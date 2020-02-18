@@ -1,3 +1,70 @@
 "C:\Program Files\MongoDB\Server\4.0\bin\mongodump.exe" -h 127.0.0.1 -d StockAnalysisSystem -o C:\
 
 "C:\Program Files\MongoDB\Server\4.0\bin\mongorestore.exe" --host 127.0.0.1 --port 27017 -d StockAnalysisSystem Data
+
+
+###########################################################################################################################################
+
+
+同时配置github和gitee的Key
+
+分别生成不同的key（默认生成的id_rsa必须）
+	cd ~/.ssh
+	ssh-keygen -t rsa -C "your_email@example.com"
+	ssh-keygen -t rsa -C "your_email@example.com" -f "gitee_id_rsa"
+	ssh-keygen -t rsa -C "your_email@example.com" -f "github_id_rsa"
+	
+在 ~/.ssh目录下建一个config文件
+	# gitee
+	Host gitee.com
+	HostName gitee.com
+	PreferredAuthentications publickey
+	IdentityFile ~/.ssh/gitee_id_rsa
+	
+	# github
+	Host github.com
+	HostName github.com
+	PreferredAuthentications publickey
+	IdentityFile ~/.ssh/github_id_rsa
+
+将公钥分别添加到github和gitee
+
+启动并将key添加ssh-agent
+	eval $(ssh-agent -s)
+	ssh-add ~/.ssh/id_rsa
+
+测试连接并在 ~/.ssh下生成 known_hosts文件
+	ssh -T git@gitee.com
+ssh -T git@github.com
+
+
+###########################################################################################################################################
+
+
+将代码同时提交到github和gitee
+
+编辑.git目录下的config文件
+第一种方法（多次提交）：
+	将[remote "github"]配置段复制一份，修改remote的名字为gitee及url指向gitee的地址
+	等同于直接执行命令：git remote add gitee git:git@gitee.com:xxxxxxx
+	同时建议将原来remote的名字改为github以示区分
+	此时提交代码需要分别push到两个仓库中：
+		git push github matser
+		git push gitee master
+第二种方法（一次提交）：
+	在remote配置段中增加一个url配置：url = git:git@gitee.com:xxxxxxx
+	等同于直接执行命令：git remote set-url --add origin git:git@gitee.com:xxxxxxx
+	直接push可能会有问题（两个仓库内容不一致）：
+		先rebase再push（注意config中哪个地址在前面就会去rebase哪个地址）：
+			git pull --rebase origin master
+		确保本地及仓库内容同步后强制推送：
+			git push -f
+			
+https://blog.csdn.net/zhuzbYR/article/details/99708449
+
+
+
+
+
+
+
