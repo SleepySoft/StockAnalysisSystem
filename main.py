@@ -111,8 +111,10 @@ def run_console():
         # 'Finance.CashFlowStatement',
         #
         # 'Stockholder.PledgeStatus',
-        'Stockholder.PledgeHistory',
-    ], True)
+        # 'Stockholder.PledgeHistory',
+        #
+        'TradeData.Daily',
+    ], False)
     # run_strategy()
 
     exit(0)
@@ -133,8 +135,8 @@ def main():
     sas = stock_analysis_system.StockAnalysisSystem()
     sas.check_initialize()
 
-    # run_console()
-    run_ui()
+    run_console()
+    # run_ui()
     # run_test()
 
     print('Process Quit.')

@@ -179,7 +179,6 @@ def generate_test_dataframe(rows: [str], cols: [str]) -> pd.DataFrame:
     return df
 
 
-
 def test_concat_dataframe_by_index():
     df1 = pd.DataFrame(data={
         'a': ['1A', '2A', '3A'],

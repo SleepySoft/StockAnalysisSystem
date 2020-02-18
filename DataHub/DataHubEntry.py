@@ -130,6 +130,39 @@ RESULT_FIELDS_PLEDGE_HISTORY = {
     'due_date':       (['datetime'], [],    True, ''),
 }
 
+# ------------------------ TradeData.Daily ------------------------
+
+QUERY_FIELDS_TRADE_DAILY = {
+    'stock_identity': ([str], [],           True,  ''),
+    'trade_date':     ([tuple,  None], [],  False, ''),
+}
+
+RESULT_FIELD_TRADE_DAILY = {
+    'trade_date':     (['datetime'], [],    True, ''),
+}
+
+
+# --------------------------------------- Separator ---------------------------------------
+
+class SeparatorByIdentity(UniversalDataTable.Separator):
+    """
+    Separate database for each identity.
+    """
+    def __init__(self, uri: str, identity: str or [str],
+                 time_serial: tuple, extra: dict, fields: list):
+        super(SeparatorByIdentity, self).__init__(uri, identity, time_serial, extra, fields)
+
+    def __next__(self):
+        if not isinstance(self.identity, (list, tuple)):
+            self.identity = [self.identity]
+        if self.parts < len(self.identity):
+            identity = self.identity[self.parts]
+            self.parts += 1
+            return self.uri + '.' + identity, identity, self.time_serial, self.extra, self.fields
+        else:
+            raise StopIteration
+
+
 # ---------------------------------------- Declare ----------------------------------------
 
 DFTDB = 'StockAnalysisSystem'
@@ -155,7 +188,14 @@ DATA_FORMAT_DECLARE = [
 
     ('Stockholder.PledgeStatus',  DFTDB, DFTPRX, 'stock_identity', 'due_date', QUERY_FIELDS_PLEDGE_STATUS, RESULT_FIELDS_PLEDGE_STATUS),
     ('Stockholder.PledgeHistory', DFTDB, DFTPRX, 'stock_identity', 'due_date', QUERY_FIELDS_PLEDGE_HISTORY, RESULT_FIELDS_PLEDGE_HISTORY),
+
+    # Because we put each stock data in different collection, so the 'stock_identity' is not necessary.
+    ('TradeData.Stock.Daily', DFTDB, DFTPRX, None, 'trade_date', QUERY_FIELDS_TRADE_DAILY, RESULT_FIELD_TRADE_DAILY),
 ]
+
+SEPARATE_SEPARATOR_TABLE = {
+    'TradeData.Stock.Daily': SeparatorByIdentity,
+}
 
 
 class DataHubEntry:
@@ -182,7 +222,8 @@ class DataHubEntry:
             self.get_data_center().register_data_table(
                 UniversalDataTable(data_format[DATA_FORMAT_URI], self.__database_entry,
                                    data_format[DATA_FORMAT_DATABASE], data_format[DATA_FORMAT_TABLE_PREFIX],
-                                   data_format[DATA_FORMAT_IDENTITY_FIELD], data_format[DATA_FORMAT_DATETIME_FIELD]),
+                                   data_format[DATA_FORMAT_IDENTITY_FIELD], data_format[DATA_FORMAT_DATETIME_FIELD],
+                                   SEPARATE_SEPARATOR_TABLE.get(data_format[DATA_FORMAT_URI], None)),
                 ParameterChecker(data_format[DATA_FORMAT_RESULT_FIELD_INFO],
                                  data_format[DATA_FORMAT_QUERY_FIELD_INFO])
             )

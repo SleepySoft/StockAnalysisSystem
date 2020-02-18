@@ -85,9 +85,9 @@ def parse(file_name: str,
 
 
 PARSE_LIST = (
-    path.join('AliasSheet', 'Alias_TradeCalender_Ts.xlsx'),
-    path.join('AliasSheet', 'Alias_NamingHistory_Ts.xlsx'),
-    path.join('AliasSheet', 'Alias_SecuritiesInfo_Ts.xlsx'),
+    # path.join('AliasSheet', 'Alias_TradeCalender_Ts.xlsx'),
+    # path.join('AliasSheet', 'Alias_NamingHistory_Ts.xlsx'),
+    # path.join('AliasSheet', 'Alias_SecuritiesInfo_Ts.xlsx'),
 
     # path.join('AliasSheet', 'Alias_Audit_Ts.xlsx'),
     # path.join('AliasSheet', 'Alias_BalanceSheet_Ts.xlsx'),
@@ -96,6 +96,10 @@ PARSE_LIST = (
 
     # path.join('AliasSheet', 'Alias_PledgeStatus_Ts.xlsx'),
     # path.join('AliasSheet', 'Alias_PledgeHistory_Ts.xlsx'),
+
+    path.join('AliasSheet', 'Alias_StockDaily_AdjFactor_Ts.xlsx'),
+    path.join('AliasSheet', 'Alias_StockDaily_Indicators_Ts.xlsx'),
+    path.join('AliasSheet', 'Alias_StockDaily_Trade_Ts.xlsx'),
 )
 
 
