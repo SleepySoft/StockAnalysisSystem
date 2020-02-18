@@ -1,0 +1,160 @@
+import logging
+import traceback
+
+from os import sys, path
+from PyQt5.QtWidgets import QLineEdit, QAbstractItemView, QFileDialog, QCheckBox, QWidget, QComboBox, QDateTimeEdit
+
+root_path = path.dirname(path.dirname(path.abspath(__file__)))
+
+try:
+    import stock_analysis_system
+    import Utiltity.common as common
+    from Utiltity.ui_utility import *
+    from Utiltity.time_utility import *
+    from DataHub.DataUtility import DataUtility
+    from DataHub.DataHubEntry import DATA_FORMAT_DECLARE
+    from Database.DatabaseEntry import DatabaseEntry
+    from DataHub.UniversalDataCenter import UniversalDataTable
+    from DataHub.UniversalDataCenter import UniversalDataCenter
+except Exception as e:
+    sys.path.append(root_path)
+
+    import stock_analysis_system
+    import Utiltity.common as common
+    from Utiltity.ui_utility import *
+    from Utiltity.time_utility import *
+    from DataHub.DataUtility import DataUtility
+    from DataHub.DataHubEntry import DATA_FORMAT_DECLARE
+    from Database.DatabaseEntry import DatabaseEntry
+    from DataHub.UniversalDataCenter import UniversalDataTable
+    from DataHub.UniversalDataCenter import UniversalDataCenter
+finally:
+    logger = logging.getLogger('')
+
+
+class DataHubUi(QWidget):
+    def __init__(self, data_center: UniversalDataCenter):
+        super(DataHubUi, self).__init__()
+
+        self.__data_center = data_center
+        self.__translate = QtCore.QCoreApplication.translate
+
+        self.__combo_uri = QComboBox()
+        self.__line_identity = QLineEdit()
+        self.__table_main = EasyQTableWidget()
+        self.__datetime_since = QDateTimeEdit()
+        self.__datetime_until = QDateTimeEdit()
+        self.__button_query = QPushButton(self.__translate('', 'Query'))
+        self.__check_identity_enable = QCheckBox(self.__translate('', 'Identity'))
+        self.__check_datetime_enable = QCheckBox(self.__translate('', 'Datetime'))
+
+        self.init_ui()
+
+    # ---------------------------------------------------- UI Init -----------------------------------------------------
+
+    def init_ui(self):
+        self.__layout_control()
+        self.__config_control()
+
+    def __layout_control(self):
+        main_layout = QVBoxLayout()
+        self.setLayout(main_layout)
+
+        line = QHBoxLayout()
+        line.addWidget(QLabel(self.__translate('', 'URI')), 0)
+        line.addWidget(self.__combo_uri, 10)
+        main_layout.addLayout(line)
+
+        line = QHBoxLayout()
+        line.addWidget(self.__check_identity_enable, 0)
+        line.addWidget(self.__line_identity, 10)
+        main_layout.addLayout(line)
+
+        line = QHBoxLayout()
+        line.addWidget(self.__check_datetime_enable, 0)
+        line.addWidget(self.__datetime_since, 10)
+        line.addWidget(self.__datetime_until, 10)
+        main_layout.addLayout(line)
+
+        line = QHBoxLayout()
+        line.addWidget(QLabel(' '), 10)
+        line.addWidget(self.__button_query, 1)
+        main_layout.addLayout(line)
+
+        main_layout.addWidget(self.__table_main)
+
+    def __config_control(self):
+        # self.__combo_uri.setEditable(True)
+        self.__check_identity_enable.setChecked(True)
+        self.__check_datetime_enable.setChecked(True)
+        self.__datetime_since.setDateTime(default_since())
+        self.__datetime_until.setDateTime(now())
+        self.__button_query.clicked.connect(self.on_button_query)
+
+        for data_hub_entry in DATA_FORMAT_DECLARE:
+            self.__combo_uri.addItem(data_hub_entry[0])
+
+    def on_button_query(self):
+        uri = self.__combo_uri.currentText()
+        identity = self.__line_identity.text() if self.__check_identity_enable.isChecked() else None
+        since = self.__datetime_since.dateTime().toPyDateTime() if self.__check_datetime_enable.isChecked() else None
+        until = self.__datetime_until.dateTime().toPyDateTime() if self.__check_datetime_enable.isChecked() else None
+
+        result = self.__data_center.query(uri, identity, (since, until)) if self.__data_center is not None else None
+
+        if result is not None:
+            del result['_id']
+            write_df_to_qtable(result, self.__table_main)
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def main():
+    app = QApplication(sys.argv)
+    sas = stock_analysis_system.StockAnalysisSystem()
+    data_hub = sas.get_data_hub_entry()
+    data_center = data_hub.get_data_center()
+    dlg = WrapperQDialog(DataHubUi(data_center))
+    dlg.exec()
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def exception_hook(type, value, tback):
+    # log the exception here
+    print('Exception hook triggered.')
+    print(type)
+    print(value)
+    print(tback)
+    # then call the default handler
+    sys.__excepthook__(type, value, tback)
+
+
+sys.excepthook = exception_hook
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        print('Error =>', e)
+        print('Error =>', traceback.format_exc())
+        exit()
+    finally:
+        pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
