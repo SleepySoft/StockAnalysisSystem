@@ -1,6 +1,10 @@
 # StockAnalysisSystem
 This program is designed for Chinese market and Chinese accounting policies (currently). So this document will only provide Chinese version.
 
+# 注意(NOTICE)
+由于空间占用问题，旧的github仓库已经废弃，请重新clone代码并手动合并你的更改（如果有的话）  
+Because the space occupancy issue. The old github repo was deprecated. Please re-clone and merge your updates manually (if has)   
+  
 # Gitee
 https://gitee.com/SleepySoft/StockAnalysisSystem  
 
@@ -104,10 +108,11 @@ QQ群：931499339，进群验证码：SleepySoft
 13. 将数据迁移到MongoDB
 > UpdateTable -> 20200209: Done  
 > XList Table  
-14. 整合测试入口，执行一个文件即可运行所有测试  
-15. 策略参数可配置可保存  
-16. 接入交易数据  
-17. 加入实时数据  
+14. 废弃旧仓库，重新建立仓库以减少空间占用，并同时迁移数据到gitee（今后代码会同时提交到两个仓库）  -> 20200218: Done  
+15. 整合测试入口，执行一个文件即可运行所有测试  
+16. 策略参数可配置可保存  
+17. 接入交易数据  
+18. 加入实时数据  
 
 
 
