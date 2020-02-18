@@ -1,0 +1,34 @@
+pipenv install
+pipenv shell
+
+pip install pandas
+pip install pyqt5
+pip install tushare
+pip install bs4
+pip install pymongo
+pip install requests
+pip install openpyxl
+
+pip uninstall pyinstaller
+pip install https://github.com/pyinstaller/pyinstaller/archive/develop.zip
+
+del main.spec
+pyi-makespec --hidden-import pandas --icon="res/logo.ico" main.py
+pyi-makespec -w --hidden-import pandas --icon="res/logo.ico" main.py
+
+
+rmdir /s /q dist
+rmdir /s /q build
+pyinstaller main.spec
+dist/main/main.exe
+
+
+pipenv --rm
+
+
+
+
+
+
+
+
