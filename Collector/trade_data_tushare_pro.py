@@ -8,6 +8,7 @@ root_path = path.dirname(path.dirname(path.abspath(__file__)))
 try:
     import config
     from Utiltity.common import *
+    from Utiltity.df_utility import *
     from Utiltity.time_utility import *
     from Collector.CollectorUtility import *
 except Exception as e:
@@ -15,6 +16,7 @@ except Exception as e:
 
     import config
     from Utiltity.common import *
+    from Utiltity.df_utility import *
     from Utiltity.time_utility import *
     from Collector.CollectorUtility import *
 finally:
@@ -24,7 +26,7 @@ finally:
 # ------------------------------------------------------- Fields -------------------------------------------------------
 
 FIELDS = {
-    'Market.TradeCalender': {
+    'TradeData.Stock.Daily': {
         'ts_code':                       '股票代码',
         'trade_date':                    '交易日期',
 
@@ -103,14 +105,17 @@ def __fetch_trade_data_daily(**kwargs) -> pd.DataFrame:
 
             # 500 times per 1 min, do not need delay.
             clock = Clock()
-            sub_result = pro.daily(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
-            print(uri + ' Network finished, time spending: ' + str(clock.elapsed_ms()) + 'ms')
 
-            if sub_result is not None:
-                if result is None:
-                    result = sub_result
-                else:
-                    result.append(result)
+            result_daily = pro.daily(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
+            result_adjust = pro.adj_factor(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
+            result_index = pro.daily_basic(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
+
+            print(uri + ' - Network finished, time spending: ' + str(clock.elapsed_ms()) + 'ms')
+
+            result = merge_on_columns(result, result_daily)
+            result = merge_on_columns(result, result_adjust)
+            result = merge_on_columns(result, result_index)
+
     check_execute_dump_flag(result, **kwargs)
 
     if result is not None:
@@ -126,7 +131,7 @@ def __fetch_trade_data_daily(**kwargs) -> pd.DataFrame:
 def query(**kwargs) -> pd.DataFrame or None:
     uri = kwargs.get('uri')
     if uri in list(FIELDS.keys()):
-        df1 = __fetch_trade_data_daily(**kwargs)
+        return __fetch_trade_data_daily(**kwargs)
     else:
         return None
 

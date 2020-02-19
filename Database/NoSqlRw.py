@@ -305,14 +305,12 @@ class ItkvTable:
             None
         """
 
-        if identity is None or identity == '':
-            spec = {}
-        elif str_available(self.__identity_field) and str_available(identity):
-            spec = {self.__identity_field: identity}
-        elif str_available(self.__identity_field) and isinstance(identity, (list, tuple)):
-            spec = {self.__identity_field: {'$in': list(identity)}}
-        # else:
-        #     raise Exception('<identity> should be str or a list of str, or just None')
+        spec = {}
+        if str_available(self.__identity_field):
+            if str_available(identity):
+                spec = {self.__identity_field: identity}
+            elif isinstance(identity, (list, tuple)):
+                spec = {self.__identity_field: {'$in': list(identity)}}
 
         if isinstance(since, str):
             since = text_auto_time(since)

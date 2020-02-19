@@ -113,6 +113,16 @@ def slice_dataframe_by_datetime(df: pd.DataFrame, since: datetime = None,
         return df
 
 
+def merge_on_columns(df1: pd.DataFrame, df2: pd.DataFrame, columns: str or [str]):
+    if df1 is None:
+        return df2
+    if df2 is None:
+        return df1
+    if not isinstance(columns, (list, tuple)):
+        columns = [columns]
+    return pd.merge(df1, df2, on=columns, sort=False)
+
+
 # ----------------------------------------------------------------
 
 
