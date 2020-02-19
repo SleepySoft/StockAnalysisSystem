@@ -212,6 +212,7 @@ class TaskQueue:
                 except Exception as e:
                     print('Task queue -> ' + str(task) + ' got exception:')
                     print(e)
+                    print(traceback.format_exc())
                 finally:
                     print('Task queue -> finish: %s, time spending: %.2f ms' %
                           (str(task), (time.time() - clock) * 1000))

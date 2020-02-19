@@ -164,25 +164,26 @@ class UniversalDataTable:
 
     # -------------------------------- Base Separator --------------------------------
 
-    class Separator:
-        def __init__(self, uri: str, identity: str or [str],
-                     time_serial: tuple, extra: dict, fields: list):
+    class Extender:
+        def __init__(self):
+            self.uri = ''
+            self.identity = ''
+            self.time_serial = ()
+            self.extra = {}
+            self.fields = []
+
+        def parts(self, uri: str, identity: str or [str], time_serial: tuple, extra: dict, fields: list) -> \
+                [(str, str or [str], tuple, dict, list)]:
             self.uri = uri
             self.identity = identity
             self.time_serial = time_serial
             self.extra = extra
             self.fields = fields
-            self.parts = 0
+            return [(uri, identity, time_serial, extra, fields)]
 
-        def __next__(self):
-            if self.parts == 0:
-                self.parts += 1
-                return self.uri, self.identity, self.time_serial, self.extra, self.fields
-            else:
-                raise StopIteration
-
-        def __iter__(self):
-            return self
+        def table_name(self, uri: str, identity: str, time_serial: tuple, extra: dict, fields: list) -> str:
+            nop(self, identity, time_serial, extra, fields)
+            return uri.replace('.', '_')
 
     # ------------------------------- UniversalDataTable -------------------------------
 
@@ -191,7 +192,7 @@ class UniversalDataTable:
                  depot_name: str, table_prefix: str = '',
                  identity_field: str or None = 'Identity',
                  datetime_field: str or None = 'DateTime',
-                 separator: Separator = None):
+                 extender: Extender = None):
         """
         If you specify both identity_field and datetime_field, the combination will be the primary key. Which means
             an id can have multiple different time serial record. e.g. stock daily price table.
@@ -215,7 +216,7 @@ class UniversalDataTable:
         self.__table_prefix = table_prefix
         self.__identity_field = identity_field
         self.__datetime_field = datetime_field
-        self.__separator = separator if separator is not None else UniversalDataTable.Separator
+        self.__extender = extender if extender is not None else UniversalDataTable.Extender()
 
     def identity_field(self) -> str or None:
         return self.__identity_field
@@ -237,19 +238,16 @@ class UniversalDataTable:
             on_column.append(self.__datetime_field)
         df_total = None
         for _uri, _identify, _time_serial, _extra, _fields in \
-                self.__separator(uri, identify, time_serial, extra, fields):
-            table = self.data_table(_uri, _identify, _time_serial, _extra)
+                self.__extender.parts(uri, identify, time_serial, extra, fields):
+            table = self.data_table(_uri, _identify, _time_serial, _extra, fields)
             since, until = normalize_time_serial(_time_serial)
             result = table.query(_identify, since, until, _extra, _fields)
             df = pd.DataFrame(result)
-            if df_total is None:
-                df_total = df
-            else:
-                df_total = pd.merge(df_total, df, on=on_column, sort=False)
+            df_total = merge_on_columns(df_total, df, on_column)
         return df_total
 
     def merge(self, uri: str, identify: str, df: pd.DataFrame):
-        table = self.data_table(uri, identify, (None, None), {})
+        table = self.data_table(uri, identify, (None, None), {}, [])
         identity_field, datetime_field = table.identity_field(), table.datetime_field()
 
         table.set_connection_threshold(5000)
@@ -276,7 +274,7 @@ class UniversalDataTable:
         table.set_connection_threshold(10)
 
     def range(self, uri: str, identify: str) -> (datetime.datetime, datetime.datetime):
-        table = self.data_table(uri, identify, (None, None), {})
+        table = self.data_table(uri, identify, (None, None), {}, [])
         return (table.min_of(self.datetime_field(), identify), table.max_of(self.datetime_field(), identify)) \
             if str_available(self.datetime_field()) else (None, None)
 
@@ -289,33 +287,14 @@ class UniversalDataTable:
         ref_since, ref_until = self.ref_range(uri, identify)
         return local_until, ref_until
 
-    def data_table(self, uri: str, identify: str or [str], time_serial: tuple, extra: dict) -> NoSqlRw.ItkvTable:
-        nop(identify, time_serial, extra)
-        table_name = self.table_name(uri, identify, time_serial, extra)
+    def data_table(self, uri: str, identify: str or [str],
+                   time_serial: tuple, extra: dict, fields: list) -> NoSqlRw.ItkvTable:
+        table_name = self.table_name(uri, identify, time_serial, extra, fields)
         return self.__database_entry.query_nosql_table(self.__depot_name, table_name,
                                                        self.__identity_field, self.__datetime_field)
 
-    def table_name(self, uri: str, identify: str or [str], time_serial: tuple, extra: dict) -> str:
-        nop(identify, time_serial, extra)
-        return self.__table_prefix + uri.replace('.', '_')
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-#                                              UniversalDataTableSeparate
-# ----------------------------------------------------------------------------------------------------------------------
-
-class UniversalDataTableSeparate(UniversalDataTable):
-    def __init__(self,
-                 uri: str, database_entry: DatabaseEntry,
-                 depot_name: str, table_prefix: str = '',
-                 identity_field: str or None = 'Identity',
-                 datetime_field: str or None = 'DateTime'):
-        super(UniversalDataTableSeparate, self).__init__(uri, database_entry, depot_name,
-                                                         table_prefix, identity_field, datetime_field)
-
-    def table_name(self, uri: str, identify: str or [str], time_serial: tuple, extra: dict) -> str:
-        nop(time_serial, extra)
-        return self.__table_prefix + (uri + '.' + identify).replace('.', '_') + identify
+    def table_name(self, uri: str, identify: str or [str], time_serial: tuple, extra: dict, fields: list) -> str:
+        return self.__table_prefix + self.__extender.table_name(uri, identify, time_serial, extra, fields)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
