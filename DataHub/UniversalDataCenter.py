@@ -250,7 +250,7 @@ class UniversalDataTable:
         table = self.data_table(uri, identity, (None, None), {}, [])
         identity_field, datetime_field = table.identity_field(), table.datetime_field()
 
-        table.set_connection_threshold(5000)
+        table.set_connection_threshold(2500)
         for index, row in df.iterrows():
             identity_value = None
             if NoSqlRw.str_available(identity_field):
@@ -269,8 +269,8 @@ class UniversalDataTable:
             if NoSqlRw.str_available(datetime_field) and datetime_value is None:
                 print('Warning: datetime field "' + datetime_field + '" of <' + uri + '> missing.')
                 continue
-
-            table.upsert(identity_value, datetime_value, row.dropna().to_dict())
+            table.bulk_upsert(identity_value, datetime_value, row.dropna().to_dict())
+        table.bulk_flush()
         table.set_connection_threshold(10)
 
     def range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
