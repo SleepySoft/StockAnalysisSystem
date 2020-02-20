@@ -3,7 +3,7 @@ import sys
 import traceback
 from bson import Code
 from datetime import datetime
-from pymongo import MongoClient, ASCENDING
+from pymongo import MongoClient, ASCENDING, UpdateOne, UpdateMany, InsertOne, DeleteOne, DeleteMany
 
 
 # ---------------------- Duplicate Functions: Because we don't want this file depends other files ----------------------
@@ -72,6 +72,7 @@ class ItkvTable:
         self.__connection_threshold = 100
         self.__identity_field = identity_field
         self.__datetime_field = datetime_field
+        self.__bulk_operations = []
 
     def identity_field(self) -> str or None:
         return self.__identity_field
@@ -110,6 +111,31 @@ class ItkvTable:
         if collection is None:
             return 0
         return collection.count()
+
+    def bulk_upsert(self, identity: str, time: datetime or str, data: dict, extra_spec: dict = None):
+        spec = self.__gen_find_spec(identity, time, time, extra_spec)
+        if isinstance(time, str):
+            time = text_auto_time(time)
+        document = {}
+        if str_available(self.__identity_field) and str_available(identity):
+            document[self.__identity_field] = identity
+        if str_available(self.__datetime_field) and time is not None:
+            document[self.__datetime_field] = time
+        document.update(data)
+        self.__bulk_operations.append(UpdateOne(spec, {'$set': document}, upsert=True))
+
+        if len(self.__bulk_operations) > 950:
+            self.bulk_flush()
+
+    def bulk_flush(self):
+        collection = self.__get_collection()
+        if collection is None:
+            while len(self.__bulk_operations) > 1000:
+                self.__bulk_operations.pop(0)
+            return False
+        ret = collection.bulk_write(self.__bulk_operations)
+        self.__bulk_operations.clear()
+        return ret
 
     def upsert(self, identity: str, time: datetime or str, data: dict, extra_spec: dict = None) -> dict:
         """ Update a record, insert if not exists.
