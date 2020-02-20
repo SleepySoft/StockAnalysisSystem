@@ -142,7 +142,7 @@ class DataUtility:
                 -> ref_latest_update is None => Should be an error, update all (patch_since = None, patch_until = None).
                 -> latest_update < ref_until => Update (since = tomorrow of latest update, until = today)
                 -> Else => Not need to update
-        :param selectors: The selectors to identify the data
+        :param selectors: The selectors to identity the data
         :return: List of Patch.
         """
         logger.info('DataUtility.check_update(' + str(selectors) + ')')

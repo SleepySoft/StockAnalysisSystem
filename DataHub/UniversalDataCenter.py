@@ -48,7 +48,7 @@ class ParameterChecker:
                  The second item: The list of expect values for this key, an empty list means it can be any value
                  The third item: True if it's necessary, False if it's optional.
     DICT_PARAM_INFO_EXAMPLE = {
-        'identify':     ([str], ['id1', 'id2'], True),
+        'identity':     ([str], ['id1', 'id2'], True),
         'datetime':     ([datetime.datetime, None], [], False)
     }
 
@@ -229,7 +229,7 @@ class UniversalDataTable:
     def adapt(self, uri: str) -> bool:
         return self.__uri.lower() == uri.lower()
 
-    def query(self, uri: str, identify: str or [str], time_serial: tuple,
+    def query(self, uri: str, identity: str or [str], time_serial: tuple,
               extra: dict, fields: list) -> pd.DataFrame or None:
         on_column = []
         if str_available(self.__identity_field):
@@ -237,17 +237,17 @@ class UniversalDataTable:
         if str_available(self.__datetime_field):
             on_column.append(self.__datetime_field)
         df_total = None
-        for _uri, _identify, _time_serial, _extra, _fields in \
-                self.__extender.parts(uri, identify, time_serial, extra, fields):
-            table = self.data_table(_uri, _identify, _time_serial, _extra, fields)
+        for _uri, _identity, _time_serial, _extra, _fields in \
+                self.__extender.parts(uri, identity, time_serial, extra, fields):
+            table = self.data_table(_uri, _identity, _time_serial, _extra, fields)
             since, until = normalize_time_serial(_time_serial)
-            result = table.query(_identify, since, until, _extra, _fields)
+            result = table.query(_identity, since, until, _extra, _fields)
             df = pd.DataFrame(result)
             df_total = merge_on_columns(df_total, df, on_column)
         return df_total
 
-    def merge(self, uri: str, identify: str, df: pd.DataFrame):
-        table = self.data_table(uri, identify, (None, None), {}, [])
+    def merge(self, uri: str, identity: str, df: pd.DataFrame):
+        table = self.data_table(uri, identity, (None, None), {}, [])
         identity_field, datetime_field = table.identity_field(), table.datetime_field()
 
         table.set_connection_threshold(5000)
@@ -273,28 +273,28 @@ class UniversalDataTable:
             table.upsert(identity_value, datetime_value, row.dropna().to_dict())
         table.set_connection_threshold(10)
 
-    def range(self, uri: str, identify: str) -> (datetime.datetime, datetime.datetime):
-        table = self.data_table(uri, identify, (None, None), {}, [])
-        return (table.min_of(self.datetime_field(), identify), table.max_of(self.datetime_field(), identify)) \
+    def range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
+        table = self.data_table(uri, identity, (None, None), {}, [])
+        return (table.min_of(self.datetime_field(), identity), table.max_of(self.datetime_field(), identity)) \
             if str_available(self.datetime_field()) else (None, None)
 
-    def ref_range(self, uri: str, identify: str) -> (datetime.datetime, datetime.datetime):
-        nop(self, uri, identify)
+    def ref_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
+        nop(self, uri, identity)
         return None, None
 
-    def update_range(self, uri: str, identify: str) -> (datetime.datetime, datetime.datetime):
-        local_since, local_until = self.range(uri, identify)
-        ref_since, ref_until = self.ref_range(uri, identify)
+    def update_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
+        local_since, local_until = self.range(uri, identity)
+        ref_since, ref_until = self.ref_range(uri, identity)
         return local_until, ref_until
 
-    def data_table(self, uri: str, identify: str or [str],
+    def data_table(self, uri: str, identity: str or [str],
                    time_serial: tuple, extra: dict, fields: list) -> NoSqlRw.ItkvTable:
-        table_name = self.table_name(uri, identify, time_serial, extra, fields)
+        table_name = self.table_name(uri, identity, time_serial, extra, fields)
         return self.__database_entry.query_nosql_table(self.__depot_name, table_name,
                                                        self.__identity_field, self.__datetime_field)
 
-    def table_name(self, uri: str, identify: str or [str], time_serial: tuple, extra: dict, fields: list) -> str:
-        return self.__table_prefix + self.__extender.table_name(uri, identify, time_serial, extra, fields)
+    def table_name(self, uri: str, identity: str or [str], time_serial: tuple, extra: dict, fields: list) -> str:
+        return self.__table_prefix + self.__extender.table_name(uri, identity, time_serial, extra, fields)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -336,17 +336,17 @@ class UniversalDataCenter:
 
     # -------------------------------------------------------------------
 
-    def query(self, uri: str, identify: str or [str] = None,
+    def query(self, uri: str, identity: str or [str] = None,
               time_serial: tuple = None, **extra) -> pd.DataFrame or None:
-        return self.query_from_local(uri, identify, time_serial, extra)
+        return self.query_from_local(uri, identity, time_serial, extra)
 
-    def query_from_local(self, uri: str, identify: str or [str] = None,
+    def query_from_local(self, uri: str, identity: str or [str] = None,
                          time_serial: tuple = None, extra: dict = None) -> pd.DataFrame or None:
         table, checker = self.get_data_table(uri)
         if table is None:
             self.log_error('Cannot find data table for : ' + uri)
             return None
-        if not self.check_query_params(uri, identify, time_serial, **extra):
+        if not self.check_query_params(uri, identity, time_serial, **extra):
             return None
         if 'fields' in extra:
             fields = extra.get('fields')
@@ -362,7 +362,7 @@ class UniversalDataCenter:
         if fields is not None and readable:
             fields = self.readable_to_fields(fields)
 
-        result = table.query(uri, identify, time_serial, extra, fields)
+        result = table.query(uri, identity, time_serial, extra, fields)
 
         if fields is not None:
             # Fill the missing columns
@@ -373,11 +373,11 @@ class UniversalDataCenter:
                 result.rename(columns=columns_mapping, inplace=True)
         return result
 
-    def query_from_plugin(self, uri: str, identify: str or [str] = None,
+    def query_from_plugin(self, uri: str, identity: str or [str] = None,
                           time_serial: tuple = None, **extra) -> pd.DataFrame or None:
-        if not self.check_query_params(uri, identify, time_serial, **extra):
+        if not self.check_query_params(uri, identity, time_serial, **extra):
             return None
-        argv = self.pack_query_params(uri, identify, time_serial, **extra)
+        argv = self.pack_query_params(uri, identity, time_serial, **extra)
         plugins = self.get_plugin_manager().find_module_has_capacity(uri)
         for plugin in plugins:
             result = self.get_plugin_manager().execute_module_function(plugin, 'query', argv)
@@ -386,7 +386,7 @@ class UniversalDataCenter:
                 return df
         return None
 
-    def update_local_data(self, uri: str, identify: str or [str] = None,
+    def update_local_data(self, uri: str, identity: str or [str] = None,
                           time_serial: tuple = None, force: bool = False, **extra) -> bool:
         table, checker = self.get_data_table(uri)
         if table is None:
@@ -397,15 +397,15 @@ class UniversalDataCenter:
         if force:
             since, until = default_since(), now()
         else:
-            since, until = self.calc_update_range(uri, identify, time_serial)
+            since, until = self.calc_update_range(uri, identity, time_serial)
         # TODO: How to be more grace?
         if date2text(since) == date2text(until):
             # Does not need update.
             return True
-        print('%s: [%s] -> Update range: %s - %s' % (uri, str(identify), date2text(since), date2text(until)))
+        print('%s: [%s] -> Update range: %s - %s' % (uri, str(identity), date2text(since), date2text(until)))
 
         # ------------------------- Fetch -------------------------
-        result = self.query_from_plugin(uri, identify, (min(since, until), max(since, until)), **extra)
+        result = self.query_from_plugin(uri, identity, (min(since, until), max(since, until)), **extra)
         if result is None or not isinstance(result, pd.DataFrame):
             self.log_error('Cannot fetch data from plugin for : ' + uri)
             return False
@@ -419,8 +419,8 @@ class UniversalDataCenter:
         # ------------------------- Merge -------------------------
 
         clock = Clock()
-        table.merge(uri, identify, result)
-        print('%s: [%s] - Persistence finished, time spending: %sms' % (uri, str(identify), clock.elapsed_ms()))
+        table.merge(uri, identity, result)
+        print('%s: [%s] - Persistence finished, time spending: %sms' % (uri, str(identity), clock.elapsed_ms()))
 
         # ---------------------- Update Table ---------------------
 
@@ -429,13 +429,13 @@ class UniversalDataCenter:
         self.get_update_table().update_latest_update_time(update_tags)
 
         # 2.Update of each identity
-        if str_available(identify):
-            update_tags.append(identify.replace('.', '_'))
+        if str_available(identity):
+            update_tags.append(identity.replace('.', '_'))
             self.get_update_table().update_latest_update_time(update_tags)
 
         return True
 
-    def calc_update_range(self, uri: str, identify: str or [str] = None,
+    def calc_update_range(self, uri: str, identity: str or [str] = None,
                           time_serial: tuple = None) -> (datetime.datetime, datetime.datetime):
         table, _ = self.get_data_table(uri)
         if table is None:
@@ -443,13 +443,13 @@ class UniversalDataCenter:
             return None, None
 
         update_tags = uri.split('.')
-        if str_available(identify):
-            update_tags.append(identify.replace('.', '_'))
+        if str_available(identity):
+            update_tags.append(identity.replace('.', '_'))
 
         # ----------------- Decide update time range -----------------
 
         since, until = normalize_time_serial(time_serial, None, None)
-        update_since, update_until = table.update_range(uri, identify)
+        update_since, update_until = table.update_range(uri, identity)
 
         # Guess the update date time range
         # If the parameter user specified. Just use user specified.
@@ -470,7 +470,7 @@ class UniversalDataCenter:
                 until = today()
         return since, until
 
-    def pack_query_params(self, uri: str, identify: str or [str], time_serial: tuple, **extra) -> dict:
+    def pack_query_params(self, uri: str, identity: str or [str], time_serial: tuple, **extra) -> dict:
         table, _ = self.get_data_table(uri)
 
         if table is not None:
@@ -481,23 +481,23 @@ class UniversalDataCenter:
             datetime_field = None
 
         if not NoSqlRw.str_available(identity_field):
-            identity_field = 'identify'
+            identity_field = 'identity'
         if not NoSqlRw.str_available(datetime_field):
             datetime_field = 'datetime'
 
         pack = {'uri': uri}
         if extra is not None:
             pack.update(extra)
-        if str_available(identify) and str_available(identity_field):
-            pack[identity_field] = identify
+        if str_available(identity) and str_available(identity_field):
+            pack[identity_field] = identity
         if time_serial is not None and str_available(datetime_field):
             pack[datetime_field] = time_serial
         return pack
 
-    def check_query_params(self, uri: str, identify: str or [str], time_serial: tuple, **extra) -> bool:
+    def check_query_params(self, uri: str, identity: str or [str], time_serial: tuple, **extra) -> bool:
         _, checker = self.get_data_table(uri)
         if checker is not None:
-            argv = self.pack_query_params(uri, identify, time_serial, **extra)
+            argv = self.pack_query_params(uri, identity, time_serial, **extra)
             if not checker.check_dict(argv):
                 self.log_error('Query format error: ' + uri)
                 return False
@@ -571,17 +571,17 @@ def __build_data_center() -> UniversalDataCenter:
 
 def test_entry1():
     data_center = __build_data_center()
-    df = data_center.query_from_plugin('test.entry1', 'identify_test1', ('2030-02-01', '2030-04-01'))
+    df = data_center.query_from_plugin('test.entry1', 'identity_test1', ('2030-02-01', '2030-04-01'))
     print(df)
     assert len(df) == 28 + 30 + 1
-    assert bool(set(list(df.columns)).intersection(['datetime', 'field_01', 'field_02', 'field_03', 'identify_test1']))
+    assert bool(set(list(df.columns)).intersection(['datetime', 'field_01', 'field_02', 'field_03', 'identity_test1']))
 
 
 def test_update():
     data_center = __build_data_center()
     data_center.register_data_table(
         UniversalDataTable('test.entry1', DatabaseEntry(), 'test_db', 'test_table'))
-    data_center.update_local_data('test.entry1', 'identify_test1')
+    data_center.update_local_data('test.entry1', 'identity_test1')
 
 
 def test_readable_to_fields():

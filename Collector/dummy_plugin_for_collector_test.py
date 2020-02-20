@@ -43,7 +43,7 @@ def plugin_capacities() -> list:
 # ----------------------------------------------------------------------------------------------------------------------
 
 def __execute_test_entry1(**kwargs) -> pd.DataFrame:
-    identify = kwargs.get('identify')
+    identity = kwargs.get('identity')
     time_serial = kwargs.get('datetime')
 
     since, until = normalize_time_serial(time_serial, days_ago(30), today())
@@ -60,7 +60,7 @@ def __execute_test_entry1(**kwargs) -> pd.DataFrame:
         }, ignore_index=True)
         index += 1
         current += datetime.timedelta(days=1)
-    return df.assign(identify=identify)
+    return df.assign(identity=identity)
 
 
 def __execute_test_entry2(**kwargs):

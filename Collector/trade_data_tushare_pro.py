@@ -112,9 +112,12 @@ def __fetch_trade_data_daily(**kwargs) -> pd.DataFrame:
 
             print(uri + ' - Network finished, time spending: ' + str(clock.elapsed_ms()) + 'ms')
 
-            result = merge_on_columns(result, result_daily)
-            result = merge_on_columns(result, result_adjust)
-            result = merge_on_columns(result, result_index)
+            sub_result = None
+            sub_result = merge_on_columns(sub_result, result_daily, ['ts_code', 'trade_date'])
+            sub_result = merge_on_columns(sub_result, result_adjust, ['ts_code', 'trade_date'])
+            sub_result = merge_on_columns(sub_result, result_index, ['ts_code', 'trade_date'])
+
+            result = pd.concat([result, sub_result], ignore_index=True)
 
     check_execute_dump_flag(result, **kwargs)
 
