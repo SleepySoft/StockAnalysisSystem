@@ -112,32 +112,34 @@ class ItkvTable:
             return 0
         return collection.count()
 
-    def bulk_upsert(self, identity: str, time: datetime or str, data: dict, extra_spec: dict = None):
-        spec = self.__gen_find_spec(identity, time, time, extra_spec)
-        if isinstance(time, str):
-            time = text_auto_time(time)
-        document = {}
-        if str_available(self.__identity_field) and str_available(identity):
-            document[self.__identity_field] = identity
-        if str_available(self.__datetime_field) and time is not None:
-            document[self.__datetime_field] = time
-        document.update(data)
-        self.__bulk_operations.append(UpdateOne(spec, {'$set': document}, upsert=True))
+    # ------------------------------------------------ Bulk Operations -------------------------------------------------
 
+    def bulk_upsert(self, identity: str, time: datetime or str, data: dict, extra_spec: dict = None):
+        spec, document = self.__gen_upsert_spec_and_document(identity, time, data, extra_spec)
+        self.__bulk_operations.append(UpdateOne(spec, {'$set': document}, upsert=True))
         if len(self.__bulk_operations) > 950:
             self.bulk_flush()
 
-    def bulk_flush(self):
+    def bulk_flush(self) -> dict or None:
         collection = self.__get_collection()
         if collection is None:
             while len(self.__bulk_operations) > 1000:
                 self.__bulk_operations.pop(0)
-            return False
-        ret = collection.bulk_write(self.__bulk_operations)
-        self.__bulk_operations.clear()
+            return None
+        try:
+            ret = collection.bulk_write(self.__bulk_operations)
+            self.__bulk_operations.clear()
+        except Exception as e:
+            ret = None
+            print('ItkvTable.bulk_flush() fail: ')
+            print(e)
+        finally:
+            pass
         return ret
 
-    def upsert(self, identity: str, time: datetime or str, data: dict, extra_spec: dict = None) -> dict:
+    # ----------------------------------------------- Single Operations ------------------------------------------------
+
+    def upsert(self, identity: str, time: datetime or str, data: dict, extra_spec: dict = None) -> dict or None:
         """ Update a record, insert if not exists.
         Args:
             identity    : str or list of str, None if you don't want to specify
@@ -150,24 +152,15 @@ class ItkvTable:
         Raises:
             None
         """
-
         collection = self.__get_collection()
         if collection is None:
-            return False
-        spec = self.__gen_find_spec(identity, time, time, extra_spec)
-        if isinstance(time, str):
-            time = text_auto_time(time)
-        document = {}
-        if str_available(self.__identity_field) and str_available(identity):
-            document[self.__identity_field] = identity
-        if str_available(self.__datetime_field) and time is not None:
-            document[self.__datetime_field] = time
-        document.update(data)
+            return None
+        spec, document = self.__gen_upsert_spec_and_document(identity, time, data, extra_spec)
         try:
             ret = collection.update_many(spec, {'$set': document}, True) \
                 if len(spec) > 0 else collection.insert(document)
         except Exception as e:
-            ret = False
+            ret = None
         finally:
             pass
         return ret
@@ -368,6 +361,19 @@ class ItkvTable:
             spec.update(extra_spec)
 
         return spec
+
+    def __gen_upsert_spec_and_document(self, identity: str, time: datetime or str,
+                                       data: dict, extra_spec: dict = None) -> (dict, dict):
+        spec = self.__gen_find_spec(identity, time, time, extra_spec)
+        if isinstance(time, str):
+            time = text_auto_time(time)
+        document = {}
+        if str_available(self.__identity_field) and str_available(identity):
+            document[self.__identity_field] = identity
+        if str_available(self.__datetime_field) and time is not None:
+            document[self.__datetime_field] = time
+        document.update(data)
+        return spec, document
 
 
 # ----------------------------------------------------- Test Code ------------------------------------------------------
