@@ -576,10 +576,10 @@ def test_min_max():
     assert str(max_time) == '2200-12-01 00:00:00'
 
 
-def test_upsert_by_identify_and_datetime():
+def test_upsert_by_identity_and_datetime():
     table = __prepare_empty_test_table()
 
-    print('------------------------------- upsert_by_identify_and_datetime 01 -------------------------------')
+    print('------------------------------- upsert_by_identity_and_datetime 01 -------------------------------')
 
     table.upsert('identity1', '2000-01-01', {'Foo1': 'bar1'})
     table.upsert('identity2', '2000-02-01', {'Foo2': 'bar2'})
@@ -591,7 +591,7 @@ def test_upsert_by_identify_and_datetime():
     print(result)
     assert(len(result) == 5)
 
-    print('------------------------------- upsert_by_identify_and_datetime 02 -------------------------------')
+    print('------------------------------- upsert_by_identity_and_datetime 02 -------------------------------')
 
     table.upsert('identity1', '2000-01-01', {'Foo1': 'bar1', 'Foo2': 'bar2'})
     table.upsert('identity1', '2000-02-01', {'Foo1': 'bar1', 'Foo2': 'bar2'})
@@ -602,10 +602,10 @@ def test_upsert_by_identify_and_datetime():
     assert(len(result) == 3)
 
 
-def test_upsert_by_identify_or_datetime():
+def test_upsert_by_identity_or_datetime():
     table = __prepare_empty_test_table()
 
-    print('------------------------------- upsert_by_identify_or_datetime 00 -------------------------------')
+    print('------------------------------- upsert_by_identity_or_datetime 00 -------------------------------')
 
     table.upsert('identity1', '', {'Foo1': 'bar1'})
     table.upsert('identity2', None, {'Foo2': 'bar2'})
@@ -617,9 +617,9 @@ def test_upsert_by_identify_or_datetime():
     print(result)
     assert(len(result) == 5)
 
-    print('------------------------------- upsert_by_identify_or_datetime 03 -------------------------------')
+    print('------------------------------- upsert_by_identity_or_datetime 03 -------------------------------')
 
-    # Without identify and time, just insert anyway
+    # Without identity and time, just insert anyway
 
     table.upsert('', None, {'Foo1': 'bar1'})
     table.upsert(None, '', {'Foo2': 'bar2'})
@@ -629,7 +629,7 @@ def test_upsert_by_identify_or_datetime():
     print(result)
     assert(len(result) == 8)
 
-    print('------------------------------- upsert_by_identify_or_datetime 01 -------------------------------')
+    print('------------------------------- upsert_by_identity_or_datetime 01 -------------------------------')
 
     table.upsert('identity1', '', {'Foo2': 'bar2'})
     table.upsert('identity1', None, {'Foo3': 'bar3'})
@@ -641,7 +641,7 @@ def test_upsert_by_identify_or_datetime():
     assert(result[0]['Foo2'] == 'bar2')
     assert(result[0]['Foo3'] == 'bar3')
 
-    print('------------------------------- upsert_by_identify_or_datetime 02 -------------------------------')
+    print('------------------------------- upsert_by_identity_or_datetime 02 -------------------------------')
 
     table.upsert('identity2', None, {'Foo1': 'bar1'})
     table.upsert('identity2', '', {'Foo2': 'bar2'})
@@ -654,7 +654,7 @@ def test_upsert_by_identify_or_datetime():
     assert(result[0]['Foo2'] == 'bar2')
     assert(result[0]['Foo3'] == 'bar3')
 
-    print('------------------------------- upsert_by_identify_or_datetime 0405 -------------------------------')
+    print('------------------------------- upsert_by_identity_or_datetime 0405 -------------------------------')
 
     table.upsert('', '2000-04-01', {'Foo4': 'bar44'})
     table.upsert('', '2000-04-01', {'Foo7': 'bar7'})
@@ -683,8 +683,8 @@ def test_entry():
     test_get_all_keys()
     test_remove_key()
     test_min_max()
-    test_upsert_by_identify_and_datetime()
-    test_upsert_by_identify_or_datetime()
+    test_upsert_by_identity_and_datetime()
+    test_upsert_by_identity_or_datetime()
 
 
 # ----------------------------------------------------- File Entry -----------------------------------------------------

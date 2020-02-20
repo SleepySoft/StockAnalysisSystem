@@ -184,7 +184,7 @@ DATA_FORMAT_DECLARE = [
     ('Stockholder.PledgeStatus',  DFTDB, DFTPRX, 'stock_identity', 'due_date', QUERY_FIELDS_PLEDGE_STATUS, RESULT_FIELDS_PLEDGE_STATUS),
     ('Stockholder.PledgeHistory', DFTDB, DFTPRX, 'stock_identity', 'due_date', QUERY_FIELDS_PLEDGE_HISTORY, RESULT_FIELDS_PLEDGE_HISTORY),
 
-    ('TradeData.Stock.Daily',     DFTDB, DFTPRX, 'stock_identity', 'trade_date', QUERY_FIELDS_TRADE_DAILY, RESULT_FIELD_TRADE_DAILY),
+    ('TradeData.Stock.Daily',     'StockDaily', DFTPRX, 'stock_identity', 'trade_date', QUERY_FIELDS_TRADE_DAILY, RESULT_FIELD_TRADE_DAILY),
 ]
 
 SPECIAL_EXTENDER_TABLE = {
@@ -240,7 +240,7 @@ class DataHubEntry:
 
         if data_format[DATA_FORMAT_IDENTITY_FIELD] is not None and \
                 not isinstance(data_format[DATA_FORMAT_IDENTITY_FIELD], str):
-            print('Error: The identify field (index: %s) should be None or str.' % DATA_FORMAT_IDENTITY_FIELD)
+            print('Error: The identity field (index: %s) should be None or str.' % DATA_FORMAT_IDENTITY_FIELD)
             return False
         if data_format[DATA_FORMAT_DATETIME_FIELD] is not None and \
                 not isinstance(data_format[DATA_FORMAT_DATETIME_FIELD], str):

@@ -120,7 +120,14 @@ def merge_on_columns(df1: pd.DataFrame, df2: pd.DataFrame, columns: str or [str]
         return df1
     if not isinstance(columns, (list, tuple)):
         columns = [columns]
-    return pd.merge(df1, df2, on=columns, sort=False)
+    # https://stackoverflow.com/questions/19125091/pandas-merge-how-to-avoid-duplicating-columns/19125531#19125531
+    diff_cols = list(df2.columns.difference(df1.columns))
+    # if len(diff_cols) == 0:
+    #     df = pd.merge(df1, df2, how='left', on=columns, sort=False)
+    # else:
+    merge_columns = diff_cols + columns
+    df = pd.merge(df1, df2[merge_columns], how='inner', on=columns, sort=False)
+    return df
 
 
 # ----------------------------------------------------------------
