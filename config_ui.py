@@ -143,7 +143,7 @@ class ConfigUi(QWidget):
         if folder == '':
             return
 
-        folder_name = path.basename(path.normpath('folder'))
+        folder_name = path.basename(path.normpath(folder))
         if folder_name not in ['StockAnalysisSystem', 'StockDaily']:
             QMessageBox.information(self,
                                     QtCore.QCoreApplication.translate('main', '错误的数据'),
@@ -157,7 +157,7 @@ class ConfigUi(QWidget):
                                      QtCore.QCoreApplication.translate('main', '导入确认'), tips,
                                      QMessageBox.Yes | QMessageBox.No,
                                      QMessageBox.No)
-        if reply != QMessageBox.No:
+        if reply != QMessageBox.Yes:
             return
 
         mongodb_name = folder_name
