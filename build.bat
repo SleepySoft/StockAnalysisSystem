@@ -81,11 +81,11 @@ goto end
 	xcopy "README.md" "dist\main\"
 
 	Rem Copy empty sqlite db to data path
-	xcopy "res\sAsUtility.db.empty" "dist\main\Data\"
-	ren "dist\main\Data\sAsUtility.db.empty" "sAsUtility.db"
+	Rem xcopy "res\sAsUtility.db.empty" "dist\main\Data\"
+	Rem ren "dist\main\Data\sAsUtility.db.empty" "sAsUtility.db"
 	
 	Rem Copy export mongodb and sqlite db to offline_data path
-	xcopy "Data\sAsUtility.db" "dist\offline_data\"
+	xcopy "Data\sAsUtility.db" "dist\main\Data\"
 	Rem xcopy "res\StockAnalysisSystem.zip.*" "dist\offline_data\"
 	
 	goto end
