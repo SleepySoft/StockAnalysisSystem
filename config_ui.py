@@ -131,6 +131,8 @@ class ConfigUi(QWidget):
     def on_button_browse(self):
         folder = str(QFileDialog.getExistingDirectory(self, "Select MongoDB Binary Directory",
                                                       directory=self.__line_mongo_db_binary.text()))
+        if folder == '':
+            return
         self.__line_mongo_db_binary.setText(folder)
 
     def on_button_import(self):
@@ -138,6 +140,27 @@ class ConfigUi(QWidget):
             return
         folder = str(QFileDialog.getExistingDirectory(self, "Select MongoDB Data Directory",
                                                       directory=path.dirname(path.abspath(__file__))))
+        if folder == '':
+            return
+
+        folder_name = path.basename(path.normpath('folder'))
+        if folder_name not in ['StockAnalysisSystem', 'StockDaily']:
+            QMessageBox.information(self,
+                                    QtCore.QCoreApplication.translate('main', '错误的数据'),
+                                    QtCore.QCoreApplication.translate('main', '数据必须为StockAnalysisSystem或StockDaily之一'),
+                                    QMessageBox.Ok, QMessageBox.Ok)
+            return
+
+        tips = QtCore.QCoreApplication.translate('main', '准备导入数据库：') + folder_name + \
+               QtCore.QCoreApplication.translate('main', '\n此数据库中的数据将会被全部改写\n是否确认？')
+        reply = QMessageBox.question(self,
+                                     QtCore.QCoreApplication.translate('main', '导入确认'), tips,
+                                     QMessageBox.Yes | QMessageBox.No,
+                                     QMessageBox.No)
+        if reply != QMessageBox.No:
+            return
+
+        mongodb_name = folder_name
         mongodb_bin = self.__line_mongo_db_binary.text()
         mongodb_host = self.__line_nosql_db_host.text()
         mongodb_port = self.__line_nosql_db_port.text()
@@ -147,7 +170,7 @@ class ConfigUi(QWidget):
                          ' --drop '\
                          ' --host ' + mongodb_host + \
                          ' --port ' + mongodb_port + \
-                         ' -d ' + 'StockAnalysisSystem' + \
+                         ' -d ' + mongodb_name + \
                          ' ' + folder
         self.execute_command(import_command)
 
@@ -156,11 +179,20 @@ class ConfigUi(QWidget):
             return
         folder = str(QFileDialog.getExistingDirectory(self, "Select MongoDB Data Directory",
                                                       directory=path.dirname(path.abspath(__file__))))
+        if folder == '':
+            return
         mongodb_bin = self.__line_mongo_db_binary.text()
         mongodb_host = self.__line_nosql_db_host.text()
         mongodb_port = self.__line_nosql_db_port.text()
 
         export_binary = path.join(mongodb_bin, 'mongodump.exe')
+
+        export_command = '"' + export_binary + '"' + \
+                         ' -h ' + mongodb_host + ':' + mongodb_port + \
+                         ' -d ' + 'StockDaily' + \
+                         ' -o' + folder
+        self.execute_command(export_command)
+
         export_command = '"' + export_binary + '"' + \
                          ' -h ' + mongodb_host + ':' + mongodb_port + \
                          ' -d ' + 'StockAnalysisSystem' + \
@@ -239,9 +271,9 @@ class ConfigUi(QWidget):
 
     def on_command_finished(self):
         tips = 'Process finished...'
-        self.__text_information.append(tips)
         print(tips)
-        print('注意：sqlite数据库文件[ Data/sAsUtility.db ]需要手动进行备份或替换')
+        self.__text_information.append(tips)
+        self.__text_information.append('注意：sqlite数据库文件[ Data/sAsUtility.db ]需要手动进行备份或替换')
 
     def read_output(self):
         output = bytes(self.__process.readAllStandardOutput()).decode('UTF-8').strip()
