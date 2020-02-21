@@ -134,7 +134,7 @@ class ItkvTable:
             print('ItkvTable.bulk_flush() fail: ')
             print(e)
         finally:
-            pass
+            self.__client.close()
         return ret
 
     # ----------------------------------------------- Single Operations ------------------------------------------------

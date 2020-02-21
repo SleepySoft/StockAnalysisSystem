@@ -59,7 +59,7 @@ class Config:
         except Exception as e:
             print('Load config fail.')
             print(e)
-            print(traceback.format_exc())
+            # print(traceback.format_exc())
             return False
         finally:
             pass
