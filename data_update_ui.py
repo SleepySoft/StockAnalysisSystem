@@ -395,16 +395,19 @@ class DataUpdateUi(QWidget):
         line = []
 
         data_table, _ = self.__data_center.get_data_table(uri)
+        update_table = self.__update_table
+
         if data_table is None:
             return None
 
         if uri != 'TradeData.Stock.Daily':
             since, until = data_table.range(uri, None)
+            # since, until = update_table.get_since_until(uri.split('.'))
             update_since, update_until = self.__data_center.calc_update_range(uri)
         else:
             # TODO: Workaround - because each stock storage in each table.
             # So we cannot fetch its time range with this method.
-            since, until = None, None
+            since, until = update_table.get_since_until(uri.split('.'))
             update_since, update_until = None, None
 
         update_tags = uri.split('.')

@@ -423,14 +423,18 @@ class UniversalDataCenter:
 
         # ---------------------- Update Table ---------------------
 
+        # Cache the update range in Update Table
+
         # 1.Update of uri
         update_tags = uri.split('.')
         self.get_update_table().update_latest_update_time(update_tags)
+        self.get_update_table().update_update_range(update_tags, since, until)
 
         # 2.Update of each identity
         if str_available(identity):
             update_tags.append(identity.replace('.', '_'))
             self.get_update_table().update_latest_update_time(update_tags)
+            self.get_update_table().update_update_range(update_tags, since, until)
 
         return True
 
