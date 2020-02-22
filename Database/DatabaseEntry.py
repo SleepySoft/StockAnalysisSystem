@@ -95,7 +95,10 @@ class DatabaseEntry:
             url = 'mongodb://%s:%s/' % (self.__mongo_db_host, self.__mongo_db_port)
 
         try:
-            self.__mongo_db_client = MongoClient(url, serverSelectionTimeoutMS=1000)
+            self.__mongo_db_client = MongoClient(url,
+                                                 maxPoolSize=50,
+                                                 serverSelectionTimeoutMS=5000,
+                                                 waitQueueTimeoutMS=1000)
             self.__mongo_db_client.server_info()
 
             import Database.UpdateTableEx as UpdateTableEx

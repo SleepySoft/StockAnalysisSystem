@@ -122,7 +122,7 @@ def __fetch_stock_holder_data(**kwargs) -> pd.DataFrame:
             result = pro.pledge_detail(ts_code=ts_code)
         else:
             result = None
-        print(uri + ' - Network finished, time spending: ' + str(clock.elapsed_ms()) + 'ms')
+        print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
 
     check_execute_dump_flag(result, **kwargs)
 
