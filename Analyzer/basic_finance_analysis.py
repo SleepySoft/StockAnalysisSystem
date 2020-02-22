@@ -213,7 +213,7 @@ def analysis_profit_structure(securities: str, data_hub: DataHubEntry,
         main_operating_profit = row['营业收入'] - row['其他业务收入']
         main_operating_profit_ratio = main_operating_profit / row['营业收入']
 
-        if main_operating_profit_ratio > 50:
+        if main_operating_profit_ratio > 0.5:
             score = 0
         reason.append('%s: 主营业务收入：%s万；营业总收入：%s万；主营业务收入占比：%.2f%%' %
                       (period, main_operating_profit / 10000, row['营业收入'] / 10000, main_operating_profit_ratio * 100))
