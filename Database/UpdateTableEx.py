@@ -56,7 +56,7 @@ class UpdateTableEx:
         since = text_auto_time(since)
         old_since = self.get_since(tags)
         if old_since is None or since < old_since:
-            print('Update since: ' + str(tags) + ' -> ' + str(since))
+            # print('Update since: ' + str(tags) + ' -> ' + str(since))
             self.__table.upsert(self.__normalize_tags(tags), None, data={'since': since})
         return True
 
@@ -66,7 +66,7 @@ class UpdateTableEx:
         until = text_auto_time(until)
         old_until = self.get_until(tags)
         if old_until is None or until > old_until:
-            print('Update until: ' + str(tags) + ' -> ' + str(until))
+            # print('Update until: ' + str(tags) + ' -> ' + str(until))
             self.__table.upsert(self.__normalize_tags(tags), None, data={'until': until})
         return True
 
@@ -76,7 +76,7 @@ class UpdateTableEx:
         return ret1 and ret2
 
     def update_latest_update_time(self, tags: [str]) -> bool:
-        print('Update latest update time: ' + str(tags) + ' -> ' + str(now()))
+        # print('Update latest update time: ' + str(tags) + ' -> ' + str(now()))
         self.__table.upsert(self.__normalize_tags(tags), None, data={'last_update': now()})
         return True
 

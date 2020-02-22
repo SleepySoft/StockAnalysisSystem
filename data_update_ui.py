@@ -79,6 +79,24 @@ class UpdateTask(TaskQueue.Task):
     def run(self):
         print('Update task start.')
 
+        try:
+            # Catch "pymongo.errors.ServerSelectionTimeoutError: No servers found yet" exception and continue.
+            self.__execute_update()
+        except Exception as e:
+            print('Update got Exception: ')
+            print(e)
+            print('Continue...')
+        finally:
+            pass
+        print('Update task finished.')
+
+    def quit(self):
+        self.__quit = True
+
+    def identity(self) -> str:
+        return self.uri
+
+    def __execute_update(self):
         self.clock.reset()
         self.progress.reset()
 
@@ -93,6 +111,8 @@ class UpdateTask(TaskQueue.Task):
             for identity in self.identities:
                 if self.__quit:
                     break
+                print('------------------------------------------------------------------------------------')
+
                 # Optimise: Update not earlier than listing date.
                 listing_date = self.__data_hub.get_data_utility().get_stock_listing_date(identity, default_since())
 
@@ -110,13 +130,6 @@ class UpdateTask(TaskQueue.Task):
 
         self.clock.freeze()
         self.__ui.task_finish_signal[UpdateTask].emit(self)
-        print('Update task finished.')
-
-    def quit(self):
-        self.__quit = True
-
-    def identity(self) -> str:
-        return self.uri
 
 
 # ---------------------------------- RefreshTask ----------------------------------

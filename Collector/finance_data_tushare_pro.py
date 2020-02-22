@@ -395,7 +395,7 @@ def __fetch_finance_data(**kwargs) -> pd.DataFrame:
             result = pro.cashflow(ts_code=ts_code, start_date=ts_since, end_date=ts_until, fields=field_joined)
         else:
             result = None
-        print(uri + ' - Network finished, time spending: ' + str(clock.elapsed_ms()) + 'ms')
+        print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
     check_execute_dump_flag(result, **kwargs)
 
     if result is not None:

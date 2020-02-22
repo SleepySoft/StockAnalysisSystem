@@ -110,7 +110,7 @@ def __fetch_trade_data_daily(**kwargs) -> pd.DataFrame:
             result_adjust = pro.adj_factor(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
             result_index = pro.daily_basic(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
 
-            print(uri + ' - Network finished, time spending: ' + str(clock.elapsed_ms()) + 'ms')
+            print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
 
             sub_result = None
             sub_result = merge_on_columns(sub_result, result_daily, ['ts_code', 'trade_date'])
