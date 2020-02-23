@@ -285,8 +285,10 @@ class StrategyUi(QWidget):
 
         # ----------- Generate report ------------
         clock.reset()
+        stock_list = self.__data_hub_entry.get_data_utility().get_stock_list()
+        stock_dict = {_id: _name for _id, _name in stock_list}
         name_dict = self.__strategy_entry.strategy_name_dict()
-        generate_analysis_report(result, output_path, name_dict)
+        generate_analysis_report(result, output_path, name_dict, stock_dict)
         print('Generate report time spending: ' + str(clock.elapsed_s()) + ' s')
 
         # ----------------- End ------------------
