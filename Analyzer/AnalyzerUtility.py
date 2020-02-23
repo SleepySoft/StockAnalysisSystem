@@ -302,8 +302,10 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
             row = 2
             col = index_to_excel_column_name(column)
             for r in analysis_result:
-                ws_score[col + str(row)] = stock_name_dict.get(r.securities, r.securities)
-                ws_comments[col + str(row)] = stock_name_dict.get(r.securities, r.securities)
+                securities_name = stock_name_dict.get(r.securities, '')
+                display_text = (r.securities + ' | ' + securities_name) if securities_name != '' else r.securities
+                ws_score[col + str(row)] = display_text
+                ws_comments[col + str(row)] = display_text
                 row += 1
             column = 2
 
