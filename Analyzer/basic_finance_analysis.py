@@ -269,6 +269,8 @@ def analysis_cash_loan_both_high(securities: str, data_hub: DataHubEntry,
             reason.append('%s: 资金：%s万；借款：%s万。贷款总资产比：%.2f%%。利息净利润比%.2f%%' %
                           (period, cash / 10000, loan / 10000, loan_vs_totol_asset * 100, fin_fee_vs_benefit * 100))
 
+    if len(reason) == 0:
+        reason.append('正常')
     return AnalysisResult(securities, score, reason) if applied else \
         AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, reason)
 
@@ -303,8 +305,10 @@ def goodwill_is_too_high(securities: str, data_hub: DataHubEntry,
         if goodwill_vs_net_assets >= 0.2 or goodwill_vs_total_assets >= 0.1:
             score = 0
             reason.append('%s: 商誉/净资产 = %.2f%% ; 商誉/资产总计 = %.2f%%' %
-                          (str(period), goodwill_vs_net_assets, goodwill_vs_total_assets))
+                          (str(period), goodwill_vs_net_assets * 100, goodwill_vs_total_assets * 100))
 
+    if len(reason) == 0:
+        reason.append('正常')
     return AnalysisResult(securities, score, reason) if applied else \
         AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, reason)
 
