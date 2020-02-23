@@ -210,13 +210,14 @@ def analysis_profit_structure(securities: str, data_hub: DataHubEntry,
             continue
         applied = True
 
-        main_operating_profit = row['营业收入'] - row['其他业务收入']
-        main_operating_profit_ratio = main_operating_profit / row['营业收入']
+        other_operating_profit = row['其他业务收入'] / row['营业收入']
+        # main_operating_profit = row['营业收入'] - row['其他业务收入']
+        # main_operating_profit_ratio = main_operating_profit / row['营业收入']
 
-        if main_operating_profit_ratio > 0.5:
+        if other_operating_profit > 0.3:
             score = 0
-        reason.append('%s: 主营业务收入：%s万；营业总收入：%s万；主营业务收入占比：%.2f%%' %
-                      (period, main_operating_profit / 10000, row['营业收入'] / 10000, main_operating_profit_ratio * 100))
+            reason.append('%s: 其他业务收入：%s万；营业总收入：%s万；其它业务收入占比：%.2f%%' %
+                          (period, row['其他业务收入'] / 10000, row['营业收入'] / 10000, other_operating_profit * 100))
 
     return AnalysisResult(securities, score, reason) if applied else \
         AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, reason)
@@ -272,7 +273,41 @@ def analysis_cash_loan_both_high(securities: str, data_hub: DataHubEntry,
         AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, reason)
 
 
-# ------------------------------------------------------ 11 - 15 -------------------------------------------------------
+def goodwill_is_too_high(securities: str, data_hub: DataHubEntry,
+                         database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+    nop(database)
+    nop(context)
+
+    df, result = query_readable_annual_report_pattern(data_hub, 'Finance.BalanceSheet',
+                                                      securities, (years_ago(3), now()),
+                                                      ['商誉', '资产总计', '负债合计'])
+    if result is not None:
+        return result
+
+    score = 100
+    reason = []
+    applied = False
+    for index, row in df.iterrows():
+        period = row['period']
+
+        net_assets = row['资产总计'] - row['负债合计']
+
+        if row['资产总计'] < 0.001 or net_assets < 0.001:
+            reason.append('资产为0，可能数据不全')
+            continue
+        applied = True
+
+        goodwill_vs_net_assets = row['商誉'] / net_assets
+        goodwill_vs_total_assets = row['商誉'] / row['资产总计']
+
+        if goodwill_vs_net_assets >= 0.2 or goodwill_vs_total_assets >= 0.1:
+            score = 0
+            reason.append('%s: 商誉/净资产 = %.2f%% ; 商誉/资产总计 = %.2f%%' %
+                          (str(period), goodwill_vs_net_assets, goodwill_vs_total_assets))
+
+    return AnalysisResult(securities, score, reason) if applied else \
+        AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, reason)
+
 
 def equity_interest_pledge_too_high(securities: str, data_hub: DataHubEntry,
                                     database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
@@ -295,12 +330,15 @@ def equity_interest_pledge_too_high(securities: str, data_hub: DataHubEntry,
         due_date = row['due_date']
 
         pledge_rate = row['质押比例']
-        if pledge_rate > 0.5:
+        if pledge_rate > 50.0:
             score = 0
-        if pledge_rate > 0.1:
+        if pledge_rate > 20.0:
             reason.append('%s: 质押比例：%.2f%%' % (str(due_date), pledge_rate * 100))
 
     return AnalysisResult(securities, score, reason)
+
+
+# ------------------------------------------------------ 11 - 15 -------------------------------------------------------
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -316,12 +354,12 @@ METHOD_LIST = [
     # 6 - 10
     ('b0e34011-c5bf-4ac3-b6a4-c15e5ea150a6', '连续亏损',        '排除营业利润或利润总额连续亏损的公司', analysis_consecutive_losses),
     # oth_b_income field missing for lots of securities. This analyzer may not work.
-    ('d811ebd6-ee28-4d2f-b7e0-79ce0ecde7f7', '非主营业务过高',  '排除主营业务或营业利润占比过低的公司', analysis_profit_structure),
-    ('2c05bb4c-935e-4be7-9c04-ae12720cd757', '存贷双高',        '排除存贷双高的公司',                  analysis_cash_loan_both_high),
-    ('e6ab71a9-0c9f-4500-b2db-d682af567f70', '商誉过高',        '排除商誉过高的公司',                  None),
+    ('d811ebd6-ee28-4d2f-b7e0-79ce0ecde7f7', '非主营业务过高',  '排除主营业务占比过低的公司',          analysis_profit_structure),
+    ('2c05bb4c-935e-4be7-9c04-ae12720cd757', '存贷双高',        '排除存贷双高的公司',                 analysis_cash_loan_both_high),
+    ('e6ab71a9-0c9f-4500-b2db-d682af567f70', '商誉过高',        '排除商誉过高的公司',                 goodwill_is_too_high),
+    ('4ccedeea-b731-4b97-9681-d804838e351b', '股权质押过高',    '排除股权质押高于50%的公司',           equity_interest_pledge_too_high),
 
     # 11 - 15
-    ('4ccedeea-b731-4b97-9681-d804838e351b', '股权质押过高',    '排除股权质押高于50%的公司',     equity_interest_pledge_too_high),
     ('f6fe627b-acbe-4b3f-a1fb-5edcd00d27b0', '', '', None),
 ]
 
