@@ -83,7 +83,7 @@ def analysis_finance_report_sign(securities: str, data_hub: DataHubEntry,
         context.cache['finance_audit'] = data_hub.get_data_center().query('Finance.Audit')
     df = context.cache.get('finance_audit', None)
 
-    error_report = check_gen_report_when_data_missing(df, securities, 'Finance.IncomeStatement',
+    error_report = check_gen_report_when_data_missing(df, securities, 'Finance.Audit',
                                                       ['stock_identity', 'period', 'conclusion'])
     if error_report is not None:
         return error_report

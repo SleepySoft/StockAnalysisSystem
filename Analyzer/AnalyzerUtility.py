@@ -275,7 +275,7 @@ def pick_up_pass_securities(result: dict, score_threshold: int, not_applied_as_f
 
 # ---------------------------------------------------- Excel Report ----------------------------------------------------
 
-def generate_analysis_report(result: dict, file_path: str, name_dict: dict = {}):
+def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: dict = {}, stock_name_dict: dict = {}):
     wb = openpyxl.Workbook()
     ws_score = wb.active
     ws_score.title = 'Score'
@@ -302,15 +302,15 @@ def generate_analysis_report(result: dict, file_path: str, name_dict: dict = {})
             row = 2
             col = index_to_excel_column_name(column)
             for r in analysis_result:
-                ws_score[col + str(row)] = r.securities
-                ws_comments[col + str(row)] = r.securities
+                ws_score[col + str(row)] = stock_name_dict.get(r.securities, r.securities)
+                ws_comments[col + str(row)] = stock_name_dict.get(r.securities, r.securities)
                 row += 1
             column = 2
 
         # Write analyzer name
         row = 1
         col = index_to_excel_column_name(column)
-        analyzer_name = name_dict.get(analyzer_uuid, analyzer_uuid)
+        analyzer_name = analyzer_name_dict.get(analyzer_uuid, analyzer_uuid)
         ws_score[col + str(row)] = analyzer_name
         ws_comments[col + str(row)] = analyzer_name
 

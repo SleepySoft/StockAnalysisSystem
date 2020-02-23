@@ -42,11 +42,11 @@ def test_entry() -> bool:
         # '7a2c2ce7-9060-4c1c-bca7-71ca12e92b09',
         # 'e639a8f1-f2f5-4d48-a348-ad12508b0dbb',
         # 'f39f14d6-b417-4a6e-bd2c-74824a154fc0',
-        # '3b01999c-3837-11ea-b851-27d2aa2d4e7d',
+        '3b01999c-3837-11ea-b851-27d2aa2d4e7d',
         # '1fdee036-c7c1-4876-912a-8ce1d7dd978b',
 
         # 'b0e34011-c5bf-4ac3-b6a4-c15e5ea150a6',
-        'd811ebd6-ee28-4d2f-b7e0-79ce0ecde7f7',
+        # 'd811ebd6-ee28-4d2f-b7e0-79ce0ecde7f7',
         # '2c05bb4c-935e-4be7-9c04-ae12720cd757',
         # 'e6ab71a9-0c9f-4500-b2db-d682af567f70',
         # '4ccedeea-b731-4b97-9681-d804838e351b',
