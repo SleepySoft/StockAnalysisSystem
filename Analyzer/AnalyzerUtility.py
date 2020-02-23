@@ -219,6 +219,10 @@ def query_readable_annual_report_pattern(data_hub, uri: str, securities: str, ti
 
     df = data_hub.get_data_center().query(uri, securities, time_serial,
                                           fields=fields + ['stock_identity', 'period'], readable=True)
+    if len(df) == 0:
+        return None, AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED,
+                                    'No data, skipped' + str(time_serial))
+
     # Only analysis annual report
     df = df[df['period'].dt.month == 12]
 
