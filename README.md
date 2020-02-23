@@ -88,6 +88,7 @@ QQ群：931499339，进群验证码：SleepySoft
   
 # 开发计划：
 0. TODO:  
+> 股东人数和十大股东  
 1. 生成EXCEL格式的报告 -> 20200129: Done  
 2. 编写数据更新的管理界面  -> 20200130: Done  
 > 硬编码过多，待重构数据结构解决  -> 20200201: Partly done  
@@ -102,19 +103,27 @@ QQ群：931499339，进群验证码：SleepySoft
 10. 改善mongodb读写性能和内存使用  ->20200214: Done  
 > 加入connection计数与限制，超过后关闭client以释放连接及内存  ->20200214: Done  
 > 为nosql数据库加入索引，提升查询和upsert速度  ->20200214: Done  
+> 使用bulk减少IO操作 -> 20200222: Done  
 11. 接入更多财务数据  
 > 股权质押数据 -> 20200212: Done  
+> 限售股解禁: https://tushare.pro/document/2?doc_id=160  
 > 回购数据  
-> 增减持数据  
+> 增减持数据（2000积分暂时没戏）: https://tushare.pro/document/2?doc_id=175  
+12. 接入股东数据
+> 股权质押数据 -> 20200221: Done  
+> 股东人数和十大股东: https://tushare.pro/document/2?doc_id=166, https://tushare.pro/document/2?doc_id=61, https://tushare.pro/document/2?doc_id=62  
+> 实际控制人数据（巨潮）: http://webapi.cninfo.com.cn/#/dataBrowse?id=266  
 12. 接入交易数据 -> 20200221: Done  
 13. 加入更多分析算法  
 > 存贷双高  -> 20200206: Done  
-> 股权质押过高  
+> 股权质押过高  -> 20200223: Done  
+> 商誉过高 -> 2200223: Done  
+> 无实际控制人  
 > 去年及未来一年有减持计划  
 14. 将数据迁移到MongoDB
 > UpdateTable -> 20200209: Done  
 > XList Table  
-15. 废弃旧仓库，重新建立仓库以减少空间占用，并同时迁移数据到gitee（今后代码会同时提交到两个仓库）  -> 20200218: Done  
+15. 废弃旧仓库，重新建立仓库以减少空间占用，并同时迁移数据到gitee（今后代码会同时提交到两个仓库）  -> 20200218: Done    
 16. 整合测试入口，执行一个文件即可运行所有测试  
 17. 策略参数可配置可保存  
 18. 接入交易数据  
