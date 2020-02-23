@@ -1,5 +1,7 @@
+"C:\Program Files\MongoDB\Server\4.0\bin\mongodump.exe" -h 127.0.0.1 -d StockDaily -o C:\
 "C:\Program Files\MongoDB\Server\4.0\bin\mongodump.exe" -h 127.0.0.1 -d StockAnalysisSystem -o C:\
 
+"C:\Program Files\MongoDB\Server\4.0\bin\mongorestore.exe" --host 127.0.0.1 --port 27017 -d StockDaily Data
 "C:\Program Files\MongoDB\Server\4.0\bin\mongorestore.exe" --host 127.0.0.1 --port 27017 -d StockAnalysisSystem Data
 
 
