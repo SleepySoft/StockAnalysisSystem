@@ -5,6 +5,9 @@
 "C:\Program Files\MongoDB\Server\4.0\bin\mongorestore.exe" --host 127.0.0.1 --port 27017 -d StockAnalysisSystem Data
 
 
+"C:\Program Files\MongoDB\Server\4.0\bin\mongod.exe" --config "C:\Program Files\MongoDB\Server\4.0\bin\mongod.cfg" --install --serviceName "MongoDB"
+
+
 ###########################################################################################################################################
 
 

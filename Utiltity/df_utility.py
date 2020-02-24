@@ -130,6 +130,18 @@ def merge_on_columns(df1: pd.DataFrame, df2: pd.DataFrame, columns: str or [str]
     return df
 
 
+def group_as_list(df: pd.DataFrame, group_by: str or list) -> pd.DataFrame:
+    if not isinstance(group_by, (list, tuple)):
+        group_by = [group_by]
+    return df.groupby(group_by, as_index=False).agg(lambda x: list(x))
+
+
+def group_as_dict(df: pd.DataFrame, group_by: str or list) -> pd.DataFrame:
+    if not isinstance(group_by, (list, tuple)):
+        group_by = [group_by]
+    return df.groupby(group_by, as_index=False).agg(lambda x: {k: v for d in x.dropna() for k, v in d.items()})
+
+
 # ----------------------------------------------------------------
 
 
