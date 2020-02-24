@@ -130,6 +130,23 @@ RESULT_FIELDS_PLEDGE_HISTORY = {
     'due_date':       (['datetime'], [],    True, ''),
 }
 
+# ------------------------ Stockholder.Statistics ------------------------
+
+QUERY_FIELDS_STOCKHOLDER_STATISTICS = {
+    'stock_identity': ([str], [],                           False, ''),
+    'period':         ([tuple,  None], [],                  False, ''),
+}
+
+RESULT_FIELDS_STOCKHOLDER_STATISTICS = {
+    'stock_identity':                   (['str'], [],       True, ''),
+    'period':                           (['datetime'], [],  True, ''),
+    'stock_holder_count':               (['int'], [],       False, ''),
+
+    # [(holder name, amount) x 10]
+    'stockholder_top10':                (['list'], [],      False, ''),
+    'non_tradable_stockholder_top10':   (['list'], [],      False, ''),
+}
+
 # ------------------------ TradeData.Daily ------------------------
 
 QUERY_FIELDS_TRADE_DAILY = {
@@ -183,6 +200,7 @@ DATA_FORMAT_DECLARE = [
 
     ('Stockholder.PledgeStatus',  DFTDB, DFTPRX, 'stock_identity', 'due_date', QUERY_FIELDS_PLEDGE_STATUS, RESULT_FIELDS_PLEDGE_STATUS),
     ('Stockholder.PledgeHistory', DFTDB, DFTPRX, 'stock_identity', 'due_date', QUERY_FIELDS_PLEDGE_HISTORY, RESULT_FIELDS_PLEDGE_HISTORY),
+    ('Stockholder.Statistics',    DFTDB, DFTPRX, 'stock_identity', 'due_date', QUERY_FIELDS_STOCKHOLDER_STATISTICS, RESULT_FIELDS_STOCKHOLDER_STATISTICS),
 
     ('TradeData.Stock.Daily',     'StockDaily', DFTPRX, 'stock_identity', 'trade_date', QUERY_FIELDS_TRADE_DAILY, RESULT_FIELD_TRADE_DAILY),
 ]

@@ -68,6 +68,8 @@ def update_local(update_list: [str], force: bool = False):
             data_center.update_local_data('Stockholder.PledgeHistory', stock_identity, force=force)
         if 'TradeData.Stock.Daily' in update_list:
             data_center.update_local_data('TradeData.Stock.Daily', stock_identity, force=force)
+        if 'Stockholder.Statistics' in update_list:
+            data_center.update_local_data('Stockholder.Statistics', stock_identity, force=force)
 
         counter += 1
         print('Done (%s / %s). Time Spending: %s s' % (counter, len(stock_list), time.time() - start_single))
@@ -114,8 +116,9 @@ def run_console():
         #
         # 'Stockholder.PledgeStatus',
         # 'Stockholder.PledgeHistory',
+        'Stockholder.Statistics',
         #
-        'TradeData.Stock.Daily',
+        # 'TradeData.Stock.Daily',
     ], True)
     # run_strategy()
 
@@ -135,10 +138,11 @@ def run_test():
 
 def main():
     sas = stock_analysis_system.StockAnalysisSystem()
-    sas.check_initialize()
+    result = sas.check_initialize()
+    assert result
 
-    # run_console()
-    run_ui()
+    run_console()
+    # run_ui()
     # run_test()
 
     print('Process Quit.')
