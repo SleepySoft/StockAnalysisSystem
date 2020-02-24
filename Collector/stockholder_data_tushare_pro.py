@@ -51,6 +51,9 @@ FIELDS = {
         'h_total_ratio':                 '持股总数占总股本比例',
         'is_buyback':                    '是否回购',
     },
+    'Stockholder.Statistics': {
+
+    },
 }
 
 
@@ -151,7 +154,7 @@ def __fetch_stock_holder_data(**kwargs) -> pd.DataFrame:
     return result
 
 
-def __fetch_stock_holder_statistics(**kwargs) -> pd.DataFrame:
+def __fetch_stock_holder_statistics(**kwargs) -> pd.DataFrame or None:
     uri = kwargs.get('uri')
     result = check_execute_test_flag(**kwargs)
 
@@ -168,20 +171,30 @@ def __fetch_stock_holder_statistics(**kwargs) -> pd.DataFrame:
         clock = Clock()
         delayer.delay()
 
+        # TODO: Top10 api can only fetch 100 items per one time (100 / 10 / 4 = 2.5Years)
         result_count = pro.stk_holdernumber(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
         result_top10 = pro.top10_holders(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
-        result_top10_non_tradable = pro.top10_floatholders(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
+        result_top10_nt = pro.top10_floatholders(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
 
         print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
 
-        if result_count is None or result_top10 is None or result_top10_non_tradable is None:
+        if result_count is None or result_top10 is None or result_top10_nt is None:
             print('Fetch stockholder statistics data fail.')
             return None
 
-        result_top10_g = group_as_list(result_top10, 'enddate')
-        result_top10_non_tradable_g = group_as_list(result_top10_non_tradable, 'enddate')
+        del result_top10['ann_date']
+        del result_top10_nt['ann_date']
 
-        print(result_top10_g)
+        key_columns = ['ts_code', 'end_date']
+        result_top10_grouped = pd.DataFrame({'stockholder_top10': result_top10.groupby(key_columns).apply(
+            lambda x: x.drop(key_columns, axis=1).to_dict('records'))}).reset_index()
+        result_top10_nt_grouped = pd.DataFrame({'stockholder_top10_nt': result_top10_nt.groupby(key_columns).apply(
+            lambda x: x.drop(key_columns, axis=1).to_dict('records'))}).reset_index()
+
+        result = merge_on_columns(result_count, result_top10_grouped, key_columns)
+        result = merge_on_columns(result, result_top10_nt_grouped, key_columns)
+
+        print(result)
 
     check_execute_dump_flag(result, **kwargs)
 
@@ -215,7 +228,7 @@ def query(**kwargs) -> pd.DataFrame or None:
     if uri in ['Stockholder.PledgeStatus', 'Stockholder.PledgeHistory']:
         return __fetch_stock_holder_data(**kwargs)
     if uri in ['Stockholder.Statistics']:
-        return __fetch_stock_holder_statistics()
+        return __fetch_stock_holder_statistics(**kwargs)
     return None
 
 
