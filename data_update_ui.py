@@ -174,7 +174,7 @@ class DataUpdateUi(QWidget):
     # TODO: Auto detect
     INCLUDES_SECURITIES_SUB_UPDATE_LIST = [
         'Finance.Audit', 'Finance.BalanceSheet', 'Finance.IncomeStatement', 'Finance.CashFlowStatement',
-        'Stockholder.PledgeStatus', 'Stockholder.PledgeHistory', 'TradeData.Stock.Daily']
+        'Stockholder.PledgeStatus', 'Stockholder.PledgeHistory', 'Stockholder.Statistics', 'TradeData.Stock.Daily']
 
     def __init__(self, data_hub_entry: DataHubEntry, update_table: UpdateTableEx):
         super(DataUpdateUi, self).__init__()

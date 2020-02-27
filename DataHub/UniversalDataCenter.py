@@ -62,6 +62,8 @@ class ParameterChecker:
 
     PYTHON_DATAFRAME_TYPE_MAPPING = {
         'str': 'object',
+        'list': 'object',
+        'dict': 'object',
         'int': 'int64',
         'float': 'float64',
         'datetime': 'datetime64[ns]',
