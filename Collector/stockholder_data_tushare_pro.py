@@ -154,7 +154,11 @@ def __fetch_stock_holder_data(**kwargs) -> pd.DataFrame:
     return result
 
 
-def __fetch_stock_holder_statistics_full(**kwargs) -> pd.DataFrame or None:
+# stk_holdernumber() : 100 times per 1 min
+delayer_stock_holder_statistics = Delayer(600)
+
+
+def __fetch_stock_holder_statistics_piece(**kwargs) -> pd.DataFrame or None:
     uri = kwargs.get('uri')
     result = check_execute_test_flag(**kwargs)
 
@@ -163,28 +167,19 @@ def __fetch_stock_holder_statistics_full(**kwargs) -> pd.DataFrame or None:
         ts_code = pickup_ts_code(kwargs)
         since, until = normalize_time_serial(period, default_since(), today())
 
+        since_limit = years_ago_of(until, 3)
+        since = max([since, since_limit])
+
         clock = Clock()
         pro = ts.pro_api(config.TS_TOKEN)
-        time_iter = DateTimeIterator(since, until)
 
         ts_since = since.strftime('%Y%m%d')
         ts_until = until.strftime('%Y%m%d')
+
+        delayer_stock_holder_statistics.delay()
         result_count = pro.stk_holdernumber(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
-
-        result_top10 = None
-        result_top10_nt = None
-        while not time_iter.end():
-            # Top10 api can only fetch 100 items per one time (100 / 10 / 4 = 2.5Years)
-            sub_since, sub_until = time_iter.iter_years(2.4)
-            ts_since = sub_since.strftime('%Y%m%d')
-            ts_until = sub_until.strftime('%Y%m%d')
-            delayer.delay()
-
-            result_top10_part = pro.top10_holders(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
-            result_top10_nt_part = pro.top10_floatholders(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
-
-            result_top10 = pd.concat([result_top10, result_top10_part], sort=False)
-            result_top10_nt = pd.concat([result_top10_nt, result_top10_nt_part], sort=False)
+        result_top10 = pro.top10_holders(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
+        result_top10_nt = pro.top10_floatholders(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
 
         print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
 
@@ -195,6 +190,9 @@ def __fetch_stock_holder_statistics_full(**kwargs) -> pd.DataFrame or None:
         del result_top10['ann_date']
         del result_top10_nt['ann_date']
 
+        result_top10.fillna(0.0)
+        result_top10['hold_ratio'] = result_top10['hold_ratio'] / 100
+
         key_columns = ['ts_code', 'end_date']
         result_top10_grouped = pd.DataFrame({'stockholder_top10': result_top10.groupby(key_columns).apply(
             lambda x: x.drop(key_columns, axis=1).to_dict('records'))}).reset_index()
@@ -202,9 +200,7 @@ def __fetch_stock_holder_statistics_full(**kwargs) -> pd.DataFrame or None:
             lambda x: x.drop(key_columns, axis=1).to_dict('records'))}).reset_index()
 
         result = pd.merge(result_top10_grouped, result_top10_nt_grouped, how='outer', on=key_columns, sort=False)
-        result = pd.merge(result, result_count, how='outer', on=key_columns, sort=False)
-
-        print(result)
+        result = pd.merge(result, result_count, how='left', on=key_columns, sort=False)
 
     check_execute_dump_flag(result, **kwargs)
 
@@ -290,7 +286,7 @@ def query(**kwargs) -> pd.DataFrame or None:
     if uri in ['Stockholder.PledgeStatus', 'Stockholder.PledgeHistory']:
         return __fetch_stock_holder_data(**kwargs)
     if uri in ['Stockholder.Statistics']:
-        return __fetch_stock_holder_statistics(**kwargs)
+        return __fetch_stock_holder_statistics_piece(**kwargs)
     return None
 
 
