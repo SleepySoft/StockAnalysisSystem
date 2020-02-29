@@ -187,20 +187,31 @@ def __fetch_stock_holder_statistics_piece(**kwargs) -> pd.DataFrame or None:
             print('Fetch stockholder statistics data fail.')
             return None
 
+        del result_top10['ts_code']
         del result_top10['ann_date']
+        del result_top10_nt['ts_code']
         del result_top10_nt['ann_date']
 
         result_top10.fillna(0.0)
         result_top10['hold_ratio'] = result_top10['hold_ratio'] / 100
 
-        key_columns = ['ts_code', 'end_date']
-        result_top10_grouped = pd.DataFrame({'stockholder_top10': result_top10.groupby(key_columns).apply(
-            lambda x: x.drop(key_columns, axis=1).to_dict('records'))}).reset_index()
-        result_top10_nt_grouped = pd.DataFrame({'stockholder_top10_nt': result_top10_nt.groupby(key_columns).apply(
-            lambda x: x.drop(key_columns, axis=1).to_dict('records'))}).reset_index()
+        result_top10_grouped = pd.DataFrame({'stockholder_top10': result_top10.groupby('end_date').apply(
+            lambda x: x.drop('end_date', axis=1).to_dict('records'))}).reset_index()
+        result_top10_nt_grouped = pd.DataFrame({'stockholder_top10_nt': result_top10_nt.groupby('end_date').apply(
+            lambda x: x.drop('end_date', axis=1).to_dict('records'))}).reset_index()
 
-        result = pd.merge(result_top10_grouped, result_top10_nt_grouped, how='outer', on=key_columns, sort=False)
-        result = pd.merge(result, result_count, how='left', on=key_columns, sort=False)
+        result = pd.merge(result_top10_grouped, result_top10_nt_grouped, how='outer', on='end_date', sort=False)
+        result = pd.merge(result, result_count, how='left', on='end_date', sort=False)
+        result['ts_code'] = ts_code
+
+        for index, row in result.iterrows():
+            end_date = row['end_date']
+            stockholder_top10 = row['stockholder_top10']
+            stockholder_top10_nt = row['stockholder_top10_nt']
+            if len(stockholder_top10) != 10:
+                print('%s: stockholder_top10 length is %s' % (end_date, len(stockholder_top10)))
+            if len(stockholder_top10_nt) != 10:
+                print('%s: stockholder_top10_nt length is %s' % (end_date, len(stockholder_top10_nt)))
 
     check_execute_dump_flag(result, **kwargs)
 
@@ -244,8 +255,8 @@ def __fetch_stock_holder_statistics_full(**kwargs) -> pd.DataFrame or None:
             result_top10_part = pro.top10_holders(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
             result_top10_nt_part = pro.top10_floatholders(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
 
-            result_top10 = pd.concat([result_top10, result_top10_part], sort=False)
-            result_top10_nt = pd.concat([result_top10_nt, result_top10_nt_part], sort=False)
+            result_top10 = pd.concat([result_top10, result_top10_part])
+            result_top10_nt = pd.concat([result_top10_nt, result_top10_nt_part])
 
         print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
 
