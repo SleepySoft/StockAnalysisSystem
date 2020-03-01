@@ -29,6 +29,9 @@ finally:
 NOT_SPEC = {
 }
 
+A_SHARE_MARKET = ['SSE', 'SZSE']
+ALL_SHARE_MARKET = ['SSE', 'SZSE', 'MSCI', 'CSI', 'CICC', 'SW', 'OTH']
+
 
 # Principle: Only declare the minimal common field
 # 原则：只限制通用字段且限制的字段尽可能少
@@ -62,6 +65,24 @@ RESULT_FIELDS_NAMING_HISTORY = {
 }
 
 
+# --------------------- Market.IndexInfo ---------------------
+
+QUERY_FIELDS_INDEX_INFO = {
+    'index_identity': ([str], [],                   False,  ''),
+    'exchange':       ([str], ALL_SHARE_MARKET,     False,  ''),
+}
+
+RESULT_FIELDS_INDEX_INFO = {
+    'index_identity': (['str'], [],                 True,  ''),
+    'code':           (['str'], [],                 True,  ''),
+    'name':           (['str'], [],                 True,  ''),
+    'full_name':      (['str'], [],                 True,  ''),
+    'exchange':       (['str'], ALL_SHARE_MARKET,   True,  ''),
+    'publisher':      (['str'], ['SSE', 'SZSE'],    True,  ''),
+    'listing_date':   (['datetime'], [],            True,  ''),
+}
+
+
 # --------------------- Market.SecuritiesInfo ---------------------
 
 QUERY_FIELDS_SECURITIES_INFO = {
@@ -72,7 +93,7 @@ RESULT_FIELDS_SECURITIES_INFO = {
     'stock_identity': (['str'], [],                 True,  ''),
     'code':           (['str'], [],                 True,  ''),
     'name':           (['str'], [],                 True,  ''),
-    'exchange':       (['str'], ['SSE', 'SZSE'],    True,  ''),
+    'exchange':       (['str'], A_SHARE_MARKET,     True,  ''),
     'listing_date':   (['datetime'], [],            True,  ''),
 }
 
@@ -190,9 +211,11 @@ DATA_FORMAT_QUERY_FIELD_INFO = 5
 DATA_FORMAT_RESULT_FIELD_INFO = 6
 
 DATA_FORMAT_DECLARE = [
-    ('Market.TradeCalender', DFTDB, DFTPRX,  'exchange', 'trade_date',       QUERY_FIELDS_TRADE_CALENDER,  RESULT_FIELDS_TRADE_CALENDER),
-    ('Market.NamingHistory', DFTDB, DFTPRX, 'stock_identity', 'naming_date', QUERY_FIELDS_NAMING_HISTORY, RESULT_FIELDS_NAMING_HISTORY),
     ('Market.SecuritiesInfo', DFTDB, DFTPRX, 'stock_identity', None,         QUERY_FIELDS_SECURITIES_INFO, RESULT_FIELDS_SECURITIES_INFO),
+    ('Market.IndexInfo',      DFTDB, DFTPRX, 'index_identity', None,         QUERY_FIELDS_INDEX_INFO, RESULT_FIELDS_INDEX_INFO),
+
+    ('Market.TradeCalender', DFTDB, DFTPRX,  'exchange', 'trade_date',       QUERY_FIELDS_TRADE_CALENDER,  RESULT_FIELDS_TRADE_CALENDER),
+    ('Market.NamingHistory', DFTDB, DFTPRX,  'stock_identity', 'naming_date', QUERY_FIELDS_NAMING_HISTORY, RESULT_FIELDS_NAMING_HISTORY),
 
     ('Finance.Audit',             DFTDB, DFTPRX, 'stock_identity', 'period', QUERY_FIELDS_FINANCE_AUDIT, RESULT_FIELDS_FINANCE_AUDIT),
     ('Finance.BalanceSheet',      DFTDB, DFTPRX, 'stock_identity', 'period', QUERY_FIELDS_FINANCE_DATA, RESULT_FIELDS_FINANCE_DATA),
