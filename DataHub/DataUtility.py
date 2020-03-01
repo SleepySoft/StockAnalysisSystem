@@ -123,7 +123,7 @@ class DataUtility:
     def get_stock_list(self) -> [(str, str)]:
         self.__lock.acquire()
         if self.__stock_cache.empty():
-            self.__refresh_securities_cache()
+            self.__refresh_stock_cache()
         ids = self.__stock_cache.get_ids()
         ret = [(_id, self.__stock_cache.id_to_names(_id)[0]) for _id in ids]
         self.__lock.release()
@@ -132,7 +132,7 @@ class DataUtility:
     def get_stock_identities(self) -> [str]:
         self.__lock.acquire()
         if self.__stock_cache.empty():
-            self.__refresh_securities_cache()
+            self.__refresh_stock_cache()
         ids = self.__stock_cache.get_ids()
         self.__lock.release()
         return ids
@@ -140,7 +140,7 @@ class DataUtility:
     def names_to_stock_identity(self, names: [str]) -> [str]:
         self.__lock.acquire()
         if self.__stock_cache.empty():
-            self.__refresh_securities_cache()
+            self.__refresh_stock_cache()
         ids = self.__stock_cache.name_to_id(names)
         self.__lock.release()
         return ids
@@ -148,22 +148,39 @@ class DataUtility:
     def get_stock_listing_date(self, stock_identity: str, default_val: datetime.datetime) -> datetime.datetime:
         self.__lock.acquire()
         if self.__stock_cache.empty():
-            self.__refresh_securities_cache()
+            self.__refresh_stock_cache()
         ret = self.__stock_cache.get_id_info(stock_identity, 'listing_date', default_val)
         self.__lock.release()
         return ret
 
     # --------------------------------------- Index ---------------------------------------
 
+    def get_index_list(self) -> [(str, str)]:
+        self.__lock.acquire()
+        if self.__index_cache.empty():
+            self.__refresh_index_cache()
+        ids = self.__index_cache.get_ids()
+        ret = [(_id, self.__index_cache.id_to_names(_id)[0]) for _id in ids]
+        self.__lock.release()
+        return ret
+
+    def get_index_identities(self) -> [str]:
+        self.__lock.acquire()
+        if self.__index_cache.empty():
+            self.__refresh_index_cache()
+        ids = self.__index_cache.get_ids()
+        self.__lock.release()
+        return ids
+
     # -------------------------------------- Refresh --------------------------------------
 
     def refresh_cache(self):
-        self.__refresh_securities_cache()
+        self.__refresh_stock_cache()
         self.__refresh_index_cache()
 
     # ------------------------------------------------------------------------------------------------------------------
 
-    def __refresh_securities_cache(self):
+    def __refresh_stock_cache(self):
         securities_info = self.__data_center.query('Market.SecuritiesInfo',
                                                    fields=['stock_identity', 'name', 'listing_date'])
         if securities_info is not None:
