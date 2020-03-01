@@ -85,8 +85,8 @@ def parse(file_name: str,
 
 
 PARSE_LIST = (
-    path.join('AliasSheet', 'Alias_Market_SecuritiesInfo_Ts'),
-    path.join('AliasSheet', 'Alias_Market_IndexInfo_Ts'),
+    path.join('AliasSheet', 'Alias_Market_SecuritiesInfo_Ts.xlsx'),
+    path.join('AliasSheet', 'Alias_Market_IndexInfo_Ts.xlsx'),
 
     path.join('AliasSheet', 'Alias_Market_TradeCalender_Ts.xlsx'),
     path.join('AliasSheet', 'Alias_Market_NamingHistory_Ts.xlsx'),
