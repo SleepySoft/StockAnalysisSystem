@@ -134,7 +134,7 @@ def __fetch_securities_info(**kwargs) -> pd.DataFrame or None:
 
 
 def __fetch_indexes_info(**kwargs) -> pd.DataFrame or None:
-    SUPPORT_MARKETS = ['SSE', 'SZSE', 'MSCI', 'CSI', 'CICC', 'SW', 'OTH']
+    SUPPORT_MARKETS = ['SSE', 'SZSE', 'CSI', 'CICC', 'SW', 'MSCI', 'OTH']
 
     result = check_execute_test_flag(**kwargs)
     if result is None:
@@ -152,12 +152,6 @@ def __fetch_indexes_info(**kwargs) -> pd.DataFrame or None:
         result['code'] = result['ts_code'].apply(lambda val: val.split('.')[0])
         result['listing_date'] = pd.to_datetime(result['list_date'], format='%Y-%m-%d')
         result['index_identity'] = result['code'].astype(str) + '.' + result['exchange']
-
-        # if 'exchange' not in result.columns:
-        #     result['exchange'] = result['ts_code'].apply(lambda val: val.split('.')[1])
-        #     result['exchange'] = result['exchange'].apply(lambda val: 'SSE' if val == 'SH' else val)
-        #     result['exchange'] = result['exchange'].apply(lambda val: 'SZSE' if val == 'SZ' else val)
-        # result['stock_identity'] = result['code'] + '.' + result['exchange']
 
     return result
 

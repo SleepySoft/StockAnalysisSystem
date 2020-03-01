@@ -99,6 +99,7 @@ PARSE_LIST = (
     path.join('AliasSheet', 'Alias_Stockholder_PledgeStatus_Ts.xlsx'),
     path.join('AliasSheet', 'Alias_Stockholder_PledgeHistory_Ts.xlsx'),
 
+    path.join('AliasSheet', 'Alias_TradeData_Index_Daily_Ts.xlsx'),
     path.join('AliasSheet', 'Alias_TradeData_Stock_Daily_Ts.xlsx'),
     path.join('AliasSheet', 'Alias_TradeData_Stock_Daily_AdjFactor_Ts.xlsx'),
     path.join('AliasSheet', 'Alias_TradeData_Stock_Daily_Indicators_Ts.xlsx'),

@@ -30,7 +30,20 @@ NOT_SPEC = {
 }
 
 A_SHARE_MARKET = ['SSE', 'SZSE']
-ALL_SHARE_MARKET = ['SSE', 'SZSE', 'MSCI', 'CSI', 'CICC', 'SW', 'OTH']
+ALL_SHARE_MARKET = ['SSE', 'SZSE', 'CSI', 'CICC', 'SW', 'MSCI', 'OTH']
+
+# Too much indexes (more than 9000)
+# Hard coded. Select form TestData/Market_IndexInfo.csv
+# TODO: Configurable
+
+DEPENDS_INDEX = [
+    '000001.SH',            # 上证综指
+    '000002.SH',            # 上证A指
+    '000003.SH',            # 上证B指
+    '',           #
+    '',           #
+    '',           #
+]
 
 
 # Principle: Only declare the minimal common field
@@ -173,7 +186,7 @@ RESULT_FIELDS_STOCKHOLDER_STATISTICS = {
 
 QUERY_FIELDS_TRADE_DAILY = {
     'stock_identity': ([str], [],           True,  ''),
-    'trade_date':     ([tuple,  None], [],  False, ''),
+    'trade_date':     ([tuple, None], [],   False, ''),
 }
 
 RESULT_FIELD_TRADE_DAILY = {
@@ -227,10 +240,12 @@ DATA_FORMAT_DECLARE = [
     ('Stockholder.Statistics',    DFTDB, DFTPRX, 'stock_identity', 'period', QUERY_FIELDS_STOCKHOLDER_STATISTICS, RESULT_FIELDS_STOCKHOLDER_STATISTICS),
 
     ('TradeData.Stock.Daily',     'StockDaily', DFTPRX, 'stock_identity', 'trade_date', QUERY_FIELDS_TRADE_DAILY, RESULT_FIELD_TRADE_DAILY),
+    ('TradeData.Index.Daily',     'StockDaily', DFTPRX, 'stock_identity', 'trade_date', QUERY_FIELDS_TRADE_DAILY, RESULT_FIELD_TRADE_DAILY),
 ]
 
 SPECIAL_EXTENDER_TABLE = {
     'TradeData.Stock.Daily': IdentityTableExtender(),
+    'TradeData.Index.Daily': IdentityTableExtender(),
 }
 
 
