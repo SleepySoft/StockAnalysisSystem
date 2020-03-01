@@ -155,7 +155,7 @@ class UpdateStockListTask(TaskQueue.Task):
 
     def run(self):
         print('Update stock list task start.')
-        self.__data_utility.refresh_securities_cache()
+        self.__data_utility.refresh_cache()
         print('Update stock list task finished.')
 
 

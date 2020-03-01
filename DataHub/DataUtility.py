@@ -39,62 +39,127 @@ def csv_name_column_to_identity(csv_file: str, column: str) -> bool:
     df.to_csv(csv_file + '_parsed.csv')
 
 
+# ----------------------------------------------- IdentityNameInfoCache ------------------------------------------------
+
+class IdentityNameInfoCache:
+    def __init__(self):
+        self.__identity_info_dict = {}
+        self.__identity_name_dict = {}
+        self.__name_identity_dict = {}
+
+    # ----------------------- Sets -----------------------
+
+    def clean(self):
+        self.__identity_info_dict.clear()
+        self.__identity_name_dict.clear()
+        self.__name_identity_dict.clear()
+
+    def set_id_name(self, _id: str, name: str):
+        id_s = self.__normalize_id_name(_id)
+        name_s = self.__normalize_id_name(name)
+        self.__check_init_id_space(id_s)
+        if name_s not in self.__identity_name_dict[id_s]:
+            self.__identity_name_dict[id_s].append(name_s)
+        self.__name_identity_dict[name_s] = id_s
+
+    def set_id_info(self, _id: str, key: str, val: any):
+        id_s = self.__normalize_id_name(_id)
+        key_s = self.__normalize_id_name(key)
+        self.__check_init_id_space(id_s)
+        self.__identity_info_dict[id_s][key_s] = val
+
+    # ----------------------- Gets -----------------------
+
+    def empty(self) -> bool:
+        return len(self.__identity_info_dict) == 0 and \
+               len(self.__identity_name_dict) == 0
+
+    def name_to_id(self, names: str or [str]) -> str or [str]:
+        if not isinstance(names, (list, tuple)):
+            return self.__identity_name_dict.get(self.__normalize_id_name(names),
+                                                 self.__normalize_id_name(names))
+        else:
+            return [self.__identity_name_dict.get(self.__normalize_id_name(name),
+                                                  self.__normalize_id_name(name))
+                    for name in names]
+
+    def id_to_names(self, _id: str) -> [str]:
+        id_s = self.__normalize_id_name(_id)
+        return self.__identity_name_dict.get(id_s, [''])
+
+    def get_ids(self) -> [str]:
+        return list(self.__identity_info_dict.keys())
+
+    def get_id_info(self, _id: str, keys: str or [str], default_value: any=None) -> any or [any]:
+        id_info = self.__identity_info_dict.get(self.__normalize_id_name(_id), {})
+        if not isinstance(keys, (list, tuple)):
+            return id_info.get(self.__normalize_id_name(keys), default_value)
+        else:
+            return [id_info.get(self.__normalize_id_name(key), default_value) for key in keys]
+
+    # ---------------------------------------------------------------------------------------
+
+    def __check_init_id_space(self, _id: str):
+        if _id not in self.__identity_info_dict.keys():
+            self.__identity_info_dict[_id] = {}
+            self.__identity_name_dict[_id] = []
+
+    def __normalize_id_name(self, id_or_name: str) -> str:
+        return id_or_name.strip()
+
+
+# ---------------------------------------------------- DataUtility -----------------------------------------------------
+
 class DataUtility:
     def __init__(self, data_center: UniversalDataCenter):
         self.__data_center = data_center
         self.__lock = threading.Lock()
 
-        self.__stock_id_information_table = {}
-        self.__stock_history_name_id_table = {}
+        self.__stock_cache = IdentityNameInfoCache()
+        self.__index_cache = IdentityNameInfoCache()
+
+    # -------------------------------- Stock --------------------------------
 
     def get_stock_list(self) -> [(str, str)]:
         self.__lock.acquire()
-        if len(self.__stock_id_information_table) == 0:
+        if self.__stock_cache.empty():
             self.__refresh_securities_cache()
-        ret = [(_id, _info[0]) for _id, _info in self.__stock_id_information_table.items()]
+        ids = self.__stock_cache.get_ids()
+        ret = [(_id, self.__stock_cache.id_to_names(_id)[0]) for _id in ids]
         self.__lock.release()
         return ret
 
     def get_stock_identities(self) -> [str]:
         self.__lock.acquire()
-        if len(self.__stock_id_information_table) == 0:
+        if self.__stock_cache.empty():
             self.__refresh_securities_cache()
-        ret = [_id for _id, _info in self.__stock_id_information_table.items()]
+        ids = self.__stock_cache.get_ids()
         self.__lock.release()
-        return ret
+        return ids
 
     def names_to_stock_identity(self, names: [str]) -> [str]:
         self.__lock.acquire()
-        if len(self.__stock_id_information_table) == 0:
+        if self.__stock_cache.empty():
             self.__refresh_securities_cache()
-        if not isinstance(names, list):
-            names = [str(names)]
-
-        # The result is a tuple like (stock_identity, naming_date)
-        # We'll keep the original name if there's no match record.
-        # Too simple: [self.__stock_history_name_id_table.get(name, (name, ''))[0] for name in names]
-
-        ids = []
-        for name in names:
-            _id = self.__stock_history_name_id_table.get(name.lower(), ('', ''))[0]
-            if _id != '':
-                ids.append(_id)
-            else:
-                # For debug
-                ids.append(name)
+        ids = self.__stock_cache.name_to_id(names)
         self.__lock.release()
-
         return ids
 
     def get_stock_listing_date(self, stock_identity: str, default_val: datetime.datetime) -> datetime.datetime:
         self.__lock.acquire()
-        ret = self.__stock_id_information_table[stock_identity][1] \
-            if stock_identity in self.__stock_id_information_table.keys() else default_val
+        if self.__stock_cache.empty():
+            self.__refresh_securities_cache()
+        ret = self.__stock_cache.get_id_info(stock_identity, 'listing_date', default_val)
         self.__lock.release()
         return ret
 
-    def refresh_securities_cache(self):
+    # --------------------------------------- Index ---------------------------------------
+
+    # -------------------------------------- Refresh --------------------------------------
+
+    def refresh_cache(self):
         self.__refresh_securities_cache()
+        self.__refresh_index_cache()
 
     # ------------------------------------------------------------------------------------------------------------------
 
@@ -102,38 +167,113 @@ class DataUtility:
         securities_info = self.__data_center.query('Market.SecuritiesInfo',
                                                    fields=['stock_identity', 'name', 'listing_date'])
         if securities_info is not None:
-            self.__stock_id_information_table = {row['stock_identity']: (row['name'], row['listing_date'])
-                                                 for index, row in securities_info.iterrows()}
+            for index, row in securities_info.iterrows():
+                self.__stock_cache.set_id_name(row['stock_identity'], row['name'])
+                self.__stock_cache.set_id_info(row['stock_identity'], 'listing_date', row['listing_date'])
 
         securities_used_name = self.__data_center.query('Market.NamingHistory',
                                                         fields=['stock_identity', 'name', 'naming_date'])
-        if securities_used_name is not None:
-            self.__stock_history_name_id_table = {
-                # Convert to lower case and remove * mark for easy indexing.
-                row['name'].lower().replace('*', ''): (row['stock_identity'],
-                                                       row['naming_date'])
-                for index, row in securities_used_name.iterrows()}
+        for index, row in securities_used_name.iterrows():
+            self.__stock_cache.set_id_name(row['stock_identity'], row['name'].lower().replace('*', ''))
 
-            # Also add current name into history naming list
-            if securities_info is not None:
-                for key, info in self.__stock_id_information_table.items():
-                    trimed_name = info[0].lower().replace('*', '')
-                    if trimed_name not in self.__stock_history_name_id_table.keys():
-                        self.__stock_history_name_id_table[trimed_name] = (key, today())
+    def __refresh_index_cache(self):
+        index_info = self.__data_center.query('Market.IndexInfo',
+                                              fields=['index_identity', 'name', 'listing_date'])
+        for index, row in index_info.iterrows():
+            self.__index_cache.set_id_name(row['index_identity'], row['name'])
+            self.__index_cache.set_id_info(row['index_identity'], 'listing_date', row['listing_date'])
 
 
+# ----------------------------------------------------------------------------------------------------------------------
+#                                                         Test
+# ----------------------------------------------------------------------------------------------------------------------
+
+def test_identity_name_info_cache():
+    cache = IdentityNameInfoCache()
+
+    cache.set_id_name('id_1', 'id_1_name_1')
+    cache.set_id_name('id_1', 'id_1_name_1')
+    cache.set_id_name('id_1', 'id_1_name_2')
+    cache.set_id_name('id_1', 'id_1_name_3')
+    cache.set_id_info('id_1', 'date', datetime.date(1990, 1, 1))
+    cache.set_id_info('id_1', 'date', datetime.date(2000, 2, 2))
+    cache.set_id_info('id_1', 'key1', 'value1')
+    cache.set_id_info('id_1', 'key2', 'value2')
+    cache.set_id_info('id_1', 'key3', 'value3')
+
+    cache.set_id_name('id_2', 'id_2_name_1')
+    cache.set_id_name('id_2', 'id_2_name_2')
+    cache.set_id_name('id_2', 'id_2_name_3')
+    cache.set_id_info('id_2', 'date', datetime.date(2010, 10, 10))
+
+    # ---------------- Test Ids -----------------
+
+    assert 'id_1' in cache.get_ids()
+    assert 'id_2' in cache.get_ids()
+
+    # ---------------- Test name ----------------
+
+    # No duplicate names
+    id_1_names = cache.id_to_names('id_1')
+    assert len(id_1_names) == 3
+    assert 'id_1_name_1' in id_1_names
+    assert 'id_1_name_2' in id_1_names
+    assert 'id_1_name_3' in id_1_names
+
+    # Normal case
+    id_2_names = cache.id_to_names('id_2')
+    assert len(id_2_names) == 3
+
+    # If id not exits, returns ['']
+    id_3_names = cache.id_to_names('id_3')
+    assert len(id_3_names) == 1
+    assert id_3_names[0] == ''
+
+    # ---------------- Test Info ----------------
+
+    # Should keep the last set info
+    assert cache.get_id_info('id_1', 'date') == datetime.date(2000, 2, 2)
+
+    # Should keep the order of query keys
+    # Return default value if info not exists
+    info = cache.get_id_info('id_1', ['key3', 'key_x', 'key1', 'key2'], 'NotExists')
+    assert info[0] == 'value3'
+    assert info[1] == 'NotExists'
+    assert info[2] == 'value1'
+    assert info[3] == 'value2'
 
 
+# ----------------------------------------------------- File Entry -----------------------------------------------------
+
+def main():
+    test_identity_name_info_cache()
+
+    # If program reaches here, all test passed.
+    print('All test passed.')
 
 
+# ------------------------------------------------- Exception Handling -------------------------------------------------
+
+def exception_hook(type, value, tback):
+    # log the exception here
+    print('Exception hook triggered.')
+    print(type)
+    print(value)
+    print(tback)
+    # then call the default handler
+    sys.__excepthook__(type, value, tback)
 
 
-
-
-
-
-
-
+if __name__ == "__main__":
+    sys.excepthook = exception_hook
+    try:
+        main()
+    except Exception as e:
+        print('Error =>', e)
+        print('Error =>', traceback.format_exc())
+        exit()
+    finally:
+        pass
 
 
 
