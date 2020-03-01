@@ -85,21 +85,23 @@ def parse(file_name: str,
 
 
 PARSE_LIST = (
-    # path.join('AliasSheet', 'Alias_TradeCalender_Ts.xlsx'),
-    # path.join('AliasSheet', 'Alias_NamingHistory_Ts.xlsx'),
-    # path.join('AliasSheet', 'Alias_SecuritiesInfo_Ts.xlsx'),
+    path.join('AliasSheet', 'Alias_Market_SecuritiesInfo_Ts'),
+    path.join('AliasSheet', 'Alias_Market_IndexInfo_Ts'),
 
-    # path.join('AliasSheet', 'Alias_Audit_Ts.xlsx'),
-    # path.join('AliasSheet', 'Alias_BalanceSheet_Ts.xlsx'),
-    # path.join('AliasSheet', 'Alias_IncomeStatement_Ts.xlsx'),
-    # path.join('AliasSheet', 'Alias_CashFlowStatement_Ts.xlsx'),
+    path.join('AliasSheet', 'Alias_Market_TradeCalender_Ts.xlsx'),
+    path.join('AliasSheet', 'Alias_Market_NamingHistory_Ts.xlsx'),
 
-    # path.join('AliasSheet', 'Alias_PledgeStatus_Ts.xlsx'),
-    # path.join('AliasSheet', 'Alias_PledgeHistory_Ts.xlsx'),
+    path.join('AliasSheet', 'Alias_Finance_Audit_Ts.xlsx'),
+    path.join('AliasSheet', 'Alias_Finance_BalanceSheet_Ts.xlsx'),
+    path.join('AliasSheet', 'Alias_Finance_IncomeStatement_Ts.xlsx'),
+    path.join('AliasSheet', 'Alias_Finance_CashFlowStatement_Ts.xlsx'),
 
-    path.join('AliasSheet', 'Alias_StockDaily_AdjFactor_Ts.xlsx'),
-    path.join('AliasSheet', 'Alias_StockDaily_Indicators_Ts.xlsx'),
-    path.join('AliasSheet', 'Alias_StockDaily_Trade_Ts.xlsx'),
+    path.join('AliasSheet', 'Alias_Stockholder_PledgeStatus_Ts.xlsx'),
+    path.join('AliasSheet', 'Alias_Stockholder_PledgeHistory_Ts.xlsx'),
+
+    path.join('AliasSheet', 'Alias_TradeData_Stock_Daily_Ts.xlsx'),
+    path.join('AliasSheet', 'Alias_TradeData_Stock_Daily_AdjFactor_Ts.xlsx'),
+    path.join('AliasSheet', 'Alias_TradeData_Stock_Daily_Indicators_Ts.xlsx'),
 )
 
 

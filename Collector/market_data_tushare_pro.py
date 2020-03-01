@@ -30,6 +30,9 @@ FIELDS = {
         'is_open':                       '是否交易',                           # 0休市;1交易
         'pretrade_date':                 '上一个交易日',
     },
+    'Market.IndexInfo': {
+
+    },
     'Market.NamingHistory': {
         'ts_code':                       'TS代码',
         'name':                          '证券名称',
@@ -93,6 +96,55 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+def __fetch_securities_info(**kwargs) -> pd.DataFrame or None:
+    result = check_execute_test_flag(**kwargs)
+    if result is None:
+        pro = ts.pro_api(config.TS_TOKEN)
+        # If we specify the exchange parameter, it raises error.
+        result = pro.stock_basic(fields='ts_code,symbol,name,area,industry,fullname,list_date,'
+                                        'enname,market,exchange,curr_type,list_status,list_date,delist_date,is_hs')
+    check_execute_dump_flag(result, **kwargs)
+
+    if result is not None:
+        result['list_date'] = pd.to_datetime(result['list_date'], format='%Y-%m-%d')
+        result['delist_date'] = pd.to_datetime(result['delist_date'], format='%Y-%m-%d')
+
+        result['listing_date'] = pd.to_datetime(result['list_date'], format='%Y-%m-%d')
+
+        if 'code' not in result.columns:
+            result['code'] = result['ts_code'].apply(lambda val: val.split('.')[0])
+        if 'exchange' not in result.columns:
+            result['exchange'] = result['ts_code'].apply(lambda val: val.split('.')[1])
+            result['exchange'] = result['exchange'].apply(lambda val: 'SSE' if val == 'SH' else val)
+            result['exchange'] = result['exchange'].apply(lambda val: 'SZSE' if val == 'SZ' else val)
+        result['stock_identity'] = result['code'] + '.' + result['exchange']
+
+    return result
+
+
+def __fetch_indexes_info(**kwargs) -> pd.DataFrame or None:
+    result = check_execute_test_flag(**kwargs)
+    if result is None:
+        pro = ts.pro_api(config.TS_TOKEN)
+
+        # If we specify the exchange parameter, it raises error.
+        result = pro.index_basic(fields='ts_code,symbol,name,area,industry,fullname,list_date,'
+                                        'enname,market,exchange,curr_type,list_status,list_date,delist_date,is_hs')
+    check_execute_dump_flag(result, **kwargs)
+
+    if result is not None:
+        result['listing_date'] = pd.to_datetime(result['list_date'], format='%Y-%m-%d')
+        result['code'] = result['ts_code'].apply(lambda val: val.split('.')[0])
+
+        # if 'exchange' not in result.columns:
+        #     result['exchange'] = result['ts_code'].apply(lambda val: val.split('.')[1])
+        #     result['exchange'] = result['exchange'].apply(lambda val: 'SSE' if val == 'SH' else val)
+        #     result['exchange'] = result['exchange'].apply(lambda val: 'SZSE' if val == 'SZ' else val)
+        # result['stock_identity'] = result['code'] + '.' + result['exchange']
+
+    return result
+
+
 def __fetch_trade_calender(**kwargs) -> pd.DataFrame or None:
     exchange = kwargs.get('exchange', '')
     if str_available(exchange) and exchange not in ['SSE', 'SZSE', 'A-SHARE']:
@@ -147,42 +199,18 @@ def __fetch_naming_history(**kwargs):
     return result
 
 
-def __fetch_securities_info(**kwargs) -> pd.DataFrame or None:
-    result = check_execute_test_flag(**kwargs)
-    if result is None:
-        pro = ts.pro_api(config.TS_TOKEN)
-        # If we specify the exchange parameter, it raises error.
-        result = pro.stock_basic(fields='ts_code,symbol,name,area,industry,fullname,list_date,'
-                                        'enname,market,exchange,curr_type,list_status,list_date,delist_date,is_hs')
-    check_execute_dump_flag(result, **kwargs)
-
-    if result is not None:
-        result['list_date'] = pd.to_datetime(result['list_date'], format='%Y-%m-%d')
-        result['delist_date'] = pd.to_datetime(result['delist_date'], format='%Y-%m-%d')
-
-        result['listing_date'] = pd.to_datetime(result['list_date'], format='%Y-%m-%d')
-
-        if 'code' not in result.columns:
-            result['code'] = result['ts_code'].apply(lambda val: val.split('.')[0])
-        if 'exchange' not in result.columns:
-            result['exchange'] = result['ts_code'].apply(lambda val: val.split('.')[1])
-            result['exchange'] = result['exchange'].apply(lambda val: 'SSE' if val == 'SH' else val)
-            result['exchange'] = result['exchange'].apply(lambda val: 'SZSE' if val == 'SZ' else val)
-        result['stock_identity'] = result['code'] + '.' + result['exchange']
-
-    return result
-
-
 # ----------------------------------------------------------------------------------------------------------------------
 
 def query(**kwargs) -> pd.DataFrame or None:
     uri = kwargs.get('uri')
-    if uri == 'Market.TradeCalender':
+    if uri == 'Market.SecuritiesInfo':
+        return __fetch_securities_info(**kwargs)
+    elif uri == 'Market.IndexInfo':
+        return __fetch_indexes_info(**kwargs)
+    elif uri == 'Market.TradeCalender':
         return __fetch_trade_calender(**kwargs)
     elif uri == 'Market.NamingHistory':
         return __fetch_naming_history(**kwargs)
-    elif uri == 'Market.SecuritiesInfo':
-        return __fetch_securities_info(**kwargs)
     elif uri == 'Market.IndexComponent':
         return None
     else:

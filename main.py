@@ -33,6 +33,10 @@ def update_local(update_list: [str], force: bool = False):
     data_center = data_hub.get_data_center()
     data_utility = data_hub.get_data_utility()
 
+    if 'Market.IndexInfo' in update_list:
+        print('Updating IndexInfo...')
+        data_center.update_local_data('Market.IndexInfo', force=force)
+
     if 'Market.SecuritiesInfo' in update_list:
         print('Updating SecuritiesInfo...')
         data_center.update_local_data('Market.SecuritiesInfo', force=force)
@@ -106,6 +110,8 @@ def run_console():
     # update_special()
     update_local([
         # 'Market.SecuritiesInfo',
+        'Market.IndexInfo',
+        #
         # 'Market.NamingHistory',
         # 'Market.TradeCalender',
         #
@@ -116,7 +122,7 @@ def run_console():
         #
         # 'Stockholder.PledgeStatus',
         # 'Stockholder.PledgeHistory',
-        'Stockholder.Statistics',
+        # 'Stockholder.Statistics',
         #
         # 'TradeData.Stock.Daily',
     ], True)
@@ -141,8 +147,8 @@ def main():
     result = sas.check_initialize()
     assert result
 
-    # run_console()
-    run_ui()
+    run_console()
+    # run_ui()
     # run_test()
 
     print('Process Quit.')
