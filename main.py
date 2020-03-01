@@ -33,10 +33,6 @@ def update_local(update_list: [str], force: bool = False):
     data_center = data_hub.get_data_center()
     data_utility = data_hub.get_data_utility()
 
-    if 'Market.IndexInfo' in update_list:
-        print('Updating IndexInfo...')
-        data_center.update_local_data('Market.IndexInfo', force=force)
-
     if 'Market.SecuritiesInfo' in update_list:
         print('Updating SecuritiesInfo...')
         data_center.update_local_data('Market.SecuritiesInfo', force=force)
@@ -66,21 +62,39 @@ def update_local(update_list: [str], force: bool = False):
             data_center.update_local_data('Finance.IncomeStatement', stock_identity, force=force)
         if 'Finance.CashFlowStatement' in update_list:
             data_center.update_local_data('Finance.CashFlowStatement', stock_identity, force=force)
+
+        if 'TradeData.Stock.Daily' in update_list:
+            data_center.update_local_data('TradeData.Stock.Daily', stock_identity, force=force)
+
         if 'Stockholder.PledgeStatus' in update_list:
             data_center.update_local_data('Stockholder.PledgeStatus', stock_identity, force=force)
         if 'Stockholder.PledgeHistory' in update_list:
             data_center.update_local_data('Stockholder.PledgeHistory', stock_identity, force=force)
-        if 'TradeData.Stock.Daily' in update_list:
-            data_center.update_local_data('TradeData.Stock.Daily', stock_identity, force=force)
         if 'Stockholder.Statistics' in update_list:
             data_center.update_local_data('Stockholder.Statistics', stock_identity, force=force)
 
         counter += 1
         print('Done (%s / %s). Time Spending: %s s' % (counter, len(stock_list), time.time() - start_single))
 
-        # For the sake of:
-        # 抱歉，您每分钟最多访问该接口80次，权限的具体详情访问：https://tushare.pro/document/1?doc_id=108
-        # time.sleep(1)
+    if 'Market.IndexInfo' in update_list:
+        print('Updating IndexInfo...')
+        data_center.update_local_data('Market.IndexInfo', force=force, dump_flag=True)
+
+    from DataHub.DataHubEntry import DEPENDS_INDEX
+    # index_list = data_utility.get_index_list()
+    index_list = DEPENDS_INDEX
+
+    print('Updating Index Data for All Support Market.')
+
+    counter = 0
+    for index_identity, name in index_list:
+        start_single = time.time()
+
+        if 'TradeData.Index.Daily' in update_list:
+            data_center.update_local_data('TradeData.Index.Daily', index_identity, force=force)
+
+        counter += 1
+        print('Done (%s / %s). Time Spending: %s s' % (counter, len(index_list), time.time() - start_single))
 
     print('Update Finance Data for All A-SHARE Stock Done. Time Spending: ' + str(time.time() - start_total) + 's')
 
@@ -110,7 +124,6 @@ def run_console():
     # update_special()
     update_local([
         # 'Market.SecuritiesInfo',
-        'Market.IndexInfo',
         #
         # 'Market.NamingHistory',
         # 'Market.TradeCalender',
@@ -125,6 +138,9 @@ def run_console():
         # 'Stockholder.Statistics',
         #
         # 'TradeData.Stock.Daily',
+        #
+        # 'Market.IndexInfo',
+        'TradeData.Index.Daily',
     ], True)
     # run_strategy()
 
@@ -147,8 +163,8 @@ def main():
     result = sas.check_initialize()
     assert result
 
-    # run_console()
-    run_ui()
+    run_console()
+    # run_ui()
     # run_test()
 
     print('Process Quit.')

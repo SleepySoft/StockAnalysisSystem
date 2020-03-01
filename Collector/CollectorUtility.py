@@ -28,40 +28,57 @@ def param_as_date_str(kwargs: dict, param: str) -> str:
     return dt.strftime('%Y%m%d')
 
 
-def code_exchange_to_ts_code(code: str, exchange: str) -> str:
-    if exchange not in ['SSE', 'SZSE']:
-        return ''
-    return code + '.' + ('SH' if exchange == 'SSE' else 'SZ')
-
-
 def pickup_since_until_as_date(kwargs: dict) -> (str, str):
     since = kwargs.get('since', None)
     until = kwargs.get('until', None)
     return param_as_date_str(kwargs, since), param_as_date_str(kwargs, until)
 
 
-def ts_exchange_to_stock_exchange(exchange: str) -> str:
-    return {
-        'SH': 'SSE',
-        'SZ': 'SZSE',
-    }.get(exchange, exchange)
+# def ts_exchange_to_stock_exchange(exchange: str) -> str:
+#     return {
+#         'SH': 'SSE',
+#         'SZ': 'SZSE',
+#     }.get(exchange, exchange)
+#
+#
+# def ts_code_to_stock_identity(ts_code: str) -> str:
+#     parts = ts_code.split('.')
+#     if len(parts) != 2:
+#         # Error
+#         return ts_code
+#     return parts[0] + '.' + ts_exchange_to_stock_exchange(parts[1])
 
 
-def ts_code_to_stock_identity(ts_code: str) -> str:
-    parts = ts_code.split('.')
-    if len(parts) != 2:
-        # Error
-        return ts_code
-    return parts[0] + '.' + ts_exchange_to_stock_exchange(parts[1])
-
+TS_SAS_IDENTITY_SUFFIX_TABLE = [
+    ('SH',    'SSE'),
+    ('SZ',    'SZSE'),
+    ('CSI',   'CSI'),
+    ('CIC',   'CICC'),
+    ('SI',    'SW'),
+    ('MI',    'MSCI'),
+    # 'OTH' not a valid exchange
+]
 
 
 def stock_identity_to_ts_code(stock_identity: str) -> str:
-    if stock_identity.endswith('.SSE'):
-        return stock_identity.replace('.SSE', '.SH')
-    if stock_identity.endswith('.SZSE'):
-        return stock_identity.replace('.SZSE', '.SZ')
-    return ''
+    for ts_suffix, sas_suffix in TS_SAS_IDENTITY_SUFFIX_TABLE:
+        if stock_identity.endswith(sas_suffix):
+            return stock_identity.replace(sas_suffix, ts_suffix)
+    return stock_identity
+
+
+def ts_code_to_stock_identity(ts_code: str) -> str:
+    for ts_suffix, sas_suffix in TS_SAS_IDENTITY_SUFFIX_TABLE:
+        if ts_code.endswith(ts_suffix):
+            return ts_code.replace(ts_suffix, sas_suffix)
+    return ts_code
+
+
+def code_exchange_to_ts_code(code: str, exchange: str) -> str:
+    for ts_suffix, sas_suffix in TS_SAS_IDENTITY_SUFFIX_TABLE:
+        if exchange == sas_suffix:
+            return code + '.' + ts_suffix
+    return code + '.' + exchange
 
 
 def pickup_ts_code(kwargs: dict) -> str:
