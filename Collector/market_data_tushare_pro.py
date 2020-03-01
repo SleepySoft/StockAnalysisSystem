@@ -24,23 +24,6 @@ finally:
 # ------------------------------------------------------- Fields -------------------------------------------------------
 
 FIELDS = {
-    'Market.TradeCalender': {
-        'exchange':                      '交易所',                            # SSE上交所;SZSE深交所
-        'cal_date':                      '日历日期',
-        'is_open':                       '是否交易',                           # 0休市;1交易
-        'pretrade_date':                 '上一个交易日',
-    },
-    'Market.IndexInfo': {
-
-    },
-    'Market.NamingHistory': {
-        'ts_code':                       'TS代码',
-        'name':                          '证券名称',
-        'start_date':                    '开始日期',
-        'end_date':                      '结束日期',
-        'ann_date':                      '公告日期',
-        'change_reason':                 '变更原因',
-    },
     'Market.SecuritiesInfo': {
         'ts_code':                       'TS代码',
         'symbol':                        '股票代码',
@@ -56,6 +39,35 @@ FIELDS = {
         'list_date':                     '上市日期',
         'delist_date':                   '退市日期',
         'is_hs':                         '是否沪深港通标的',                       # N否;H沪股通;S深股通
+    },
+    'Market.IndexInfo': {
+        'ts_code':                       'TS代码',
+        'name':                          '简称',
+        'fullname':                      '指数全称',
+        'market':                        '市场',
+        'publisher':                     '发布方',
+        'index_type':                    '指数风格',
+        'category':                      '指数类别',
+        'base_date':                     '基期',
+        'base_point':                    '基点',
+        'list_date':                     '发布日期',
+        'weight_rule':                   '加权方式',
+        'desc':                          '描述',
+        'exp_date':                      '终止日期',
+    },
+    'Market.TradeCalender': {
+        'exchange':                      '交易所',                            # SSE上交所;SZSE深交所
+        'cal_date':                      '日历日期',
+        'is_open':                       '是否交易',                           # 0休市;1交易
+        'pretrade_date':                 '上一个交易日',
+    },
+    'Market.NamingHistory': {
+        'ts_code':                       'TS代码',
+        'name':                          '证券名称',
+        'start_date':                    '开始日期',
+        'end_date':                      '结束日期',
+        'ann_date':                      '公告日期',
+        'change_reason':                 '变更原因',
     },
     'Market.IndexComponent': {
         'ts_code':                       'TS代码',
@@ -101,8 +113,7 @@ def __fetch_securities_info(**kwargs) -> pd.DataFrame or None:
     if result is None:
         pro = ts.pro_api(config.TS_TOKEN)
         # If we specify the exchange parameter, it raises error.
-        result = pro.stock_basic(fields='ts_code,symbol,name,area,industry,fullname,list_date,'
-                                        'enname,market,exchange,curr_type,list_status,list_date,delist_date,is_hs')
+        result = pro.stock_basic(fields=list(FIELDS.get('Market.SecuritiesInfo').keys()))
     check_execute_dump_flag(result, **kwargs)
 
     if result is not None:
@@ -123,18 +134,24 @@ def __fetch_securities_info(**kwargs) -> pd.DataFrame or None:
 
 
 def __fetch_indexes_info(**kwargs) -> pd.DataFrame or None:
+    SUPPORT_MARKETS = ['SSE', 'SZSE', 'MSCI', 'CSI', 'CICC', 'SW', 'OTH']
+
     result = check_execute_test_flag(**kwargs)
     if result is None:
         pro = ts.pro_api(config.TS_TOKEN)
 
-        # If we specify the exchange parameter, it raises error.
-        result = pro.index_basic(fields='ts_code,symbol,name,area,industry,fullname,list_date,'
-                                        'enname,market,exchange,curr_type,list_status,list_date,delist_date,is_hs')
+        result = None
+        for market in SUPPORT_MARKETS:
+            sub_result = pro.index_basic(market=market, fields=list(FIELDS.get('Market.IndexInfo').keys()))
+            result = pd.concat([result, sub_result])
+
     check_execute_dump_flag(result, **kwargs)
 
     if result is not None:
-        result['listing_date'] = pd.to_datetime(result['list_date'], format='%Y-%m-%d')
+        result['exchange'] = result['market']
         result['code'] = result['ts_code'].apply(lambda val: val.split('.')[0])
+        result['listing_date'] = pd.to_datetime(result['list_date'], format='%Y-%m-%d')
+        result['index_identity'] = result['code'].astype(str) + '.' + result['exchange']
 
         # if 'exchange' not in result.columns:
         #     result['exchange'] = result['ts_code'].apply(lambda val: val.split('.')[1])

@@ -36,20 +36,6 @@ ALL_SHARE_MARKET = ['SSE', 'SZSE', 'MSCI', 'CSI', 'CICC', 'SW', 'OTH']
 # Principle: Only declare the minimal common field
 # 原则：只限制通用字段且限制的字段尽可能少
 
-
-# --------------------- Market.TradeCalender ---------------------
-
-QUERY_FIELDS_TRADE_CALENDER = {
-    'exchange':     ([str], ['SSE', 'SZSE', 'A-SHARE'], True,  ''),
-    'trade_date':   ([tuple], [],                       False,  ''),
-}
-
-RESULT_FIELDS_TRADE_CALENDER = {
-    'exchange':     (['str'], ['SSE', 'SZSE'],  True,  ''),
-    'trade_date':   (['datetime'], [],          True,  ''),
-    'status':       (['int'], [],               True,  ''),
-}
-
 # ---------------------- Market.NamingHistory ---------------------
 
 
@@ -76,10 +62,24 @@ RESULT_FIELDS_INDEX_INFO = {
     'index_identity': (['str'], [],                 True,  ''),
     'code':           (['str'], [],                 True,  ''),
     'name':           (['str'], [],                 True,  ''),
-    'full_name':      (['str'], [],                 True,  ''),
+    'fullname':       (['str'], [],                 True,  ''),
     'exchange':       (['str'], ALL_SHARE_MARKET,   True,  ''),
-    'publisher':      (['str'], ['SSE', 'SZSE'],    True,  ''),
+    'publisher':      (['str'], [],                 True,  ''),
     'listing_date':   (['datetime'], [],            True,  ''),
+}
+
+
+# --------------------- Market.TradeCalender ---------------------
+
+QUERY_FIELDS_TRADE_CALENDER = {
+    'exchange':     ([str], ['SSE', 'SZSE', 'A-SHARE'], True,  ''),
+    'trade_date':   ([tuple], [],                       False,  ''),
+}
+
+RESULT_FIELDS_TRADE_CALENDER = {
+    'exchange':     (['str'], ['SSE', 'SZSE'],  True,  ''),
+    'trade_date':   (['datetime'], [],          True,  ''),
+    'status':       (['int'], [],               True,  ''),
 }
 
 
