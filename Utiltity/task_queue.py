@@ -9,8 +9,16 @@ class TaskQueue:
     # ---------------------------------------- Task -----------------------------------------
 
     class Task:
+        STATUS_IDLE = 0
+        STATUS_PENDING = 1
+        STATUS_RUNNING = 2
+        STATUS_CANCELED = 3
+        STATUS_FINISHED = 4
+        STATUS_EXCEPTION = 5
+
         def __init__(self, name: str):
             self.__name = name
+            self.__status = TaskQueue.Task.STATUS_IDLE
 
         def __str__(self):
             return 'Task %s [%s]' % (self.name(), self.identity())
@@ -18,9 +26,11 @@ class TaskQueue:
         def name(self) -> str:
             return self.__name
 
+        def update(self, status: int):
+            self.__status = status
+
         def status(self) -> int:
-            # TODO: Waiting, Running, Finished, Canceled
-            pass
+            return self.__status
 
         def run(self):
             pass
@@ -95,6 +105,7 @@ class TaskQueue:
             print('Task queue -> found duplicate, drop.')
             return False
         self.__task_queue.append(task)
+        task.update(TaskQueue.Task.STATUS_PENDING)
         self.__lock.release()
         self.notify_task_updated(task, 'append')
         return True
@@ -109,6 +120,7 @@ class TaskQueue:
             self.__task_queue.append(task)
         else:
             self.__task_queue.insert(index, task)
+        task.update(TaskQueue.Task.STATUS_PENDING)
         self.__lock.release()
         self.notify_task_updated(task, 'insert')
 
@@ -150,7 +162,7 @@ class TaskQueue:
 
     # ------------------------------------- private --------------------------------------
 
-    def __adapted_task(self, task: Task, name: str or None, identity: str or None) -> Task or None:
+    def __adapt_task(self, task: Task, name: str or None, identity: str or None) -> Task or None:
         adapt = True
         if task is not None:
             if name is not None and name != '':
@@ -162,9 +174,9 @@ class TaskQueue:
     def __find_adapt_tasks(self, name: str or None, identity: str or None) -> [Task]:
         tasks = []
         for task in self.__task_queue:
-            if self.__adapted_task(task, name, identity):
+            if self.__adapt_task(task, name, identity):
                 tasks.append(task)
-        if self.__adapted_task(self.__running_task, name, identity):
+        if self.__adapt_task(self.__running_task, name, identity):
             tasks.append(self.__running_task)
         return tasks
 
@@ -174,9 +186,12 @@ class TaskQueue:
         task_queue = self.__task_queue.copy()
         for task in task_queue:
             if task.identity() == identity:
+                task.update(TaskQueue.Task.STATUS_CANCELED)
                 self.__task_queue.remove(task)
 
     def __clear_pending_task(self):
+        for task in self.__task_queue:
+            task.update(TaskQueue.Task.STATUS_CANCELED)
         self.__task_queue.clear()
 
     def __check_cancel_running_task(self, identity: str or None):
@@ -187,6 +202,7 @@ class TaskQueue:
 
     def __cancel_running_task(self):
         if self.__running_task is not None:
+            self.__running_task.update(TaskQueue.Task.STATUS_CANCELED)
             self.__running_task.quit()
 
     # ----------------------------------- Thread Entry -----------------------------------
@@ -207,9 +223,12 @@ class TaskQueue:
             if task is not None:
                 try:
                     print('Task queue -> start: ' + str(task))
+                    task.update(TaskQueue.Task.STATUS_RUNNING)
                     self.notify_task_updated(task, 'started')
                     task.run()
+                    task.update(TaskQueue.Task.STATUS_FINISHED)
                 except Exception as e:
+                    task.update(TaskQueue.Task.STATUS_EXCEPTION)
                     print('Task queue -> ' + str(task) + ' got exception:')
                     print(e)
                     print(traceback.format_exc())

@@ -129,7 +129,7 @@ class UpdateTask(TaskQueue.Task):
             self.progress.increase_progress(self.uri)
 
         self.clock.freeze()
-        self.__ui.task_finish_signal[UpdateTask].emit(self)
+        # self.__ui.task_finish_signal[UpdateTask].emit(self)
 
 
 # ---------------------------------- RefreshTask ----------------------------------
@@ -161,7 +161,7 @@ class UpdateStockListTask(TaskQueue.Task):
 
 # ---------------------------------------------------- DataUpdateUi ----------------------------------------------------
 
-class DataUpdateUi(QWidget):
+class DataUpdateUi(QWidget, TaskQueue.Observer):
     task_finish_signal = pyqtSignal([UpdateTask])
     refresh_finish_signal = pyqtSignal()
 
@@ -179,7 +179,7 @@ class DataUpdateUi(QWidget):
     SUB_UPDATE_INDEX_URI = ['TradeData.Index.Daily']
     SUB_UPDATE_STOCK_EXCHANGE_URI = ['Market.TradeCalender']
 
-    def get_uri_sub_update(self, uri: str) -> list:
+    def get_uri_sub_update(self, uri: str) -> list or None:
         if uri in DataUpdateUi.SUB_UPDATE_STOCK_URI:
             data_utility = self.__data_hub.get_data_utility()
             return data_utility.get_stock_identities()
@@ -188,7 +188,7 @@ class DataUpdateUi(QWidget):
         elif uri in DataUpdateUi.SUB_UPDATE_STOCK_EXCHANGE_URI:
             return A_SHARE_MARKET
         elif uri in DataUpdateUi.NO_SUB_UPDATE_URI:
-            return []
+            return None
         else:
             print('Sub update declare missing.')
             assert False
@@ -242,6 +242,7 @@ class DataUpdateUi(QWidget):
 
         # Post update and cache stock list after posting RefreshTask
         data_utility = self.__data_hub.get_data_utility()
+        StockAnalysisSystem().get_task_queue().add_observer(self)
         StockAnalysisSystem().get_task_queue().append_task(UpdateStockListTask(data_utility))
 
     # ---------------------------------------------------- UI Init -----------------------------------------------------
@@ -350,12 +351,20 @@ class DataUpdateUi(QWidget):
             for task in self.__processing_update_tasks:
                 if not task.in_work_package(uri):
                     continue
-                if task.progress.has_progress(prog_id):
-                    rate = task.progress.get_progress_rate(prog_id)
-                    status = '%ss | %.2f%%' % (task.clock.elapsed_s(), rate * 100)
-                    self.__table_main.item(i, DataUpdateUi.INDEX_STATUS).setText(status)
+                text = ''
+                if task.status() in [TaskQueue.Task.STATUS_IDLE, TaskQueue.Task.STATUS_PENDING]:
+                    text = '等待中...'
                 else:
-                    self.__table_main.item(i, DataUpdateUi.INDEX_STATUS).setText('等待中...')
+                    if task.progress.has_progress(prog_id):
+                        rate = task.progress.get_progress_rate(prog_id)
+                        text = '%ss | %.2f%%' % (task.clock.elapsed_s(), rate * 100)
+                    if task.status() == TaskQueue.Task.STATUS_CANCELED:
+                        text += ' | [Canceled]'
+                    elif task.status() == TaskQueue.Task.STATUS_FINISHED:
+                        text += ' | [Finished]'
+                    elif task.status() == TaskQueue.Task.STATUS_EXCEPTION:
+                        text += ' | [Error]'
+                self.__table_main.item(i, DataUpdateUi.INDEX_STATUS).setText(text)
                 break
 
     # def closeEvent(self, event):
@@ -393,10 +402,12 @@ class DataUpdateUi(QWidget):
             self.__table_main.setItem(index, 0, check_item)
 
             # Add detail button
-            if line[1] not in DataUpdateUi.NO_SUB_UPDATE_URI:
-                button = QPushButton('Enter')
-                button.clicked.connect(partial(self.on_detail_button, line[1]))
-                self.__table_main.AddWidgetToCell(index, 6, button)
+            # Only if currently in top level
+            if self.__display_identities is None or len(self.__display_identities) == 0:
+                if line[1] not in DataUpdateUi.NO_SUB_UPDATE_URI:
+                    button = QPushButton('Enter')
+                    button.clicked.connect(partial(self.on_detail_button, line[1]))
+                    self.__table_main.AddWidgetToCell(index, 6, button)
 
             # Add update button
             button_auto = QPushButton('Auto')
@@ -700,6 +711,11 @@ class DataUpdateUi(QWidget):
     #     print('Update task finished.')
 
     # ---------------------------------------------------------------------------------
+
+    def on_task_updated(self, task, change: str):
+        if change in ['canceled', 'finished']:
+            if task in self.__processing_update_tasks_count:
+                self.task_finish_signal[UpdateTask].emit(task)
 
     def __on_task_done(self, task: UpdateTask):
         if task in self.__processing_update_tasks_count:
