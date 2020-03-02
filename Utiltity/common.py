@@ -113,7 +113,7 @@ class ProgressRate:
             total = 1
             current = 0
         current = min(current, total)
-        return 0.0 if total == 0 else current / total
+        return 1 if total == 0 else current / total
 
     def normalize_identity(self, identity: str or list) -> str:
         return '.'.join(list(identity)) if isinstance(identity, (list, tuple)) else identity
