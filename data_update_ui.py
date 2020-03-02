@@ -114,7 +114,7 @@ class UpdateTask(TaskQueue.Task):
                 print('------------------------------------------------------------------------------------')
 
                 # Optimise: Update not earlier than listing date.
-                listing_date = self.__data_hub.get_data_utility().get_stock_listing_date(identity, default_since())
+                listing_date = self.__data_hub.get_data_utility().get_securities_listing_date(identity, default_since())
 
                 if self.__force:
                     since, until = listing_date, now()
@@ -171,10 +171,27 @@ class DataUpdateUi(QWidget):
     TABLE_HEADER = ['', 'Item', 'Local Data Since', 'Local Data Until', 'Latest Update',
                     'Update Estimation', 'Sub Update', 'Update', 'Status']
 
-    # TODO: Auto detect
-    INCLUDES_SECURITIES_SUB_UPDATE_LIST = [
-        'Finance.Audit', 'Finance.BalanceSheet', 'Finance.IncomeStatement', 'Finance.CashFlowStatement',
-        'Stockholder.PledgeStatus', 'Stockholder.PledgeHistory', 'Stockholder.Statistics', 'TradeData.Stock.Daily']
+    NO_SUB_UPDATE_URI = ['Market.SecuritiesInfo', 'Market.IndexInfo', ]
+    SUB_UPDATE_STOCK_URI = ['Finance.Audit', 'Finance.BalanceSheet',
+                            'Finance.IncomeStatement', 'Finance.CashFlowStatement',
+                            'Stockholder.PledgeStatus', 'Stockholder.PledgeHistory', 'Stockholder.Statistics',
+                            'TradeData.Stock.Daily', 'Market.NamingHistory']
+    SUB_UPDATE_INDEX_URI = ['TradeData.Index.Daily']
+    SUB_UPDATE_STOCK_EXCHANGE_URI = ['Market.TradeCalender']
+
+    def get_uri_sub_update(self, uri: str) -> list:
+        if uri in DataUpdateUi.SUB_UPDATE_STOCK_URI:
+            data_utility = self.__data_hub.get_data_utility()
+            return data_utility.get_stock_identities()
+        elif uri in DataUpdateUi.SUB_UPDATE_INDEX_URI:
+            return DEPENDS_INDEX
+        elif uri in DataUpdateUi.SUB_UPDATE_STOCK_EXCHANGE_URI:
+            return A_SHARE_MARKET
+        elif uri in DataUpdateUi.NO_SUB_UPDATE_URI:
+            return []
+        else:
+            print('Sub update declare missing.')
+            assert False
 
     def __init__(self, data_hub_entry: DataHubEntry, update_table: UpdateTableEx):
         super(DataUpdateUi, self).__init__()
@@ -376,7 +393,7 @@ class DataUpdateUi(QWidget):
             self.__table_main.setItem(index, 0, check_item)
 
             # Add detail button
-            if line[1] in DataUpdateUi.INCLUDES_SECURITIES_SUB_UPDATE_LIST:
+            if line[1] not in DataUpdateUi.NO_SUB_UPDATE_URI:
                 button = QPushButton('Enter')
                 button.clicked.connect(partial(self.on_detail_button, line[1]))
                 self.__table_main.AddWidgetToCell(index, 6, button)
@@ -566,22 +583,24 @@ class DataUpdateUi(QWidget):
 
     def __to_detail_level(self, uri: str):
         self.__display_uri = [uri]
-        if uri in ['Market.TradeCalender']:
-            self.__display_identities = ['SSE']
-        elif uri in DataUpdateUi.INCLUDES_SECURITIES_SUB_UPDATE_LIST:
-            data_utility = self.__data_hub.get_data_utility()
-            self.__display_identities = data_utility.get_stock_identities()
+        self.__display_identities = self.get_uri_sub_update(uri)
+        # if uri in ['Market.TradeCalender']:
+        #     self.__display_identities = ['SSE']
+        # elif uri in DataUpdateUi.INCLUDES_SECURITIES_SUB_UPDATE_LIST:
+        #     data_utility = self.__data_hub.get_data_utility()
+        #     self.__display_identities = data_utility.get_stock_identities()
         self.__page = 0
         self.update_table()
 
     def __build_post_update_task(self, uri: str, identities: list or None, force: bool) -> bool:
         task = UpdateTask(self, self.__data_hub, self.__data_center, force)
         if identities is None:
-            if uri == 'Market.TradeCalender':
-                identities = 'SSE'
-            elif uri in DataUpdateUi.INCLUDES_SECURITIES_SUB_UPDATE_LIST:
-                data_utility = self.__data_hub.get_data_utility()
-                identities = data_utility.get_stock_identities()
+            identities = self.get_uri_sub_update(uri)
+            # if uri == 'Market.TradeCalender':
+            #     identities = 'SSE'
+            # elif uri in DataUpdateUi.INCLUDES_SECURITIES_SUB_UPDATE_LIST:
+            #     data_utility = self.__data_hub.get_data_utility()
+            #     identities = data_utility.get_stock_identities()
         task.set_work_package(uri, identities)
         self.__processing_update_tasks.append(task)
         self.__processing_update_tasks_count.append(task)
