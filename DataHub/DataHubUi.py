@@ -102,7 +102,7 @@ class DataHubUi(QWidget):
 
         result = self.__data_center.query(uri, identity, (since, until)) if self.__data_center is not None else None
 
-        if result is not None:
+        if result is not None and '_id' in result.columns:
             del result['_id']
             write_df_to_qtable(result, self.__table_main)
 

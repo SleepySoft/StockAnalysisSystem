@@ -163,8 +163,8 @@ def main():
     result = sas.check_initialize()
     assert result
 
-    run_console()
-    # run_ui()
+    # run_console()
+    run_ui()
     # run_test()
 
     print('Process Quit.')

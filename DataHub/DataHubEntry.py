@@ -37,12 +37,13 @@ ALL_SHARE_MARKET = ['SSE', 'SZSE', 'CSI', 'CICC', 'SW', 'MSCI', 'OTH']
 # TODO: Configurable
 
 DEPENDS_INDEX = [
-    '000001.SH',            # 上证综指
-    '000002.SH',            # 上证A指
-    '000003.SH',            # 上证B指
-    '',           #
-    '',           #
-    '',           #
+    '000001.SSE',            # 上证综指
+    '000002.SSE',            # 上证A指
+    '000003.SSE',            # 上证B指
+    '000016.SSE',            # 上证50
+    '399001.SESZ',           # 深证成指
+    '399005.SESZ',           # 中小板指
+    '399006.SESZ',           # 创业板指
 ]
 
 

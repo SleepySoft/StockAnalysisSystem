@@ -118,6 +118,11 @@ class DataUtility:
         self.__stock_cache = IdentityNameInfoCache()
         self.__index_cache = IdentityNameInfoCache()
 
+    # ------------------------------- General -------------------------------
+
+    def get_securities_listing_date(self, securities: str, default_val: datetime.datetime) -> datetime.datetime:
+        return self.get_stock_listing_date(securities, self.get_index_listing_date(securities, default_val))
+
     # -------------------------------- Stock --------------------------------
 
     def get_stock_list(self) -> [(str, str)]:
@@ -171,6 +176,14 @@ class DataUtility:
         ids = self.__index_cache.get_ids()
         self.__lock.release()
         return ids
+
+    def get_index_listing_date(self, index_identity: str, default_val: datetime.datetime) -> datetime.datetime:
+        self.__lock.acquire()
+        if self.__index_cache.empty():
+            self.__refresh_index_cache()
+        ret = self.__index_cache.get_id_info(index_identity, 'listing_date', default_val)
+        self.__lock.release()
+        return ret
 
     # -------------------------------------- Refresh --------------------------------------
 
