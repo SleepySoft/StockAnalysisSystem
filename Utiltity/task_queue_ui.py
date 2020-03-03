@@ -100,8 +100,11 @@ class TaskQueueUi(QWidget):
 
     def __on_action_button(self, name: str, identity: str):
         if self.__task_queue is not None:
-            self.__task_queue.cancel_task(identity)
-            self.update_table()
+            if identity is not None and identity != '':
+                self.__task_queue.cancel_task(identity)
+                self.update_table()
+            else:
+                print('Warning: Task Identity is Empty, will cancel all task.')
 
     def __on_observe_signal(self, action: str):
         self.update_table()

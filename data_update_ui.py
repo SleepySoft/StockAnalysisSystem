@@ -145,6 +145,9 @@ class RefreshTask(TaskQueue.Task):
         self.__ui.refresh_finish_signal.emit()
         print('Refresh task finished.')
 
+    def identity(self) -> str:
+        return 'RefreshTask'
+
 
 # ------------------------------ UpdateStockListTask ------------------------------
 
@@ -157,6 +160,9 @@ class UpdateStockListTask(TaskQueue.Task):
         print('Update stock list task start.')
         self.__data_utility.refresh_cache()
         print('Update stock list task finished.')
+
+    def identity(self) -> str:
+        return 'UpdateStockListTask'
 
 
 # ---------------------------------------------------- DataUpdateUi ----------------------------------------------------
@@ -360,7 +366,7 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
                         text.append('%ss' % task.clock.elapsed_s())
                         text.append('%.2f%%' % (rate * 100))
                     if task.status() == TaskQueue.Task.STATUS_CANCELED:
-                        text.append('[Canceling]')
+                        text.append('[Canceled]')
                     elif task.status() == TaskQueue.Task.STATUS_FINISHED:
                         text.append('[Finished]')
                     elif task.status() == TaskQueue.Task.STATUS_EXCEPTION:

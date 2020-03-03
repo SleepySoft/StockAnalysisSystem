@@ -39,7 +39,8 @@ class TaskQueue:
             pass
 
         def identity(self) -> str:
-            pass
+            # Must override
+            assert False
 
     # -------------------------------------- Observer ---------------------------------------
 
@@ -99,6 +100,9 @@ class TaskQueue:
         return task_list
 
     def append_task(self, task: Task, unique: bool = True) -> bool:
+        if task.identity() is None or task == '':
+            print('Task must have an identity.')
+            return False
         print('Task queue -> append : ' + str(task))
         self.__lock.acquire()
         if unique and (task.identity() is not None and
@@ -113,6 +117,9 @@ class TaskQueue:
         return True
 
     def insert_task(self, task: Task, index: int = 0, unique: bool = True):
+        if task.identity() is None or task == '':
+            print('Task must have an identity.')
+            return False
         print('Task queue -> insert : ' + str(task))
         self.__lock.acquire()
         if unique:
@@ -237,7 +244,8 @@ class TaskQueue:
                     task.update(TaskQueue.Task.STATUS_RUNNING)
                     self.notify_task_updated(task, 'started')
                     task.run()
-                    task.update(TaskQueue.Task.STATUS_FINISHED)
+                    task.update(TaskQueue.Task.STATUS_FINISHED) \
+                        if task.status() != TaskQueue.Task.STATUS_CANCELED else None
                 except Exception as e:
                     task.update(TaskQueue.Task.STATUS_EXCEPTION)
                     print('Task queue -> ' + str(task) + ' got exception:')
