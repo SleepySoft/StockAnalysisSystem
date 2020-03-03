@@ -351,20 +351,21 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
             for task in self.__processing_update_tasks:
                 if not task.in_work_package(uri):
                     continue
-                text = ''
+                text = []
                 if task.status() in [TaskQueue.Task.STATUS_IDLE, TaskQueue.Task.STATUS_PENDING]:
-                    text = '等待中...'
+                    text.append('等待中...')
                 else:
                     if task.progress.has_progress(prog_id):
                         rate = task.progress.get_progress_rate(prog_id)
-                        text = '%ss | %.2f%%' % (task.clock.elapsed_s(), rate * 100)
+                        text.append('%ss' % task.clock.elapsed_s())
+                        text.append('%.2f%%' % (rate * 100))
                     if task.status() == TaskQueue.Task.STATUS_CANCELED:
-                        text += ' | [Canceled]'
+                        text.append('[Canceling]')
                     elif task.status() == TaskQueue.Task.STATUS_FINISHED:
-                        text += ' | [Finished]'
+                        text.append('[Finished]')
                     elif task.status() == TaskQueue.Task.STATUS_EXCEPTION:
-                        text += ' | [Error]'
-                self.__table_main.item(i, DataUpdateUi.INDEX_STATUS).setText(text)
+                        text.append('[Error]')
+                self.__table_main.item(i, DataUpdateUi.INDEX_STATUS).setText(' | '.join(text))
                 break
 
     # def closeEvent(self, event):
@@ -615,6 +616,7 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
         task.set_work_package(uri, identities)
         self.__processing_update_tasks.append(task)
         self.__processing_update_tasks_count.append(task)
+        print('<== Add task: ' + str(task))
         ret = StockAnalysisSystem().get_task_queue().append_task(task)
         # After updating market info, also update stock list cache
         if ret and uri == 'Market.SecuritiesInfo':
@@ -714,12 +716,14 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
 
     def on_task_updated(self, task, change: str):
         if change in ['canceled', 'finished']:
+            print('==> Get task: ' + str(task))
             if task in self.__processing_update_tasks_count:
                 self.task_finish_signal[UpdateTask].emit(task)
 
     def __on_task_done(self, task: UpdateTask):
         if task in self.__processing_update_tasks_count:
             self.__processing_update_tasks_count.remove(task)
+            print('Finish task: %s, remaining count: %s' % (task.name(), len(self.__processing_update_tasks_count)))
             if len(self.__processing_update_tasks_count) == 0:
                 QMessageBox.information(self,
                                         QtCore.QCoreApplication.translate('main', '更新完成'),
