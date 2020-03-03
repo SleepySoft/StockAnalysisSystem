@@ -454,7 +454,7 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
             # So we cannot fetch its time range with this method.
             since, until = data_table.range(uri, identity)
         if until is not None:
-            update_since = tomorrow_of(until)
+            update_since = min(tomorrow_of(until), now())
             update_until = now()
         else:
             update_since, update_until = self.__data_center.calc_update_range(uri, identity)
