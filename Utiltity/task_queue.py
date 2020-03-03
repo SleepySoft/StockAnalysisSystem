@@ -66,11 +66,13 @@ class TaskQueue:
             self.__task_thread.join(timeout)
 
     def quit(self):
+        canceled_tasks = []
         self.__lock.acquire()
         self.__quit_flag = True
-        self.__clear_pending_task()
-        self.__cancel_running_task()
+        self.__clear_pending_task(canceled_tasks)
+        self.__cancel_running_task(canceled_tasks)
         self.__lock.release()
+        self.notify_task_updated(canceled_tasks, 'canceled')
 
     def start(self):
         if self.__task_thread is None or self.__task_thread.is_alive():
@@ -128,21 +130,23 @@ class TaskQueue:
         self.__will_task = task
 
     def cancel_task(self, identity: str or None):
+        canceled_tasks = []
         self.__lock.acquire()
         if identity is None:
-            self.__clear_pending_task()
-            self.__cancel_running_task()
+            self.__clear_pending_task(canceled_tasks)
+            self.__cancel_running_task(canceled_tasks)
         else:
-            self.__remove_pending_task(identity)
-            self.__check_cancel_running_task(identity)
+            self.__remove_pending_task(identity, canceled_tasks)
+            self.__check_cancel_running_task(identity, canceled_tasks)
         self.__lock.release()
-        self.notify_task_updated(None, 'canceled')
+        self.notify_task_updated(canceled_tasks, 'canceled')
 
     def cancel_running_task(self):
+        canceled_tasks = []
         self.__lock.acquire()
-        self.__cancel_running_task()
+        self.__cancel_running_task(canceled_tasks)
         self.__lock.release()
-        self.notify_task_updated(None, 'canceled')
+        self.notify_task_updated(canceled_tasks, 'canceled')
 
     def find_matching_tasks(self, name: str or None, identity: str or None) -> [Task]:
         self.__lock.acquire()
@@ -156,9 +160,12 @@ class TaskQueue:
         if ob not in self.__observers:
             self.__observers.append(ob)
 
-    def notify_task_updated(self, task: Task, action: str):
+    def notify_task_updated(self, task: Task or [Task], action: str):
+        if not isinstance(task, (list, tuple)):
+            task = [task]
         for ob in self.__observers:
-            ob.on_task_updated(task, action)
+            for t in task:
+                ob.on_task_updated(t, action)
 
     # ------------------------------------- private --------------------------------------
 
@@ -180,30 +187,34 @@ class TaskQueue:
             tasks.append(self.__running_task)
         return tasks
 
-    def __remove_pending_task(self, identity):
+    def __remove_pending_task(self, identity, canceled_tasks: [Task]):
         if identity is None:
             return
         task_queue = self.__task_queue.copy()
         for task in task_queue:
             if task.identity() == identity:
+                canceled_tasks.append(task)
                 task.update(TaskQueue.Task.STATUS_CANCELED)
                 self.__task_queue.remove(task)
 
-    def __clear_pending_task(self):
+    def __clear_pending_task(self, canceled_tasks: [Task]):
         for task in self.__task_queue:
+            canceled_tasks.append(task)
             task.update(TaskQueue.Task.STATUS_CANCELED)
         self.__task_queue.clear()
 
-    def __check_cancel_running_task(self, identity: str or None):
+    def __check_cancel_running_task(self, identity: str or None, canceled_tasks: [Task]):
         if identity is None or \
                 (self.__running_task is not None and
                  self.__running_task.identity() == identity):
-            self.__cancel_running_task()
+            canceled_tasks.append(self.__cancel_running_task(canceled_tasks))
 
-    def __cancel_running_task(self):
+    def __cancel_running_task(self, canceled_tasks: [Task]):
         if self.__running_task is not None:
+            canceled_tasks.append(self.__running_task)
             self.__running_task.update(TaskQueue.Task.STATUS_CANCELED)
             self.__running_task.quit()
+            self.__running_task = None
 
     # ----------------------------------- Thread Entry -----------------------------------
 
