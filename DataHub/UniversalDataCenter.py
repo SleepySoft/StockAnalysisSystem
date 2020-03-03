@@ -303,7 +303,6 @@ class UniversalDataTable:
 # ----------------------------------------------------------------------------------------------------------------------
 
 class UniversalDataCenter:
-
     def __init__(self, database_entry: DatabaseEntry, collector_plugin: PluginManager):
         self.__database_entry = database_entry
         self.__plugin_manager = collector_plugin
@@ -335,7 +334,7 @@ class UniversalDataCenter:
         if table not in self.__data_table:
             self.__data_table.append((table, params_checker))
 
-    # -------------------------------------------------------------------
+    # ------------------------------------------------ Data Management -------------------------------------------------
 
     def query(self, uri: str, identity: str or [str] = None,
               time_serial: tuple = None, **extra) -> pd.DataFrame or None:
@@ -389,12 +388,20 @@ class UniversalDataCenter:
 
     def update_local_data(self, uri: str, identity: str or [str] = None,
                           time_serial: tuple = None, force: bool = False, **extra) -> bool:
+        return self.apply_local_data_patch(
+            self.build_local_data_patch(uri, identity, time_serial, force, **extra))
+
+    def build_local_data_patch(self, uri: str, identity: str or [str] = None,
+                               time_serial: tuple = None, force: bool = False, **extra) -> tuple:
+        """
+        Calculate update range and fetch from plug-in, then pack for local persistence.
+        """
         table, checker = self.get_data_table(uri)
         if table is None:
             self.log_error('Cannot find data table for : ' + uri)
-            return False
+            return False, (uri, identity, None, None, table), None
 
-        # ----------------- Decide update time range -----------------
+        # ---------------- Decide update time range ----------------
         if force:
             since, until = default_since(), now()
         else:
@@ -402,28 +409,43 @@ class UniversalDataCenter:
         # TODO: How to be more grace?
         if date2text(since) == date2text(until):
             # Does not need update.
-            return True
+            return True, (uri, identity, since, until, table), None
         print('%s: [%s] -> Update range: %s - %s' % (uri, str(identity), date2text(since), date2text(until)))
 
         # ------------------------- Fetch -------------------------
         result = self.query_from_plugin(uri, identity, (min(since, until), max(since, until)), **extra)
         if result is None or not isinstance(result, pd.DataFrame):
             self.log_error('Cannot fetch data from plugin for : ' + uri)
-            return False
+            return False, (uri, identity, since, until, table), result
 
         # ------------------------- Check -------------------------
         if checker is not None:
             if not checker.check_dataframe(result):
                 self.log_error('Result format error: ' + uri)
-                return False
+                return False, (uri, identity, since, until, table), result
+        return True, (uri, identity, since, until, table), result
 
-        # ------------------------- Merge -------------------------
+    def apply_local_data_patch(self, patch: tuple) -> bool:
+        """
+        Merge and persistence the patch data.
+        """
+        # ------------------------- Unpack -------------------------
+        try:
+            result, params, data = patch
+            if not result or data is None:
+                return result
+            uri, identity, since, until, table = params
+        except Exception as e:
+            print(e)
+            return False
+
+        # ------------------------- Merge --------------------------
 
         clock = Clock()
         table.merge(uri, identity, result)
         print('%s: [%s] - Persistence finished, time spending: %sms' % (uri, str(identity), clock.elapsed_ms()))
 
-        # ---------------------- Update Table ---------------------
+        # ----------------------- Update Table ----------------------
 
         # Cache the update range in Update Table
 
@@ -439,6 +461,8 @@ class UniversalDataCenter:
             self.get_update_table().update_update_range(update_tags, since, until)
 
         return True
+
+    # ------------------------------------------------- Calc and Check -------------------------------------------------
 
     def calc_update_range(self, uri: str, identity: str or [str] = None,
                           time_serial: tuple = None) -> (datetime.datetime, datetime.datetime):
