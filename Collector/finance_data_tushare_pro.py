@@ -386,12 +386,16 @@ def __fetch_finance_data(**kwargs) -> pd.DataFrame:
         clock = Clock()
         delayer.delay()
         if uri == 'Finance.Audit':
+            # Score 500; Update Na; No limit;
             result = pro.fina_audit(ts_code=ts_code, start_date=ts_since, end_date=ts_until, fields=field_joined)
         elif uri == 'Finance.BalanceSheet':
+            # Score 500; Update Na; No limit;
             result = pro.balancesheet(ts_code=ts_code, start_date=ts_since, end_date=ts_until, fields=field_joined)
         elif uri == 'Finance.IncomeStatement':
+            # Score 500; Update Na; No limit;
             result = pro.income(ts_code=ts_code, start_date=ts_since, end_date=ts_until, fields=field_joined)
         elif uri == 'Finance.CashFlowStatement':
+            # Score 500; Update Na; No limit;
             result = pro.cashflow(ts_code=ts_code, start_date=ts_since, end_date=ts_until, fields=field_joined)
         else:
             result = None

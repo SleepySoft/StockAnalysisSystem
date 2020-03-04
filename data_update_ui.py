@@ -14,6 +14,7 @@ import threading
 
 from PyQt5.QtCore import QTimer, pyqtSignal
 from PyQt5.QtWidgets import QHeaderView
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, Executor
 
 from Utiltity.common import *
 from Utiltity.ui_utility import *
@@ -41,6 +42,12 @@ class UpdateTask(TaskQueue.Task):
         self.__data_hub = data_hub
         self.__data_center = data_center
         self.__quit = False
+
+        # Thread pool
+        self.__future = None
+        self.__patch_queue = []
+        self.__sub_task_quit = False
+        self.__pool = ThreadPoolExecutor(max_workers=1)
 
         # Parameters
         self.uri = ''
@@ -79,6 +86,7 @@ class UpdateTask(TaskQueue.Task):
     def run(self):
         print('Update task start.')
 
+        self.__future = self.__pool.submit(self.__execute_persistence)
         try:
             # Catch "pymongo.errors.ServerSelectionTimeoutError: No servers found yet" exception and continue.
             self.__execute_update()
@@ -87,7 +95,8 @@ class UpdateTask(TaskQueue.Task):
             print(e)
             print('Continue...')
         finally:
-            pass
+            if self.__future is not None:
+                self.__future.cancel()
         print('Update task finished.')
 
     def quit(self):
@@ -96,16 +105,29 @@ class UpdateTask(TaskQueue.Task):
     def identity(self) -> str:
         return self.uri
 
+    # ------------------------------------- Task -------------------------------------
+
+    def __put_patch(self, patch: tuple):
+        while len(self.__patch_queue) > 50:
+            print('Patch queue is full, waiting...')
+            time.sleep(1)
+        self.__patch_queue.append(patch)
+
+    def __pop_patch(self) -> tuple:
+        return self.__patch_queue.pop(0) if len(self.__patch_queue) > 0 else None
+
     def __execute_update(self):
         self.clock.reset()
         self.progress.reset()
 
-        if self.identities is not None:
-            self.progress.set_progress(self.uri, 0, len(self.identities))
-            for identity in self.identities:
-                self.progress.set_progress([self.uri, identity], 0, 1)
-        else:
-            self.progress.set_progress(self.uri, 0, 1)
+        self.progress.set_progress(self.uri, 0, len(self.identities) if self.identities is not None else 1)
+
+        # if self.identities is not None:
+        #     self.progress.set_progress(self.uri, 0, len(self.identities))
+        #     for identity in self.identities:
+        #         self.progress.set_progress([self.uri, identity], 0, 1)
+        # else:
+        #     self.progress.set_progress(self.uri, 0, 1)
 
         if self.identities is not None:
             for identity in self.identities:
@@ -121,15 +143,41 @@ class UpdateTask(TaskQueue.Task):
                 else:
                     since, until = self.__data_center.calc_update_range(self.uri, identity)
                     since = max(listing_date, since)
-                self.__data_center.update_local_data(self.uri, identity, (since, until))
-                self.progress.increase_progress([self.uri, identity])
-                self.progress.increase_progress(self.uri)
+
+                patch = self.__data_center.build_local_data_patch(self.uri, identity, (since, until))
+                self.__put_patch((self.uri, identity, patch))
         else:
-            self.__data_center.update_local_data(self.uri, force=self.__force)
+            patch = self.__data_center.build_local_data_patch(self.uri, force=self.__force)
+            self.__put_patch((self.uri, None, patch))
             self.progress.increase_progress(self.uri)
+
+        self.__sub_task_quit = True
+        if self.__future is not None:
+            print('Persistence Task quit status:' + str(self.__future.result()))
 
         self.clock.freeze()
         # self.__ui.task_finish_signal[UpdateTask].emit(self)
+
+    def __execute_persistence(self) -> bool:
+        while True:
+            try:
+                pack = self.__pop_patch()
+                if pack is not None:
+                    uri, identity, patch = pack
+                    self.__data_center.apply_local_data_patch(patch)
+                    if identity is not None:
+                        self.progress.set_progress([self.uri, identity], 1, 1)
+                    self.progress.increase_progress(self.uri)
+                else:
+                    if self.__sub_task_quit:
+                        break
+                    time.sleep(1)
+            except Exception as e:
+                print('e')
+            finally:
+                pass
+        print('Sub task quit.')
+        return True
 
 
 # ---------------------------------- RefreshTask ----------------------------------
@@ -622,7 +670,6 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
         task.set_work_package(uri, identities)
         self.__processing_update_tasks.append(task)
         self.__processing_update_tasks_count.append(task)
-        print('<== Add task: ' + str(task))
         ret = StockAnalysisSystem().get_task_queue().append_task(task)
         # After updating market info, also update stock list cache
         if ret and uri == 'Market.SecuritiesInfo':
@@ -722,7 +769,6 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
 
     def on_task_updated(self, task, change: str):
         if change in ['canceled', 'finished']:
-            print('==> Get task: ' + str(task))
             if task in self.__processing_update_tasks_count:
                 self.task_finish_signal[UpdateTask].emit(task)
 

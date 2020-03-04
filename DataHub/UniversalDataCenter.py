@@ -431,9 +431,9 @@ class UniversalDataCenter:
         """
         # ------------------------- Unpack -------------------------
         try:
-            result, params, data = patch
-            if not result or data is None:
-                return result
+            ret, params, result = patch
+            if not ret or result is None:
+                return ret
             uri, identity, since, until, table = params
         except Exception as e:
             print(e)
