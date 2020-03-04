@@ -44,9 +44,9 @@ class UpdateTask(TaskQueue.Task):
         self.__quit = False
 
         # Thread pool
+        self.__patch_count = 0
+        self.__apply_count = 0
         self.__future = None
-        self.__patch_queue = []
-        self.__sub_task_quit = False
         self.__pool = ThreadPoolExecutor(max_workers=1)
 
         # Parameters
@@ -86,7 +86,8 @@ class UpdateTask(TaskQueue.Task):
     def run(self):
         print('Update task start.')
 
-        self.__future = self.__pool.submit(self.__execute_persistence)
+        self.__patch_count = 0
+        self.__apply_count = 0
         try:
             # Catch "pymongo.errors.ServerSelectionTimeoutError: No servers found yet" exception and continue.
             self.__execute_update()
@@ -107,34 +108,22 @@ class UpdateTask(TaskQueue.Task):
 
     # ------------------------------------- Task -------------------------------------
 
-    def __put_patch(self, patch: tuple):
-        while len(self.__patch_queue) > 50:
-            print('Patch queue is full, waiting...')
-            time.sleep(1)
-        self.__patch_queue.append(patch)
-
-    def __pop_patch(self) -> tuple:
-        return self.__patch_queue.pop(0) if len(self.__patch_queue) > 0 else None
-
     def __execute_update(self):
         self.clock.reset()
         self.progress.reset()
-
         self.progress.set_progress(self.uri, 0, len(self.identities) if self.identities is not None else 1)
 
-        # if self.identities is not None:
-        #     self.progress.set_progress(self.uri, 0, len(self.identities))
-        #     for identity in self.identities:
-        #         self.progress.set_progress([self.uri, identity], 0, 1)
-        # else:
-        #     self.progress.set_progress(self.uri, 0, 1)
+        identities = self.identities if self.identities is not None else [None]
+        for identity in identities:
+            while (self.__patch_count - self.__apply_count > 20) and not self.__quit:
+                time.sleep(0.5)
+                continue
+            if self.__quit:
+                break
 
-        if self.identities is not None:
-            for identity in self.identities:
-                if self.__quit:
-                    break
-                print('------------------------------------------------------------------------------------')
+            print('------------------------------------------------------------------------------------')
 
+            if identity is not None:
                 # Optimise: Update not earlier than listing date.
                 listing_date = self.__data_hub.get_data_utility().get_securities_listing_date(identity, default_since())
 
@@ -143,40 +132,34 @@ class UpdateTask(TaskQueue.Task):
                 else:
                     since, until = self.__data_center.calc_update_range(self.uri, identity)
                     since = max(listing_date, since)
+                time_serial = (since, until)
+            else:
+                time_serial = None
 
-                patch = self.__data_center.build_local_data_patch(self.uri, identity, (since, until))
-                self.__put_patch((self.uri, identity, patch))
-        else:
-            patch = self.__data_center.build_local_data_patch(self.uri, force=self.__force)
-            self.__put_patch((self.uri, None, patch))
-            self.progress.increase_progress(self.uri)
+            patch = self.__data_center.build_local_data_patch(self.uri, identity, time_serial, force=self.__force)
+            self.__patch_count += 1
+            print('Patch count: ' + str(self.__patch_count))
+            self.__future = self.__pool.submit(self.__execute_persistence, self.uri, identity, patch)
 
-        self.__sub_task_quit = True
         if self.__future is not None:
-            print('Persistence Task quit status:' + str(self.__future.result()))
-
+            print('Waiting for persistence task finish...')
+            self.__future.result()
         self.clock.freeze()
         # self.__ui.task_finish_signal[UpdateTask].emit(self)
 
-    def __execute_persistence(self) -> bool:
-        while True:
-            try:
-                pack = self.__pop_patch()
-                if pack is not None:
-                    uri, identity, patch = pack
-                    self.__data_center.apply_local_data_patch(patch)
-                    if identity is not None:
-                        self.progress.set_progress([self.uri, identity], 1, 1)
-                    self.progress.increase_progress(self.uri)
-                else:
-                    if self.__sub_task_quit:
-                        break
-                    time.sleep(1)
-            except Exception as e:
-                print('e')
-            finally:
-                pass
-        print('Sub task quit.')
+    def __execute_persistence(self, uri: str, identity: str, patch: tuple) -> bool:
+        try:
+            if patch is not None:
+                self.__data_center.apply_local_data_patch(patch)
+            if identity is not None:
+                self.progress.set_progress([uri, identity], 1, 1)
+            self.progress.increase_progress(uri)
+        except Exception as e:
+            print('e')
+            return False
+        finally:
+            self.__apply_count += 1
+            print('Persistence count: ' + str(self.__apply_count))
         return True
 
 
