@@ -50,6 +50,7 @@ class ConfigUi(QWidget):
 
         # Command
         self.__process = None
+        self.__pending_command = []
 
         self.init_ui()
 
@@ -187,17 +188,17 @@ class ConfigUi(QWidget):
 
         export_binary = path.join(mongodb_bin, 'mongodump.exe')
 
-        export_command = '"' + export_binary + '"' + \
-                         ' -h ' + mongodb_host + ':' + mongodb_port + \
-                         ' -d ' + 'StockDaily' + \
-                         ' -o' + folder
-        self.execute_command(export_command)
-
-        export_command = '"' + export_binary + '"' + \
-                         ' -h ' + mongodb_host + ':' + mongodb_port + \
-                         ' -d ' + 'StockAnalysisSystem' + \
-                         ' -o' + folder
-        self.execute_command(export_command)
+        export_command_sd = '"' + export_binary + '"' + \
+                            ' -h ' + mongodb_host + ':' + mongodb_port + \
+                            ' -d ' + 'StockDaily' + \
+                            ' -o ' + folder
+        export_command_sas = '"' + export_binary + '"' + \
+                             ' -h ' + mongodb_host + ':' + mongodb_port + \
+                             ' -d ' + 'StockAnalysisSystem' + \
+                             ' -o ' + folder
+        # Workaround
+        self.__pending_command.append(export_command_sas)
+        self.execute_command(export_command_sd)
 
     # -----------------------------------------------------------------------------------
 
@@ -270,6 +271,10 @@ class ConfigUi(QWidget):
         print(tips)
 
     def on_command_finished(self):
+        if len(self.__pending_command) > 0:
+            cmd = self.__pending_command.pop(0)
+            self.execute_command(cmd)
+            return
         tips = 'Process finished...'
         print(tips)
         self.__text_information.append(tips)
