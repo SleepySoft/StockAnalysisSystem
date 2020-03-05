@@ -104,6 +104,7 @@ QQ群：931499339，进群验证码：SleepySoft
 > 加入connection计数与限制，超过后关闭client以释放连接及内存  ->20200214: Done  
 > 为nosql数据库加入索引，提升查询和upsert速度  ->20200214: Done  
 > 使用bulk减少IO操作 -> 20200222: Done  
+> 使用多线程同时下载数据和写入数据库 -> 20200305: Done  
 11. 接入更多财务数据  
 > 股权质押数据 -> 20200212: Done  
 > 限售股解禁: https://tushare.pro/document/2?doc_id=160  
@@ -111,7 +112,7 @@ QQ群：931499339，进群验证码：SleepySoft
 > 增减持数据（2000积分暂时没戏）: https://tushare.pro/document/2?doc_id=175  
 12. 接入股东数据
 > 股权质押数据 -> 20200221: Done  
-> 股东人数和十大股东: https://tushare.pro/document/2?doc_id=166, https://tushare.pro/document/2?doc_id=61, https://tushare.pro/document/2?doc_id=62  
+> 股东人数和十大股东: 20200227: Done
 > 实际控制人数据（巨潮）: http://webapi.cninfo.com.cn/#/dataBrowse?id=266  
 12. 接入交易数据 -> 20200221: Done  
 13. 加入更多分析算法  
