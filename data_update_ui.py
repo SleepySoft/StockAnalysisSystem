@@ -19,6 +19,7 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, Executor
 from Utiltity.common import *
 from Utiltity.ui_utility import *
 from Utiltity.task_queue import *
+from Utiltity.TableViewEx import *
 from DataHub.DataHubEntry import *
 from Database.UpdateTableEx import *
 from stock_analysis_system import StockAnalysisSystem
@@ -264,7 +265,7 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
         # UI related
         self.__info_panel = QLabel(DEFAULT_INFO)
 
-        self.__table_main = EasyQTableWidget()
+        self.__table_main = TableViewEx()
         self.__button_head_page = QPushButton('<<')
         self.__button_prev_page = QPushButton('<')
         self.__button_next_page = QPushButton('>')
@@ -311,9 +312,8 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
         bottom_right_area.addLayout(line)
 
     def __config_control(self):
-        for _ in DataUpdateUi.TABLE_HEADER:
-            self.__table_main.insertColumn(0)
-        self.__table_main.setHorizontalHeaderLabels(DataUpdateUi.TABLE_HEADER)
+        self.__table_main.SetColumn(DataUpdateUi.TABLE_HEADER)
+        self.__table_main.SetCheckableColumn(DataUpdateUi.INDEX_CHECK)
         self.__table_main.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
         self.__button_head_page.clicked.connect(partial(self.on_page_control, '<<'))
@@ -340,15 +340,15 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
         self.__build_post_update_task(uri, None, True)
 
     def on_batch_update(self, force: bool):
-        for i in range(0, self.__table_main.rowCount()):
-            item_check = self.__table_main.item(i, DataUpdateUi.INDEX_CHECK)
-            if item_check.checkState() == Qt.Checked:
-                item_id = self.__table_main.item(i, DataUpdateUi.INDEX_ITEM).text()
-                # A little ugly...To distinguish it's uri or securities ideneity
-                if self.__display_identities is None:
-                    self.__build_post_update_task(item_id, None, force)
-                else:
-                    self.__build_post_update_task(self.__display_uri[0], item_id, force)
+        pass
+        # for i in range(self.__table_main.RowCount()):
+        #     if self.__table_main.GetItemCheckState(i, DataUpdateUi.INDEX_CHECK) == Qt.Checked:
+        #         item_id = self.__table_main.GetItemText(i, DataUpdateUi.INDEX_ITEM)
+        #         # A little ugly...To distinguish it's uri or securities ideneity
+        #         if self.__display_identities is None:
+        #             self.__build_post_update_task(item_id, None, force)
+        #         else:
+        #             self.__build_post_update_task(self.__display_uri[0], item_id, force)
 
     def on_page_control(self, control: str):
         # data_utility = self.__data_hub.get_data_utility()
@@ -376,34 +376,35 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
             self.update_table()
 
     def on_timer(self):
-        for i in range(0, self.__table_main.rowCount()):
-            item_id = self.__table_main.item(i, DataUpdateUi.INDEX_ITEM).text()
-            # A little ugly...To distinguish it's uri or securities identity
-            if self.__display_identities is None:
-                uri = item_id
-                prog_id = uri
-            else:
-                uri = self.__display_uri[0]
-                prog_id = [uri, item_id]
-            for task in self.__processing_update_tasks:
-                if not task.in_work_package(uri):
-                    continue
-                text = []
-                if task.status() in [TaskQueue.Task.STATUS_IDLE, TaskQueue.Task.STATUS_PENDING]:
-                    text.append('等待中...')
-                else:
-                    if task.progress.has_progress(prog_id):
-                        rate = task.progress.get_progress_rate(prog_id)
-                        text.append('%ss' % task.clock.elapsed_s())
-                        text.append('%.2f%%' % (rate * 100))
-                    if task.status() == TaskQueue.Task.STATUS_CANCELED:
-                        text.append('[Canceled]')
-                    elif task.status() == TaskQueue.Task.STATUS_FINISHED:
-                        text.append('[Finished]')
-                    elif task.status() == TaskQueue.Task.STATUS_EXCEPTION:
-                        text.append('[Error]')
-                self.__table_main.item(i, DataUpdateUi.INDEX_STATUS).setText(' | '.join(text))
-                break
+        pass
+        # for i in range(self.__table_main.RowCount()):
+        #     item_id = self.__table_main.GetItemText(i, DataUpdateUi.INDEX_ITEM)
+        #     # A little ugly...To distinguish it's uri or securities identity
+        #     if self.__display_identities is None:
+        #         uri = item_id
+        #         prog_id = uri
+        #     else:
+        #         uri = self.__display_uri[0]
+        #         prog_id = [uri, item_id]
+        #     for task in self.__processing_update_tasks:
+        #         if not task.in_work_package(uri):
+        #             continue
+        #         text = []
+        #         if task.status() in [TaskQueue.Task.STATUS_IDLE, TaskQueue.Task.STATUS_PENDING]:
+        #             text.append('等待中...')
+        #         else:
+        #             if task.progress.has_progress(prog_id):
+        #                 rate = task.progress.get_progress_rate(prog_id)
+        #                 text.append('%ss' % task.clock.elapsed_s())
+        #                 text.append('%.2f%%' % (rate * 100))
+        #             if task.status() == TaskQueue.Task.STATUS_CANCELED:
+        #                 text.append('[Canceled]')
+        #             elif task.status() == TaskQueue.Task.STATUS_FINISHED:
+        #                 text.append('[Finished]')
+        #             elif task.status() == TaskQueue.Task.STATUS_EXCEPTION:
+        #                 text.append('[Error]')
+        #         self.__table_main.SetItemText(i, DataUpdateUi.INDEX_STATUS, ' | '.join(text))
+        #         break
 
     # def closeEvent(self, event):
     #     if self.__task_thread is not None:
@@ -418,26 +419,24 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
     # ---------------------------------------- Table Update ----------------------------------------
 
     def update_table(self):
-        self.__table_main.clear()
-        self.__table_main.setRowCount(0)
-        self.__table_main.setHorizontalHeaderLabels(DataUpdateUi.TABLE_HEADER)
+        self.__table_main.Clear()
+        self.__table_main.SetColumn(DataUpdateUi.TABLE_HEADER)
         self.__table_main.AppendRow(['', '刷新中...', '', '', '', '', '', '', ''])
         task = RefreshTask(self)
         StockAnalysisSystem().get_task_queue().append_task(task)
 
     def update_table_display(self):
-        self.__table_main.clear()
-        self.__table_main.setRowCount(0)
-        self.__table_main.setHorizontalHeaderLabels(DataUpdateUi.TABLE_HEADER)
+        self.__table_main.Clear()
+        self.__table_main.SetColumn(DataUpdateUi.TABLE_HEADER)
 
         for line in self.__display_table_lines:
             self.__table_main.AppendRow(line)
-            index = self.__table_main.rowCount() - 1
+            index = self.__table_main.RowCount() - 1
 
             # Add check box
-            check_item = QTableWidgetItem()
-            check_item.setCheckState(QtCore.Qt.Unchecked)
-            self.__table_main.setItem(index, 0, check_item)
+            # check_item = QTableWidgetItem()
+            # check_item.setCheckState(QtCore.Qt.Unchecked)
+            # self.__table_main.setItem(index, 0, check_item)
 
             # Add detail button
             # Only if currently in top level
@@ -445,14 +444,14 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
                 if line[1] not in DataUpdateUi.NO_SUB_UPDATE_URI:
                     button = QPushButton('Enter')
                     button.clicked.connect(partial(self.on_detail_button, line[1]))
-                    self.__table_main.AddWidgetToCell(index, 6, button)
+                    self.__table_main.SetCellWidget(index, 6, button)
 
             # Add update button
             button_auto = QPushButton('Auto')
             button_force = QPushButton('Force')
             button_auto.clicked.connect(partial(self.on_auto_update_button, line[1], None))
             button_force.clicked.connect(partial(self.on_force_update_button, line[1], None))
-            self.__table_main.AddWidgetToCell(index, 7, [button_auto, button_force])
+            self.__table_main.SetCellWidget(index, 7, [button_auto, button_force])
 
     def update_table_content(self):
         contents = []
