@@ -135,25 +135,22 @@ class TableViewEx(QTableView):
         self.setModel(self.__model)
         self.setHorizontalHeader(self.__header)
 
-        # self.__current_item = QStandardItem()
-        self.__current_item = self.__model.invisibleRootItem()
-
     def Clear(self):
         self.__model.clear()
 
     # -------------------------- Row / Column --------------------------
 
     def RowCount(self) -> int:
-        return self.__current_item.rowCount()
+        return self.__model.rowCount()
 
     def ColumnCount(self) -> int:
-        return self.__current_item.columnCount()
+        return self.__model.columnCount()
 
     def SetRowCount(self, count: int):
-        return self.__current_item.setRowCount(count)
+        return self.__model.setRowCount(count)
 
     def SetColumnCount(self, count: int):
-        return self.__current_item.setColumnCount(count)
+        return self.__model.setColumnCount(count)
 
     def SetColumn(self, columns: [str]):
         self.__model.setHorizontalHeaderLabels(columns)
@@ -166,18 +163,18 @@ class TableViewEx(QTableView):
             item = QStandardItem(str(texts[col]))
             item.setCheckable(self.__header.isColumnCheckable(col))
             row.append(item)
-        self.__current_item.appendRow(row)
+        self.__model.appendRow(row)
 
     def AppendColumn(self, title: str):
         item = QStandardItem(title)
-        self.__current_item.appendColumn(item)
+        self.__model.appendColumn(item)
 
     # ------------------------------ Items ------------------------------
 
     # ------------------------ Gets ------------------------
 
     def GetItem(self, row: int, col: int) -> QStandardItem:
-        return self.__current_item.child(row, col)
+        return self.__model.item(row, col)
 
     def GetItemText(self, row: int, col: int) -> str:
         item = self.GetItem(row, col)
