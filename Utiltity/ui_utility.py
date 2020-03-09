@@ -7,11 +7,12 @@ from functools import partial
 from types import SimpleNamespace
 
 from PyQt5 import QtCore
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QStandardItemModel, QStandardItem
+from PyQt5.QtCore import pyqtSignal, Qt, QAbstractTableModel, QModelIndex, QRect, QVariant
 from PyQt5.QtWidgets import QMainWindow, QApplication, QHBoxLayout, QWidget, QPushButton, \
-    QDockWidget, QAction, qApp, QMessageBox, QDialog, QVBoxLayout, QLabel, QGroupBox, QBoxLayout, QTableWidget, \
-    QTableWidgetItem, QTabWidget, QLayout, QTextEdit, QListWidget, QListWidgetItem, QMenu
+    QDockWidget, QAction, qApp, QMessageBox, QDialog, QVBoxLayout, QLabel, QGroupBox, QTableWidget, \
+    QTableWidgetItem, QTabWidget, QLayout, QTextEdit, QListWidget, QListWidgetItem, QMenu, QHeaderView, \
+    QStyle, QStyleOptionButton, QTableView
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -190,7 +191,12 @@ class CommonMainWindow(QMainWindow):
             Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea | Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea)
         # With this setting, the dock widget cannot be closed
         # dock_wnd.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable)
-        self.addDockWidget(dock_area, dock_wnd)
+        if dock_area != Qt.NoDockWidgetArea:
+            self.addDockWidget(dock_area, dock_wnd)
+        else:
+            self.addDockWidget(Qt.TopDockWidgetArea, dock_wnd)
+            dock_wnd.setFloating(True)
+            dock_wnd.setAllowedAreas(Qt.NoDockWidgetArea)
 
         dock_wnd.setWidget(window)
         if dock_float:
@@ -609,7 +615,7 @@ class DataFrameModel(QtCore.QAbstractTableModel):
             return str(val)
         elif role == DataFrameModel.ValueRole:
             return val
-        if role == DataFrameModel.DtypeRole:
+        if role == DataFrameself.DtypeRole:
             return dt
         return QtCore.QVariant()
 

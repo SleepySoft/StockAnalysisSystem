@@ -1,8 +1,11 @@
+import datetime
+import logging
 import sys
 import traceback
+from functools import partial
 
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
-from PyQt5.QtCore import (pyqtSignal, Qt, QRect)
+from PyQt5.QtCore import (pyqtSignal, Qt, QRect, QTimer)
 from PyQt5.QtWidgets import (QApplication, QHeaderView, QStyle, QStyleOptionButton, QTableView, QHBoxLayout, QWidget,
                              QPushButton)
 
@@ -171,6 +174,8 @@ class TableViewEx(QTableView):
 
     # ------------------------------ Items ------------------------------
 
+    # ------------------------ Gets ------------------------
+
     def GetItem(self, row: int, col: int) -> QStandardItem:
         return self.__current_item.child(row, col)
 
@@ -178,9 +183,37 @@ class TableViewEx(QTableView):
         item = self.GetItem(row, col)
         return item.text() if item is not None else ''
 
+    def GetItemData(self, row: int, col: int) -> any:
+        item = self.GetItem(row, col)
+        return item.data(Qt.UserRole) if item is not None else ''
+
+    def GetItemCheckState(self, row: int, col: int) -> int:
+        item = self.GetItem(row, col)
+        return item.checkState() if item is not None else Qt.Unchecked
+
+    # ------------------------ Sets ------------------------
+
+    def SetItemText(self, row: int, col: int, text: str):
+        item = self.GetItem(row, col)
+        if item is not None:
+            item.setText(text)
+
+    def SetItemData(self, row: int, col: int, data: any):
+        item = self.GetItem(row, col)
+        if item is not None:
+            item.setData(data, Qt.UserRole)
+
+    def SetItemCheckState(self, row: int, col: int, state: int):
+        if state in [Qt.Checked, Qt.Unchecked,  Qt.PartiallyChecked]:
+            item = self.GetItem(row, col)
+            if item is not None:
+                item.setCheckState(state)
+        else:
+            print('Check state should be one of [Qt.Checked, Qt.Unchecked,  Qt.PartiallyChecked]')
+
     # ----------------------------- Widgets -----------------------------
 
-    def AddWidgetToCell(self, row: int, col: int, widgets: [QWidget]):
+    def SetCellWidget(self, row: int, col: int, widgets: [QWidget]):
         layout = QHBoxLayout()
         layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -197,9 +230,6 @@ class TableViewEx(QTableView):
 
     # ------------------------------ Config ------------------------------
 
-    def SetEditableColumn(self, col: int):
-        pass
-
     def SetCheckableColumn(self, col: int):
         self.__header.setCheckableColumn(col)
 
@@ -215,6 +245,10 @@ class TableViewEx(QTableView):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+def on_timer(table: TableViewEx):
+    table.SetItemText(0, 3, str(datetime.datetime.now()))
+
+
 def main():
     app = QApplication(sys.argv)
 
@@ -226,13 +260,23 @@ def main():
     table.setSortingEnabled(True)
     table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
+    timer = QTimer()
+    timer.setInterval(1000)
+    timer.timeout.connect(partial(on_timer, table))
+    timer.start()
+
     for row in range(10):
         row_items = []
         for col in range(len(columns)):
             row_items.append('Item %s,%s' % (row, col))
         table.AppendRow(row_items)
-        table.AddWidgetToCell(row, 4, QPushButton('Push'))
+        table.SetCellWidget(row, 4, QPushButton('Push'))
     table.show()
+
+    timer = QTimer()
+    timer.setInterval(1000)
+    timer.timeout.connect(partial(on_timer, table))
+    timer.start()
 
     sys.exit(app.exec_())
 
@@ -249,10 +293,9 @@ def exception_hook(type, value, tback):
     sys.__excepthook__(type, value, tback)
 
 
-sys.excepthook = exception_hook
-
-
 if __name__ == "__main__":
+    sys.excepthook = exception_hook
+    logging.basicConfig(level='INFO')
     try:
         main()
     except Exception as e:
