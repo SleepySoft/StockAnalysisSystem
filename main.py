@@ -160,8 +160,7 @@ def run_test():
 
 def main():
     sas = stock_analysis_system.StockAnalysisSystem()
-    result = sas.check_initialize()
-    assert result
+    sas.check_initialize()
 
     # run_console()
     run_ui()
