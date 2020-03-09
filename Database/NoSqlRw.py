@@ -740,10 +740,8 @@ def exception_hook(type, value, tback):
     sys.__excepthook__(type, value, tback)
 
 
-sys.excepthook = exception_hook
-
-
 if __name__ == "__main__":
+    sys.excepthook = exception_hook
     try:
         main()
     except Exception as e:
