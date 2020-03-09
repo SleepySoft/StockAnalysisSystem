@@ -340,15 +340,14 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
         self.__build_post_update_task(uri, None, True)
 
     def on_batch_update(self, force: bool):
-        pass
-        # for i in range(self.__table_main.RowCount()):
-        #     if self.__table_main.GetItemCheckState(i, DataUpdateUi.INDEX_CHECK) == Qt.Checked:
-        #         item_id = self.__table_main.GetItemText(i, DataUpdateUi.INDEX_ITEM)
-        #         # A little ugly...To distinguish it's uri or securities ideneity
-        #         if self.__display_identities is None:
-        #             self.__build_post_update_task(item_id, None, force)
-        #         else:
-        #             self.__build_post_update_task(self.__display_uri[0], item_id, force)
+        for i in range(self.__table_main.RowCount()):
+            if self.__table_main.GetItemCheckState(i, DataUpdateUi.INDEX_CHECK) == Qt.Checked:
+                item_id = self.__table_main.GetItemText(i, DataUpdateUi.INDEX_ITEM)
+                # A little ugly...To distinguish it's uri or securities ideneity
+                if self.__display_identities is None:
+                    self.__build_post_update_task(item_id, None, force)
+                else:
+                    self.__build_post_update_task(self.__display_uri[0], item_id, force)
 
     def on_page_control(self, control: str):
         # data_utility = self.__data_hub.get_data_utility()
@@ -361,50 +360,52 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
             max_item_count = len(self.__display_identities)
         max_page = max_item_count // self.__item_per_page
 
+        new_page = self.__page
         if control == '<<':
-            self.__page = 0
+            new_page = 0
         elif control == '<':
-            self.__page = max(self.__page - 1, 0)
+            new_page = max(self.__page - 1, 0)
         elif control == '>':
-            self.__page = min(self.__page + 1, max_page)
+            new_page = min(self.__page + 1, max_page)
         elif control == '>>':
-            self.__page = max_page
+            new_page = max_page
         elif control == '^':
             self.__to_top_level()
 
-        if control in ['<<', '<', '>', '>>', '^', 'r']:
-            self.update_table()
+        if control in ['<<', '<', '>', '>>', 'r']:
+            if control == 'r' or new_page != self.__page:
+                self.update_table()
+                self.__page = new_page
 
     def on_timer(self):
-        pass
-        # for i in range(self.__table_main.RowCount()):
-        #     item_id = self.__table_main.GetItemText(i, DataUpdateUi.INDEX_ITEM)
-        #     # A little ugly...To distinguish it's uri or securities identity
-        #     if self.__display_identities is None:
-        #         uri = item_id
-        #         prog_id = uri
-        #     else:
-        #         uri = self.__display_uri[0]
-        #         prog_id = [uri, item_id]
-        #     for task in self.__processing_update_tasks:
-        #         if not task.in_work_package(uri):
-        #             continue
-        #         text = []
-        #         if task.status() in [TaskQueue.Task.STATUS_IDLE, TaskQueue.Task.STATUS_PENDING]:
-        #             text.append('等待中...')
-        #         else:
-        #             if task.progress.has_progress(prog_id):
-        #                 rate = task.progress.get_progress_rate(prog_id)
-        #                 text.append('%ss' % task.clock.elapsed_s())
-        #                 text.append('%.2f%%' % (rate * 100))
-        #             if task.status() == TaskQueue.Task.STATUS_CANCELED:
-        #                 text.append('[Canceled]')
-        #             elif task.status() == TaskQueue.Task.STATUS_FINISHED:
-        #                 text.append('[Finished]')
-        #             elif task.status() == TaskQueue.Task.STATUS_EXCEPTION:
-        #                 text.append('[Error]')
-        #         self.__table_main.SetItemText(i, DataUpdateUi.INDEX_STATUS, ' | '.join(text))
-        #         break
+        for i in range(self.__table_main.RowCount()):
+            item_id = self.__table_main.GetItemText(i, DataUpdateUi.INDEX_ITEM)
+            # A little ugly...To distinguish it's uri or securities identity
+            if self.__display_identities is None:
+                uri = item_id
+                prog_id = uri
+            else:
+                uri = self.__display_uri[0]
+                prog_id = [uri, item_id]
+            for task in self.__processing_update_tasks:
+                if not task.in_work_package(uri):
+                    continue
+                text = []
+                if task.status() in [TaskQueue.Task.STATUS_IDLE, TaskQueue.Task.STATUS_PENDING]:
+                    text.append('等待中...')
+                else:
+                    if task.progress.has_progress(prog_id):
+                        rate = task.progress.get_progress_rate(prog_id)
+                        text.append('%ss' % task.clock.elapsed_s())
+                        text.append('%.2f%%' % (rate * 100))
+                    if task.status() == TaskQueue.Task.STATUS_CANCELED:
+                        text.append('[Canceled]')
+                    elif task.status() == TaskQueue.Task.STATUS_FINISHED:
+                        text.append('[Finished]')
+                    elif task.status() == TaskQueue.Task.STATUS_EXCEPTION:
+                        text.append('[Error]')
+                self.__table_main.SetItemText(i, DataUpdateUi.INDEX_STATUS, ' | '.join(text))
+                break
 
     # def closeEvent(self, event):
     #     if self.__task_thread is not None:
