@@ -49,6 +49,9 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+delayer_fina_mainbz = Delayer(1000)
+
+
 def __fetch_business_data(**kwargs) -> pd.DataFrame:
     uri = kwargs.get('uri')
     result = check_execute_test_flag(**kwargs)
@@ -58,7 +61,7 @@ def __fetch_business_data(**kwargs) -> pd.DataFrame:
         ts_code = pickup_ts_code(kwargs)
         since, until = normalize_time_serial(period, default_since(), today())
 
-        since_limit = years_ago_of(until, 5)
+        since_limit = years_ago_of(until, 3)
         since = max([since, since_limit])
 
         # Because of the implementation of this interface, we only fetch the annual report
@@ -71,6 +74,8 @@ def __fetch_business_data(**kwargs) -> pd.DataFrame:
         clock = Clock()
         for year in range(since_year, until_year):
             ts_date = '%02d1231' % year
+            # 抱歉，您每分钟最多访问该接口60次
+            delayer_fina_mainbz.delay()
             sub_result = pro.fina_mainbz(ts_code=ts_code, start_date=ts_date, end_date=ts_date)
             result = pd.concat([result, sub_result])
         print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
