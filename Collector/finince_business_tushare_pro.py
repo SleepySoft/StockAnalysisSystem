@@ -24,7 +24,7 @@ finally:
 # ----------------------------------------------------------------------------------------------------------------------
 
 FIELDS = {
-    'Finance.MainBusinessComposition': {
+    'Finance.BusinessComposition': {
     },
 }
 
