@@ -85,6 +85,8 @@ FIELDS = {
         'delist_date':                   '退市日期',
         'is_hs':                         '是否沪深港通标的',                       # N否;H沪股通;S深股通
     },
+    'Market.SecuritiesTags': {
+    },
 }
 
 
@@ -143,19 +145,9 @@ def __fetch_stock_concept(**kwargs) -> pd.DataFrame or None:
     check_execute_dump_flag(result, **kwargs)
 
     if result is not None:
-        result['list_date'] = pd.to_datetime(result['list_date'], format='%Y-%m-%d')
-        result['delist_date'] = pd.to_datetime(result['delist_date'], format='%Y-%m-%d')
-
-        result['listing_date'] = pd.to_datetime(result['list_date'], format='%Y-%m-%d')
-
-        if 'code' not in result.columns:
-            result['code'] = result['ts_code'].apply(lambda val: val.split('.')[0])
-        if 'exchange' not in result.columns:
-            result['exchange'] = result['ts_code'].apply(lambda val: val.split('.')[1])
-            result['exchange'] = result['exchange'].apply(lambda val: 'SSE' if val == 'SH' else val)
-            result['exchange'] = result['exchange'].apply(lambda val: 'SZSE' if val == 'SZ' else val)
-        result['stock_identity'] = result['code'] + '.' + result['exchange']
-
+        del result['ts_code']
+        result['ts_concept'] = result.to_dict('records')
+        result['stock_identity'] = ts_code_to_stock_identity(ts_code)
     return result
 
 
@@ -250,6 +242,8 @@ def query(**kwargs) -> pd.DataFrame or None:
         return __fetch_naming_history(**kwargs)
     elif uri == 'Market.IndexComponent':
         return None
+    elif uri == 'Market.SecuritiesTags':
+        return __fetch_stock_concept(**kwargs)
     else:
         return None
 

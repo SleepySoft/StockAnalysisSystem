@@ -115,11 +115,11 @@ RESULT_FIELDS_SECURITIES_INFO = {
 # --------------------- Market.SecuritiesTags ---------------------
 
 QUERY_FIELDS_SECURITIES_TAGS = {
-    'stock_identity': ([str], [],                   False,  ''),
+    'stock_identity': ([str], [],           False, ''),
 }
 
 RESULT_FIELDS_SECURITIES_TAGS = {
-    'stock_identity': (['str'], [],                 True,  ''),
+    'stock_identity': (['str'], [],         True, ''),
 }
 
 # ---------------------- FinanceData.Audit ----------------------
@@ -245,7 +245,7 @@ DATA_FORMAT_DECLARE = [
     ('Market.SecuritiesInfo', DFTDB, DFTPRX, 'stock_identity', None,          QUERY_FIELDS_SECURITIES_INFO, RESULT_FIELDS_SECURITIES_INFO),
     ('Market.IndexInfo',      DFTDB, DFTPRX, 'index_identity', None,          QUERY_FIELDS_INDEX_INFO, RESULT_FIELDS_INDEX_INFO),
 
-    ('Market.SecuritiesTags', DFTDB, DFTPRX, 'index_identity', None,          QUERY_FIELDS_SECURITIES_TAGS, RESULT_FIELDS_SECURITIES_TAGS),
+    ('Market.SecuritiesTags', DFTDB, DFTPRX, 'stock_identity', None,          QUERY_FIELDS_SECURITIES_TAGS, RESULT_FIELDS_SECURITIES_TAGS),
 
     ('Market.TradeCalender',  DFTDB, DFTPRX, 'exchange', 'trade_date',        QUERY_FIELDS_TRADE_CALENDER,  RESULT_FIELDS_TRADE_CALENDER),
     ('Market.NamingHistory',  DFTDB, DFTPRX, 'stock_identity', 'naming_date', QUERY_FIELDS_NAMING_HISTORY, RESULT_FIELDS_NAMING_HISTORY),

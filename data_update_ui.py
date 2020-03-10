@@ -213,7 +213,7 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
     SUB_UPDATE_STOCK_URI = ['Finance.Audit', 'Finance.BusinessComposition',
                             'Finance.BalanceSheet', 'Finance.IncomeStatement', 'Finance.CashFlowStatement',
                             'Stockholder.PledgeStatus', 'Stockholder.PledgeHistory', 'Stockholder.Statistics',
-                            'TradeData.Stock.Daily', 'Market.NamingHistory']
+                            'TradeData.Stock.Daily', 'Market.NamingHistory', 'Market.SecuritiesTags']
     SUB_UPDATE_INDEX_URI = ['TradeData.Index.Daily']
     SUB_UPDATE_STOCK_EXCHANGE_URI = ['Market.TradeCalender']
 
