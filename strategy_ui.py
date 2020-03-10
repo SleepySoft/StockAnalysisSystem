@@ -18,6 +18,7 @@ from PyQt5.QtWidgets import QHeaderView, QLineEdit, QFileDialog
 from Utiltity.common import *
 from Utiltity.ui_utility import *
 from Utiltity.task_queue import *
+from Utiltity.TableViewEx import *
 from Utiltity.time_utility import *
 from Strategy.StrategyEntry import *
 from Analyzer.AnalyzerUtility import *
@@ -68,8 +69,8 @@ class StrategyUi(QWidget):
         self.__group_result = group
         self.__layout_result = layout
 
-        self.__table_selector = EasyQTableWidget()
-        self.__table_analyzer = EasyQTableWidget()
+        self.__table_selector = TableViewEx()
+        self.__table_analyzer = TableViewEx()
 
         self.__edit_path = QLineEdit('analysis_report.xlsx')
         self.__button_browse = QPushButton('Browse')
@@ -117,14 +118,12 @@ class StrategyUi(QWidget):
         bottom_control_area.addWidget(self.__button_run_strategy)
 
     def __config_control(self):
-        for _ in StrategyUi.TABLE_HEADER_SELECTOR:
-            self.__table_selector.insertColumn(0)
-        self.__table_selector.setHorizontalHeaderLabels(StrategyUi.TABLE_HEADER_SELECTOR)
+        self.__table_selector.SetCheckableColumn(0)
+        self.__table_selector.SetColumn(StrategyUi.TABLE_HEADER_SELECTOR)
         self.__table_selector.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
-        for _ in StrategyUi.TABLE_HEADER_ANALYZER:
-            self.__table_analyzer.insertColumn(0)
-        self.__table_analyzer.setHorizontalHeaderLabels(StrategyUi.TABLE_HEADER_ANALYZER)
+        self.__table_analyzer.SetCheckableColumn(0)
+        self.__table_analyzer.SetColumn(StrategyUi.TABLE_HEADER_ANALYZER)
         self.__table_analyzer.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
         self.__layout_selector.setSpacing(0)
@@ -165,9 +164,9 @@ class StrategyUi(QWidget):
                                     QtCore.QCoreApplication.translate('', '请指定结果输出文件'),
                                     QMessageBox.Close, QMessageBox.Close)
 
-        for i in range(0, self.__table_analyzer.rowCount()):
-            if self.__table_analyzer.item(i, 0).checkState() == QtCore.Qt.Checked:
-                uuid = self.__table_analyzer.item(i, 3).text()
+        for i in range(self.__table_analyzer.RowCount()):
+            if self.__table_analyzer.GetItemCheckState(i, 0) == QtCore.Qt.Checked:
+                uuid = self.__table_analyzer.GetItemText(i, 3)
                 analyzer_list.append(uuid)
 
         self.__lock.acquire()
@@ -179,13 +178,13 @@ class StrategyUi(QWidget):
         self.execute_update_task()
 
     def on_timer(self):
-        for i in range(0, self.__table_analyzer.rowCount()):
-            uuid = self.__table_analyzer.item(i, 3).text()
+        for i in range(self.__table_analyzer.RowCount()):
+            uuid = self.__table_analyzer.GetItemText(i, 3)
             if self.__progress_rate.has_progress(uuid):
                 rate = self.__progress_rate.get_progress_rate(uuid)
-                self.__table_analyzer.item(i, 4).setText('%.2f%%' % (rate * 100))
+                self.__table_analyzer.SetItemText(i, 4, '%.2f%%' % (rate * 100))
             else:
-                self.__table_analyzer.item(i, 4).setText(str(''))
+                self.__table_analyzer.SetItemText(i, 4, '')
 
     def closeEvent(self, event):
         if self.__task_thread is not None:
@@ -200,21 +199,21 @@ class StrategyUi(QWidget):
     # --------------------------------------------------------------------------------------
 
     def update_selector(self):
-        self.__table_selector.clear()
-        self.__table_selector.setRowCount(0)
-        self.__table_selector.setHorizontalHeaderLabels(StrategyUi.TABLE_HEADER_SELECTOR)
+        self.__table_selector.Clear()
+        self.__table_selector.SetRowCount(0)
+        self.__table_selector.SetColumn(StrategyUi.TABLE_HEADER_SELECTOR)
 
         self.__table_selector.AppendRow(['', '所有股票', '当前只支持所有股票，不选默认也是所有股票', '-'])
 
         # Add check box
-        check_item = QTableWidgetItem()
-        check_item.setCheckState(QtCore.Qt.Unchecked)
-        self.__table_selector.setItem(0, 0, check_item)
+        # check_item = QTableWidgetItem()
+        # check_item.setCheckState(QtCore.Qt.Unchecked)
+        # self.__table_selector.setItem(0, 0, check_item)
 
     def update_analyzer(self):
-        self.__table_analyzer.clear()
-        self.__table_analyzer.setRowCount(0)
-        self.__table_analyzer.setHorizontalHeaderLabels(StrategyUi.TABLE_HEADER_ANALYZER)
+        self.__table_analyzer.Clear()
+        self.__table_analyzer.SetRowCount(0)
+        self.__table_analyzer.SetColumn(StrategyUi.TABLE_HEADER_ANALYZER)
 
         for method_uuid, method_name, method_detail in self.__analyzer_info:
             line = []
@@ -225,12 +224,12 @@ class StrategyUi(QWidget):
             line.append('')             # Place holder for status
 
             self.__table_analyzer.AppendRow(line)
-            index = self.__table_analyzer.rowCount() - 1
+            # index = self.__table_analyzer.RowCount() - 1
 
             # Add check box
-            check_item = QTableWidgetItem()
-            check_item.setCheckState(QtCore.Qt.Unchecked)
-            self.__table_analyzer.setItem(index, 0, check_item)
+            # check_item = QTableWidgetItem()
+            # check_item.setCheckState(QtCore.Qt.Unchecked)
+            # self.__table_analyzer.setItem(index, 0, check_item)
 
     # --------------------------------------------------------------------------
 

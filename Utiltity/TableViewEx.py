@@ -112,6 +112,9 @@ class TableViewExModel(QStandardItemModel):
             checked = 0
             unchecked = 0
             for j in range(self.rowCount()):
+                item = self.item(j, i)
+                if item is None:
+                    continue
                 if self.item(j, i).checkState() == Qt.Checked:
                     checked += 1
                 elif self.item(j, i).checkState() == Qt.Unchecked:
