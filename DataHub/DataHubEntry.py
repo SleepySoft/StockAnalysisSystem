@@ -111,6 +111,17 @@ RESULT_FIELDS_SECURITIES_INFO = {
     'listing_date':   (['datetime'], [],            True,  ''),
 }
 
+
+# --------------------- Market.SecuritiesTags ---------------------
+
+QUERY_FIELDS_SECURITIES_TAGS = {
+    'stock_identity': ([str], [],                   False,  ''),
+}
+
+RESULT_FIELDS_SECURITIES_TAGS = {
+    'stock_identity': (['str'], [],                 True,  ''),
+}
+
 # ---------------------- FinanceData.Audit ----------------------
 
 QUERY_FIELDS_FINANCE_AUDIT = {
@@ -135,7 +146,13 @@ QUERY_FIELDS_FINANCE_DATA = {
 
 RESULT_FIELDS_FINANCE_DATA = {
     'stock_identity': (['str'], [],         True, ''),
-    'period':         (['datetime'], [],    True, '')                # The last day of report period
+    'period':         (['datetime'], [],    True, ''),                # The last day of report period
+}
+
+RESULT_FIELDS_MAIN_BUSINESS = {
+    'stock_identity': (['str'], [],         True, ''),
+    'period':         (['datetime'], [],    True, ''),                # The last day of report period
+    'business':       (['dict'], [],        True, ''),
 }
 
 # ------------------------ Stockholder.PledgeStatus ------------------------
@@ -225,20 +242,23 @@ DATA_FORMAT_QUERY_FIELD_INFO = 5
 DATA_FORMAT_RESULT_FIELD_INFO = 6
 
 DATA_FORMAT_DECLARE = [
-    ('Market.SecuritiesInfo', DFTDB, DFTPRX, 'stock_identity', None,         QUERY_FIELDS_SECURITIES_INFO, RESULT_FIELDS_SECURITIES_INFO),
-    ('Market.IndexInfo',      DFTDB, DFTPRX, 'index_identity', None,         QUERY_FIELDS_INDEX_INFO, RESULT_FIELDS_INDEX_INFO),
+    ('Market.SecuritiesInfo', DFTDB, DFTPRX, 'stock_identity', None,          QUERY_FIELDS_SECURITIES_INFO, RESULT_FIELDS_SECURITIES_INFO),
+    ('Market.IndexInfo',      DFTDB, DFTPRX, 'index_identity', None,          QUERY_FIELDS_INDEX_INFO, RESULT_FIELDS_INDEX_INFO),
 
-    ('Market.TradeCalender', DFTDB, DFTPRX,  'exchange', 'trade_date',       QUERY_FIELDS_TRADE_CALENDER,  RESULT_FIELDS_TRADE_CALENDER),
-    ('Market.NamingHistory', DFTDB, DFTPRX,  'stock_identity', 'naming_date', QUERY_FIELDS_NAMING_HISTORY, RESULT_FIELDS_NAMING_HISTORY),
+    ('Market.SecuritiesTags', DFTDB, DFTPRX, 'index_identity', None,          QUERY_FIELDS_SECURITIES_TAGS, RESULT_FIELDS_SECURITIES_TAGS),
 
-    ('Finance.Audit',             DFTDB, DFTPRX, 'stock_identity', 'period', QUERY_FIELDS_FINANCE_AUDIT, RESULT_FIELDS_FINANCE_AUDIT),
-    ('Finance.BalanceSheet',      DFTDB, DFTPRX, 'stock_identity', 'period', QUERY_FIELDS_FINANCE_DATA, RESULT_FIELDS_FINANCE_DATA),
-    ('Finance.IncomeStatement',   DFTDB, DFTPRX, 'stock_identity', 'period', QUERY_FIELDS_FINANCE_DATA, RESULT_FIELDS_FINANCE_DATA),
-    ('Finance.CashFlowStatement', DFTDB, DFTPRX, 'stock_identity', 'period', QUERY_FIELDS_FINANCE_DATA, RESULT_FIELDS_FINANCE_DATA),
+    ('Market.TradeCalender',  DFTDB, DFTPRX, 'exchange', 'trade_date',        QUERY_FIELDS_TRADE_CALENDER,  RESULT_FIELDS_TRADE_CALENDER),
+    ('Market.NamingHistory',  DFTDB, DFTPRX, 'stock_identity', 'naming_date', QUERY_FIELDS_NAMING_HISTORY, RESULT_FIELDS_NAMING_HISTORY),
+
+    ('Finance.Audit',                   DFTDB, DFTPRX, 'stock_identity', 'period', QUERY_FIELDS_FINANCE_AUDIT, RESULT_FIELDS_FINANCE_AUDIT),
+    ('Finance.BalanceSheet',            DFTDB, DFTPRX, 'stock_identity', 'period', QUERY_FIELDS_FINANCE_DATA, RESULT_FIELDS_FINANCE_DATA),
+    ('Finance.IncomeStatement',         DFTDB, DFTPRX, 'stock_identity', 'period', QUERY_FIELDS_FINANCE_DATA, RESULT_FIELDS_FINANCE_DATA),
+    ('Finance.CashFlowStatement',       DFTDB, DFTPRX, 'stock_identity', 'period', QUERY_FIELDS_FINANCE_DATA, RESULT_FIELDS_FINANCE_DATA),
+    ('Finance.MainBusinessComposition', DFTDB, DFTPRX, 'stock_identity', 'period', QUERY_FIELDS_FINANCE_DATA, RESULT_FIELDS_MAIN_BUSINESS),
 
     ('Stockholder.PledgeStatus',  DFTDB, DFTPRX, 'stock_identity', 'due_date', QUERY_FIELDS_PLEDGE_STATUS, RESULT_FIELDS_PLEDGE_STATUS),
     ('Stockholder.PledgeHistory', DFTDB, DFTPRX, 'stock_identity', 'due_date', QUERY_FIELDS_PLEDGE_HISTORY, RESULT_FIELDS_PLEDGE_HISTORY),
-    ('Stockholder.Statistics',    DFTDB, DFTPRX, 'stock_identity', 'period', QUERY_FIELDS_STOCKHOLDER_STATISTICS, RESULT_FIELDS_STOCKHOLDER_STATISTICS),
+    ('Stockholder.Statistics',    DFTDB, DFTPRX, 'stock_identity', 'period',   QUERY_FIELDS_STOCKHOLDER_STATISTICS, RESULT_FIELDS_STOCKHOLDER_STATISTICS),
 
     ('TradeData.Stock.Daily',     'StockDaily', DFTPRX, 'stock_identity', 'trade_date', QUERY_FIELDS_TRADE_DAILY, RESULT_FIELD_TRADE_DAILY),
     ('TradeData.Index.Daily',     'StockDaily', DFTPRX, 'stock_identity', 'trade_date', QUERY_FIELDS_TRADE_DAILY, RESULT_FIELD_TRADE_DAILY),
