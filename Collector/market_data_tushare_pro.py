@@ -133,6 +133,32 @@ def __fetch_securities_info(**kwargs) -> pd.DataFrame or None:
     return result
 
 
+def __fetch_stock_concept(**kwargs) -> pd.DataFrame or None:
+    result = check_execute_test_flag(**kwargs)
+    if result is None:
+        ts_code = pickup_ts_code(kwargs)
+        pro = ts.pro_api(config.TS_TOKEN)
+        result = pro.concept_detail(ts_code=ts_code, fields=[
+            'id', 'concept_name', 'ts_code', 'name', 'in_date', 'out_date'])
+    check_execute_dump_flag(result, **kwargs)
+
+    if result is not None:
+        result['list_date'] = pd.to_datetime(result['list_date'], format='%Y-%m-%d')
+        result['delist_date'] = pd.to_datetime(result['delist_date'], format='%Y-%m-%d')
+
+        result['listing_date'] = pd.to_datetime(result['list_date'], format='%Y-%m-%d')
+
+        if 'code' not in result.columns:
+            result['code'] = result['ts_code'].apply(lambda val: val.split('.')[0])
+        if 'exchange' not in result.columns:
+            result['exchange'] = result['ts_code'].apply(lambda val: val.split('.')[1])
+            result['exchange'] = result['exchange'].apply(lambda val: 'SSE' if val == 'SH' else val)
+            result['exchange'] = result['exchange'].apply(lambda val: 'SZSE' if val == 'SZ' else val)
+        result['stock_identity'] = result['code'] + '.' + result['exchange']
+
+    return result
+
+
 def __fetch_indexes_info(**kwargs) -> pd.DataFrame or None:
     SUPPORT_MARKETS = ['SSE', 'SZSE', 'CSI', 'CICC', 'SW', 'MSCI', 'OTH']
 
