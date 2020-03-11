@@ -192,7 +192,11 @@ class CommonMainWindow(QMainWindow):
         # With this setting, the dock widget cannot be closed
         # dock_wnd.setFeatures(QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable)
         if dock_area != Qt.NoDockWidgetArea:
-            self.addDockWidget(dock_area, dock_wnd)
+            if dock_area == Qt.AllDockWidgetAreas:
+                self.addDockWidget(Qt.TopDockWidgetArea, dock_wnd)
+                dock_wnd.setFloating(True)
+            else:
+                self.addDockWidget(dock_area, dock_wnd)
         else:
             self.addDockWidget(Qt.TopDockWidgetArea, dock_wnd)
             dock_wnd.setFloating(True)
