@@ -53,6 +53,8 @@ goto end
 	pip install pymongo
 	pip install openpyxl
 	pip install tushare
+	pip install matplotlib
+	pip install --upgrade mplfinance
 
 	pip uninstall pyinstaller
 	pip install https://github.com/pyinstaller/pyinstaller/archive/develop.zip

@@ -220,7 +220,8 @@ class IdentityTableExtender(UniversalDataTable.Extender):
 
     def parts(self, uri: str, identity: str or [str], time_serial: tuple, extra: dict, fields: list) -> \
             [(str, str or [str], tuple, dict, list)]:
-        super(IdentityTableExtender, self).parts(uri, identity, time_serial, extra, fields)
+        if not isinstance(identity, (list, tuple)):
+            identity = [identity]
         return [(uri, _id, time_serial, extra, fields) for _id in identity]
 
     def table_name(self, uri: str, identity: str, time_serial: tuple, extra: dict, fields: list) -> str:

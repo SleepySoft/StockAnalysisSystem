@@ -168,19 +168,20 @@ class UniversalDataTable:
 
     class Extender:
         def __init__(self):
-            self.uri = ''
-            self.identity = ''
-            self.time_serial = ()
-            self.extra = {}
-            self.fields = []
+            pass
+            # self.uri = ''
+            # self.identity = ''
+            # self.time_serial = ()
+            # self.extra = {}
+            # self.fields = []
 
         def parts(self, uri: str, identity: str or [str], time_serial: tuple, extra: dict, fields: list) -> \
                 [(str, str or [str], tuple, dict, list)]:
-            self.uri = uri
-            self.identity = identity
-            self.time_serial = time_serial
-            self.extra = extra
-            self.fields = fields
+            # self.uri = uri
+            # self.identity = identity
+            # self.time_serial = time_serial
+            # self.extra = extra
+            # self.fields = fields
             return [(uri, identity, time_serial, extra, fields)]
 
         def table_name(self, uri: str, identity: str, time_serial: tuple, extra: dict, fields: list) -> str:
