@@ -204,13 +204,14 @@ def __fetch_stock_holder_statistics_piece(**kwargs) -> pd.DataFrame or None:
         result = pd.merge(result, result_count, how='left', on='end_date', sort=False)
         result['ts_code'] = ts_code
 
+        # Ts data may have issues, just detect it.
         for index, row in result.iterrows():
             end_date = row['end_date']
             stockholder_top10 = row['stockholder_top10']
             stockholder_top10_nt = row['stockholder_top10_nt']
-            if len(stockholder_top10) != 10:
+            if not pd.isna(stockholder_top10) and len(stockholder_top10) != 10:
                 print('%s: stockholder_top10 length is %s' % (end_date, len(stockholder_top10)))
-            if len(stockholder_top10_nt) != 10:
+            if not pd.isna(stockholder_top10_nt) and len(stockholder_top10_nt) != 10:
                 print('%s: stockholder_top10_nt length is %s' % (end_date, len(stockholder_top10_nt)))
 
     check_execute_dump_flag(result, **kwargs)
