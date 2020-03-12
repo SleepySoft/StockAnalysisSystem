@@ -28,7 +28,7 @@ goto end
 :help
 	echo -b or no param : Build
 	echo -c             : Clean Build
-	echo -echo          : Setup cuurent env
+	echo -e             : Setup cuurent env
 	echo -s             : Re-setup virtual enviroment
 	echo -d             : Delete virtual enviroment
 	goto end
@@ -45,16 +45,21 @@ goto end
 	goto end
 
 :setup_env
-	pip install bs4
-	pip install lxml
-	pip install requests
-	pip install pandas
-	pip install pyqt5
-	pip install pymongo
-	pip install openpyxl
-	pip install tushare
-	pip install matplotlib
-	pip install --upgrade mplfinance
+	Rem Use 5.12.0 to match another lib's dependency. But it does not have to.
+	pip install --user pyqt5==5.12.0
+	pip install --user pyqtwebengine==5.12.0
+	pip install --user bs4
+	pip install --user lxml
+	pip install --user requests
+	pip install --user pandas
+	pip install --user pymongo
+	pip install --user openpyxl
+	pip install --user tushare
+	pip install --user matplotlib
+	pip install --user mpl_finance
+	
+	Rem Note that mpl_finance will be deprecated and the new lib named mplfinance whose api is way different from mpl_finance
+	Rem pip install --user --upgrade mplfinance --proxy=
 
 	pip uninstall pyinstaller
 	pip install https://github.com/pyinstaller/pyinstaller/archive/develop.zip

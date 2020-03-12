@@ -1,4 +1,33 @@
-﻿"C:\Program Files\MongoDB\Server\4.0\bin\mongodump.exe" -h 127.0.0.1 -d StockDaily -o C:\
+
+###########################################################################################################################################
+
+虚拟环境
+
+pipenv install
+pipenv shell
+pipenv --rm
+
+
+Anaconda
+
+conda info --envs
+conda create -n xx python=3.7
+conda env remove -p xx
+conda env remove -n xx
+activate xx
+deactivate
+
+proxy:
+add lines to .condarc
+proxy_servers:
+  http: http://domainname\username:password@proxyserver:port
+  https: http://domainname\username:password@proxyserver:port
+
+  
+###########################################################################################################################################
+
+
+"C:\Program Files\MongoDB\Server\4.0\bin\mongodump.exe" -h 127.0.0.1 -d StockDaily -o C:\
 "C:\Program Files\MongoDB\Server\4.0\bin\mongodump.exe" -h 127.0.0.1 -d StockAnalysisSystem -o C:\
 
 "C:\Program Files\MongoDB\Server\4.0\bin\mongorestore.exe" --host 127.0.0.1 --port 27017 -d StockDaily Data
