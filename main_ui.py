@@ -80,6 +80,8 @@ class MainWindow(CommonMainWindow):
         self.modules_init()
         self.modules_ui_init()
 
+        self.init_extension_window()
+
     # ----------------------------- Setup and UI -----------------------------
 
     def init_ui(self):
@@ -207,6 +209,10 @@ class MainWindow(CommonMainWindow):
 
     def modules_ui_init(self):
         self.__alias_table_ui.Init()
+
+    def init_extension_window(self):
+        sas = StockAnalysisSystem()
+        extension_mgr = sas.get_extension_manager()
 
     # ----------------------------- UI Events -----------------------------
 

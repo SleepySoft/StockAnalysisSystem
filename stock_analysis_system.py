@@ -27,6 +27,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
 
         self.__collector_plugin = None
         self.__strategy_plugin = None
+        self.__extension__plugin = None
 
         self.__data_hub_entry = None
         self.__strategy_entry = None
@@ -109,9 +110,11 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
 
         self.__strategy_plugin = plugin_manager.PluginManager(path.join(root_path, 'Analyzer'))
         self.__collector_plugin = plugin_manager.PluginManager(path.join(root_path, 'Collector'))
+        self.__extension__plugin = plugin_manager.PluginManager(path.join(root_path, 'Extension'))
 
         self.__strategy_plugin.refresh()
         self.__collector_plugin.refresh()
+        self.__extension__plugin.refresh()
 
         self.__data_hub_entry = DataHubEntry.DataHubEntry(self.__database_entry, self.__collector_plugin)
         self.__strategy_entry = StrategyEntry.StrategyEntry(self.__strategy_plugin,
@@ -136,6 +139,9 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
 
     def get_strategy_entry(self):
         return self.__strategy_entry if self.check_initialize() else None
+
+    def get_extension_manager(self):
+        return self.__extension__plugin
 
 
 
