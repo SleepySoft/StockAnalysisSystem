@@ -18,6 +18,7 @@ https://github.com/SleepySoft/StockAnalysisSystem
   
 # 最后更新内容：
 接入交易数据 -> 20200221: Done  
+最近腰伤卧床，更新延迟 -> 2020314  
   
 # 联系作者
 如果有任何意见及建议，或者对此项目感兴趣的，请联系我：  
