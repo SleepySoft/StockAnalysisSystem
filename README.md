@@ -12,13 +12,13 @@ https://gitee.com/SleepySoft/StockAnalysisSystem
 https://github.com/SleepySoft/StockAnalysisSystem  
   
 # 网盘下载：
-应网友要求，对于网络访问受限的用户，提供网盘下载：  
+应网友要求，对于网络访问受限的用户，提供网盘下载（离线数据在此）：  
 链接：https://pan.baidu.com/s/1H-viluqOoKrKRNJJmU17jg  
 提取码：4r3u  
   
 # 最后更新内容：
 接入交易数据 -> 20200221: Done  
-最近腰伤卧床，更新延迟 -> 2020314  
+最近腰伤卧床，更新延迟 -> 20200314  
   
 # 联系作者
 如果有任何意见及建议，或者对此项目感兴趣的，请联系我：  
