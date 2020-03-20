@@ -1,4 +1,4 @@
-"C:\Program Files\MongoDB\Server\4.0\bin\mongodump.exe" -h 127.0.0.1 -d StockDaily -o C:\
+﻿"C:\Program Files\MongoDB\Server\4.0\bin\mongodump.exe" -h 127.0.0.1 -d StockDaily -o C:\
 "C:\Program Files\MongoDB\Server\4.0\bin\mongodump.exe" -h 127.0.0.1 -d StockAnalysisSystem -o C:\
 
 "C:\Program Files\MongoDB\Server\4.0\bin\mongorestore.exe" --host 127.0.0.1 --port 27017 -d StockDaily Data
@@ -69,6 +69,29 @@ https://blog.csdn.net/zhuzbYR/article/details/99708449
 
 
 
+###########################################################################################################################################
+
+Windows Server 2012上，程序运行时出现：
+
+An error window appears, saying "This Windows version (6.3.9600) does not support the required bluetooth API. Consider updating to a more recent Windows (10.0.10685 or above)."
+
+解决方案：
+
+第一步：找到vnpy的QT的bin路径，例如我的是：C:\vnstudio\Lib\site-packages\PyQt5\Qt\bin
+
+第二步：将Qt5Bluetooth.dll重命名为其它名字，例如：Qt5Bluetooth.dll1就OK了
+
+https://github.com/GIS4WRF/gis4wrf/issues/103
+
+https://zhuanlan.zhihu.com/p/112387918
+
+
+###########################################################################################################################################
+
+Windows Server 2012上mongodb跑不起来
+
+https://support.microsoft.com/zh-cn/help/2977003/the-latest-supported-visual-c-downloads
+下载vc_redist.x64.exe
 
 
 
