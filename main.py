@@ -15,7 +15,9 @@ from Utiltity.ui_utility import *
 
 def run_ui():
     app = QApplication(sys.argv)
+
     sas = stock_analysis_system.StockAnalysisSystem()
+    sas.check_initialize()
 
     while not sas.is_initialized():
         dlg = WrapperQDialog(config_ui.ConfigUi())
@@ -29,6 +31,8 @@ def run_ui():
 
 def update_local(update_list: [str], force: bool = False):
     sas = stock_analysis_system.StockAnalysisSystem()
+    sas.check_initialize()
+
     data_hub = sas.get_data_hub_entry()
     data_center = data_hub.get_data_center()
     data_utility = data_hub.get_data_utility()
@@ -159,9 +163,6 @@ def run_test():
     
 
 def main():
-    sas = stock_analysis_system.StockAnalysisSystem()
-    sas.check_initialize()
-
     # run_console()
     run_ui()
     # run_test()
