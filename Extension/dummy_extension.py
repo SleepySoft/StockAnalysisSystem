@@ -61,11 +61,13 @@ def init(sas: StockAnalysisSystem) -> bool:
     return True
 
 
-def period():
+def period(tick_ns: int):
     """
-    If you specify 'period' in plugin_capacities(). This function will be invoked periodic per 100ms.
+    If you specify 'period' in plugin_capacities(). This function will be invoked periodically by MAIN thread,
+        the invoke interval should be more or less than 100ms.
     Note that if this extension spends too much time on this function. The interface will be blocked.
     And this extension will be removed from running list.
+    :param tick_ns: The current tick of system in ns
     :return: None
     """
     print('Period...')

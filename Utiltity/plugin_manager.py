@@ -98,7 +98,7 @@ class PluginManager:
             modules = [modules]
         result_list = []
         for module in modules:
-            result_obj = self.__safe_execute(module, function, parameters)
+            result_obj = self.__safe_execute(module, function, *(), **parameters)
             if result_obj is not None:
                 result_list.append(result_obj)
                 if end_if_success:
@@ -107,13 +107,10 @@ class PluginManager:
 
     # --------------------------------------- Execute ---------------------------------------
 
-    def __safe_execute(self, module: object, function: str, parameters: dict = None) -> object:
+    def __safe_execute(self, module: object, _function: str, *argc, **argv) -> object:
         try:
-            func = getattr(module, function)
-            if parameters is not None:
-                return_obj = func(**parameters)
-            else:
-                return_obj = func()
+            func = getattr(module, _function)
+            return_obj = func(*argc, **argv)
         except Exception as e:
             return_obj = None
             print("Function run fail.")

@@ -58,9 +58,14 @@ class IdentityNameInfoCache:
         id_s = self.__normalize_id_name(_id)
         name_s = self.__normalize_id_name(name)
         self.__check_init_id_space(id_s)
-        if name_s not in self.__identity_name_dict[id_s]:
-            self.__identity_name_dict[id_s].append(name_s)
-        self.__name_identity_dict[name_s] = id_s
+        try:
+            if name_s not in self.__identity_name_dict[id_s]:
+                self.__identity_name_dict[id_s].append(name_s)
+            self.__name_identity_dict[name_s] = id_s
+        except Exception as e:
+            print('Error')
+        finally:
+            pass
 
     def set_id_info(self, _id: str, key: str, val: any):
         id_s = self.__normalize_id_name(_id)

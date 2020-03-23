@@ -172,11 +172,11 @@ class CommonMainWindow(QMainWindow):
     def get_sub_window(self, name: str) -> SimpleNamespace or None:
         return self.__sub_window_table.get(name, None)
 
-    def add_sub_window(self, window: QWidget, name: str, config: dict):
+    def add_sub_window(self, window: QWidget, name: str, config: dict, menu: QMenu = None):
         sub_window_data = SimpleNamespace()
         sub_window_data.config = config
         self.__setup_sub_window_dock(window, config, sub_window_data)
-        self.__setup_sub_window_menu(config, sub_window_data)
+        self.__setup_sub_window_menu(config, sub_window_data, menu)
         self.__setup_sub_window_action(config, sub_window_data)
         self.__sub_window_table[name] = sub_window_data
 
@@ -213,12 +213,12 @@ class CommonMainWindow(QMainWindow):
             dock_wnd.hide()
         sub_window_data.dock_wnd = dock_wnd
 
-    def __setup_sub_window_menu(self, config: dict, sub_window_data: SimpleNamespace):
+    def __setup_sub_window_menu(self, config: dict, sub_window_data: SimpleNamespace, menu: QMenu):
         menu_present = config.get('MenuPresent', False)
         dock_wnd = sub_window_data.dock_wnd if hasattr(sub_window_data, 'dock_wnd') else None
 
         if menu_present and dock_wnd is not None:
-            menu_view = self.menu_view
+            menu_view = self.menu_view if menu is None else menu
             menu_view.addAction(dock_wnd.toggleViewAction())
 
     def __setup_sub_window_action(self, config: dict, sub_window_data: SimpleNamespace):

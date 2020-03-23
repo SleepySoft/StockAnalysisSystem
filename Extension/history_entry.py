@@ -22,8 +22,10 @@ try:
     from Extension.History.filter import *
     from Extension.History.indexer import *
     from Extension.History.viewer_ex import *
-    from Extension.History.Utility.ui_utility import *
+    from Extension.History.Utility.history_public import *
+    from Extension.History.Utility.viewer_utility import *
 
+    from Utiltity.ui_utility import *
     from DataHub.DataHubEntry import DataHubEntry
     from Database.DatabaseEntry import DatabaseEntry
     from stock_analysis_system import StockAnalysisSystem
@@ -35,8 +37,10 @@ except Exception as e:
     from Extension.History.filter import *
     from Extension.History.indexer import *
     from Extension.History.viewer_ex import *
-    from Extension.History.Utility.ui_utility import *
+    from Extension.History.Utility.history_public import *
+    from Extension.History.Utility.viewer_utility import *
 
+    from Utiltity.ui_utility import *
     from DataHub.DataHubEntry import DataHubEntry
     from Database.DatabaseEntry import DatabaseEntry
     from stock_analysis_system import StockAnalysisSystem
@@ -56,6 +60,9 @@ class StockHistoryUi(QMainWindow):
         self.__time_axis.set_agent(self)
         self.__time_axis.set_history_core(self.__history)
 
+        self.__thread_top = TimeThreadBase()
+        self.__thread_bottom = TimeThreadBase()
+
         self.__combo_name = QComboBox()
         self.__button_ensure = QPushButton('确定')
 
@@ -72,7 +79,7 @@ class StockHistoryUi(QMainWindow):
         main_layout.addWidget(group_box)
 
         group_layout.addLayout(horizon_layout([
-            'Securities', self.__combo_name, self.__button_ensure,
+            QLabel('Securities'), self.__combo_name, self.__button_ensure,
         ]))
 
     def __config_ui(self):
@@ -84,6 +91,13 @@ class StockHistoryUi(QMainWindow):
         self.setMinimumSize(QSize(600, 400))
 
         self.__button_ensure.clicked.connect(self.on_button_ensure)
+
+        self.__thread_top.set_thread_min_track_width(9999)
+        self.__thread_bottom.set_thread_min_track_width(9999)
+
+        self.__time_axis.set_axis_layout(LAYOUT_HORIZON)
+        self.__time_axis.add_history_thread(self.__thread_bottom, ALIGN_LEFT)
+        self.__time_axis.add_history_thread(self.__thread_top, ALIGN_RIGHT)
 
     def on_button_ensure(self):
         stock_input = self.__combo_name.currentText()
@@ -102,8 +116,11 @@ class StockHistoryUi(QMainWindow):
         base_path = path.dirname(path.abspath(__file__))
         history_path = path.join(base_path, 'History')
         depot_path = path.join(history_path, 'depot')
+
         his_file = path.join(depot_path, securities + '.his')
         trade_data = self.__sas.get_data_hub_entry().get_data_center().query('TradeData.Stock.Daily', securities)
+
+        self.__history.load_source(his_file)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -132,29 +149,28 @@ def plugin_capacities() -> list:
 sasEntry = None
 
 
-def init(sas: StockAnalysisSystem):
+def init(sas: StockAnalysisSystem) -> bool:
     try:
         global sasEntry
         sasEntry = sas
-        from Extension.History.main import HistoryUi
-        main_wnd = HistoryUi()
     except Exception as e:
-        main_wnd = None
+        print(e)
+        return False
     finally:
         pass
-    return main_wnd
+    return True
 
 
-def period():
+def period(tick_ns: int):
     pass
 
 
-def thread():
+def thread(context: dict):
     pass
 
 
-def widget() -> QWidget:
-    pass
+def widget(parent: QWidget) -> (QWidget, dict):
+    return StockHistoryUi(sasEntry), {'name': 'History', 'show': False}
 
 
 

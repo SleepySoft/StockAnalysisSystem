@@ -33,6 +33,8 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         self.__strategy_entry = None
         self.__database_entry = None
 
+        self.__extension_manager = None
+
     # ---------------------------------------- Config ----------------------------------------
 
     def get_config(self):
@@ -114,11 +116,17 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
 
         self.__strategy_plugin.refresh()
         self.__collector_plugin.refresh()
-        self.__extension__plugin.refresh()
+        # self.__extension__plugin.refresh()
 
         self.__data_hub_entry = DataHubEntry.DataHubEntry(self.__database_entry, self.__collector_plugin)
         self.__strategy_entry = StrategyEntry.StrategyEntry(self.__strategy_plugin,
                                                             self.__data_hub_entry, self.__database_entry)
+
+        from extension import ExtensionManager
+        self.__extension_manager = ExtensionManager(self, self.__extension__plugin)
+        self.__extension_manager.init()
+        self.__extension_manager.activate_extensions()
+
         self.__task_queue.start()
 
         print('Stock Analysis System Initialization Done, Time spending: ' + str(clock.elapsed_ms()) + ' ms')
@@ -141,7 +149,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         return self.__strategy_entry if self.check_initialize() else None
 
     def get_extension_manager(self):
-        return self.__extension__plugin
+        return self.__extension_manager
 
 
 
