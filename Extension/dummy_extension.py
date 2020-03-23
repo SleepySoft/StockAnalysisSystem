@@ -33,11 +33,12 @@ def plugin_adapt(method: str) -> bool:
 
 
 def plugin_capacities() -> list:
-    return [
-        'period',
-        'thread',
-        'widget',
-    ]
+    return []
+    # return [
+    #     'period',
+    #     'thread',
+    #     'widget',
+    # ]
 
 
 # ----------------------------------------------------------------------------------------------------------------------
