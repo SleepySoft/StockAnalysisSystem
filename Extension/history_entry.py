@@ -75,11 +75,11 @@ class StockHistoryUi(QWidget):
 
         group_box, group_layout = create_v_group_box('Securities')
 
-        main_layout.addWidget(self.__time_axis)
+        main_layout.addWidget(self.__time_axis, 99)
         main_layout.addWidget(group_box)
 
         group_layout.addLayout(horizon_layout([
-            QLabel('Securities'), self.__combo_name, self.__button_ensure,
+            self.__combo_name, self.__button_ensure,
         ]))
 
     def __config_ui(self):
@@ -98,6 +98,9 @@ class StockHistoryUi(QWidget):
         self.__time_axis.set_axis_layout(LAYOUT_HORIZON)
         self.__time_axis.add_history_thread(self.__thread_bottom, ALIGN_LEFT)
         self.__time_axis.add_history_thread(self.__thread_top, ALIGN_RIGHT)
+
+        self.setMinimumWidth(1000)
+        self.setMinimumHeight(800)
 
     def on_button_ensure(self):
         stock_input = self.__combo_name.currentText()
