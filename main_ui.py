@@ -50,6 +50,7 @@ class MainWindow(CommonMainWindow):
         # --------- init Member ---------
 
         self.__menu_config = None
+        self.__menu_extension = None
         self.__translate = QtCore.QCoreApplication.translate
 
         # ---------- Modules and Sub Window ----------
@@ -80,7 +81,7 @@ class MainWindow(CommonMainWindow):
         self.modules_init()
         self.modules_ui_init()
 
-        self.init_extension_window()
+        self.extension_window_init()
 
     # ----------------------------- Setup and UI -----------------------------
 
@@ -100,10 +101,13 @@ class MainWindow(CommonMainWindow):
         self.__menu_config = QMenu('Config')
         self.__menu_config.addAction(config_action)
 
+        self.__menu_extension = QMenu('Extension')
+
         menu_bar = self.menuBar()
         menu_bar.addMenu(self.menu_file)
         menu_bar.addMenu(self.menu_view)
         menu_bar.addMenu(self.__menu_config)
+        menu_bar.addMenu(self.__menu_extension)
         menu_bar.addMenu(self.menu_help)
 
     def init_sub_window(self):
@@ -210,9 +214,19 @@ class MainWindow(CommonMainWindow):
     def modules_ui_init(self):
         self.__alias_table_ui.Init()
 
-    def init_extension_window(self):
+    def extension_window_init(self):
         sas = StockAnalysisSystem()
-        extension_mgr = sas.get_extension_manager()
+        extension_manager = sas.get_extension_manager()
+        widgets_config = extension_manager.create_extensions_widgets(self)
+        for widget, _config in widgets_config:
+            self.add_sub_window(widget, _config.get('name'), {
+                'DockFloat': True,
+                'MenuPresent': True,
+                'DockArea': Qt.AllDockWidgetAreas,
+                'DockShow': _config.get('show', False),
+                'DockName': _config.get('name', 'Extension'),
+                'ActionTips': _config.get('name', 'Extension'),
+            }, self.__menu_extension)
 
     # ----------------------------- UI Events -----------------------------
 
