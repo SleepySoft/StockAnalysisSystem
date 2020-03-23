@@ -125,7 +125,6 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         from extension import ExtensionManager
         self.__extension_manager = ExtensionManager(self, self.__extension__plugin)
         self.__extension_manager.init()
-        self.__extension_manager.activate_extensions()
 
         self.__task_queue.start()
 

@@ -27,8 +27,10 @@ class ExtensionManager:
         self.__plugin = plugin
 
         # Timer for update status
+        self.__prev_tick = 0
         self.__timer = QTimer()
-        self.__timer.setInterval(100)
+        self.__timer.setInterval(1000)
+        self.__timer.timeout.connect(self.__poll_period_extensions)
 
         # Threads
         self.__extension_threads = {}
@@ -54,8 +56,7 @@ class ExtensionManager:
                 if 'widget' in capacities:
                     self.__widget_extension.append(module)
                 self.__extension_cap[module] = capacities
-        ret = self.init_extensions()
-        return ret
+        return self.init_extensions() and self.activate_extensions()
 
     def init_extensions(self) -> bool:
         fail_extension = []
@@ -76,7 +77,6 @@ class ExtensionManager:
         return True
 
     def activate_extensions(self) -> bool:
-        self.__timer.timeout.connect(self.__poll_period_extensions)
         self.__timer.start()
         self.__run_thread_extensions()
         return True
@@ -99,8 +99,12 @@ class ExtensionManager:
         return True
 
     def __poll_period_extensions(self) -> bool:
+        tick_ns = time.time_ns()
+        if self.__prev_tick == 0:
+            self.__prev_tick = tick_ns
         for extension in self.__period_extension:
-            self.__plugin.execute_module_function(extension, 'period', {'tick_ns': time.process_time_ns()})
+            self.__plugin.execute_module_function(extension, 'period', {'interval_ns': tick_ns - self.__prev_tick})
+        self.__prev_tick = tick_ns
         return True
 
 

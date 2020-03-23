@@ -50,7 +50,7 @@ finally:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-class StockHistoryUi(QMainWindow):
+class StockHistoryUi(QWidget):
     def __init__(self, sas: StockAnalysisSystem):
         super(StockHistoryUi, self).__init__()
 
@@ -159,14 +159,6 @@ def init(sas: StockAnalysisSystem) -> bool:
     finally:
         pass
     return True
-
-
-def period(tick_ns: int):
-    pass
-
-
-def thread(context: dict):
-    pass
 
 
 def widget(parent: QWidget) -> (QWidget, dict):
