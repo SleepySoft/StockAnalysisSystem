@@ -275,6 +275,38 @@ def pick_up_pass_securities(result: dict, score_threshold: int, not_applied_as_f
 
 # ---------------------------------------------------- Excel Report ----------------------------------------------------
 
+
+fill_pass = openpyxl.styles.PatternFill(patternType="solid", start_color="10EF10")
+fill_flaw = openpyxl.styles.PatternFill(patternType="solid", start_color="FFFF10")
+fill_fail = openpyxl.styles.PatternFill(patternType="solid", start_color="EF1010")
+fill_none = openpyxl.styles.PatternFill(patternType="solid", start_color="808080")
+
+
+def __score_to_fill_style(score: int or None):
+    if score is None:
+        fill_style = fill_none
+    elif score < 40:
+        fill_style = fill_fail
+    elif score < 60:
+        fill_style = fill_flaw
+    else:
+        fill_style = fill_pass
+    return fill_style
+
+
+def __score_to_fill_text(score: int or None):
+    if score is None:
+        return '-'
+    elif score < 40:
+        return 'FAIL'
+    elif score < 60:
+        return 'FLAW'
+    elif score < 100:
+        return 'WELL'
+    else:
+        return 'PASS'
+
+
 def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: dict = {}, stock_name_dict: dict = {}):
     wb = openpyxl.Workbook()
     ws_score = wb.active
@@ -283,10 +315,6 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
 
     ws_score['A1'] = 'Securities\\Analyzer'
     ws_comments['A1'] = 'Securities\\Analyzer'
-
-    fill_pass = openpyxl.styles.PatternFill(patternType="solid", start_color="10EF10")
-    fill_fail = openpyxl.styles.PatternFill(patternType="solid", start_color="EF1010")
-    fill_none = openpyxl.styles.PatternFill(patternType="solid", start_color="808080")
 
     ROW_OFFSET = 2
     total_score = []
@@ -297,7 +325,7 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
         if column == 1:
             # The first run. Init the total score list here.
             # Flaw: The first column of result should be the full one. Otherwise the index may out of range.
-            total_score = [100 for i in range(0, len(analysis_result))]      # 100: Pass; 0: Fail; 50: Pass with None
+            total_score = [[] for _ in range(0, len(analysis_result))]      # 100: Pass; 0: Fail; 50: Pass with None
 
             row = 2
             col = index_to_excel_column_name(column)
@@ -321,14 +349,11 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
         for r in analysis_result:
             ws_score[col + str(row)] = r.score if r.score is not None else '-'
             ws_comments[col + str(row)] = r.reason
-            if r.score is None:
-                fill_style = fill_none
-                total_score[row - ROW_OFFSET] = 50 if total_score[row - ROW_OFFSET] != 0 else 0
-            elif r.score < 50:
-                fill_style = fill_fail
-                total_score[row - ROW_OFFSET] = 0
-            else:
-                fill_style = fill_pass
+
+            if r.score is not None:
+                total_score[row - ROW_OFFSET].append(r.score)
+            fill_style = __score_to_fill_style(r.score)
+
             ws_score[col + str(row)].fill = fill_style
             ws_comments[col + str(row)].fill = fill_style
             row += 1
@@ -337,19 +362,18 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
     # Write total score
     row = 1
     col = index_to_excel_column_name(column)
+
     for score in total_score:
         if row == 1:
             ws_score[col + str(row)] = 'Total Result'
             row = 2
-        if score == 50:
-            fill_text = 'PASS'
-            fill_style = fill_none
-        elif score < 50:
-            fill_text = 'FAIL'
-            fill_style = fill_fail
+
+        if len(score) > 0:
+            avg_score = sum(score) / float(len(score))
         else:
-            fill_text = 'PASS'
-            fill_style = fill_pass
+            avg_score = None
+        fill_text = __score_to_fill_text(avg_score)
+        fill_style = __score_to_fill_style(avg_score)
 
         ws_score[col + str(row)] = fill_text
         ws_comments[col + str(row)] = fill_text
