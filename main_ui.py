@@ -4,7 +4,7 @@
 from PyQt5 import Qt
 from PyQt5.QtWidgets import QMenu
 
-from chart_ui import *
+# from chart_ui import *
 from config_ui import *
 from strategy_ui import *
 from data_update_ui import *
@@ -60,7 +60,7 @@ class MainWindow(CommonMainWindow):
         database_entry = StockAnalysisSystem().get_database_entry()
         update_table = database_entry.get_update_table()
 
-        self.__chart_ui = ChartUi(data_hub_entry)
+        # self.__chart_ui = ChartUi(data_hub_entry)
         self.__data_hub_ui = DataHubUi(data_hub_entry.get_data_center())
         self.__strategy_ui = StrategyUi(data_hub_entry, strategy_entry)
         self.__data_update_ui = DataUpdateUi(data_hub_entry, update_table)
@@ -141,15 +141,15 @@ class MainWindow(CommonMainWindow):
             'ActionShortcut': 'Ctrl+B',
         })
 
-        self.add_sub_window(self.__chart_ui, 'chart_ui', {
-            'DockName': self.__translate('main', '数据图形'),
-            'DockArea': Qt.AllDockWidgetAreas,
-            'DockShow': False,
-            'DockFloat': False,
-            'MenuPresent': True,
-            'ActionTips': self.__translate('main', '数据图形'),
-            'ActionShortcut': 'Ctrl+P',
-        })
+        # self.add_sub_window(self.__chart_ui, 'chart_ui', {
+        #     'DockName': self.__translate('main', '数据图形'),
+        #     'DockArea': Qt.AllDockWidgetAreas,
+        #     'DockShow': False,
+        #     'DockFloat': False,
+        #     'MenuPresent': True,
+        #     'ActionTips': self.__translate('main', '数据图形'),
+        #     'ActionShortcut': 'Ctrl+P',
+        # })
 
         # -------------------------------------------------------------------------
 

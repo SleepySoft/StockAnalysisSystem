@@ -120,7 +120,10 @@ class DataUtility:
         self.__data_center = data_center
         self.__lock = threading.Lock()
 
+        self.__stock_cache_ready = False
         self.__stock_cache = IdentityNameInfoCache()
+
+        self.__index_cache_ready = False
         self.__index_cache = IdentityNameInfoCache()
 
     # ------------------------------- General -------------------------------
@@ -130,9 +133,12 @@ class DataUtility:
 
     # -------------------------------- Stock --------------------------------
 
+    def stock_cache_ready(self) -> bool:
+        return self.__stock_cache_ready
+
     def get_stock_list(self) -> [(str, str)]:
         self.__lock.acquire()
-        if self.__stock_cache.empty():
+        if not self.__stock_cache_ready:
             self.__refresh_stock_cache()
         ids = self.__stock_cache.get_ids()
         ret = [(_id, self.__stock_cache.id_to_names(_id)[0]) for _id in ids]
@@ -141,7 +147,7 @@ class DataUtility:
 
     def get_stock_identities(self) -> [str]:
         self.__lock.acquire()
-        if self.__stock_cache.empty():
+        if not self.__stock_cache_ready:
             self.__refresh_stock_cache()
         ids = self.__stock_cache.get_ids()
         self.__lock.release()
@@ -149,7 +155,7 @@ class DataUtility:
 
     def names_to_stock_identity(self, names: [str]) -> [str]:
         self.__lock.acquire()
-        if self.__stock_cache.empty():
+        if not self.__stock_cache_ready:
             self.__refresh_stock_cache()
         ids = self.__stock_cache.name_to_id(names)
         self.__lock.release()
@@ -157,7 +163,7 @@ class DataUtility:
 
     def get_stock_listing_date(self, stock_identity: str, default_val: datetime.datetime) -> datetime.datetime:
         self.__lock.acquire()
-        if self.__stock_cache.empty():
+        if not self.__stock_cache_ready:
             self.__refresh_stock_cache()
         ret = self.__stock_cache.get_id_info(stock_identity, 'listing_date', default_val)
         self.__lock.release()
@@ -165,9 +171,12 @@ class DataUtility:
 
     # --------------------------------------- Index ---------------------------------------
 
+    def index_cache_ready(self) -> bool:
+        return self.__index_cache_ready
+
     def get_index_list(self) -> [(str, str)]:
         self.__lock.acquire()
-        if self.__index_cache.empty():
+        if not self.__index_cache_ready:
             self.__refresh_index_cache()
         ids = self.__index_cache.get_ids()
         ret = [(_id, self.__index_cache.id_to_names(_id)[0]) for _id in ids]
@@ -176,7 +185,7 @@ class DataUtility:
 
     def get_index_identities(self) -> [str]:
         self.__lock.acquire()
-        if self.__index_cache.empty():
+        if not self.__index_cache_ready:
             self.__refresh_index_cache()
         ids = self.__index_cache.get_ids()
         self.__lock.release()
@@ -184,7 +193,7 @@ class DataUtility:
 
     def get_index_listing_date(self, index_identity: str, default_val: datetime.datetime) -> datetime.datetime:
         self.__lock.acquire()
-        if self.__index_cache.empty():
+        if not self.__index_cache_ready:
             self.__refresh_index_cache()
         ret = self.__index_cache.get_id_info(index_identity, 'listing_date', default_val)
         self.__lock.release()
@@ -193,8 +202,10 @@ class DataUtility:
     # -------------------------------------- Refresh --------------------------------------
 
     def refresh_cache(self):
+        self.__lock.acquire()
         self.__refresh_stock_cache()
         self.__refresh_index_cache()
+        self.__lock.release()
 
     # ------------------------------------------------------------------------------------------------------------------
 
@@ -210,6 +221,7 @@ class DataUtility:
                                                         fields=['stock_identity', 'name', 'naming_date'])
         for index, row in securities_used_name.iterrows():
             self.__stock_cache.set_id_name(row['stock_identity'], row['name'].lower().replace('*', ''))
+        self.__stock_cache_ready = True
 
     def __refresh_index_cache(self):
         index_info = self.__data_center.query('Market.IndexInfo',
@@ -217,6 +229,7 @@ class DataUtility:
         for index, row in index_info.iterrows():
             self.__index_cache.set_id_name(row['index_identity'], row['name'])
             self.__index_cache.set_id_info(row['index_identity'], 'listing_date', row['listing_date'])
+        self.__index_cache_ready = True
 
 
 # ----------------------------------------------------------------------------------------------------------------------

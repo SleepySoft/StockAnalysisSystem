@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QWidget, QMainWindow
 from PyQt5.QtWidgets import QApplication, QScrollBar, QSlider, QMenu
 
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QStyledItemDelegate, QTreeWidgetItem, QComboBox, QInputDialog, QFileDialog
 
@@ -63,6 +63,12 @@ class StockHistoryUi(QWidget):
         self.__thread_top = TimeThreadBase()
         self.__thread_bottom = TimeThreadBase()
 
+        # Timer for update stock list
+        self.__timer = QTimer()
+        self.__timer.setInterval(1000)
+        self.__timer.timeout.connect(self.on_timer)
+        self.__timer.start()
+
         self.__combo_name = QComboBox()
         self.__button_ensure = QPushButton('确定')
 
@@ -83,10 +89,10 @@ class StockHistoryUi(QWidget):
         ]))
 
     def __config_ui(self):
-        data_utility = self.__sas.get_data_hub_entry().get_data_utility()
-        stock_list = data_utility.get_stock_list()
-        for stock_identity, stock_name in stock_list:
-            self.__combo_name.addItem(stock_identity + ' | ' + stock_name, stock_identity)
+        # data_utility = self.__sas.get_data_hub_entry().get_data_utility()
+        # stock_list = data_utility.get_stock_list()
+        # for stock_identity, stock_name in stock_list:
+        #     self.__combo_name.addItem(stock_identity + ' | ' + stock_name, stock_identity)
         self.__combo_name.setEditable(True)
         self.setMinimumSize(QSize(600, 400))
 
@@ -99,8 +105,17 @@ class StockHistoryUi(QWidget):
         self.__time_axis.add_history_thread(self.__thread_bottom, ALIGN_LEFT)
         self.__time_axis.add_history_thread(self.__thread_top, ALIGN_RIGHT)
 
-        self.setMinimumWidth(1000)
-        self.setMinimumHeight(800)
+        self.setMinimumWidth(800)
+        self.setMinimumHeight(600)
+
+    def on_timer(self):
+        # Check stock list ready and update combobox
+        data_utility = self.__sas.get_data_hub_entry().get_data_utility()
+        if data_utility.stock_cache_ready():
+            stock_list = data_utility.get_stock_list()
+            for stock_identity, stock_name in stock_list:
+                self.__combo_name.addItem(stock_identity + ' | ' + stock_name, stock_identity)
+            self.__timer.stop()
 
     def on_button_ensure(self):
         stock_input = self.__combo_name.currentText()
