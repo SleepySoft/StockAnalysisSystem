@@ -1,13 +1,9 @@
 # StockAnalysisSystem
 This program is designed for Chinese market and Chinese accounting policies (currently). So this document will only provide Chinese version.
-
-# 注意(NOTICE)
-由于空间占用问题，旧的github仓库已经废弃，请重新clone代码并手动合并你的更改（如果有的话）  
-Because the space occupancy issue. The old github repo was deprecated. Please re-clone and merge your updates manually (if has)   
   
 # Gitee
 https://gitee.com/SleepySoft/StockAnalysisSystem  
-
+  
 # Github
 https://github.com/SleepySoft/StockAnalysisSystem  
   
@@ -17,8 +13,11 @@ https://github.com/SleepySoft/StockAnalysisSystem
 提取码：4r3u  
   
 # 最后更新内容：
-接入交易数据 -> 20200221: Done  
-最近腰伤卧床，更新延迟 -> 20200314  
+加入《手把手教你读财报》的分析方法  
+> 现金流画像 -> 20200328：Done  
+  
+加入扩展（Extension）功能 -> 20200323：Done  
+加入History扩展。由于一个数学问题未能解决，导致更新延迟。此功能暂时不投入使用，后期与其它功能并行开发  
   
 # 联系作者
 如果有任何意见及建议，或者对此项目感兴趣的，请联系我：  
@@ -101,6 +100,12 @@ QQ群：931499339，进群验证码：SleepySoft
 3. 加入更多分析算法  
 > 无实际控制人  
 > 去年及未来一年有减持计划  
+
+4.加入《手把手教你读财报》的分析方法  
+> 现金流画像 -> 20200328：Done  
+
+5.加入扩展（Extension）功能 -> 20200323：Done  
+
 11. 整合测试入口，执行一个文件即可运行所有测试  
 21. 将数据迁移到MongoDB  
 > XList Table  
@@ -138,9 +143,9 @@ QQ群：931499339，进群验证码：SleepySoft
     继而发现[产品]或[概念]相关的公司  
   
 ### History（股市史）  
-1. 为History工和加入Horizon轴支持  
-2. 增加显示折线图的Track
-3. 集成到StockAnalysisSytem
+1. 为History加入Horizon轴支持 -> Done  
+2. 增加显示折线图的Track -> Done  
+3. 集成到StockAnalysisSytem -> Done  
 4. 股票历史的录入
 5. Stock Memo在时间轴上的显示
   
