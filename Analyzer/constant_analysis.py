@@ -84,10 +84,6 @@ def analysis_exclude_industries(securities: str, data_hub: DataHubEntry,
     df = context.cache.get('securities_info', None)
 
     df_slice = df[df['stock_identity'] == securities]
-    error_report = check_gen_report_when_data_missing(df_slice, securities, 'Finance.IncomeStatement',
-                                                      ['industry'])
-    if error_report is not None:
-        return error_report
 
     industry = get_dataframe_slice_item(df_slice, 'industry', 0, '')
     exclude = industry in ['种植业', '渔业', '林业', '畜禽养殖', '农业综合']
