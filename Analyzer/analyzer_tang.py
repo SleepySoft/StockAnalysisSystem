@@ -208,12 +208,111 @@ def analyzer_check_monetary_fund(securities: str, data_hub: DataHubEntry,
         return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '无数据')
 
 
+def analyzer_check_receivable_and_prepaid(securities: str, data_hub: DataHubEntry,
+                                          database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+    nop(database)
+
+    if context.cache.get('securities_info', None) is None:
+        context.cache['securities_info'] = data_hub.get_data_center().query('Market.SecuritiesInfo')
+    df_info = context.cache.get('securities_info', None)
+    df_slice = df_info[df_info['stock_identity'] == securities]
+    industry = get_dataframe_slice_item(df_slice, 'industry', 0, '')
+    if industry in ['银行', '保险', '房地产', '全国地产', '区域地产']:
+        return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业')
+
+    df_income, result = query_readable_annual_report_pattern(data_hub, 'Finance.IncomeStatement',
+                                                             securities, (years_ago(5), now()),
+                                                             ['营业收入', '营业总收入'])
+    if result is not None:
+        return result
+
+    fields_balance_sheet = ['应收账款', '应收票据', '其他应收款', '长期应收款', '应收款项']
+    df_balance_sheet, result = query_readable_annual_report_pattern(
+        data_hub, 'Finance.BalanceSheet', securities, (years_ago(5), now()), fields_balance_sheet)
+    if result is not None:
+        return result
+
+    df = pd.merge(df_income, df_balance_sheet, how='left', on=['stock_identity', 'period'])
+    df = df.sort_values('period')
+
+    score = []
+    reason = []
+    previous = None
+    for index, row in df.iterrows():
+        period = row['period']
+
+        var = dict(row)
+        var['应收款'] = var['应收账款'] + var['应收票据']
+
+        if var['营业收入'] < 1:
+            reason.append('%s : 营业收入为零，可能数据缺失？' % period.year)
+            previous = var
+            continue
+
+        var['应收款/营业收入'] = var['应收款'] / var['营业收入']
+        var['其他应收款/营业收入'] = var['其他应收款'] / var['营业收入']
+
+        if var['应收款/营业收入'] + var['其他应收款/营业收入'] < 0.05 and (
+                previous is None or previous['应收款/营业收入'] + previous['其他应收款/营业收入'] < 0.05):
+            # Too small
+            previous = var
+            continue
+
+        if var['应收款/营业收入'] > 0.6:
+            score.append(0)
+            reason.append('%s : 应收款/营业收入 = %s 大于 60%%' %
+                          (period.year, format_pct(var['应收款/营业收入'])))
+        else:
+            score.append(100)
+
+        if var['其他应收款/营业收入'] > 0.1:
+            reason.append('%s : 其他应收款/营业收入 = %s 大于 10%%' %
+                          (period.year, format_pct(var['其他应收款/营业收入'])))
+            score.append(0)
+        else:
+            score.append(100)
+
+        if previous is not None:
+            # Has previous data
+            if previous['应收款'] < 1.0:
+                if var['应收款'] > 1.0:
+                    score.append(50)
+                    reason.append('%s : 应收款从0增长到%s' % (period.year, format_w(var['应收款'])))
+            else:
+                var['应收增长'] = var['应收款'] / previous['应收款']
+                var['营业收入增长'] = var['营业收入'] / previous['营业收入']
+
+                if var['应收增长'] > 10:
+                    score.append(50)
+                    reason.append('%s : 应收款实然大幅下降超过90%% (%s -> %s)' %
+                                  (period.year, previous['应收款'], var['应收款']))
+                elif var['应收增长'] < 0.1:
+                    score.append(0)
+                    reason.append('%s : 应收款实然大幅上升超过10倍 (%s -> %s)' %
+                                  (period.year, previous['应收款'], var['应收款']))
+                else:
+                    score.append(100)
+
+                if var['应收增长'] / var['营业收入增长'] > 2.0:
+                    reason.append('%s : 应收增长 = %s 大于 营业收入增长 %s 两倍' %
+                                  (period.year, format_pct(var['应收增长']), format_pct(var['营业收入增长'])))
+                    score.append(0)
+                else:
+                    score.append(100)
+        previous = var
+
+    if len(score) > 0:
+        return AnalysisResult(securities, int(float(sum(score)) / float(len(score))), reason)
+    else:
+        return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '无数据')
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 METHOD_LIST = [
     ('3ee3a4ff-a2cf-4244-8f45-c319016ee16b', '[T001] 现金流肖像',    '根据经营现金流,投资现金流,筹资现金流的情况为企业绘制画像',       analyzer_stock_portrait),
     ('7e132f82-a28e-4aa9-aaa6-81fa3692b10c', '[T002] 货币资金分析',  '分析货币资金，详见excel中的对应的ID行',                         analyzer_check_monetary_fund),
-    ('7b0478d3-1e15-4bce-800c-6f89ee743600', '', '',       None),
+    ('7b0478d3-1e15-4bce-800c-6f89ee743600', '[T003] 应收预付分析',  '分析应收款和预付款，详见excel中的对应的ID行',                   analyzer_check_receivable_and_prepaid),
     ('fff6c3cf-a6e5-4fa2-9dce-7d0566b581a1', '', '',       None),
     ('d2ced262-7a03-4428-9220-3d4a2a8fe201', '', '',       None),
 
