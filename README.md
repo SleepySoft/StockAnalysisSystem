@@ -12,14 +12,21 @@ https://github.com/SleepySoft/StockAnalysisSystem
 链接：https://pan.baidu.com/s/1H-viluqOoKrKRNJJmU17jg  
 提取码：4r3u  
   
-# 最后更新内容：
-加入《手把手教你读财报》的分析方法  
+# 最近更新内容：
+  
+修复更新数据时发生的错误  
+继续加入《手把手教你读财报》的分析方法  
 > 现金流画像 -> 20200328：Done  
 > 货币资金分析 -> 20200328：Done  
 > 应收预付分析 -> 20200329：Done  
   
 加入扩展（Extension）功能 -> 20200323：Done  
+加入Chart Lab扩展。用以作为选择参数的参考 -> 20200331: Partly Done  
 加入History扩展。由于一个数学问题未能解决，导致更新延迟。此功能暂时不投入使用，后期与其它功能并行开发  
+  
+# 更新计划：
+完成《手把手教你读财报》中剩余的分析方法后，发布一个release  
+开始量价分析  
   
 # 联系作者
 如果有任何意见及建议，或者对此项目感兴趣的，请联系我：  
@@ -109,6 +116,8 @@ QQ群：931499339，进群验证码：SleepySoft
 > 应收预付分析 -> 20200329：Done  
 
 5.加入扩展（Extension）功能 -> 20200323：Done  
+> History -> Pending  
+> Chart Lab -> 20200331: Partly Done
 
 11. 整合测试入口，执行一个文件即可运行所有测试  
 21. 将数据迁移到MongoDB  
