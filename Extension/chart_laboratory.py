@@ -81,20 +81,40 @@ class ChartLab(QWidget):
         self.plot_histogram_statistics()
 
     def plot_histogram_statistics(self):
+        # --------------------------- The Data and Period We Want to Check ---------------------------
+
+        stock = ''
+        period = (text_auto_time('2018-12-01'), text_auto_time('2018-12-31'))
+
+        # --------------------------------------- Query Pattern --------------------------------------
+
         fields_balance_sheet = ['货币资金', '资产总计', '负债合计',
                                 '短期借款', '一年内到期的非流动负债', '其他流动负债',
-                                '长期借款', '应付债券', '其他非流动负债',
-                                '应收票据', '流动负债合计',
+                                '长期借款', '应付债券', '其他非流动负债', '流动负债合计',
+                                '应收票据', '应收账款', '其他应收款', '预付款项',
                                 '交易性金融资产', '可供出售金融资产']
-        df, result = query_readable_annual_report_pattern(
-            self.__data_hub, 'Finance.BalanceSheet', '',
-            (text_auto_time('2018-12-01'), text_auto_time('2018-12-31')), fields_balance_sheet)
+        df_balance_sheet, result = query_readable_annual_report_pattern(
+            self.__data_hub, 'Finance.BalanceSheet', stock, period, fields_balance_sheet)
         if result is not None:
             print('Data Error')
 
+        fields_income_statement = ['营业收入', '营业总收入', '减:营业成本']
+        df_income_statement, result = query_readable_annual_report_pattern(
+            self.__data_hub, 'Finance.IncomeStatement', stock, period, fields_income_statement)
+        if result is not None:
+            print('Data Error')
+
+        # -------------------------------- Merge and Pre-processing --------------------------------
+
+        df = pd.merge(df_balance_sheet,
+                      df_income_statement,
+                      how='left', on=['stock_identity', 'period'])
+        df = df.sort_values('period')
         df = df.reset_index()
         df = df.fillna(0)
         df = df.replace(0, 1)
+
+        # ------------------------------------- Calc and Plot -------------------------------------
 
         mpl.rcParams['font.sans-serif'] = ['Microsoft YaHei']
         mpl.rcParams['axes.unicode_minus'] = False
@@ -102,76 +122,46 @@ class ChartLab(QWidget):
         # font = matplotlib.font_manager.FontProperties(fname='C:/Windows/Fonts/msyh.ttf')
         # mpl.rcParams['axes.unicode_minus'] = False
 
+        df['应收款'] = df['应收账款'] + df['应收票据']
         df['净资产'] = df['资产总计'] - df['负债合计']
         df['短期负债'] = df['短期借款'] + df['一年内到期的非流动负债'] + df['其他流动负债']
         df['有息负债'] = df['短期负债'] + df['长期借款'] + df['应付债券'] + df['其他非流动负债']
         df['金融资产'] = df['交易性金融资产'] + df['可供出售金融资产']
 
-        s1 = df['货币资金'] / df['有息负债']
-        s1 = s1.apply(lambda x: x if x < 10 else 10)
-        plt.subplot(2, 1, 1)
+        # s1 = df['货币资金'] / df['有息负债']
+        # s1 = s1.apply(lambda x: x if x < 10 else 10)
+        # plt.subplot(2, 1, 1)
+        # s1.hist(bins=100)
+        # plt.title('货币资金/有息负债')
+        #
+        # s2 = df['有息负债'] / df['资产总计']
+        # plt.subplot(2, 1, 2)
+        # s2.hist(bins=100)
+        # plt.title('有息负债/资产总计')
+
+        s1 = df['应收款'] / df['营业收入']
+        s1 = s1.apply(lambda x: x if x < 2 else 2)
+        plt.subplot(4, 1, 1)
         s1.hist(bins=100)
-        plt.title('货币资金/有息负债')
+        plt.title('应收款/营业收入')
 
-        s2 = df['有息负债'] / df['资产总计']
-        plt.subplot(2, 1, 2)
+        s2 = df['其他应收款'] / df['营业收入']
+        s2 = s2.apply(lambda x: x if x < 1 else 1)
+        plt.subplot(4, 1, 2)
         s2.hist(bins=100)
-        plt.title('有息负债/资产总计')
+        plt.title('其他应收款/营业收入')
 
-    # def plot_stock_price(self):
-        # df = self.__data_center.query('TradeData.Stock.Daily', '600000.SSE')
-        #
-        # df = df[df['trade_date'] > years_ago(1)]
-        #
-        # # df['trade_date'] = df['trade_date'].apply(lambda d: mdates.date2num(d.to_pydatetime()))
-        # adjust_ratio = df['adj_factor']
-        #
-        # price_open = df['open'] * adjust_ratio
-        # price_close = df['close'] * adjust_ratio
-        # price_high = df['high'] * adjust_ratio
-        # price_low = df['low'] * adjust_ratio
-        #
-        # self.__figure.clear()
-        # ax1 = self.__figure.add_subplot(2, 1, 1)
-        # ax2 = self.__figure.add_subplot(2, 1, 2)
-        #
-        # time_serial = pd.to_datetime(df['trade_date'], format="%Y/%m/%d")
-        #
-        # # ax1 = plt.subplot2grid((3, 1), (0, 0), rowspan=2, colspan=1)  # 佔全圖2/3的子圖一
-        # ax1.set_xticks(range(0, len(time_serial), 10))  # 設定X軸座標
-        # ax1.set_xticklabels(time_serial)  # 設定X軸標籤
-        # mpf.candlestick2_ohlc(ax1, df['open'], df['high'], df['low'], df['close'], width=0.6, colorup='r',
-        #                       colordown='k', alpha=1)  # 畫出K線圖
-        # ax1.tick_params('x', bottom=False, labelbottom=False)  # 子圖一不顯示X軸標籤
-        # ax1.set_axisbelow(True)  # 設定格線在最底圖層
-        # ax1.grid(True)  # 畫格線
-        #
-        # # ax2 = plt.subplot2grid((3, 1), (2, 0), rowspan=1, colspan=1, sharex=ax1)  # 佔全圖1/3的子圖二，設定X軸座標與子圖一相同
-        # mpf.volume_overlay(ax2, df['open'], df['close'], df['amount'] / 1000, colorup='b', colordown='b',
-        #                    width=0.6, alpha=1)  # 畫出成交量
-        # ax2.set_axisbelow(True)  # 設定格線在最底圖層
-        # ax2.grid(True)  # 畫格線
-        #
-        # plt.gcf().autofmt_xdate()  # 斜放X軸標籤
-        # self.__canvas.draw()
+        s3 = df['预付款项'] / df['营业收入']
+        s3 = s3.apply(lambda x: x if x < 1 else 1)
+        plt.subplot(4, 1, 3)
+        s3.hist(bins=100)
+        plt.title('预付款项/营业收入')
 
-        # mpf.candlestick2_ochl(axes, price_open, price_close, price_high, price_low, colorup='r', colordown='g')
-        #
-        # axes.set_xlabel('日期')
-        # axes.set_ylabel('价格')
-        # axes.set_xlim(0, len(df['trade_date']))
-        # axes.set_xticks(range(0, len(df['trade_date']), 15))
-        #
-        # time_serial = pd.to_datetime(df['trade_date'], format="%Y/%m/%d")
-        # axes.set_xticklabels([time_serial[x] for x in axes.get_xticks()])  # 标签设置为日期
-        #
-        # # X-轴每个ticker标签都向右倾斜45度
-        # for label in axes.xaxis.get_ticklabels():
-        #     label.set_rotation(45)
-        #     label.set_fontsize(10)  # 设置标签字体
-        # plt.show()
-
-        # self.__canvas.draw()
+        s4 = df['预付款项'] / df['减:营业成本']
+        s4 = s4.apply(lambda x: x if x < 1 else 1)
+        plt.subplot(4, 1, 4)
+        s4.hist(bins=100)
+        plt.title('预付款项/营业成本')
 
 
 # ----------------------------------------------------------------------------------------------------------------------
