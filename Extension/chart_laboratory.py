@@ -215,7 +215,7 @@ def init(sas: StockAnalysisSystem) -> bool:
 
 
 def widget(parent: QWidget) -> (QWidget, dict):
-    return ChartLab(sasEntry.get_data_hub_entry()), {'name': 'ChartLab', 'show': False}
+    return ChartLab(sasEntry.get_data_hub_entry()), {'name': 'Chart Lab', 'show': False}
 
 
 
