@@ -203,6 +203,108 @@ def analyzer_check_monetary_fund(securities: str, data_hub: DataHubEntry,
         return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '无数据')
 
 
+# ----------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------- 应收预付分析 ----------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+
+def __check_receivable(var: dict, previous: dict, score: list, reason: list, period):
+    var['应收款/营业收入'] = var['应收款'] / var['营业收入']
+    var['其他应收款/营业收入'] = var['其他应收款'] / var['营业收入']
+
+    if var['应收款/营业收入'] + var['其他应收款/营业收入'] < 0.05 and (
+            previous is None or previous['应收款/营业收入'] + previous['其他应收款/营业收入'] < 0.05):
+        # Too small
+        return
+
+    if var['应收款/营业收入'] > 0.6:
+        score.append(0)
+        reason.append('%s : 应收款/营业收入 = %s 大于 60%%' %
+                      (period.year, format_pct(var['应收款/营业收入'])))
+    else:
+        score.append(100)
+
+    if var['其他应收款/营业收入'] > 0.1:
+        reason.append('%s : 其他应收款/营业收入 = %s 大于 10%%' %
+                      (period.year, format_pct(var['其他应收款/营业收入'])))
+        score.append(0)
+    else:
+        score.append(100)
+
+    if previous is not None:
+        # Has previous data
+        if previous['应收款'] < 1.0:
+            if var['应收款'] > 1.0:
+                score.append(50)
+                reason.append('%s : 应收款从0增长到%s' % (period.year, format_w(var['应收款'])))
+        else:
+            var['应收增长'] = var['应收款'] / previous['应收款']
+            var['营业收入增长'] = var['营业收入'] / previous['营业收入']
+
+            if var['应收增长'] > 10:
+                score.append(50)
+                reason.append('%s : 应收款实然大幅下降超过90%% (%s -> %s)' %
+                              (period.year, previous['应收款'], var['应收款']))
+            elif var['应收增长'] < 0.1:
+                score.append(0)
+                reason.append('%s : 应收款实然大幅上升超过10倍 (%s -> %s)' %
+                              (period.year, previous['应收款'], var['应收款']))
+            else:
+                score.append(100)
+
+            if var['应收增长'] / var['营业收入增长'] > 2.0:
+                reason.append('%s : 应收增长 = %s 大于 营业收入增长 %s 两倍' %
+                              (period.year, format_pct(var['应收增长']), format_pct(var['营业收入增长'])))
+                score.append(0)
+            else:
+                score.append(100)
+
+
+def __check_prepaid_with_income(var: dict, previous: dict, score: list, reason: list, period):
+    var['预付款项/营业收入'] = var['预付款项'] / var['营业收入']
+
+    if var['预付款项/营业收入'] < 0.03:
+        # Too small
+        return
+
+    if var['预付款项/营业收入'] > 0.1:
+        score.append(0)
+        reason.append('%s : 预付款项/营业收入 = %s 大于 10%%' %
+                      (period.year, format_pct(var['预付款项/营业收入'])))
+    else:
+        score.append(100)
+
+    if previous is not None and previous['预付款项/营业收入'] > 0.03:
+
+        inc = abs(var['预付款项/营业收入'] - previous['预付款项/营业收入']) / var['预付款项/营业收入']
+        if inc > 1.0:
+            score.append(0)
+            reason.append('%s : 预付款项占营业收入的比例大幅变化(%s)超过100%%' % (period.year, format_pct(inc)))
+
+
+def __check_prepaid_with_cost(var: dict, previous: dict, score: list, reason: list, period):
+    if var['减:营业成本'] < 1:
+        reason.append('%s : 营业成本为零，可能数据缺失？' % period.year)
+        return
+    var['预付款项/营业成本'] = var['预付款项'] / var['减:营业成本']
+
+    if var['预付款项/营业成本'] < 0.03:
+        # Too small
+        return
+
+    if var['预付款项/营业成本'] > 0.1:
+        score.append(0)
+        reason.append('%s : 预付款项/营业成本 = %s 大于 10%%' %
+                      (period.year, format_pct(var['预付款项/营业成本'])))
+    else:
+        score.append(100)
+
+    if previous is not None and previous['预付款项/营业成本'] > 0.03:
+        inc = abs(var['预付款项/营业成本'] - previous['预付款项/营业成本']) / var['预付款项/营业成本']
+        if inc > 1.0:
+            score.append(0)
+            reason.append('%s : 预付款项占营业成本的比例大幅变化(%s)超过100%%' % (period.year, format_pct(inc)))
+
+
 def analyzer_check_receivable_and_prepaid(securities: str, data_hub: DataHubEntry,
                                           database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
     nop(database)
@@ -217,11 +319,11 @@ def analyzer_check_receivable_and_prepaid(securities: str, data_hub: DataHubEntr
 
     df_income, result = query_readable_annual_report_pattern(data_hub, 'Finance.IncomeStatement',
                                                              securities, (years_ago(5), now()),
-                                                             ['营业收入', '营业总收入'])
+                                                             ['营业收入', '营业总收入', '减:营业成本'])
     if result is not None:
         return result
 
-    fields_balance_sheet = ['应收账款', '应收票据', '其他应收款', '长期应收款', '应收款项']
+    fields_balance_sheet = ['应收账款', '应收票据', '其他应收款', '长期应收款', '应收款项', '预付款项']
     df_balance_sheet, result = query_readable_annual_report_pattern(
         data_hub, 'Finance.BalanceSheet', securities, (years_ago(5), now()), fields_balance_sheet)
     if result is not None:
@@ -241,59 +343,13 @@ def analyzer_check_receivable_and_prepaid(securities: str, data_hub: DataHubEntr
 
         if var['营业收入'] < 1:
             reason.append('%s : 营业收入为零，可能数据缺失？' % period.year)
-            previous = var
+            previous = None
             continue
 
-        var['应收款/营业收入'] = var['应收款'] / var['营业收入']
-        var['其他应收款/营业收入'] = var['其他应收款'] / var['营业收入']
+        __check_receivable(var, previous, score, reason, period)
+        __check_prepaid_with_income(var, previous, score, reason, period)
+        __check_prepaid_with_cost(var, previous, score, reason, period)
 
-        if var['应收款/营业收入'] + var['其他应收款/营业收入'] < 0.05 and (
-                previous is None or previous['应收款/营业收入'] + previous['其他应收款/营业收入'] < 0.05):
-            # Too small
-            previous = var
-            continue
-
-        if var['应收款/营业收入'] > 0.6:
-            score.append(0)
-            reason.append('%s : 应收款/营业收入 = %s 大于 60%%' %
-                          (period.year, format_pct(var['应收款/营业收入'])))
-        else:
-            score.append(100)
-
-        if var['其他应收款/营业收入'] > 0.1:
-            reason.append('%s : 其他应收款/营业收入 = %s 大于 10%%' %
-                          (period.year, format_pct(var['其他应收款/营业收入'])))
-            score.append(0)
-        else:
-            score.append(100)
-
-        if previous is not None:
-            # Has previous data
-            if previous['应收款'] < 1.0:
-                if var['应收款'] > 1.0:
-                    score.append(50)
-                    reason.append('%s : 应收款从0增长到%s' % (period.year, format_w(var['应收款'])))
-            else:
-                var['应收增长'] = var['应收款'] / previous['应收款']
-                var['营业收入增长'] = var['营业收入'] / previous['营业收入']
-
-                if var['应收增长'] > 10:
-                    score.append(50)
-                    reason.append('%s : 应收款实然大幅下降超过90%% (%s -> %s)' %
-                                  (period.year, previous['应收款'], var['应收款']))
-                elif var['应收增长'] < 0.1:
-                    score.append(0)
-                    reason.append('%s : 应收款实然大幅上升超过10倍 (%s -> %s)' %
-                                  (period.year, previous['应收款'], var['应收款']))
-                else:
-                    score.append(100)
-
-                if var['应收增长'] / var['营业收入增长'] > 2.0:
-                    reason.append('%s : 应收增长 = %s 大于 营业收入增长 %s 两倍' %
-                                  (period.year, format_pct(var['应收增长']), format_pct(var['营业收入增长'])))
-                    score.append(0)
-                else:
-                    score.append(100)
         previous = var
 
     if len(score) > 0:
