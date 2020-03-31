@@ -1,4 +1,6 @@
 import logging
+import matplotlib
+from pylab import mpl
 from os import sys, path
 from PyQt5.QtCore import pyqtSignal, QProcess
 from PyQt5.QtWidgets import QWidget, QPushButton, QGridLayout, QLineEdit, QFileDialog, QComboBox, QVBoxLayout
@@ -82,30 +84,39 @@ class ChartLab(QWidget):
         fields_balance_sheet = ['货币资金', '资产总计', '负债合计',
                                 '短期借款', '一年内到期的非流动负债', '其他流动负债',
                                 '长期借款', '应付债券', '其他非流动负债',
-                                '应收票据', '其他流动负债', '流动负债合计',
+                                '应收票据', '流动负债合计',
                                 '交易性金融资产', '可供出售金融资产']
         df, result = query_readable_annual_report_pattern(
             self.__data_hub, 'Finance.BalanceSheet', '',
-            (text_auto_time('2019-12-01'), text_auto_time('2019-12-31')),
-            fields_balance_sheet)
+            (text_auto_time('2018-12-01'), text_auto_time('2018-12-31')), fields_balance_sheet)
         if result is not None:
             print('Data Error')
+
+        df = df.reset_index()
+        df = df.fillna(0)
+        df = df.replace(0, 1)
+
+        mpl.rcParams['font.sans-serif'] = ['Microsoft YaHei']
+        mpl.rcParams['axes.unicode_minus'] = False
+
+        # font = matplotlib.font_manager.FontProperties(fname='C:/Windows/Fonts/msyh.ttf')
+        # mpl.rcParams['axes.unicode_minus'] = False
 
         df['净资产'] = df['资产总计'] - df['负债合计']
         df['短期负债'] = df['短期借款'] + df['一年内到期的非流动负债'] + df['其他流动负债']
         df['有息负债'] = df['短期负债'] + df['长期借款'] + df['应付债券'] + df['其他非流动负债']
         df['金融资产'] = df['交易性金融资产'] + df['可供出售金融资产']
 
-        df_calc = pd.DataFrame()
-        df_calc['period'] = df['period']
-        df_calc['stock_identity'] = df['stock_identity']
-        df_calc['货币资金/有息负债'] = df['货币资金'] / df['有息负债']
+        s1 = df['货币资金'] / df['有息负债']
+        s1 = s1.apply(lambda x: x if x < 10 else 10)
+        plt.subplot(2, 1, 1)
+        s1.hist(bins=100)
+        plt.title('货币资金/有息负债')
 
-        ranges = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-        df_calc.groupby(pd.cut(df.a, ranges)).count()
-
-        print(df_calc)
-
+        s2 = df['有息负债'] / df['资产总计']
+        plt.subplot(2, 1, 2)
+        s2.hist(bins=100)
+        plt.title('有息负债/资产总计')
 
     # def plot_stock_price(self):
         # df = self.__data_center.query('TradeData.Stock.Daily', '600000.SSE')

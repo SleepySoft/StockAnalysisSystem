@@ -60,7 +60,7 @@ class PluginManager:
         for file_name, plugin in self.__plugins:
             # capacities = self.__safe_execute(plugin, 'plugin_capacities')
             # if isinstance(capacities, list) and capacity in capacities:
-            if self.__safe_execute(plugin, 'plugin_adapt', {'uri': capacity}):
+            if self.__safe_execute(plugin, 'plugin_adapt', capacity):
                 module_list.append(plugin)
         return module_list
 
