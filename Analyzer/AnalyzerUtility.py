@@ -217,8 +217,8 @@ def query_readable_annual_report_pattern(data_hub, uri: str, securities: str, ti
     if not data_hub.get_data_center().check_readable_name(fields):
         return None, AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, 'Unknown readable name detect.')
 
-    df = data_hub.get_data_center().query(uri, securities, time_serial,
-                                          fields=fields + ['stock_identity', 'period'], readable=True)
+    fields_stripped = list(set(fields + ['stock_identity', 'period']))
+    df = data_hub.get_data_center().query(uri, securities, time_serial, fields=fields_stripped, readable=True)
     if df is None or len(df) == 0:
         return None, AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED,
                                     'No data, skipped' + str(time_serial))

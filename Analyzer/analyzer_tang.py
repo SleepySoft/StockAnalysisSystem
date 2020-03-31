@@ -137,7 +137,7 @@ def analyzer_check_monetary_fund(securities: str, data_hub: DataHubEntry,
     fields_balance_sheet = ['货币资金', '资产总计', '负债合计',
                             '短期借款', '一年内到期的非流动负债', '其他流动负债',
                             '长期借款', '应付债券', '其他非流动负债',
-                            '应收票据', '其他流动负债', '流动负债合计',
+                            '应收票据', '流动负债合计',
                             '交易性金融资产', '可供出售金融资产']
     df_balance_sheet, result = query_readable_annual_report_pattern(
         data_hub, 'Finance.BalanceSheet', securities, (years_ago(5), now()), fields_balance_sheet)
@@ -150,11 +150,6 @@ def analyzer_check_monetary_fund(securities: str, data_hub: DataHubEntry,
         period = row['period']
 
         var = dict(row)
-
-        # Why '其他流动负债' is a DataFrame in df_balance_sheet
-        if '其他流动负债' in var.keys():
-            value = var.get('其他流动负债')
-            var['其他流动负债'] = value[0]
 
         var['净资产'] = var['资产总计'] - var['负债合计']
         var['短期负债'] = var['短期借款'] + var['一年内到期的非流动负债'] + var['其他流动负债']
