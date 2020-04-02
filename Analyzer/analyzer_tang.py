@@ -57,15 +57,8 @@ portrait_comments_table = {
 
 def analyzer_stock_portrait(securities: str, data_hub: DataHubEntry,
                             database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
-    nop(database)
 
-    if context.cache.get('securities_info', None) is None:
-        context.cache['securities_info'] = data_hub.get_data_center().query('Market.SecuritiesInfo')
-    df_info = context.cache.get('securities_info', None)
-
-    df_slice = df_info[df_info['stock_identity'] == securities]
-    industry = get_dataframe_slice_item(df_slice, 'industry', 0, '')
-    if industry in ['银行', '保险', '房地产', '全国地产', '区域地产']:
+    if check_industry_in(securities, ['银行', '保险', '房地产', '全国地产', '区域地产'], data_hub, database, context):
         return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业')
 
     df_balance, result = query_readable_annual_report_pattern(data_hub, 'Finance.BalanceSheet',
@@ -123,15 +116,8 @@ def analyzer_stock_portrait(securities: str, data_hub: DataHubEntry,
 
 def analyzer_check_monetary_fund(securities: str, data_hub: DataHubEntry,
                                  database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
-    nop(database)
 
-    if context.cache.get('securities_info', None) is None:
-        context.cache['securities_info'] = data_hub.get_data_center().query('Market.SecuritiesInfo')
-    df_info = context.cache.get('securities_info', None)
-
-    df_slice = df_info[df_info['stock_identity'] == securities]
-    industry = get_dataframe_slice_item(df_slice, 'industry', 0, '')
-    if industry in ['银行', '保险', '房地产', '全国地产', '区域地产']:
+    if check_industry_in(securities, ['银行', '保险', '房地产', '全国地产', '区域地产'], data_hub, database, context):
         return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业')
 
     fields_balance_sheet = ['货币资金', '资产总计', '负债合计',
@@ -144,56 +130,48 @@ def analyzer_check_monetary_fund(securities: str, data_hub: DataHubEntry,
     if result is not None:
         return result
 
+    df = df_balance_sheet
+
+    df['净资产'] = df['资产总计'] - df['负债合计']
+    df['短期负债'] = df['短期借款'] + df['一年内到期的非流动负债'] + df['其他流动负债']
+    df['有息负债'] = df['短期负债'] + df['长期借款'] + df['应付债券'] + df['其他非流动负债']
+    df['金融资产'] = df['交易性金融资产'] + df['可供出售金融资产']
+
+    df['货币资金/有息负债'] = df['货币资金'] / df['有息负债']
+    df['货币资金/短期负债'] = df['货币资金'] / df['短期负债']
+    df['有息负债/资产总计'] = df['有息负债'] / df['资产总计']
+    df['货币资金+金融资产'] = df['货币资金'] + df['金融资产']
+
     score = []
     reason = []
-    for index, row in df_balance_sheet.iterrows():
+    for index, row in df.iterrows():
         period = row['period']
 
-        var = dict(row)
-
-        var['净资产'] = var['资产总计'] - var['负债合计']
-        var['短期负债'] = var['短期借款'] + var['一年内到期的非流动负债'] + var['其他流动负债']
-        var['有息负债'] = var['短期负债'] + var['长期借款'] + var['应付债券'] + var['其他非流动负债']
-        var['金融资产'] = var['交易性金融资产'] + var['可供出售金融资产']
-
-        if var['有息负债'] > 1:
-            var['货币资金/有息负债'] = var['货币资金'] / var['有息负债']
-            reason.append('%s : 货币资金/有息负债 = %s' % (period.year, format_pct(var['货币资金/有息负债'])))
-
-            if var['货币资金/有息负债'] < 2.0:
+        if np.isinf(row['货币资金/有息负债']) or row['货币资金/有息负债'] >= 3.0:
+            score.append(100)
+        else:
+            if row['货币资金/有息负债'] < 2.0:
                 score.append(0)
-            elif var['货币资金/有息负债'] < 3.0:
+            elif row['货币资金/有息负债'] < 3.0:
                 score.append(60)
-            else:
-                score.append(100)
-        else:
-            score.append(100)
-            reason.append('%s : 无有息负债' % period.year)
+            reason.append('%s : 货币资金/有息负债 = %s' % (period.year, format_pct(row['货币资金/有息负债'])))
 
-        if var['短期负债'] > 1:
-            var['货币资金/短期负债'] = var['货币资金'] / var['短期负债']
-            if var['货币资金/短期负债'] < 1.0:
-                reason.append('%s : 货币资金/短期负债 = %s, 小于1' % (period.year, format_pct(var['货币资金/短期负债'])))
-                score.append(0)
-            else:
-                score.append(100)
-        else:
-            score.append(100)
-            reason.append('%s : 无短期负债' % period.year)
-
-        var['有息负债/资产总计'] = var['有息负债'] / var['资产总计']
-        var['货币资金+金融资产'] = var['货币资金'] + var['金融资产']
-
-        if var['有息负债/资产总计'] > 0.6:
+        if row['货币资金/短期负债'] < 1.0:
             score.append(0)
-            reason.append('%s 有息负债/资产总计 = %s, 大于 60%%' % (period.year, format_pct(var['有息负债/资产总计'])))
+            reason.append('%s : 货币资金/短期负债 = %s, 小于1' % (period.year, format_pct(row['货币资金/短期负债'])))
         else:
             score.append(100)
 
-        if var['货币资金+金融资产'] < var['有息负债']:
+        if row['有息负债/资产总计'] > 0.6:
+            score.append(0)
+            reason.append('%s 有息负债/资产总计 = %s, 大于 60%%' % (period.year, format_pct(row['有息负债/资产总计'])))
+        else:
+            score.append(100)
+
+        if row['货币资金+金融资产'] < row['有息负债']:
             score.append(0)
             reason.append('%s : 货币资金+金融资产 = %s 小于 有息负债 %s' %
-                          (period.year, format_w(var['货币资金+金融资产']), format_w(var['有息负债'])))
+                          (period.year, format_w(row['货币资金+金融资产']), format_w(row['有息负债'])))
         else:
             score.append(100)
 
@@ -207,130 +185,35 @@ def analyzer_check_monetary_fund(securities: str, data_hub: DataHubEntry,
 # ---------------------------------------------------- 应收预付分析 ----------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------------------
 
-def __check_receivable(var: dict, previous: dict, score: list, reason: list, period):
-    var['应收款/营业收入'] = var['应收款'] / var['营业收入']
-    var['其他应收款/营业收入'] = var['其他应收款'] / var['营业收入']
-
-    if var['应收款/营业收入'] + var['其他应收款/营业收入'] < 0.05 and (
-            previous is None or previous['应收款/营业收入'] + previous['其他应收款/营业收入'] < 0.05):
-        # Too small
-        return
-
-    if var['应收款/营业收入'] > 0.6:
-        score.append(0)
-        reason.append('%s : 应收款/营业收入 = %s 大于 60%%' %
-                      (period.year, format_pct(var['应收款/营业收入'])))
-    else:
-        score.append(100)
-
-    if var['其他应收款/营业收入'] > 0.1:
-        reason.append('%s : 其他应收款/营业收入 = %s 大于 10%%' %
-                      (period.year, format_pct(var['其他应收款/营业收入'])))
-        score.append(0)
-    else:
-        score.append(100)
-
-    if previous is not None:
-        # Has previous data
-        if previous['应收款'] < 1.0:
-            if var['应收款'] > 1.0:
-                score.append(50)
-                reason.append('%s : 应收款从0增长到%s' % (period.year, format_w(var['应收款'])))
-        else:
-            var['应收增长'] = var['应收款'] / previous['应收款']
-            var['营业收入增长'] = var['营业收入'] / previous['营业收入']
-
-            if var['应收增长'] > 10:
-                score.append(50)
-                reason.append('%s : 应收款实然大幅下降超过90%% (%s -> %s)' %
-                              (period.year, previous['应收款'], var['应收款']))
-            elif var['应收增长'] < 0.1:
-                score.append(0)
-                reason.append('%s : 应收款实然大幅上升超过10倍 (%s -> %s)' %
-                              (period.year, previous['应收款'], var['应收款']))
-            else:
-                score.append(100)
-
-            if var['应收增长'] / var['营业收入增长'] > 2.0:
-                reason.append('%s : 应收增长 = %s 大于 营业收入增长 %s 两倍' %
-                              (period.year, format_pct(var['应收增长']), format_pct(var['营业收入增长'])))
-                score.append(0)
-            else:
-                score.append(100)
-
-
-def __check_prepaid_with_income(var: dict, previous: dict, score: list, reason: list, period):
-    var['预付款项/营业收入'] = var['预付款项'] / var['营业收入']
-
-    if var['预付款项/营业收入'] < 0.03:
-        # Too small
-        return
-
-    if var['预付款项/营业收入'] > 0.1:
-        score.append(0)
-        reason.append('%s : 预付款项/营业收入 = %s 大于 10%%' %
-                      (period.year, format_pct(var['预付款项/营业收入'])))
-    else:
-        score.append(100)
-
-    if previous is not None and previous['预付款项/营业收入'] > 0.03:
-
-        inc = abs(var['预付款项/营业收入'] - previous['预付款项/营业收入']) / var['预付款项/营业收入']
-        if inc > 1.0:
-            score.append(0)
-            reason.append('%s : 预付款项占营业收入的比例大幅变化(%s)超过100%%' % (period.year, format_pct(inc)))
-
-
-def __check_prepaid_with_cost(var: dict, previous: dict, score: list, reason: list, period):
-    if var['减:营业成本'] < 1:
-        reason.append('%s : 营业成本为零，可能数据缺失？' % period.year)
-        return
-    var['预付款项/营业成本'] = var['预付款项'] / var['减:营业成本']
-
-    if var['预付款项/营业成本'] < 0.03:
-        # Too small
-        return
-
-    if var['预付款项/营业成本'] > 0.1:
-        score.append(0)
-        reason.append('%s : 预付款项/营业成本 = %s 大于 10%%' %
-                      (period.year, format_pct(var['预付款项/营业成本'])))
-    else:
-        score.append(100)
-
-    if previous is not None and previous['预付款项/营业成本'] > 0.03:
-        inc = abs(var['预付款项/营业成本'] - previous['预付款项/营业成本']) / var['预付款项/营业成本']
-        if inc > 1.0:
-            score.append(0)
-            reason.append('%s : 预付款项占营业成本的比例大幅变化(%s)超过100%%' % (period.year, format_pct(inc)))
-
-
 def analyzer_check_receivable_and_prepaid(securities: str, data_hub: DataHubEntry,
                                           database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
-    nop(database)
 
-    if context.cache.get('securities_info', None) is None:
-        context.cache['securities_info'] = data_hub.get_data_center().query('Market.SecuritiesInfo')
-    df_info = context.cache.get('securities_info', None)
-    df_slice = df_info[df_info['stock_identity'] == securities]
-    industry = get_dataframe_slice_item(df_slice, 'industry', 0, '')
-    if industry in ['银行', '保险', '房地产', '全国地产', '区域地产']:
+    if check_industry_in(securities, ['银行', '保险', '房地产', '全国地产', '区域地产'], data_hub, database, context):
         return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业')
 
-    df_income, result = query_readable_annual_report_pattern(data_hub, 'Finance.IncomeStatement',
-                                                             securities, (years_ago(5), now()),
-                                                             ['营业收入', '营业总收入', '减:营业成本'])
-    if result is not None:
-        return result
-
     fields_balance_sheet = ['应收账款', '应收票据', '其他应收款', '长期应收款', '应收款项', '预付款项']
-    df_balance_sheet, result = query_readable_annual_report_pattern(
-        data_hub, 'Finance.BalanceSheet', securities, (years_ago(5), now()), fields_balance_sheet)
+    fields_income_statement = ['营业收入', '营业总收入', '减:营业成本']
+
+    df, result = batch_query_readable_annual_report_pattern(
+        data_hub, securities, (years_ago(5), now()), fields_balance_sheet, fields_income_statement)
     if result is not None:
         return result
 
-    df = pd.merge(df_income, df_balance_sheet, how='left', on=['stock_identity', 'period'])
-    df = df.sort_values('period')
+    df['应收款'] = df['应收账款'] + df['应收票据']
+    df['其他应收款/营业收入'] = df['其他应收款'] / df['营业收入']
+    df['应收款/营业收入'] = df['应收款'] / df['营业收入']
+    df['应收款总比例'] = df['应收款/营业收入'] + df['其他应收款/营业收入']
+    df['预付款项/营业收入'] = df['预付款项'] / df['营业收入']
+    df['预付款项/营业成本'] = df['预付款项'] / df['减:营业成本']
+
+    df['营业收入同比增长'] = df['营业收入'].pct_change()
+    df['营业成本同比增长'] = df['减:营业成本'].pct_change()
+
+    df['应收款同比增长'] = df['应收款'].pct_change()
+    df['应收增长/营业收入增长'] = df['应收款同比增长'] / df['营业收入同比增长']
+
+    df['预付款项同比增长'] = df['预付款项'].pct_change()
+    df['预付增长/营业成本增长'] = df['预付款项同比增长'] / df['营业成本同比增长']
 
     score = []
     reason = []
@@ -338,19 +221,59 @@ def analyzer_check_receivable_and_prepaid(securities: str, data_hub: DataHubEntr
     for index, row in df.iterrows():
         period = row['period']
 
-        var = dict(row)
-        var['应收款'] = var['应收账款'] + var['应收票据']
+        # ----------------------------------------------------------------------------
 
-        if var['营业收入'] < 1:
-            reason.append('%s : 营业收入为零，可能数据缺失？' % period.year)
-            previous = None
-            continue
+        if row['应收款/营业收入'] > 0.6:
+            score.append(0)
+            reason.append('%s : 应收款/营业收入 = %s 大于 60%%' %
+                          (period.year, format_pct(row['应收款/营业收入'])))
+        else:
+            score.append(100)
 
-        __check_receivable(var, previous, score, reason, period)
-        __check_prepaid_with_income(var, previous, score, reason, period)
-        __check_prepaid_with_cost(var, previous, score, reason, period)
+        if row['其他应收款/营业收入'] > 0.1:
+            reason.append('%s : 其他应收款/营业收入 = %s 大于 10%%' %
+                          (period.year, format_pct(row['其他应收款/营业收入'])))
+            score.append(0)
+        else:
+            score.append(100)
 
-        previous = var
+        # ----------------------------------------------------------------------------
+
+        if row['应收款同比增长'] >= 10.0:
+            score.append(0)
+            reason.append('%s : 应收款同比大幅上升 %s (%s -> %s)' %
+                          (period.year, format_pct(row['应收款同比增长']),
+                           format_w(previous['应收款']), format_w(row['应收款'])))
+        elif row['应收款同比增长'] <= -0.9:
+            score.append(0)
+            reason.append('%s : 应收款同比大幅下降 %s (%s -> %s)' %
+                          (period.year, format_pct(row['应收款同比增长']),
+                           format_w(previous['应收款']), format_w(row['应收款'])))
+        else:
+            score.append(100)
+
+        if row['应收款/营业收入'] > 0.1 and row['应收增长/营业收入增长'] > 2.0:
+            score.append(0)
+            reason.append('%s : 应收增长（%s）大于 营业收入增长（%s）两倍以上' %
+                          (period.year, format_pct(row['应收款同比增长']), format_pct(row['营业收入同比增长'])))
+
+        # ----------------------------------------------------------------------------
+
+        if row['预付款项/营业成本'] > 0.1:
+            score.append(0)
+            reason.append('%s : 预付款项/营业成本 = %s 大于 10%%' %
+                          (period.year, format_pct(row['预付款项/营业成本'])))
+        else:
+            score.append(100)
+
+        if row['预付款项/营业成本'] > 0.05:
+            if row['预付增长/营业成本增长'] > 1.5:
+                score.append(0)
+                reason.append('%s : 预付款项增长(%s)大于营业成本增长(%s)1.5倍以上' %
+                              (period.year, format_pct(row['预付款项同比增长']), format_pct(row['营业成本同比增长'])))
+        else:
+            score.append(100)
+        previous = row
 
     if len(score) > 0:
         return AnalysisResult(securities, int(float(sum(score)) / float(len(score))), reason)
