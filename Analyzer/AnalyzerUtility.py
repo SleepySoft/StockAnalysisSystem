@@ -7,13 +7,19 @@ root_path = path.dirname(path.dirname(path.abspath(__file__)))
 try:
     import config
     from Utiltity.common import *
+    from Utiltity.df_utility import *
     from Utiltity.time_utility import *
+    from DataHub.DataHubEntry import DataHubEntry
+    from Database.DatabaseEntry import DatabaseEntry
 except Exception as e:
     sys.path.append(root_path)
 
     import config
     from Utiltity.common import *
+    from Utiltity.df_utility import *
     from Utiltity.time_utility import *
+    from DataHub.DataHubEntry import DataHubEntry
+    from Database.DatabaseEntry import DatabaseEntry
 finally:
     pass
 
@@ -198,6 +204,37 @@ def gen_report_when_analyzing_error(securities: str, exception: Exception):
     return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, error_info)
 
 
+def batch_query_readable_annual_report_pattern(
+        data_hub, securities: str, time_serial: tuple,
+        fields_balance_sheet: [str] = None,
+        fields_income_statement: [str] = None,
+        fields_cash_flow_statement: [str] = None) -> (pd.DataFrame, AnalysisResult):
+
+    df = None
+    if fields_balance_sheet is not None and len(fields_balance_sheet) > 0:
+        df_balance, result = query_readable_annual_report_pattern(
+            data_hub, 'Finance.BalanceSheet', securities, time_serial, fields_balance_sheet)
+        if result is not None:
+            return df, result
+        df = df_balance
+
+    if fields_income_statement is not None and len(fields_income_statement) > 0:
+        df_income, result = query_readable_annual_report_pattern(
+            data_hub, 'Finance.IncomeStatement', securities, time_serial, fields_income_statement)
+        if result is not None:
+            return df, result
+        df = df_income if df is None else (pd.merge(df, df_income, how='left', on=['stock_identity', 'period']))
+
+    if fields_cash_flow_statement is not None and len(fields_cash_flow_statement) > 0:
+        df_cash, result = query_readable_annual_report_pattern(
+            data_hub, 'Finance.CashFlowStatement', securities, time_serial, fields_cash_flow_statement)
+        if result is not None:
+            return df, result
+        df = df_cash if df is None else (pd.merge(df, df_cash, how='left', on=['stock_identity', 'period']))
+    df = df.sort_values('period')
+    return df, None
+
+
 def query_readable_annual_report_pattern(data_hub, uri: str, securities: str, time_serial: tuple,
                                          fields: [str]) -> (pd.DataFrame, AnalysisResult):
     """
@@ -233,6 +270,20 @@ def query_readable_annual_report_pattern(data_hub, uri: str, securities: str, ti
     df = df.sort_values('period', ascending=False)
 
     return df, None
+
+
+def check_industry_in(securities: str, industries: [str], data_hub: DataHubEntry,
+                      database: DatabaseEntry, context: AnalysisContext) -> bool:
+    nop(database)
+
+    if context.cache.get('securities_info', None) is None:
+        context.cache['securities_info'] = data_hub.get_data_center().query('Market.SecuritiesInfo')
+    df_info = context.cache.get('securities_info', None)
+
+    df_slice = df_info[df_info['stock_identity'] == securities]
+    industry = get_dataframe_slice_item(df_slice, 'industry', 0, '')
+
+    return industry in industries
 
 
 # ---------------------------------------------------- Parse Result ----------------------------------------------------
