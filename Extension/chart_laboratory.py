@@ -66,7 +66,7 @@ class ChartLab(QWidget):
     def __layout_control(self):
         main_layout = QVBoxLayout()
         self.setLayout(main_layout)
-        self.setMinimumSize(600, 400)
+        self.setMinimumSize(1280, 800)
 
         main_layout.addWidget(self.__canvas)
         main_layout.addWidget(self.__button_draw)
@@ -92,7 +92,8 @@ class ChartLab(QWidget):
                                 '短期借款', '一年内到期的非流动负债', '其他流动负债',
                                 '长期借款', '应付债券', '其他非流动负债', '流动负债合计',
                                 '应收票据', '应收账款', '其他应收款', '预付款项',
-                                '交易性金融资产', '可供出售金融资产']
+                                '交易性金融资产', '可供出售金融资产',
+                                '在建工程', '商誉']
         df_balance_sheet, result = query_readable_annual_report_pattern(
             self.__data_hub, 'Finance.BalanceSheet', stock, period, fields_balance_sheet)
         if result is not None:
@@ -139,29 +140,43 @@ class ChartLab(QWidget):
         # s2.hist(bins=100)
         # plt.title('有息负债/资产总计')
 
-        s1 = df['应收款'] / df['营业收入']
-        s1 = s1.apply(lambda x: x if x < 2 else 2)
-        plt.subplot(4, 1, 1)
+        # s1 = df['应收款'] / df['营业收入']
+        # s1 = s1.apply(lambda x: x if x < 2 else 2)
+        # plt.subplot(4, 1, 1)
+        # s1.hist(bins=100)
+        # plt.title('应收款/营业收入')
+        #
+        # s2 = df['其他应收款'] / df['营业收入']
+        # s2 = s2.apply(lambda x: x if x < 1 else 1)
+        # plt.subplot(4, 1, 2)
+        # s2.hist(bins=100)
+        # plt.title('其他应收款/营业收入')
+        #
+        # s3 = df['预付款项'] / df['营业收入']
+        # s3 = s3.apply(lambda x: x if x < 1 else 1)
+        # plt.subplot(4, 1, 3)
+        # s3.hist(bins=100)
+        # plt.title('预付款项/营业收入')
+        #
+        # s4 = df['预付款项'] / df['减:营业成本']
+        # s4 = s4.apply(lambda x: x if x < 1 else 1)
+        # plt.subplot(4, 1, 4)
+        # s4.hist(bins=100)
+        # plt.title('预付款项/营业成本')
+
+        s1 = df['商誉'] / df['净资产']
+        s1 = s1.apply(lambda x: (x if x < 1 else 1) if x > 0 else 0)
+        plt.subplot(2, 1, 1)
         s1.hist(bins=100)
-        plt.title('应收款/营业收入')
+        plt.title('商誉/净资产')
 
-        s2 = df['其他应收款'] / df['营业收入']
-        s2 = s2.apply(lambda x: x if x < 1 else 1)
-        plt.subplot(4, 1, 2)
+        s2 = df['在建工程'] / df['净资产']
+        s2 = s2.apply(lambda x: (x if x < 1 else 1) if x > 0 else 0)
+        plt.subplot(2, 1, 2)
         s2.hist(bins=100)
-        plt.title('其他应收款/营业收入')
+        plt.title('在建工程/净资产')
 
-        s3 = df['预付款项'] / df['营业收入']
-        s3 = s3.apply(lambda x: x if x < 1 else 1)
-        plt.subplot(4, 1, 3)
-        s3.hist(bins=100)
-        plt.title('预付款项/营业收入')
-
-        s4 = df['预付款项'] / df['减:营业成本']
-        s4 = s4.apply(lambda x: x if x < 1 else 1)
-        plt.subplot(4, 1, 4)
-        s4.hist(bins=100)
-        plt.title('预付款项/营业成本')
+        self.repaint()
 
 
 # ----------------------------------------------------------------------------------------------------------------------
