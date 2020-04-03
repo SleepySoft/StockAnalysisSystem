@@ -46,6 +46,9 @@ class ChartLab(QWidget):
         self.__data_center = self.__data_hub.get_data_center() if self.__data_hub is not None else None
         self.__data_utility = self.__data_hub.get_data_utility() if self.__data_hub is not None else None
 
+        self.__inited = False
+        self.__plot_table = {}
+
         # ------------- plot resource -------------
 
         self.__figure = plt.figure()
@@ -189,19 +192,58 @@ class ChartLab(QWidget):
         # s2.hist(bins=100)
         # plt.title('在建工程/资产总计')
 
-        s1 = df['固定资产'] / df['资产总计']
-        s1 = s1.apply(lambda x: (x if x < 1 else 1) if x > 0 else 0)
-        plt.subplot(2, 1, 1)
-        s1.hist(bins=100)
-        plt.title('固定资产/资产总计')
+        # s1 = df['固定资产'] / df['资产总计']
+        # s1 = s1.apply(lambda x: (x if x < 1 else 1) if x > 0 else 0)
+        # plt.subplot(2, 1, 1)
+        # s1.hist(bins=100)
+        # plt.title('固定资产/资产总计')
+        #
+        # s2 = df['息税前利润'] / df['固定资产']
+        # s2 = s2.apply(lambda x: (x if x < 10 else 10) if x > -10 else -10)
+        # plt.subplot(2, 1, 2)
+        # s2.hist(bins=100)
+        # plt.title('息税前利润/固定资产')
 
-        s2 = df['息税前利润'] / df['固定资产']
-        s2 = s2.apply(lambda x: (x if x < 10 else 10) if x > -10 else -10)
-        plt.subplot(2, 1, 2)
-        s2.hist(bins=100)
-        plt.title('息税前利润/固定资产')
+        self.plot_proportion([
+            ChartLab.PlotItem('固定资产', '资产总计', 0, 1),
+            ChartLab.PlotItem('息税前利润', '固定资产', -10, 10),
+        ], text_auto_time('2018-12-31'))
 
         self.repaint()
+
+    class PlotItem:
+        def __init__(self, num: str, den: str,
+                     lower: float or None = None, upper:float or None = None,
+                     bins: int = 100):
+            self.numerator = num
+            self.denominator = den
+            self.limit_lower = lower
+            self.limit_upper = upper
+            self.plot_bins = bins
+
+    def plot_proportion(self, plot_set: [PlotItem], period: datetime.datetime):
+        df = self.prepare_plot_data(plot_set, period)
+
+        plot_count = len(plot_set)
+        for plot_index in range(plot_count):
+            plot_item = plot_set[plot_index]
+            s = df[plot_item.numerator] / df[plot_item.denominator]
+            if plot_item.limit_lower is not None:
+                s = s.apply(lambda x: max(x, plot_item.limit_lower))
+            if plot_item.limit_upper is not None:
+                s = s.apply(lambda x: min(x, plot_item.limit_upper))
+            plt.subplot(plot_count, 1, plot_index + 1)
+            s.hist(bins=plot_item.plot_bins)
+            plt.title(plot_item.numerator + '/' + plot_item.denominator)
+
+    def prepare_plot_data(self, plot_set: [PlotItem], period: datetime.datetime) -> pd.DataFrame:
+        fields = []
+        for plot_item in plot_set:
+            fields.append(plot_item.numerator)
+            fields.append(plot_item.denominator)
+        fields = list(set(fields))
+        return self.__data_utility.auto_query(
+            '', (period - datetime.timedelta(days=1), period), fields, ['stock_identity', 'period'])
 
 
 # ----------------------------------------------------------------------------------------------------------------------
