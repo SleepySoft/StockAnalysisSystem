@@ -42,7 +42,7 @@ def analysis_finance_report_sign(securities: str, data_hub: DataHubEntry,
         return error_report
 
     df_slice = df[df['stock_identity'] == securities]
-    df_slice_in_4_years = df_slice[df_slice['period'] > years_ago(4)]
+    df_slice_in_4_years = df_slice[df_slice['period'] > years_ago(5)]
 
     score = 100
     reason = []
@@ -66,7 +66,7 @@ def analysis_consecutive_losses(securities: str, data_hub: DataHubEntry,
     nop(context)
 
     df, result = query_readable_annual_report_pattern(data_hub, 'Finance.IncomeStatement',
-                                                      securities, (years_ago(4), now()),
+                                                      securities, (years_ago(5), now()),
                                                       ['利润总额', '营业利润'])
     if result is not None:
         return result
@@ -94,7 +94,7 @@ def analysis_profit_structure(securities: str, data_hub: DataHubEntry,
     nop(context)
 
     df, result = query_readable_annual_report_pattern(data_hub, 'Finance.IncomeStatement',
-                                                      securities, (years_ago(4), now()),
+                                                      securities, (years_ago(5), now()),
                                                       ['营业收入', '营业总收入', '其他业务收入'])
     if result is not None:
         return result
@@ -134,12 +134,12 @@ def analysis_cash_loan_both_high(securities: str, data_hub: DataHubEntry,
     fields_income_statement = ['净利润(含少数股东损益)', '减:财务费用']
 
     df_balance_sheet, result = query_readable_annual_report_pattern(
-        data_hub, 'Finance.BalanceSheet', securities, (years_ago(4), now()), fields_balance_sheet)
+        data_hub, 'Finance.BalanceSheet', securities, (years_ago(5), now()), fields_balance_sheet)
     if result is not None:
         return result
 
     df_income_statement, result = query_readable_annual_report_pattern(
-        data_hub, 'Finance.IncomeStatement', securities, (years_ago(4), now()), fields_income_statement)
+        data_hub, 'Finance.IncomeStatement', securities, (years_ago(5), now()), fields_income_statement)
     if result is not None:
         return result
 
@@ -181,7 +181,7 @@ def goodwill_is_too_high(securities: str, data_hub: DataHubEntry,
     nop(context)
 
     df, result = query_readable_annual_report_pattern(data_hub, 'Finance.BalanceSheet',
-                                                      securities, (years_ago(3), now()),
+                                                      securities, (years_ago(5), now()),
                                                       ['商誉', '资产总计', '负债合计'])
     if result is not None:
         return result
@@ -228,7 +228,7 @@ METHOD_LIST = [
     # oth_b_income field missing for lots of securities. This analyzer may not work.
     ('d811ebd6-ee28-4d2f-b7e0-79ce0ecde7f7', '非主营业务过高',  '排除主营业务占比过低的公司',           analysis_profit_structure),
     ('2c05bb4c-935e-4be7-9c04-ae12720cd757', '存贷双高',        '排除存贷双高的公司',                  analysis_cash_loan_both_high),
-    ('e6ab71a9-0c9f-4500-b2db-d682af567f70', '商誉过高',        '排除商誉过高的公司',                  goodwill_is_too_high),
+    # ('e6ab71a9-0c9f-4500-b2db-d682af567f70', '商誉过高',        '排除商誉过高的公司',                  goodwill_is_too_high),
 ]
 
 

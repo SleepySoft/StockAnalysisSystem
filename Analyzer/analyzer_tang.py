@@ -288,12 +288,87 @@ def analyzer_check_receivable_and_prepaid(securities: str, data_hub: DataHubEntr
 
 
 # ----------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------- 资产构成分析 ----------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+
+def analyzer_asset_composition(securities: str, data_hub: DataHubEntry,
+                               database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+
+    nop(database, context)
+
+    fields_balance_sheet = ['商誉', '在建工程', '固定资产', '资产总计', '负债合计']
+    # fields_income_statement = ['息税前利润']
+
+    df, result = batch_query_readable_annual_report_pattern(
+        data_hub, securities, (years_ago(5), now()), fields_balance_sheet)
+    if result is not None:
+        return result
+
+    df['净资产'] = df['资产总计'] - df['负债合计']
+    df['商誉/净资产'] = df['商誉'] / df['净资产']
+    df['商誉/总资产'] = df['商誉'] / df['资产总计']
+    df['在建工程/总资产'] = df['在建工程'] / df['资产总计']
+    df['固定资产/总资产'] = df['固定资产'] / df['资产总计']
+    # df['税前利润/固定资产'] = df['息税前利润'] / df['固定资产']
+
+    score = []
+    reason = []
+    for index, row in df.iterrows():
+        period = row['period']
+
+        # ----------------------------------------------------------------------------
+
+        if row['净资产'] < 10000.0:
+            score.append(0)
+            reason.append('%s : 净资产（%s）为负或过低（资不抵债）' % (period.year, row['净资产']))
+
+        if row['商誉/净资产'] > 0.2 or row['商誉/总资产'] > 0.1:
+            score.append(0)
+            reason.append('%s : 商誉/净资产 = %s，商誉/总资产 = %s - 占比过高' %
+                          (period.year, format_pct(row['商誉/净资产']), format_pct(row['商誉/总资产'])))
+
+        if row['在建工程/总资产'] > 0.1:
+            score.append(0)
+            reason.append('%s : 在建工程/总资产 = %s - 占比过高' % (period.year, format_pct(row['在建工程/总资产'])))
+
+        judgement = ''
+        if row['固定资产/总资产'] < 0.1:
+            score.append(100)
+        elif row['固定资产/总资产'] < 0.3:
+            score.append(90)
+        elif row['固定资产/总资产'] < 0.4:
+            score.append(80)
+            judgement = '中资产公司'
+        elif row['固定资产/总资产'] < 0.6:
+            score.append(70)
+            judgement = '中资产公司'
+        else:
+            score.append(60)
+            judgement = '重资产公司'
+        if judgement != '':
+            reason.append('%s : 固定资产/总资产 = %s - %s' % (period.year, format_pct(row['固定资产/总资产']), judgement))
+
+        # if row['税前利润/固定资产'] < 0.08:
+        #     score.append(50)
+        #     reason.append('%s : 税前利润/固定资产 = %s - 小于平均社会平均资本回报率' %
+        #                   (period.year, format_pct(row['税前利润/固定资产'])))
+
+    if len(reason) == 0:
+        reason.append('正常')
+
+    if len(score) > 0:
+        return AnalysisResult(securities, int(float(sum(score)) / float(len(score))), reason)
+    else:
+        return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '无数据')
+
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 METHOD_LIST = [
     ('3ee3a4ff-a2cf-4244-8f45-c319016ee16b', '[T001] 现金流肖像',    '根据经营现金流,投资现金流,筹资现金流的情况为企业绘制画像',       analyzer_stock_portrait),
     ('7e132f82-a28e-4aa9-aaa6-81fa3692b10c', '[T002] 货币资金分析',  '分析货币资金，详见excel中的对应的ID行',                         analyzer_check_monetary_fund),
     ('7b0478d3-1e15-4bce-800c-6f89ee743600', '[T003] 应收预付分析',  '分析应收款和预付款，详见excel中的对应的ID行',                   analyzer_check_receivable_and_prepaid),
-    ('fff6c3cf-a6e5-4fa2-9dce-7d0566b581a1', '', '',       None),
+    ('fff6c3cf-a6e5-4fa2-9dce-7d0566b581a1', '[T004] 资产构成分析',  '净资产，商誉，在建工程等项目分析',                              analyzer_asset_composition),
     ('d2ced262-7a03-4428-9220-3d4a2a8fe201', '', '',       None),
 
     ('bceef7fc-20c5-4c8a-87fc-d5fb7437bc1d', '', '',       None),
