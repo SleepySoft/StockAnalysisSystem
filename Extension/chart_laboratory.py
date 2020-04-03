@@ -93,23 +93,30 @@ class ChartLab(QWidget):
                                 '长期借款', '应付债券', '其他非流动负债', '流动负债合计',
                                 '应收票据', '应收账款', '其他应收款', '预付款项',
                                 '交易性金融资产', '可供出售金融资产',
-                                '在建工程', '商誉']
-        df_balance_sheet, result = query_readable_annual_report_pattern(
-            self.__data_hub, 'Finance.BalanceSheet', stock, period, fields_balance_sheet)
-        if result is not None:
-            print('Data Error')
+                                '在建工程', '商誉', '固定资产']
+        fields_income_statement = ['营业收入', '营业总收入', '减:营业成本', '息税前利润']
 
-        fields_income_statement = ['营业收入', '营业总收入', '减:营业成本']
-        df_income_statement, result = query_readable_annual_report_pattern(
-            self.__data_hub, 'Finance.IncomeStatement', stock, period, fields_income_statement)
+        df, result = batch_query_readable_annual_report_pattern(
+            self.__data_hub, stock, period, fields_balance_sheet, fields_income_statement)
         if result is not None:
-            print('Data Error')
+            return result
+
+        # df_balance_sheet, result = query_readable_annual_report_pattern(
+        #     self.__data_hub, 'Finance.BalanceSheet', stock, period, fields_balance_sheet)
+        # if result is not None:
+        #     print('Data Error')
+        #
+        # df_income_statement, result = query_readable_annual_report_pattern(
+        #     self.__data_hub, 'Finance.IncomeStatement', stock, period, fields_income_statement)
+        # if result is not None:
+        #     print('Data Error')
 
         # -------------------------------- Merge and Pre-processing --------------------------------
 
-        df = pd.merge(df_balance_sheet,
-                      df_income_statement,
-                      how='left', on=['stock_identity', 'period'])
+        # df = pd.merge(df_balance_sheet,
+        #               df_income_statement,
+        #               how='left', on=['stock_identity', 'period'])
+
         df = df.sort_values('period')
         df = df.reset_index()
         df = df.fillna(0)
@@ -164,17 +171,35 @@ class ChartLab(QWidget):
         # s4.hist(bins=100)
         # plt.title('预付款项/营业成本')
 
-        s1 = df['商誉'] / df['净资产']
+        # s1 = df['商誉'] / df['净资产']
+        # s1 = s1.apply(lambda x: (x if x < 1 else 1) if x > 0 else 0)
+        # plt.subplot(3, 1, 1)
+        # s1.hist(bins=100)
+        # plt.title('商誉/净资产')
+        #
+        # s2 = df['在建工程'] / df['净资产']
+        # s2 = s2.apply(lambda x: (x if x < 1 else 1) if x > 0 else 0)
+        # plt.subplot(3, 1, 2)
+        # s2.hist(bins=100)
+        # plt.title('在建工程/净资产')
+        #
+        # s2 = df['在建工程'] / df['资产总计']
+        # s2 = s2.apply(lambda x: (x if x < 1 else 1) if x > 0 else 0)
+        # plt.subplot(3, 1, 3)
+        # s2.hist(bins=100)
+        # plt.title('在建工程/资产总计')
+
+        s1 = df['固定资产'] / df['资产总计']
         s1 = s1.apply(lambda x: (x if x < 1 else 1) if x > 0 else 0)
         plt.subplot(2, 1, 1)
         s1.hist(bins=100)
-        plt.title('商誉/净资产')
+        plt.title('固定资产/资产总计')
 
-        s2 = df['在建工程'] / df['净资产']
-        s2 = s2.apply(lambda x: (x if x < 1 else 1) if x > 0 else 0)
+        s2 = df['息税前利润'] / df['固定资产']
+        s2 = s2.apply(lambda x: (x if x < 10 else 10) if x > -10 else -10)
         plt.subplot(2, 1, 2)
         s2.hist(bins=100)
-        plt.title('在建工程/净资产')
+        plt.title('息税前利润/固定资产')
 
         self.repaint()
 
