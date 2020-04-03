@@ -199,6 +199,27 @@ class DataUtility:
         self.__lock.release()
         return ret
 
+    # --------------------------------------- Query ---------------------------------------
+
+    def auto_query(self, identity: str or [str], time_serial: tuple, fields: [str],
+                   join_on: [str] = None) -> pd.DataFrame or [pd.DataFrame]:
+        group = self.__data_center.readable_to_uri(fields)
+        if 'None' in group.keys():
+            print('Warning: Unknown fields in auto_query() : ' + str(group['None']))
+            del group['None']
+        result = None
+        for uri, fields in group.items():
+            if join_on is not None:
+                fields.extend(join_on)
+                fields = list(set(fields))
+            df = self.__data_center.query(uri, identity, time_serial, fields=fields, readable=True)
+            if join_on is not None:
+                result = df if result is None else pd.merge(result, df, how='left', on=join_on)
+            else:
+                result = [] if result is None else result
+                result.append(df)
+        return result
+
     # -------------------------------------- Refresh --------------------------------------
 
     def refresh_cache(self):

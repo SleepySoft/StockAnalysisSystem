@@ -309,6 +309,7 @@ class UniversalDataCenter:
         self.__plugin_manager = collector_plugin
         self.__last_error = ''
         self.__data_table = []
+        self.__field_uri_dict = {}
         self.__field_readable_dict = {}
         self.__readable_field_dict = {}
 
@@ -537,6 +538,17 @@ class UniversalDataCenter:
 
     # ----------------- Fields -----------------
 
+    def fields_to_uri(self, fields: str):
+        result = {}
+        self.__check_cache_fields_declaration()
+        for field in fields:
+            uri = self.__field_uri_dict.get(field, 'None')
+            if uri in result.keys():
+                result[uri].append(field)
+            else:
+                result[uri] = [field]
+        return result
+
     def check_fields_name(self, fields: [str]):
         self.__check_cache_fields_declaration()
         if not isinstance(fields, (tuple, list)):
@@ -555,6 +567,18 @@ class UniversalDataCenter:
         return {f: self.__field_readable_dict.get(f, f) for f in fields}
 
     # ----------------- Readable -----------------
+
+    def readable_to_uri(self, readable: str):
+        result = {}
+        self.__check_cache_fields_declaration()
+        for r in readable:
+            field = self.__readable_field_dict.get(r, '*')
+            uri = self.__field_uri_dict.get(field, 'None')
+            if uri in result.keys():
+                result[uri].append(r)
+            else:
+                result[uri] = [r]
+        return result
 
     def check_readable_name(self, readable: [str]):
         self.__check_cache_fields_declaration()
@@ -580,8 +604,9 @@ class UniversalDataCenter:
         field_probs = self.get_plugin_manager().execute_module_function(
             self.get_plugin_manager().all_modules(), 'fields', {}, False)
         for field_prob in field_probs:
-            for collector, field_declare in field_prob.items():
+            for uri, field_declare in field_prob.items():
                 for field, readable in field_declare.items():
+                    self.__field_uri_dict[field] = uri
                     self.__field_readable_dict[field] = readable
                     self.__readable_field_dict[readable] = field
 
