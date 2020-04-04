@@ -12,6 +12,9 @@ https://github.com/SleepySoft/StockAnalysisSystem
 链接：https://pan.baidu.com/s/1H-viluqOoKrKRNJJmU17jg  
 提取码：4r3u  
   
+# 视频讲解
+安装配置：https://www.bilibili.com/video/BV14z411b7AE/  
+  
 # 最近更新内容：
   
 修复更新数据时发生的错误  
