@@ -362,14 +362,30 @@ def analyzer_asset_composition(securities: str, data_hub: DataHubEntry,
         return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '无数据')
 
 
+def analyzer_income_statement(securities: str, data_hub: DataHubEntry,
+                              database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+
+    fields_balance_sheet = ['商誉', '在建工程', '固定资产', '资产总计', '负债合计']
+    fields_income_statement = ['营业利润', '营业收入', '营业总收入', '净利润(含少数股东损益)',
+                               '加:营业外收入', '减:资产减值损失',
+                               '减:销售费用', '减:管理费用', '减:财务费用', '减:资产减值损失']
+    fields_cash_flow_statement = ['经营活动产生的现金流量净额']
+
+    df, result = batch_query_readable_annual_report_pattern(
+        data_hub, securities, (years_ago(5), now()),
+        fields_balance_sheet, fields_income_statement, fields_cash_flow_statement)
+    if result is not None:
+        return result
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 METHOD_LIST = [
     ('3ee3a4ff-a2cf-4244-8f45-c319016ee16b', '[T001] 现金流肖像',    '根据经营现金流,投资现金流,筹资现金流的情况为企业绘制画像',       analyzer_stock_portrait),
     ('7e132f82-a28e-4aa9-aaa6-81fa3692b10c', '[T002] 货币资金分析',  '分析货币资金，详见excel中的对应的ID行',                         analyzer_check_monetary_fund),
     ('7b0478d3-1e15-4bce-800c-6f89ee743600', '[T003] 应收预付分析',  '分析应收款和预付款，详见excel中的对应的ID行',                   analyzer_check_receivable_and_prepaid),
-    ('fff6c3cf-a6e5-4fa2-9dce-7d0566b581a1', '[T004] 资产构成分析',  '净资产，商誉，在建工程等项目分析',                              analyzer_asset_composition),
-    ('d2ced262-7a03-4428-9220-3d4a2a8fe201', '', '',       None),
+    ('fff6c3cf-a6e5-4fa2-9dce-7d0566b581a1', '[T004] 资产构成分析',  '净资产，商誉，在建工程等项目分析，详见excel中的对应的ID行',      analyzer_asset_composition),
+    ('d2ced262-7a03-4428-9220-3d4a2a8fe201', '[T005] 利润表分析',    '分析利润，费用以及它们的构成，详见excel中的对应的ID行',          None),
 
     ('bceef7fc-20c5-4c8a-87fc-d5fb7437bc1d', '', '',       None),
     ('9777f5c1-0e79-4e04-9082-1f38891c2922', '', '',       None),
