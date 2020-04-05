@@ -14,6 +14,7 @@ https://github.com/SleepySoft/StockAnalysisSystem
   
 # 视频讲解
 安装配置：https://www.bilibili.com/video/BV14z411b7AE/  
+设计与框架：https://www.bilibili.com/video/BV1u64y1u7dy/  
   
 # 最近更新内容：
   
