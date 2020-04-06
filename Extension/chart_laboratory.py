@@ -91,18 +91,18 @@ class ChartLab(QWidget):
 
         # --------------------------------------- Query Pattern --------------------------------------
 
-        fields_balance_sheet = ['货币资金', '资产总计', '负债合计',
-                                '短期借款', '一年内到期的非流动负债', '其他流动负债',
-                                '长期借款', '应付债券', '其他非流动负债', '流动负债合计',
-                                '应收票据', '应收账款', '其他应收款', '预付款项',
-                                '交易性金融资产', '可供出售金融资产',
-                                '在建工程', '商誉', '固定资产']
-        fields_income_statement = ['营业收入', '营业总收入', '减:营业成本', '息税前利润']
-
-        df, result = batch_query_readable_annual_report_pattern(
-            self.__data_hub, stock, period, fields_balance_sheet, fields_income_statement)
-        if result is not None:
-            return result
+        # fields_balance_sheet = ['货币资金', '资产总计', '负债合计',
+        #                         '短期借款', '一年内到期的非流动负债', '其他流动负债',
+        #                         '长期借款', '应付债券', '其他非流动负债', '流动负债合计',
+        #                         '应收票据', '应收账款', '其他应收款', '预付款项',
+        #                         '交易性金融资产', '可供出售金融资产',
+        #                         '在建工程', '商誉', '固定资产']
+        # fields_income_statement = ['营业收入', '营业总收入', '减:营业成本', '息税前利润']
+        #
+        # df, result = batch_query_readable_annual_report_pattern(
+        #     self.__data_hub, stock, period, fields_balance_sheet, fields_income_statement)
+        # if result is not None:
+        #     return result
 
         # df_balance_sheet, result = query_readable_annual_report_pattern(
         #     self.__data_hub, 'Finance.BalanceSheet', stock, period, fields_balance_sheet)
@@ -120,10 +120,10 @@ class ChartLab(QWidget):
         #               df_income_statement,
         #               how='left', on=['stock_identity', 'period'])
 
-        df = df.sort_values('period')
-        df = df.reset_index()
-        df = df.fillna(0)
-        df = df.replace(0, 1)
+        # df = df.sort_values('period')
+        # df = df.reset_index()
+        # df = df.fillna(0)
+        # df = df.replace(0, 1)
 
         # ------------------------------------- Calc and Plot -------------------------------------
 
@@ -133,11 +133,35 @@ class ChartLab(QWidget):
         # font = matplotlib.font_manager.FontProperties(fname='C:/Windows/Fonts/msyh.ttf')
         # mpl.rcParams['axes.unicode_minus'] = False
 
-        df['应收款'] = df['应收账款'] + df['应收票据']
-        df['净资产'] = df['资产总计'] - df['负债合计']
-        df['短期负债'] = df['短期借款'] + df['一年内到期的非流动负债'] + df['其他流动负债']
-        df['有息负债'] = df['短期负债'] + df['长期借款'] + df['应付债券'] + df['其他非流动负债']
-        df['金融资产'] = df['交易性金融资产'] + df['可供出售金融资产']
+        # df['应收款'] = df['应收账款'] + df['应收票据']
+        # df['净资产'] = df['资产总计'] - df['负债合计']
+        # df['短期负债'] = df['短期借款'] + df['一年内到期的非流动负债'] + df['其他流动负债']
+        # df['有息负债'] = df['短期负债'] + df['长期借款'] + df['应付债券'] + df['其他非流动负债']
+        # df['金融资产'] = df['交易性金融资产'] + df['可供出售金融资产']
+        #
+        # df['财务费用正'] = df['减:财务费用'].apply(lambda x: x if x > 0 else 0)
+        # df['三费'] = df['减:销售费用'] + df['减:管理费用'] + df['财务费用正']
+
+        df = self.__data_utility.auto_query('', period,
+                                            ['减:财务费用', '减:销售费用', '减:管理费用',
+                                             '营业总收入', '营业收入', '减:营业成本'],
+                                            ['stock_identity', 'period'])
+
+        df['毛利润'] = df['营业收入'] - df['减:营业成本']
+        df['财务费用正'] = df['减:财务费用'].apply(lambda x: x if x > 0 else 0)
+        df['三费'] = df['减:销售费用'] + df['减:管理费用'] + df['财务费用正']
+
+        s1 = df['三费'] / df['营业总收入']
+        s1 = s1.apply(lambda x: (x if x < 1 else 1) if x > -0.1 else -0.1)
+        plt.subplot(2, 1, 1)
+        s1.hist(bins=100)
+        plt.title('三费/营业总收入')
+
+        s2 = df['三费'] / df['毛利润']
+        s2 = s2.apply(lambda x: (x if x < 1 else 1) if x > -0.1 else -0.1)
+        plt.subplot(2, 1, 2)
+        s2.hist(bins=100)
+        plt.title('三费/毛利润')
 
         # s1 = df['货币资金'] / df['有息负债']
         # s1 = s1.apply(lambda x: x if x < 10 else 10)
@@ -204,10 +228,10 @@ class ChartLab(QWidget):
         # s2.hist(bins=100)
         # plt.title('息税前利润/固定资产')
 
-        self.plot_proportion([
-            ChartLab.PlotItem('固定资产', '资产总计', 0, 1),
-            ChartLab.PlotItem('息税前利润', '固定资产', -10, 10),
-        ], text_auto_time('2018-12-31'))
+        # self.plot_proportion([
+        #     ChartLab.PlotItem('固定资产', '资产总计', 0, 1),
+        #     ChartLab.PlotItem('息税前利润', '固定资产', -10, 10),
+        # ], text_auto_time('2018-12-31'))
 
         self.repaint()
 
