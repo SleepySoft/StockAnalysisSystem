@@ -26,8 +26,10 @@ class QStringList(object):
 class ConfigUi(QWidget):
     check_finish_signal = pyqtSignal()
 
-    def __init__(self):
+    def __init__(self, inited: bool = True):
         super(ConfigUi, self).__init__()
+
+        self.__inited = inited
 
         self.__line_ts_token = QLineEdit()
         self.__line_nosql_db_host = QLineEdit('localhost')
@@ -127,7 +129,10 @@ class ConfigUi(QWidget):
         self.close()
 
     def on_button_exit(self):
-        sys.exit(0)
+        if not self.__inited:
+            sys.exit(0)
+        else:
+            self.close()
 
     def on_button_browse(self):
         folder = str(QFileDialog.getExistingDirectory(self, "Select MongoDB Binary Directory",

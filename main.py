@@ -20,7 +20,7 @@ def run_ui():
     sas.check_initialize()
 
     while not sas.is_initialized():
-        dlg = WrapperQDialog(config_ui.ConfigUi())
+        dlg = WrapperQDialog(config_ui.ConfigUi(False))
         dlg.exec()
         sas.check_initialize()
 
