@@ -7,37 +7,13 @@ from PyQt5.QtWidgets import QMenu
 # from chart_ui import *
 from config_ui import *
 from strategy_ui import *
+from readme import VERSION
 from data_update_ui import *
 from DataHub.DataHubUi import *
 from Database.AliasTableUi import *
 from Database.XListTableUi import *
 from Utiltity.task_queue_ui import *
 from stock_analysis_system import StockAnalysisSystem
-
-
-# =========================================== InfoDialog ===========================================
-
-class InfoDialog(QDialog):
-    def __init__(self, title: str, text: str):
-        super().__init__()
-        self.__text = text
-        self.__title = title
-        self.__button_ok = QPushButton('OK')
-        self.__layout_main = QVBoxLayout()
-
-        self.init_ui()
-
-    def init_ui(self):
-        self.setWindowTitle(self.__title)
-
-        self.__button_ok.clicked.connect(self.on_btn_click_ok)
-
-        self.__layout_main.addWidget(QLabel(self.__text), 1)
-        self.__layout_main.addWidget(self.__button_ok)
-        self.setLayout(self.__layout_main)
-
-    def on_btn_click_ok(self):
-        self.close()
 
 
 # =========================================== MainWindow ===========================================
@@ -91,7 +67,7 @@ class MainWindow(CommonMainWindow):
         # widget.setLayout(main_layout)
         # self.setCentralWidget(widget)
 
-        self.setWindowTitle('Stock Analysis System - Sleepy')
+        self.setWindowTitle('Stock Analysis System [%s] - Sleepy' % VERSION)
 
     def init_menu(self):
         config_action = QAction('系统配置（需要重新启动程序）', self)

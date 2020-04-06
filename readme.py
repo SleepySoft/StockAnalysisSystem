@@ -2,21 +2,19 @@
 # -*- coding: utf-8 -*-
 
 TEXT = '''
-Stock Analysis
+Stock Analysis System
 '''
 
 
 ABOUT = '''
-Name: Stock Analysis
+Name: Stock Analysis System
 Author: Sleepy
 E-Mail: sleepysoft@163.com
 '''
 
 
-VERSION = '0.1.0'
+VERSION = '0.0.5'
 
 
 HISTORY = '''
-20191027:
-    Porting GUI into sAs.
 '''

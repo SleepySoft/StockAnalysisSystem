@@ -246,7 +246,7 @@ class CommonMainWindow(QMainWindow):
     def on_menu_about(self):
         try:
             import readme
-            QMessageBox.about(self, 'About', readme.ABOUT)
+            QMessageBox.about(self, 'About', readme.ABOUT + 'Version: ' + readme.VERSION)
         except Exception as e:
             pass
         finally:
