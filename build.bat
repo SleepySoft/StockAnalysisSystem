@@ -12,6 +12,9 @@ if "X%1" == "X" (
 ) else if "%1" == "-e" (
 	echo setup_env
 	goto setup_env
+) else if "%1" == "-ve" (
+	echo setup_venv
+	goto setup_venv
 ) else if "%1" == "-s" (
 	echo setup_virtual_env
 	goto setup_virtual_env
@@ -40,7 +43,26 @@ goto end
 
 :setup_virtual_env
 	pipenv install
-	pipenv run %0 -e
+	pipenv run %0 -ve
+	
+	goto end
+
+:setup_venv
+	Rem Use 5.12.0 to match another lib's dependency. But it does not have to.
+	pip install pyqt5==5.12.0
+	pip install pyqtwebengine==5.12.0
+	pip install bs4
+	pip install lxml
+	pip install requests
+	pip install pandas
+	pip install pymongo
+	pip install openpyxl
+	pip install tushare
+	pip install matplotlib
+	pip install mpl_finance
+
+	pip uninstall pyinstaller
+	pip install https://github.com/pyinstaller/pyinstaller/archive/develop.zip
 	
 	goto end
 
