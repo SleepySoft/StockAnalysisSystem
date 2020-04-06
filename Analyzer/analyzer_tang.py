@@ -365,10 +365,14 @@ def analyzer_asset_composition(securities: str, data_hub: DataHubEntry,
 def analyzer_income_statement(securities: str, data_hub: DataHubEntry,
                               database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
 
+    if check_industry_in(securities, ['银行', '保险', '房地产', '全国地产', '区域地产'], data_hub, database, context):
+        return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业')
+
     fields_balance_sheet = ['商誉', '在建工程', '固定资产', '资产总计', '负债合计']
     fields_income_statement = ['营业利润', '营业收入', '营业总收入', '净利润(含少数股东损益)',
-                               '加:营业外收入', '减:资产减值损失',
-                               '减:销售费用', '减:管理费用', '减:财务费用', '减:资产减值损失']
+                               '加:营业外收入', '减:资产减值损失', '减:营业成本',
+                               '减:销售费用', '减:管理费用', '减:财务费用',
+                               '减:资产减值损失']
     fields_cash_flow_statement = ['经营活动产生的现金流量净额']
 
     df, result = batch_query_readable_annual_report_pattern(
@@ -376,6 +380,122 @@ def analyzer_income_statement(securities: str, data_hub: DataHubEntry,
         fields_balance_sheet, fields_income_statement, fields_cash_flow_statement)
     if result is not None:
         return result
+
+    df['毛利润'] = df['营业收入'] - df['减:营业成本']
+    df['营业利润率'] = df['营业利润'] / df['营业收入']
+
+    df['财务费用正'] = df['减:财务费用'].apply(lambda x: x if x > 0 else 0)
+    df['三费'] = df['减:销售费用'] + df['减:管理费用'] + df['财务费用正']
+
+    df['三费/营业总收入'] = df['三费'] / df['营业总收入']
+    df['三费/毛利润'] = df['三费'] / df['毛利润']
+
+    df['营业外收入/营业总收入'] = df['加:营业外收入'] / df['营业总收入']
+    df['资产减值损失/营业总收入'] = df['减:资产减值损失'] / df['营业总收入']
+    df['经营现金流/净利润'] = df['经营活动产生的现金流量净额'] / df['净利润(含少数股东损益)']
+
+    df['销售费用/营业收入'] = df['减:销售费用'] / df['营业收入']
+    df['管理费用/营业收入'] = df['减:管理费用'] / df['营业收入']
+
+    df['三费/营业总收入同比'] = df['三费/营业总收入'].pct_change()
+    df['销售费用/营业收入同比'] = df['销售费用/营业收入'].pct_change()
+    df['管理费用/营业收入同比'] = df['管理费用/营业收入'].pct_change()
+
+    score = []
+    reason = []
+    previous = None
+    aset_lost = 0
+    for index, row in df.iterrows():
+        period = row['period']
+
+        # ----------------------------------------------------------------------------
+
+        if row['营业总收入'] < 0.1:
+            score.append(0)
+            reason.append('%s : 营业总收入 %s 小于0' % (period.year, format_w(row['营业总收入'])))
+            previous = row
+            continue
+
+        if row['毛利润'] < 0.1:
+            score.append(0)
+            reason.append('%s : 毛利润 %s 小于0' % (period.year, format_w(row['毛利润'])))
+            previous = row
+            continue
+
+        # ----------------------------------------------------------------------------
+
+        if abs(row['销售费用/营业收入同比'] > 0.4):
+            score.append(0)
+            reason.append('%s : 销售费用/营业收入 变化超过40%% (%s -> %s)' %
+                          (period.year, format_pct(previous['销售费用/营业收入']), format_pct(row['销售费用/营业收入'])))
+
+        if abs(row['管理费用/营业收入同比'] > 0.4):
+            score.append(0)
+            reason.append('%s : 管理费用/营业收入 变化超过40%% (%s -> %s)' %
+                          (period.year, format_pct(previous['管理费用/营业收入']), format_pct(row['管理费用/营业收入'])))
+
+        # ----------------------------------------------------------------------------
+
+        if row['经营现金流/净利润'] > 1.0:
+            score.append(100)
+        elif row['经营现金流/净利润'] > 0.8:
+            score.append(100 * row['经营现金流/净利润'])
+            reason.append('%s : 经营现金流/净利润 = %s < 1.0' %
+                          (period.year, format_pct(row['经营现金流/净利润'])))
+
+        # ----------------------------------------------------------------------------
+
+        if row['营业外收入/营业总收入'] > 0.1:
+            score.append(0)
+            reason.append('%s : 营业外收入占比%s，超过10%%' %
+                          (period.year, format_pct(row['营业外收入/营业总收入'])))
+
+        if abs(row['资产减值损失/营业总收入']) > 0.2:
+            aset_lost += 1
+            reason.append('%s : 资产减值损失/营业总收入 = %s，超过20%%' %
+                          (period.year, format_pct(abs(row['资产减值损失/营业总收入']))))
+
+        # ----------------------------------------------------------------------------
+
+        # df['营业利润率']
+        # 越大越好，并且需要同行及历史比较
+
+        # ----------------------------------------------------------------------------
+
+        if abs(row['三费/营业总收入']) < 0.2:
+            score.append(100)
+        elif abs(row['三费/营业总收入']) < 0.4:
+            score.append(60)
+        else:
+            score.append(0)
+            reason.append('%s : 三费/营业总收入 = %s，超过40%%' % (period.year, format_pct(row['三费/营业总收入'])))
+
+        if row['三费/毛利润'] < 0.3:
+            pass
+        elif row['三费/毛利润'] < 0.7:
+            score.append(60)
+            reason.append('%s : 三费/毛利润 = %s，在30%% ~ 70%%之间，良' %
+                          (period.year, format_pct(row['三费/毛利润'])))
+        else:
+            score.append(0)
+            reason.append('%s : 三费/毛利润 = %s，大于70%%，差' %
+                          (period.year, format_pct(row['三费/毛利润'])))
+
+        # ----------------------------------------------------------------------------
+
+        previous = row
+
+    if aset_lost >= 2:
+        score.append(0)
+        reason.append('注意：有 %s 次较大资产减值损失（超过营业总收入20%%）' % aset_lost)
+
+    if len(reason) == 0:
+        reason.append('正常')
+
+    if len(score) > 0:
+        return AnalysisResult(securities, int(float(sum(score)) / float(len(score))), reason)
+    else:
+        return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '无数据')
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -385,7 +505,7 @@ METHOD_LIST = [
     ('7e132f82-a28e-4aa9-aaa6-81fa3692b10c', '[T002] 货币资金分析',  '分析货币资金，详见excel中的对应的ID行',                         analyzer_check_monetary_fund),
     ('7b0478d3-1e15-4bce-800c-6f89ee743600', '[T003] 应收预付分析',  '分析应收款和预付款，详见excel中的对应的ID行',                   analyzer_check_receivable_and_prepaid),
     ('fff6c3cf-a6e5-4fa2-9dce-7d0566b581a1', '[T004] 资产构成分析',  '净资产，商誉，在建工程等项目分析，详见excel中的对应的ID行',      analyzer_asset_composition),
-    ('d2ced262-7a03-4428-9220-3d4a2a8fe201', '[T005] 利润表分析',    '分析利润，费用以及它们的构成，详见excel中的对应的ID行',          None),
+    ('d2ced262-7a03-4428-9220-3d4a2a8fe201', '[T005] 利润表分析',    '分析利润，费用以及它们的构成，详见excel中的对应的ID行',          analyzer_income_statement),
 
     ('bceef7fc-20c5-4c8a-87fc-d5fb7437bc1d', '', '',       None),
     ('9777f5c1-0e79-4e04-9082-1f38891c2922', '', '',       None),
