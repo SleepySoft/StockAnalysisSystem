@@ -1,3 +1,4 @@
+import time
 from threading import Thread
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QWidget
@@ -99,11 +100,12 @@ class ExtensionManager:
         return True
 
     def __poll_period_extensions(self) -> bool:
-        tick_ns = time.time_ns()
+        tick_ns = time.time() * 1000000
         if self.__prev_tick == 0:
             self.__prev_tick = tick_ns
+        elapsed_ns = tick_ns - self.__prev_tick
         for extension in self.__period_extension:
-            self.__plugin.execute_module_function(extension, 'period', {'interval_ns': tick_ns - self.__prev_tick})
+            self.__plugin.execute_module_function(extension, 'period', {'interval_ns': elapsed_ns})
         self.__prev_tick = tick_ns
         return True
 

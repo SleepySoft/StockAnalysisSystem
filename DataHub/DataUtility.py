@@ -227,6 +227,7 @@ class DataUtility:
         self.__refresh_stock_cache()
         self.__refresh_index_cache()
         self.__lock.release()
+        self.__stock_cache_ready = True
 
     # ------------------------------------------------------------------------------------------------------------------
 
@@ -242,7 +243,6 @@ class DataUtility:
                                                         fields=['stock_identity', 'name', 'naming_date'])
         for index, row in securities_used_name.iterrows():
             self.__stock_cache.set_id_name(row['stock_identity'], row['name'].lower().replace('*', ''))
-        self.__stock_cache_ready = True
 
     def __refresh_index_cache(self):
         index_info = self.__data_center.query('Market.IndexInfo',
