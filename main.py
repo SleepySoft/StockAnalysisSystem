@@ -1,16 +1,16 @@
+import logging
+logging.getLogger('matplotlib').setLevel(logging.WARNING)
+
 import sys
 import time
 import traceback
-import tushare as ts
 from PyQt5.QtWidgets import QApplication
 
 import main_ui
 import config_ui
+import import_all
 import stock_analysis_system
 from Utiltity.ui_utility import *
-
-# NOTE: If plugin depends on any lib, please import here. Otherwise the packing program cannot find this lib.
-# 注意：如果插件依赖于任何库，请务必在这里导入（让打包工具知道有这个依赖项），否则打包后运行可能找不到该库
 
 
 def run_ui():

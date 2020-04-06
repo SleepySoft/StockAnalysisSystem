@@ -102,10 +102,15 @@ goto end
 	Rem pyi-makespec -w --hidden-import pandas --icon="res/logo.ico" main.py
 
 	pyinstaller main.spec
+	
+	rmdir /s/q "Analyzer/__pycache__"
+	rmdir /s/q "Collector/__pycache__"
+	rmdir /s/q "Extension/__pycache__"
 
 	Rem Copy plug-in
 	xcopy "Analyzer" "dist/main/Analyzer" /e /i /h /s
 	xcopy "Collector" "dist/main/Collector" /e /i /h /s
+	xcopy "Extension" "dist/main/Extension" /e /i /h /s
 	
 	xcopy "README.md" "dist\main\"
 
