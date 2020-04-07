@@ -222,6 +222,22 @@ class DataUtility:
                 result.append(df)
         return result
 
+    def query_daily_trade_data(self, identity: str, time_serial: tuple = (default_since(), now()),
+                               _open: bool = True, _close: bool = True, high: bool = True, low: bool = True,
+                               amount: bool = True) -> pd.DataFrame or None:
+        fields = [
+            'open' if _open else '',
+            'close' if _close else '',
+            'high' if high else '',
+            'low' if low else '',
+            'amount' if amount else '',
+        ]
+        fields.remove('')
+        if len(fields) == 0:
+            return None
+        df = self.__data_center.query('TradeData.Stock.Daily', identity, time_serial, fields=fields)
+        return df
+
     # -------------------------------------- Refresh --------------------------------------
 
     def refresh_cache(self):
