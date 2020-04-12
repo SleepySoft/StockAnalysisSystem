@@ -1,6 +1,6 @@
 from os import sys, path
 
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor, QFont
 from PyQt5.QtCore import QRect, QPoint
 
 root_path = path.dirname(path.dirname(path.abspath(__file__)))
@@ -14,6 +14,17 @@ except Exception as e:
     from Utility.history_public import *
 finally:
     pass
+
+
+# ------------------------------------------------------- Fonts --------------------------------------------------------
+
+event_font = QFont()
+event_font.setFamily("微软雅黑")
+event_font.setPointSize(6)
+
+period_font = QFont()
+period_font.setFamily("微软雅黑")
+period_font.setPointSize(8)
 
 
 # ------------------------------------------------------- Colors -------------------------------------------------------
@@ -39,6 +50,53 @@ ALIGN_RIGHT = 8
 
 
 # ----------------------------------------------------------------------------------------------------------------------
+#                                                  class AxisMapping
+# ----------------------------------------------------------------------------------------------------------------------
+
+class AxisMapping:
+    def __init__(self,
+                 range_a_lower: float or int = 0, range_a_upper: float or int = 0,
+                 range_b_lower: float or int = 0, range_b_upper: float or int = 0):
+        # al = a lower, ar = a reference
+        self.__al = range_a_lower
+        self.__ar = range_a_upper - range_a_lower
+        # bl = b lower, br = b reference
+        self.__bl = range_b_lower
+        self.__br = range_b_upper - range_b_lower
+
+    def set_range_a(self, lower: float or int, upper: float or int):
+        self.__al = lower
+        self.__ar = upper - lower
+
+    def set_range_b(self, lower: float or int, upper: float or int):
+        self.__bl = lower
+        self.__br = upper - lower
+
+    def set_range_ref(self, ref_a: float or int, ref_b: float or int,
+                      origin_a: float or int = 0, origin_b: float or int = 0):
+        """
+        Config the mapping by the reference length of range a and b.
+        :param ref_a: The reference length of range a
+        :param ref_b: The reference length of range b
+        :param origin_a: The origin (offset) of range a
+        :param origin_b: The origin (offset) of range b
+        :return: None
+        """
+        self.__al, self.__ar = origin_a, ref_a
+        self.__bl, self.__br = origin_b, ref_b
+
+    def a_to_b(self, value_a) -> float:
+        return 0.0 if self.is_digit_zero(self.__ar) else (value_a - self.__al) * self.__br / self.__ar + self.__bl
+
+    def b_to_a(self, value_b) -> float:
+        return 0.0 if self.is_digit_zero(self.__br) else (value_b - self.__bl) * self.__ar / self.__br + self.__al
+
+    @staticmethod
+    def is_digit_zero(digit: float or int):
+        return digit == 0 if isinstance(digit, int) else digit < 0.0000001
+
+
+# ----------------------------------------------------------------------------------------------------------------------
 #                                                  class AxisMetrics
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -52,6 +110,7 @@ class AxisMetrics:
         self.__longitudinal_until = 0
         self.__align = ALIGN_LEFT
         self.__layout = LAYOUT_VERTICAL
+        self.__value_pixel_mapping = AxisMapping()
 
     # ------------------- Gets -------------------
 
@@ -70,6 +129,12 @@ class AxisMetrics:
     def get_longitudinal_range(self) -> (int, int):
         return self.__longitudinal_since, self.__longitudinal_until
 
+    def get_transverse_length(self) -> int:
+        return abs(self.__transverse_right - self.__transverse_left)
+
+    def get_longitudinal_length(self) -> int:
+        return abs(self.__longitudinal_until - self.__longitudinal_since)
+
     # ------------------- Sets -------------------
 
     def set_align(self, align: ALIGN_TYPE):
@@ -81,14 +146,16 @@ class AxisMetrics:
     def set_scale_range(self, since: HistoryTime.TICK, until: HistoryTime.TICK):
         self.__scale_since = since
         self.__scale_until = until
+        self.__value_pixel_mapping.set_range_a(since, until)
 
     def set_transverse_limit(self, left: int, right: int):
         self.__transverse_left = left
         self.__transverse_right = right
 
-    def set_longitudinal_range(self, since: int, _range: int):
+    def set_longitudinal_range(self, since: int, until: int):
         self.__longitudinal_since = since
-        self.__longitudinal_until = _range
+        self.__longitudinal_until = until
+        self.__value_pixel_mapping.set_range_b(since, until)
 
     # ------------------- Parse -------------------
 
@@ -118,6 +185,8 @@ class AxisMetrics:
         self.__longitudinal_until = rhs.__longitudinal_until
         self.__align = rhs.__align
         self.__layout = rhs.__layout
+        self.__value_pixel_mapping.set_range_a(self.__scale_since, self.__scale_until)
+        self.__value_pixel_mapping.set_range_b(self.__longitudinal_since, self.__longitudinal_until)
 
     def offset(self, long_offset: int, wide_offset: int):
         self.__longitudinal_since += long_offset
@@ -141,11 +210,15 @@ class AxisMetrics:
                 area.setRight(self.__longitudinal_until)
         return area
 
-    def value_to_pixel(self, value: HistoryTime.TICK):
-        scale_delta = self.__scale_until - self.__scale_since
-        if scale_delta == 0:
-            return 0
-        return (self.__longitudinal_until - self.__longitudinal_since) * (value - self.__scale_since) / scale_delta
+    def value_to_pixel(self, value: HistoryTime.TICK) -> int:
+        return int(self.__value_pixel_mapping.a_to_b(value))
+        # scale_delta = self.__scale_until - self.__scale_since
+        # if scale_delta == 0:
+        #     return 0
+        # return (self.__longitudinal_until - self.__longitudinal_since) * (value - self.__scale_since) / scale_delta
+
+    def pixel_to_value(self, pixel: int) -> HistoryTime.TICK:
+        return HistoryTime.TICK(self.__value_pixel_mapping.b_to_a(pixel))
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -166,16 +239,13 @@ class TrackContext:
     def get_layout_bars(self) -> []:
         return self.__layout_bars
 
-    def has_space(self, since: int, until: int) -> bool:
+    def has_space(self, since: HistoryTime.TICK, until: HistoryTime.TICK) -> bool:
         for bar in self.__layout_bars:
-            exist_since_pixel, exist_until_pixel = bar.get_item_metrics().get_longitudinal_range()
-            if exist_since_pixel < since < exist_until_pixel or \
-                    exist_since_pixel < until < exist_until_pixel:
+            exist_since_tick, exist_until_tick = bar.get_item_metrics().get_scale_range()
+            if exist_since_tick < since < exist_until_tick or \
+                    exist_since_tick < until < exist_until_tick:
                 return False
         return True
-
-    def has_space_for(self, bar) -> bool:
-        return self.has_space(*bar.get_longitudinal_space())
 
     def take_space_for(self, bar):
         if bar in self.__layout_bars:

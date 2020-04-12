@@ -396,12 +396,12 @@ class HistoryUi(QMainWindow):
                 align = ALIGN_LEFT
             elif action == opt_add_thread_right:
                 align = ALIGN_RIGHT
-            new_thread = TimeThreadBase()
+            new_thread = HistoryIndexTrack()
             self.__thread_color_selection += 1
             new_thread.set_thread_color(THREAD_BACKGROUND_COLORS[self.__thread_color_selection %
                                                                  len(THREAD_BACKGROUND_COLORS)])
             new_thread.set_thread_event_indexes([])
-            new_thread.set_thread_min_track_width(TimeThreadBase.REFERENCE_TRACK_WIDTH)
+            new_thread.set_thread_min_track_width(HistoryIndexTrack.REFERENCE_TRACK_WIDTH)
             self.__time_axis.add_history_thread(new_thread, align, thread)
 
         # --------------------------- Remove ---------------------------
@@ -488,7 +488,7 @@ class HistoryUi(QMainWindow):
         #     indexer = HistoricalRecordIndexer()
         #     indexer.load_from_file(track_index)
         #
-        #     thread = TimeThreadBase()
+        #     thread = HistoryIndexTrack()
         #     thread.set_thread_color(THREAD_BACKGROUND_COLORS[thread_index])
         #     thread.set_thread_event_indexes(indexer.get_indexes())
         #     thread.set_thread_min_track_width(track_width)
