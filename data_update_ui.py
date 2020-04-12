@@ -333,11 +333,11 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
 
     def on_auto_update_button(self, uri: str, identity: str):
         print('Auto update ' + uri + ':' + str(identity))
-        self.__build_post_update_task(uri, None, False)
+        self.__build_post_update_task(uri, identity, False)
 
     def on_force_update_button(self, uri: str, identity: str):
-        print('Force update ' + uri + ':' + str(identity))
-        self.__build_post_update_task(uri, None, True)
+        print('Force update ' + uri + ' : ' + str(identity))
+        self.__build_post_update_task(uri, identity, True)
 
     def on_batch_update(self, force: bool):
         for i in range(self.__table_main.RowCount()):
@@ -450,8 +450,12 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
             # Add update button
             button_auto = QPushButton('Auto')
             button_force = QPushButton('Force')
-            button_auto.clicked.connect(partial(self.on_auto_update_button, line[1], None))
-            button_force.clicked.connect(partial(self.on_force_update_button, line[1], None))
+            if self.__display_identities is None:
+                button_auto.clicked.connect(partial(self.on_auto_update_button, line[1], None))
+                button_force.clicked.connect(partial(self.on_force_update_button, line[1], None))
+            else:
+                button_auto.clicked.connect(partial(self.on_auto_update_button, self.__display_uri[0], line[1]))
+                button_force.clicked.connect(partial(self.on_force_update_button, self.__display_uri[0], line[1]))
             self.__table_main.SetCellWidget(index, 7, [button_auto, button_force])
 
     def update_table_content(self):

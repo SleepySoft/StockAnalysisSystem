@@ -91,9 +91,8 @@ def __fetch_index_data_daily(**kwargs) -> pd.DataFrame:
     check_execute_dump_flag(result, **kwargs)
 
     if result is not None:
-        result['stock_identity'] = result['ts_code']
-        result['stock_identity'].apply(ts_code_to_stock_identity)
         result['trade_date'] = pd.to_datetime(result['trade_date'])
+        result['stock_identity'] = result['ts_code'].apply(ts_code_to_stock_identity)
     return result
 
 
