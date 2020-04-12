@@ -613,6 +613,10 @@ class HistoryEditorDialog(QDialog):
         self.__current_depot = self.history_browser.get_current_depot()
         self.history_editor.set_current_depot(self.__current_depot)
 
+    # def showEvent(self, event):
+    #     self.setFocus()
+    #     event.accept()
+
     def show_browser(self, show: bool = True):
         self.get_history_browser().setVisible(show)
 
