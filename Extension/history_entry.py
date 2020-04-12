@@ -99,9 +99,13 @@ class StockHistoryUi(QWidget):
         self.__button_ensure.clicked.connect(self.on_button_ensure)
 
         self.__thread_top.set_thread_min_track_width(9999)
+        self.__thread_top.set_thread_color(QColor(201, 211, 140))
+
         self.__thread_bottom.set_thread_min_track_width(9999)
+        self.__thread_bottom.set_thread_color(QColor(130, 57, 53))
 
         self.__time_axis.set_axis_layout(LAYOUT_HORIZON)
+        self.__time_axis.set_time_range(2000 * HistoryTime.TICK_YEAR, 2020 * HistoryTime.TICK_YEAR)
         self.__time_axis.add_history_thread(self.__thread_bottom, ALIGN_LEFT)
         self.__time_axis.add_history_thread(self.__thread_top, ALIGN_RIGHT)
 
@@ -136,7 +140,8 @@ class StockHistoryUi(QWidget):
         depot_path = path.join(history_path, 'depot')
 
         his_file = path.join(depot_path, securities + '.his')
-        trade_data = self.__sas.get_data_hub_entry().get_data_center().query('TradeData.Stock.Daily', securities)
+        trade_data = self.__sas.get_data_hub_entry().get_data_center().query('TradeData.Index.Daily', '000001.SSE')
+        trade_data.to_csv('000001.SSE.CSV')
 
         self.__history.load_source(his_file)
 
