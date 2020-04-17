@@ -22,6 +22,7 @@ try:
     from Extension.History.filter import *
     from Extension.History.indexer import *
     from Extension.History.viewer_ex import *
+    from Extension.History.Utility.candlestick import *
     from Extension.History.Utility.history_public import *
     from Extension.History.Utility.viewer_utility import *
 
@@ -37,6 +38,7 @@ except Exception as e:
     from Extension.History.filter import *
     from Extension.History.indexer import *
     from Extension.History.viewer_ex import *
+    from Extension.History.Utility.candlestick import *
     from Extension.History.Utility.history_public import *
     from Extension.History.Utility.viewer_utility import *
 
@@ -60,7 +62,7 @@ class StockHistoryUi(QWidget):
         self.__time_axis.set_agent(self)
         self.__time_axis.set_history_core(self.__history)
 
-        self.__thread_top = TimeThreadBase()
+        self.__thread_candlestick = TimeThreadBase()
         self.__thread_bottom = TimeThreadBase()
 
         # Timer for update stock list
@@ -98,16 +100,16 @@ class StockHistoryUi(QWidget):
 
         self.__button_ensure.clicked.connect(self.on_button_ensure)
 
-        self.__thread_top.set_thread_min_track_width(9999)
-        self.__thread_top.set_thread_color(QColor(201, 211, 140))
+        self.__thread_candlestick.set_thread_min_track_width(9999)
+        self.__thread_candlestick.set_thread_color(QColor(201, 211, 140))
 
         self.__thread_bottom.set_thread_min_track_width(9999)
         self.__thread_bottom.set_thread_color(QColor(130, 57, 53))
 
         self.__time_axis.set_axis_layout(LAYOUT_HORIZON)
-        self.__time_axis.set_time_range(2000 * HistoryTime.TICK_YEAR, 2020 * HistoryTime.TICK_YEAR)
+        self.__time_axis.set_time_range(2010 * HistoryTime.TICK_YEAR, 2020 * HistoryTime.TICK_YEAR)
         self.__time_axis.add_history_thread(self.__thread_bottom, ALIGN_LEFT)
-        self.__time_axis.add_history_thread(self.__thread_top, ALIGN_RIGHT)
+        self.__time_axis.add_history_thread(self.__thread_candlestick, ALIGN_RIGHT)
 
         self.setMinimumWidth(800)
         self.setMinimumHeight(600)
@@ -139,11 +141,14 @@ class StockHistoryUi(QWidget):
         history_path = path.join(base_path, 'History')
         depot_path = path.join(history_path, 'depot')
 
-        his_file = path.join(depot_path, securities + '.his')
-        trade_data = self.__sas.get_data_hub_entry().get_data_center().query('TradeData.Index.Daily', '000001.SSE')
-        trade_data.to_csv('000001.SSE.CSV')
+        # his_file = path.join(depot_path, securities + '.his')
+        # self.__history.load_source(his_file)
 
-        self.__history.load_source(his_file)
+        trade_data = self.__sas.get_data_hub_entry().get_data_center().query('TradeData.Index.Daily', '000001.SSE')
+        candle_sticks = build_candle_stick(trade_data)
+
+        for candle_stick in candle_sticks:
+            self.__thread_candlestick.add_axis_items(candle_stick)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
