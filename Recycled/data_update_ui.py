@@ -222,7 +222,7 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
             data_utility = self.__data_hub.get_data_utility()
             return data_utility.get_stock_identities()
         elif uri in DataUpdateUi.SUB_UPDATE_INDEX_URI:
-            return DEPENDS_INDEX
+            return list(DEPENDS_INDEX.keys())
         elif uri in DataUpdateUi.SUB_UPDATE_STOCK_EXCHANGE_URI:
             return A_SHARE_MARKET
         elif uri in DataUpdateUi.NO_SUB_UPDATE_URI:

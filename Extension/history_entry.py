@@ -28,6 +28,7 @@ try:
 
     from Utiltity.ui_utility import *
     from DataHub.DataHubEntry import DataHubEntry
+    from DataHub.DataHubEntry import DEPENDS_INDEX
     from Database.DatabaseEntry import DatabaseEntry
     from stock_analysis_system import StockAnalysisSystem
 except Exception as e:
@@ -44,6 +45,7 @@ except Exception as e:
 
     from Utiltity.ui_utility import *
     from DataHub.DataHubEntry import DataHubEntry
+    from DataHub.DataHubEntry import DEPENDS_INDEX
     from Database.DatabaseEntry import DatabaseEntry
     from stock_analysis_system import StockAnalysisSystem
 finally:
@@ -96,6 +98,9 @@ class StockHistoryUi(QWidget):
         # for stock_identity, stock_name in stock_list:
         #     self.__combo_name.addItem(stock_identity + ' | ' + stock_name, stock_identity)
         self.__combo_name.setEditable(True)
+        for key in DEPENDS_INDEX:
+            self.__combo_name.addItem(key + ' | ' + DEPENDS_INDEX.get(key), key)
+
         self.setMinimumSize(QSize(600, 400))
 
         self.__button_ensure.clicked.connect(self.on_button_ensure)
@@ -111,8 +116,10 @@ class StockHistoryUi(QWidget):
         self.__time_axis.add_history_thread(self.__thread_bottom, ALIGN_LEFT)
         self.__time_axis.add_history_thread(self.__thread_candlestick, ALIGN_RIGHT)
 
-        self.setMinimumWidth(800)
-        self.setMinimumHeight(600)
+        self.setMinimumWidth(1280)
+        self.setMinimumHeight(800)
+
+        self.move(QtGui.QApplication.desktop().screen().rect().center() - self.rect().center())
 
     def on_timer(self):
         # Check stock list ready and update combobox
@@ -137,14 +144,18 @@ class StockHistoryUi(QWidget):
     # ------------------------------------------------------------------------------
 
     def load_for_securities(self, securities: str):
+        if securities in DEPENDS_INDEX.keys():
+            uri = 'TradeData.Index.Daily'
+        else:
+            uri = 'TradeData.Stock.Daily'
+
         base_path = path.dirname(path.abspath(__file__))
         history_path = path.join(base_path, 'History')
         depot_path = path.join(history_path, 'depot')
+        his_file = path.join(depot_path, securities + '.his')
+        self.__history.load_source(his_file)
 
-        # his_file = path.join(depot_path, securities + '.his')
-        # self.__history.load_source(his_file)
-
-        trade_data = self.__sas.get_data_hub_entry().get_data_center().query('TradeData.Index.Daily', '000001.SSE')
+        trade_data = self.__sas.get_data_hub_entry().get_data_center().query(uri, securities)
         candle_sticks = build_candle_stick(trade_data)
 
         for candle_stick in candle_sticks:
