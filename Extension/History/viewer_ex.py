@@ -547,12 +547,12 @@ class TimeAxis(QWidget):
         def format_main_scale_text(self, tick: HistoryTime.TICK) -> str:
             formatter = [
                 lambda x:'%04d' % x[0],
-                lambda x:'%04d/%02d' % x[0: 2],
-                lambda x:'%04d/%02d/%02d' % x[0: 3],
+                lambda x:'%04d/%02d' % (x[0], x[1]),
+                lambda x:'%04d/%02d/%02d' % (x[0], x[1], x[2]),
 
-                lambda x:'%04d/%02d/%02d %02dH' % x[0: 4],
-                lambda x:'%04d/%02d/%02d %02d:%02d:%02d' % x,
-                lambda x:'%04d/%02d/%02d %02d:%02d:%02d' % x,
+                lambda x:'%04d/%02d/%02d %02dH' % (x[0], x[1], x[2], x[3]),
+                lambda x:'%04d/%02d/%02d %02d:%02d:%02d' % (x[0], x[1], x[2], x[3], x[4], x[5]),
+                lambda x:'%04d/%02d/%02d %02d:%02d:%02d' % (x[0], x[1], x[2], x[3], x[4], x[5]),
             ]
 
             formatter_index = 0
@@ -560,10 +560,12 @@ class TimeAxis(QWidget):
                 if self.main_scale_offset[index] != 0:
                     formatter_index = index
 
-            date_time = HistoryTime.seconds_to_date_time(tick)
+            date_time = list(HistoryTime.seconds_to_date_time(tick))
+            year = date_time[0]
+            date_time[0] = abs(year)
             date_time_text = formatter[formatter_index](date_time)
 
-            if date_time[0] < 0:
+            if year < 0:
                 date_time_text = 'BC' + date_time_text
 
             return date_time_text
@@ -634,6 +636,9 @@ class TimeAxis(QWidget):
         # Scale Step Selection
         self.__scale_selection = 0
         self.__scale = TimeAxis.STEP_LIST[8]
+
+        self.__time_range_limit_upper = None
+        self.__time_range_limit_lower = None
 
         self.__main_scale_limit_upper = TimeAxis.STEP_LIST[0].rough_offset_tick()
         self.__main_scale_limit_lower = TimeAxis.STEP_LIST[-1].rough_offset_tick()
@@ -714,6 +719,10 @@ class TimeAxis(QWidget):
                 break
             step_index += 1
         self.select_step_scale(step_index)
+
+    def set_axis_time_range_limit(self, lower: HistoryTime.TICK, upper: HistoryTime.TICK):
+        self.__time_range_limit_lower = lower
+        self.__time_range_limit_upper = upper
 
     def set_axis_scale_step_limit(self, lower: HistoryTime.TICK, upper: HistoryTime.TICK):
         self.__main_scale_limit_lower = lower
@@ -955,9 +964,22 @@ class TimeAxis(QWidget):
             self.__scroll = self.__tick_offset_mapping.a_to_b(self.__seeking)
             self.__offset = 0
             self.__seeking = None
-        if self.__total_pixel_offset is None or self.__total_pixel_offset != self.__scroll + self.__offset:
+        current_offset = self.__scroll + self.__offset
+
+        # Calculate limit
+        if self.__time_range_limit_upper is not None:
+            limit_offset_upper = self.__tick_offset_mapping.a_to_b(self.__time_range_limit_upper)
+            limit_offset_upper -= self.__coordinate_metrics.get_longitudinal_length()
+            self.__scroll = min(self.__scroll, int(limit_offset_upper))
+            current_offset = min(current_offset, int(limit_offset_upper))
+        if self.__time_range_limit_lower is not None:
+            limit_offset_lower = self.__tick_offset_mapping.a_to_b(self.__time_range_limit_lower)
+            self.__scroll = max(self.__scroll, int(limit_offset_lower))
+            current_offset = max(current_offset, int(limit_offset_lower))
+
+        if self.__total_pixel_offset is None or self.__total_pixel_offset != current_offset:
             self.__scroll_updated = True
-            self.__total_pixel_offset = self.__scroll + self.__offset
+            self.__total_pixel_offset = current_offset
             tick_since = self.__tick_offset_mapping.b_to_a(self.__total_pixel_offset)
             tick_until = self.__tick_offset_mapping.b_to_a(self.__total_pixel_offset +
                                                            self.__coordinate_metrics.get_longitudinal_length())

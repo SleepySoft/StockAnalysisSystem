@@ -1,6 +1,8 @@
 import copy
 import time
 import random
+import numpy as np
+import pandas as pd
 import traceback, math
 from PyQt5.QtCore import QRect, QPoint, QSize
 from PyQt5.QtGui import QPainter, QColor, QFont, QPen, QPolygon, QFontMetrics
@@ -97,18 +99,28 @@ class Candlestick(AxisItem):
         pass
 
 
-import pandas as pd
-
-
 def build_candle_stick(df: pd.DataFrame,
                        open_field: str = 'open', close_field: str = 'close',
                        high_field: str = 'high', low_field: str = 'low',
                        time_field: str = 'trade_date') -> [Candlestick]:
+    # lower = np.nanmin(df[low_field])
+    upper = np.nanmax(df[high_field])
+
+    # lower = -(-lower // 1)
+    upper = -(-upper // 1)
+
+    if upper < 100:
+        upper = round(upper + 5, -1)
+    elif upper < 1000:
+        upper = round(upper + 50, -2)
+    else:
+        upper = round(upper + 500, -3)
+
     candle_sticks = []
     for index, row in df.iterrows():
         time_data = row[time_field]
         time_tick = HistoryTime.time_str_to_tick(time_data)
-        candle_stick = Candlestick(0, 5000, time_tick,
+        candle_stick = Candlestick(0, upper, time_tick,
                                    row[open_field], row[close_field],
                                    row[high_field], row[low_field])
         candle_sticks.append(candle_stick)
@@ -145,6 +157,7 @@ def main():
     history_viewer.get_time_axis().set_axis_scale_step(HistoryTime.TICK_DAY)
     history_viewer.get_time_axis().set_axis_scale_step_limit(HistoryTime.TICK_DAY, HistoryTime.TICK_YEAR)
     history_viewer.get_time_axis().set_time_range(2010 * HistoryTime.TICK_YEAR, 2020 * HistoryTime.TICK_YEAR)
+    history_viewer.get_time_axis().set_axis_time_range_limit(HistoryTime.years_to_seconds(1990), HistoryTime.now_tick())
     history_viewer.get_time_axis().add_history_thread(thread, ALIGN_RIGHT)
     history_viewer.exec()
 
