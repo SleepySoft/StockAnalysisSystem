@@ -112,14 +112,15 @@ class StockHistoryUi(QWidget):
         self.__thread_bottom.set_thread_color(QColor(130, 57, 53))
 
         self.__time_axis.set_axis_layout(LAYOUT_HORIZON)
-        self.__time_axis.set_time_range(2010 * HistoryTime.TICK_YEAR, 2020 * HistoryTime.TICK_YEAR)
+        self.__time_axis.set_time_range(HistoryTime.years_to_seconds(2010), HistoryTime.years_to_seconds(2020))
+        self.__time_axis.set_axis_time_range_limit(HistoryTime.years_to_seconds(1990), HistoryTime.now_tick())
         self.__time_axis.add_history_thread(self.__thread_bottom, ALIGN_LEFT)
         self.__time_axis.add_history_thread(self.__thread_candlestick, ALIGN_RIGHT)
 
         self.setMinimumWidth(1280)
         self.setMinimumHeight(800)
 
-        self.move(QtGui.QApplication.desktop().screen().rect().center() - self.rect().center())
+        self.move(QApplication.desktop().screen().rect().center() - self.rect().center())
 
     def on_timer(self):
         # Check stock list ready and update combobox
@@ -158,8 +159,10 @@ class StockHistoryUi(QWidget):
         trade_data = self.__sas.get_data_hub_entry().get_data_center().query(uri, securities)
         candle_sticks = build_candle_stick(trade_data)
 
+        self.__thread_candlestick.clear()
         for candle_stick in candle_sticks:
             self.__thread_candlestick.add_axis_items(candle_stick)
+        self.__thread_candlestick.refresh()
 
 
 # ----------------------------------------------------------------------------------------------------------------------
