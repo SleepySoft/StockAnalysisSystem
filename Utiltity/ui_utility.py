@@ -195,12 +195,14 @@ class CommonMainWindow(QMainWindow):
             if dock_area == Qt.AllDockWidgetAreas:
                 self.addDockWidget(Qt.TopDockWidgetArea, dock_wnd)
                 dock_wnd.setFloating(True)
+                dock_wnd.move(QApplication.desktop().screen().rect().center() - self.rect().center())
             else:
                 self.addDockWidget(dock_area, dock_wnd)
         else:
             self.addDockWidget(Qt.TopDockWidgetArea, dock_wnd)
             dock_wnd.setFloating(True)
             dock_wnd.setAllowedAreas(Qt.NoDockWidgetArea)
+            dock_wnd.move(QApplication.desktop().screen().rect().center() - self.rect().center())
 
         dock_wnd.setWidget(window)
         if dock_float:

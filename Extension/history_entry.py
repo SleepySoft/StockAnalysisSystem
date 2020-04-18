@@ -120,8 +120,6 @@ class StockHistoryUi(QWidget):
         self.setMinimumWidth(1280)
         self.setMinimumHeight(800)
 
-        self.move(QApplication.desktop().screen().rect().center() - self.rect().center())
-
     def on_timer(self):
         # Check stock list ready and update combobox
         data_utility = self.__sas.get_data_hub_entry().get_data_utility()
