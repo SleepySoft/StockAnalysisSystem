@@ -1,12 +1,14 @@
+import datetime
+
 import pandas as pd
 from datetime import date
 from os import sys, path
 
-from PyQt5.QtWidgets import QWidget, QMainWindow, QButtonGroup
+from PyQt5.QtWidgets import QWidget, QMainWindow, QButtonGroup, QDateTimeEdit
 from PyQt5.QtWidgets import QApplication, QScrollBar, QSlider, QMenu
 
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, QDateTime
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QStyledItemDelegate, QTreeWidgetItem, QComboBox, QInputDialog, QFileDialog
 
@@ -52,6 +54,54 @@ finally:
     pass
 
 
+class StockMemoEditor(QDialog):
+    def __init__(self):
+        super(StockMemoEditor, self).__init__()
+
+        self.__records = []
+        self.__source = ''
+        self.__current_record = None
+
+        self.__label_uuid = QLabel()
+        self.__label_source = QLabel()
+        self.__text_record = QTextEdit()
+        self.__datetime_time = QDateTimeEdit(QDateTime.currentDateTime())
+
+        self.__button_apply = QPushButton('保存')
+        self.__button_cancel = QPushButton('取消')
+
+        self.init_ui()
+        self.config_ui()
+
+    def init_ui(self):
+        root_layout = QVBoxLayout()
+        self.setLayout(root_layout)
+
+        group_box, group_layout = create_v_group_box('')
+        group_layout.addWidget(self.__label_uuid)
+        group_layout.addWidget(self.__label_source)
+        group_layout.addWidget(self.__datetime_time)
+        # group_layout.addLayout(horizon_layout([QLabel('笔记ID'), self.__label_uuid]))
+        # group_layout.addLayout(horizon_layout([QLabel('笔记文件'), self.__label_source]))
+        # group_layout.addLayout(horizon_layout([QLabel('记录时间'), self.__datetime_time]))
+
+        root_layout.addWidget(group_box, 0)
+        root_layout.addWidget(self.__text_record, 10)
+
+        root_layout.addLayout(horizon_layout([self.__button_apply, self.__button_cancel]))
+
+        self.setMinimumSize(500, 600)
+
+    def config_ui(self):
+        self.__label_uuid.setEnabled(False)
+        self.__label_source.setEnabled(False)
+        self.setWindowTitle('笔记')
+        self.__datetime_time.setCalendarPopup(True)
+
+    def set_memo_datetime(self, date_time: datetime.datetime):
+        self.__datetime_time.setDateTime(date_time)
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 class StockHistoryUi(QWidget):
@@ -76,7 +126,7 @@ class StockHistoryUi(QWidget):
         self.__time_axis.set_history_core(self.__history)
 
         self.__thread_candlestick = TimeThreadBase()
-        self.__thread_bottom = TimeThreadBase()
+        self.__thread__memo = TimeThreadBase()
 
         # Timer for update stock list
         self.__timer = QTimer()
@@ -146,8 +196,8 @@ class StockHistoryUi(QWidget):
         self.__thread_candlestick.set_thread_min_track_width(9999)
         self.__thread_candlestick.set_thread_color(QColor(201, 211, 140))
 
-        self.__thread_bottom.set_thread_min_track_width(9999)
-        self.__thread_bottom.set_thread_color(QColor(130, 57, 53))
+        self.__thread__memo.set_thread_min_track_width(9999)
+        self.__thread__memo.set_thread_color(QColor(130, 57, 53))
 
         self.__time_axis.set_axis_layout(LAYOUT_HORIZON)
         self.__time_axis.set_time_range(HistoryTime.years_to_seconds(2010), HistoryTime.years_to_seconds(2020))
@@ -155,11 +205,16 @@ class StockHistoryUi(QWidget):
         self.__time_axis.set_axis_scale_step(HistoryTime.TICK_LEAP_YEAR)
         self.__time_axis.set_axis_scale_step_limit(HistoryTime.TICK_DAY, HistoryTime.TICK_LEAP_YEAR * 2)
 
-        self.__time_axis.add_history_thread(self.__thread_bottom, ALIGN_LEFT)
+        self.__time_axis.add_history_thread(self.__thread__memo, ALIGN_LEFT)
         self.__time_axis.add_history_thread(self.__thread_candlestick, ALIGN_RIGHT)
 
         self.setMinimumWidth(1280)
         self.setMinimumHeight(800)
+
+        # ------------------ Right Button Menu ------------------
+
+        self.__time_axis.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.__time_axis.customContextMenuRequested.connect(self.on_custom_menu)
 
     def on_timer(self):
         # Check stock list ready and update combobox
@@ -198,6 +253,27 @@ class StockHistoryUi(QWidget):
             return_style = StockHistoryUi.RETURN_SIMPLE
 
         self.load_for_securities(input_securities, adjust_method, return_style)
+
+    # ------------------------------ Right Click Menu ------------------------------
+
+    def on_custom_menu(self, pos: QPoint):
+        align = self.__time_axis.align_from_point(pos)
+        thread = self.__time_axis.thread_from_point(pos)
+
+        opt_add_memo = None
+
+        menu = QMenu()
+        if thread == self.__thread__memo:
+            opt_add_memo = menu.addAction("新增笔记")
+
+        action = menu.exec_(self.__time_axis.mapToGlobal(pos))
+        if action is None:
+            return
+
+        # --------------------------- Add ---------------------------
+
+        if action == opt_add_memo:
+            pass
 
     # ------------------------------- TimeAxis.Agent -------------------------------
 
@@ -289,6 +365,39 @@ def init(sas: StockAnalysisSystem) -> bool:
 
 def widget(parent: QWidget) -> (QWidget, dict):
     return StockHistoryUi(sasEntry), {'name': 'History', 'show': False}
+
+
+# ------------------------------------------------ File Entry : main() -------------------------------------------------
+
+def main():
+    app = QApplication(sys.argv)
+    StockMemoEditor().exec()
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def exception_hook(type, value, tback):
+    # log the exception here
+    print('Exception hook triggered.')
+    print(type)
+    print(value)
+    print(tback)
+    # then call the default handler
+    sys.__excepthook__(type, value, tback)
+
+
+if __name__ == "__main__":
+    sys.excepthook = exception_hook
+    try:
+        main()
+    except Exception as e:
+        print('Error =>', e)
+        print('Error =>', traceback.format_exc())
+        exit()
+    finally:
+        pass
+
+
 
 
 
