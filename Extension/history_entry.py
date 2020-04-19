@@ -55,9 +55,10 @@ finally:
 
 
 class StockMemoEditor(QDialog):
-    def __init__(self):
+    def __init__(self, history: History):
         super(StockMemoEditor, self).__init__()
 
+        self.__history = history
         self.__records = []
         self.__source = ''
         self.__current_record = None
@@ -98,8 +99,54 @@ class StockMemoEditor(QDialog):
         self.setWindowTitle('笔记')
         self.__datetime_time.setCalendarPopup(True)
 
+        self.__button_apply.clicked.connect(self.on_button_apply)
+        self.__button_cancel.clicked.connect(self.on_button_cancel)
+
+    def on_button_apply(self):
+        if self.__current_record is None:
+            self.__current_record = HistoricalRecord()
+            self.__records.append(self.__current_record)
+        else:
+            self.__current_record.reset()
+
+        if not self.ui_to_record(self.__current_record):
+            return
+
+        # self.__history.
+
+        self.close()
+
+    def on_button_cancel(self):
+        self.close()
+
+    def set_memo(self, memo: HistoricalRecord):
+        self.record_to_ui(memo)
+
     def set_memo_datetime(self, date_time: datetime.datetime):
         self.__datetime_time.setDateTime(date_time)
+
+    # --------------------------------------------------- Operation ----------------------------------------------------
+
+    def clear_ui(self):
+        self.__label_uuid.setText('')
+        self.__label_source.setText('')
+        self.__text_record.clear()
+
+    def ui_to_record(self, record: HistoricalRecord) -> bool:
+        input_time = self.__datetime_time.dateTime()
+        input_memo = self.__text_record.toPlainText()
+        record.set_label_tags('time', str(input_time.split))
+        record.set_label_tags('event', input_memo)
+        record.set_focus_label('time')
+        return True
+
+    def record_to_ui(self, record: HistoricalRecord or str):
+        self.clear_ui()
+
+        self.__label_uuid.setText(LabelTagParser.tags_to_text(record.uuid()))
+        self.__label_source.setText(self.__source)
+        self.__line_time.setText(LabelTagParser.tags_to_text(record.time()))
+        self.__text_record.setText(LabelTagParser.tags_to_text(record.event()))
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -116,6 +163,7 @@ class StockHistoryUi(QWidget):
         super(StockHistoryUi, self).__init__()
 
         self.__sas = sas
+        self.__memo_file = ''
         self.__paint_securities = ''
         self.__paint_trade_data = None
 
@@ -124,6 +172,7 @@ class StockHistoryUi(QWidget):
         self.__time_axis = TimeAxis()
         self.__time_axis.set_agent(self)
         self.__time_axis.set_history_core(self.__history)
+        self.__time_axis.popup_editor_for_index = self.popup_editor_for_index
 
         self.__thread_candlestick = TimeThreadBase()
         self.__thread__memo = TimeThreadBase()
@@ -265,20 +314,23 @@ class StockHistoryUi(QWidget):
         menu = QMenu()
         if thread == self.__thread__memo:
             opt_add_memo = menu.addAction("新增笔记")
+            action = menu.exec_(self.__time_axis.mapToGlobal(pos))
 
-        action = menu.exec_(self.__time_axis.mapToGlobal(pos))
-        if action is None:
+            if action == opt_add_memo:
+                tick = self.__time_axis.tick_from_point(pos)
+                date_time = HistoryTime.tick_to_pytime(tick)
+                editor = StockMemoEditor(self.__history)
+                editor.set_memo_datetime(date_time)
+                editor.exec_()
+
+    # --------------------------------------------------------------
+
+    def popup_editor_for_index(self, index: HistoricalRecord):
+        if index is None:
+            print('None index.')
             return
-
-        # --------------------------- Add ---------------------------
-
-        if action == opt_add_memo:
-            pass
-
-    # ------------------------------- TimeAxis.Agent -------------------------------
-
-    def on_r_button_up(self, pos: QPoint):
-        pass
+        editor = StockMemoEditor(self.__history)
+        editor.set_memo(index)
 
     # ------------------------------------------------------------------------------
 
@@ -296,6 +348,7 @@ class StockHistoryUi(QWidget):
             his_file = path.join(depot_path, securities + '.his')
             self.__history.load_source(his_file)
 
+            self.__memo_file = his_file
             self.__paint_trade_data = trade_data
             self.__paint_securities = securities
 

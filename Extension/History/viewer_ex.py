@@ -802,6 +802,17 @@ class TimeAxis(QWidget):
                 return thread
         return None
 
+    def tick_from_point(self, pos: QPoint) -> HistoryTime.TICK:
+        if self.__layout == LAYOUT_HORIZON:
+            pixel = pos.x()
+        else:
+            pixel = pos.y()
+        if pixel in self.__optimise_pixel.keys():
+            mouse_on_scale_value = self.__optimise_pixel[pixel]
+        else:
+            mouse_on_scale_value = self.__coordinate_metrics.pixel_to_value(pixel)
+        return mouse_on_scale_value
+
     # --------------------------------------------------- UI Event ----------------------------------------------------
 
     def wheelEvent(self, event):
@@ -1346,14 +1357,7 @@ class TimeAxis(QWidget):
             return
         if self.__mouse_on_coordinate != pos:
             self.__mouse_on_coordinate = pos
-            if self.__layout == LAYOUT_HORIZON:
-                pixel = pos.x()
-            else:
-                pixel = pos.y()
-            if pixel in self.__optimise_pixel.keys():
-                self.__mouse_on_scale_value = self.__optimise_pixel[pixel]
-            else:
-                self.__mouse_on_scale_value = self.__coordinate_metrics.pixel_to_value(pixel)
+            self.__mouse_on_scale_value = self.tick_from_point(pos)
             self.__mouse_on_item = self.axis_item_from_point(pos)
             self.repaint()
 
