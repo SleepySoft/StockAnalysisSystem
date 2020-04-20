@@ -498,10 +498,7 @@ class HistoryIndexTrack(TimeThreadBase):
 class TimeAxis(QWidget):
 
     class Agent:
-        def __init__(self):
-            pass
-
-        def on_r_button_up(self, pos: QPoint):
+        def on_edit_record(self, record: HistoricalRecord) -> bool:
             pass
 
     class Scale:
@@ -859,9 +856,9 @@ class TimeAxis(QWidget):
             self.__scroll += self.__offset
             self.__offset = 0
             self.repaint()
-        elif event.button() == QtCore.Qt.RightButton:
-            for agent in self.__agent:
-                agent.on_r_button_up(event.pos())
+        # elif event.button() == QtCore.Qt.RightButton:
+        #     for agent in self.__agent:
+        #         agent.on_r_button_up(event.pos())
 
     def mouseDoubleClickEvent(self,  event):
         now_pos = event.pos()
@@ -914,7 +911,6 @@ class TimeAxis(QWidget):
         # self.__history_editor.show()
         # self.__history_editor.raise_()
         self.__history_editor.exec_()
-        self.setFocus()
 
     # -------------------------------------------------- Calculation ---------------------------------------------------
 

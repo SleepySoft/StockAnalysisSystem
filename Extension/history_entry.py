@@ -121,7 +121,7 @@ class StockMemoEditor(QDialog):
             return
 
         self.__current_record.set_source(self.__source)
-        self.__history.update_records(self.__current_record)
+        self.__history.update_records([self.__current_record])
 
         records = self.__history.get_record_by_source(self.__source)
         result = HistoricalRecordLoader.to_local_source(records, self.__source)
@@ -145,7 +145,7 @@ class StockMemoEditor(QDialog):
         self.__source = memo.source()
         self.record_to_ui(memo)
 
-    def set_source(self, source:str):
+    def set_source(self, source: str):
         self.__source = source
 
     def set_memo_datetime(self, date_time: datetime.datetime):
@@ -161,7 +161,9 @@ class StockMemoEditor(QDialog):
     def ui_to_record(self, record: HistoricalRecord) -> bool:
         input_time = self.__datetime_time.dateTime()
         input_memo = self.__text_record.toPlainText()
-        record.set_label_tags('time', str(input_time.split))
+        date_time = input_time.toPyDateTime()
+
+        record.set_label_tags('time', date_time.strftime('%Y-%m-%d %H:%M:%S'))
         record.set_label_tags('event', input_memo)
         record.set_focus_label('time')
         return True
@@ -351,6 +353,7 @@ class StockHistoryUi(QWidget):
                 date_time = HistoryTime.tick_to_pytime(tick)
                 editor = StockMemoEditor(self.__history)
                 editor.set_memo_datetime(date_time)
+                editor.set_source(self.__memo_file)
                 editor.exec_()
 
     # --------------------------------------------------------------
