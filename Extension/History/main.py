@@ -458,7 +458,7 @@ class HistoryUi(QMainWindow):
         dialog with options on how to proceed - Save, Close, Cancel buttons
         """
         reply = QMessageBox.question(self,
-                                     QtCore.QCoreApplication.translate('main', "退出"),
+                                     QtCore.QCoreApplication.translate('main', "退�?),
                                      QtCore.QCoreApplication.translate('main', "是否确认退出？"),
                                      QMessageBox.Close | QMessageBox.Cancel,
                                      QMessageBox.Cancel)
@@ -497,11 +497,6 @@ class HistoryUi(QMainWindow):
         #     self.__time_axis.add_history_thread(thread, align)
         #
         #     thread_index += 1
-
-    # ------------------------------- TimeAxis.Agent -------------------------------
-
-    def on_r_button_up(self, pos: QPoint):
-        pass
 
 
 # ----------------------------------------------------------------------------------------------------------------------
