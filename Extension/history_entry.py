@@ -59,7 +59,6 @@ class StockMemoEditor(QDialog):
         super(StockMemoEditor, self).__init__()
 
         self.__history = history
-        self.__records = []
         self.__source = ''
         self.__current_record = None
 
@@ -105,27 +104,54 @@ class StockMemoEditor(QDialog):
     def on_button_apply(self):
         if self.__current_record is None:
             self.__current_record = HistoricalRecord()
-            self.__records.append(self.__current_record)
         else:
             self.__current_record.reset()
 
         if not self.ui_to_record(self.__current_record):
+            QMessageBox.information(self,
+                                    QtCore.QCoreApplication.translate('History', '错误'),
+                                    QtCore.QCoreApplication.translate('History', '采集界面数据错误'),
+                                    QMessageBox.Ok, QMessageBox.Ok)
+            return
+        if self.__source is None or self.__source == '':
+            QMessageBox.information(self,
+                                    QtCore.QCoreApplication.translate('History', '错误'),
+                                    QtCore.QCoreApplication.translate('History', '没有指定数据源，无法保存'),
+                                    QMessageBox.Ok, QMessageBox.Ok)
             return
 
-        # self.__history.
+        self.__current_record.set_source(self.__source)
+        self.__history.update_records(self.__current_record)
+
+        records = self.__history.get_record_by_source(self.__source)
+        result = HistoricalRecordLoader.to_local_source(records, self.__source)
+
+        if not result:
+            QMessageBox.information(self,
+                                    QtCore.QCoreApplication.translate('History', '错误'),
+                                    QtCore.QCoreApplication.translate('History', '保存到数据源 [%s] 失败' % self.__source),
+                                    QMessageBox.Ok, QMessageBox.Ok)
+            return
 
         self.close()
 
     def on_button_cancel(self):
         self.close()
 
+    # ---------------------------------------------------------------------------
+
     def set_memo(self, memo: HistoricalRecord):
+        self.__current_record = memo
+        self.__source = memo.source()
         self.record_to_ui(memo)
+
+    def set_source(self, source:str):
+        self.__source = source
 
     def set_memo_datetime(self, date_time: datetime.datetime):
         self.__datetime_time.setDateTime(date_time)
 
-    # --------------------------------------------------- Operation ----------------------------------------------------
+    # -------------------------------- Operation --------------------------------
 
     def clear_ui(self):
         self.__label_uuid.setText('')
@@ -301,7 +327,11 @@ class StockHistoryUi(QWidget):
         else:
             return_style = StockHistoryUi.RETURN_SIMPLE
 
-        self.load_for_securities(input_securities, adjust_method, return_style)
+        if not self.load_for_securities(input_securities, adjust_method, return_style):
+            QMessageBox.information(self,
+                                    QtCore.QCoreApplication.translate('History', '没有数据'),
+                                    QtCore.QCoreApplication.translate('History', '没有交易数据，请检查证券编码或更新本地数据'),
+                                    QMessageBox.Ok, QMessageBox.Ok)
 
     # ------------------------------ Right Click Menu ------------------------------
 
@@ -334,7 +364,7 @@ class StockHistoryUi(QWidget):
 
     # ------------------------------------------------------------------------------
 
-    def load_for_securities(self, securities: str, adjust_method: int, return_style: int):
+    def load_for_securities(self, securities: str, adjust_method: int, return_style: int) -> bool:
         if securities != self.__paint_securities or self.__paint_trade_data is None:
             if securities in DEPENDS_INDEX.keys():
                 uri = 'TradeData.Index.Daily'
@@ -352,8 +382,8 @@ class StockHistoryUi(QWidget):
             self.__paint_trade_data = trade_data
             self.__paint_securities = securities
 
-        if self.__paint_trade_data is None:
-            return
+        if self.__paint_trade_data is None or len(self.__paint_trade_data) == 0:
+            return False
 
         trade_data = pd.DataFrame()
         if adjust_method == StockHistoryUi.ADJUST_TAIL and 'adj_factor' in self.__paint_trade_data.columns:
@@ -376,6 +406,8 @@ class StockHistoryUi(QWidget):
         for candle_stick in candle_sticks:
             self.__thread_candlestick.add_axis_items(candle_stick)
         self.__thread_candlestick.refresh()
+
+        return True
 
 
 # ----------------------------------------------------------------------------------------------------------------------
