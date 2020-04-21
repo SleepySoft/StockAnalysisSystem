@@ -173,8 +173,11 @@ class StockMemoEditor(QDialog):
 
         self.__label_uuid.setText(LabelTagParser.tags_to_text(record.uuid()))
         self.__label_source.setText(self.__source)
-        self.__line_time.setText(LabelTagParser.tags_to_text(record.time()))
         self.__text_record.setText(LabelTagParser.tags_to_text(record.event()))
+
+        since = record.since()
+        pytime = HistoryTime.tick_to_pytime(since)
+        self.__datetime_time.setDateTime(pytime)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -203,7 +206,7 @@ class StockHistoryUi(QWidget):
         self.__time_axis.popup_editor_for_index = self.popup_editor_for_index
 
         self.__thread_candlestick = TimeThreadBase()
-        self.__thread__memo = TimeThreadBase()
+        self.__thread_memo = HistoryIndexTrack()
 
         # Timer for update stock list
         self.__timer = QTimer()
@@ -273,16 +276,17 @@ class StockHistoryUi(QWidget):
         self.__thread_candlestick.set_thread_min_track_width(9999)
         self.__thread_candlestick.set_thread_color(QColor(201, 211, 140))
 
-        self.__thread__memo.set_thread_min_track_width(9999)
-        self.__thread__memo.set_thread_color(QColor(130, 57, 53))
+        self.__thread_memo.set_thread_min_track_width(9999)
+        self.__thread_memo.set_thread_color(QColor(130, 57, 53))
 
+        self.__time_axis.set_axis_offset(0.20)
         self.__time_axis.set_axis_layout(LAYOUT_HORIZON)
         self.__time_axis.set_time_range(HistoryTime.years_to_seconds(2010), HistoryTime.years_to_seconds(2020))
         self.__time_axis.set_axis_time_range_limit(HistoryTime.years_to_seconds(1990), HistoryTime.now_tick())
         self.__time_axis.set_axis_scale_step(HistoryTime.TICK_LEAP_YEAR)
         self.__time_axis.set_axis_scale_step_limit(HistoryTime.TICK_DAY, HistoryTime.TICK_LEAP_YEAR * 2)
 
-        self.__time_axis.add_history_thread(self.__thread__memo, ALIGN_LEFT)
+        self.__time_axis.add_history_thread(self.__thread_memo, ALIGN_LEFT)
         self.__time_axis.add_history_thread(self.__thread_candlestick, ALIGN_RIGHT)
 
         self.setMinimumWidth(1280)
@@ -344,7 +348,7 @@ class StockHistoryUi(QWidget):
         opt_add_memo = None
 
         menu = QMenu()
-        if thread == self.__thread__memo:
+        if thread == self.__thread_memo:
             opt_add_memo = menu.addAction("新增笔记")
             action = menu.exec_(self.__time_axis.mapToGlobal(pos))
 
@@ -364,6 +368,7 @@ class StockHistoryUi(QWidget):
             return
         editor = StockMemoEditor(self.__history)
         editor.set_memo(index)
+        editor.exec_()
 
     # ------------------------------------------------------------------------------
 
@@ -379,7 +384,9 @@ class StockHistoryUi(QWidget):
             history_path = path.join(base_path, 'History')
             depot_path = path.join(history_path, 'depot')
             his_file = path.join(depot_path, securities + '.his')
-            self.__history.load_source(his_file)
+
+            records = self.__history.load_source(his_file)
+            self.__thread_memo.set_thread_event_indexes(records)
 
             self.__memo_file = his_file
             self.__paint_trade_data = trade_data
@@ -459,7 +466,7 @@ def widget(parent: QWidget) -> (QWidget, dict):
 
 def main():
     app = QApplication(sys.argv)
-    StockMemoEditor().exec()
+    StockMemoEditor(History()).exec()
 
 
 # ----------------------------------------------------------------------------------------------------------------------

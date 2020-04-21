@@ -21,6 +21,33 @@ finally:
 def now_cn_str() -> str:
     return time.strftime('%Y{y}%m{m}%d{d}').format(y='年', m='月', d='日')
 
+
+def text_auto_pytime(text: str) -> datetime.datetime:
+    if isinstance(text, datetime.datetime):
+        return text
+    # noinspection PyBroadException
+    try:
+        return datetime.datetime.strptime(text, '%Y-%m-%d %H:%M:%S')
+    except Exception:
+        pass
+    # noinspection PyBroadException
+    try:
+        return datetime.datetime.strptime(text, '%Y-%m-%d')
+    except Exception:
+        pass
+    # noinspection PyBroadException
+    try:
+        return datetime.datetime.strptime(text, '%H:%M:%S')
+    except Exception:
+        pass
+    # noinspection PyBroadException
+    try:
+        return datetime.datetime.strptime(text, '%Y%m%d')
+    except Exception:
+        pass
+    return None
+
+
 # TODO: Use NLP to process nature language
 
 
@@ -139,9 +166,17 @@ class HistoryTime:
         return datetime.datetime(*date_time)
 
     @staticmethod
-    def pytime_to_tick(ts: time.struct_time) -> TICK:
-        return HistoryTime.date_time_to_seconds(ts.tm_year, ts.tm_mon, ts.tm_mday,
-                                                   ts.tm_hour, ts.tm_min, ts.tm_sec)
+    def pytime_to_tick(pytime: datetime.datetime or time.struct_time) -> TICK:
+        if isinstance(pytime, datetime.datetime):
+            return HistoryTime.date_time_to_seconds(pytime.year, pytime.month, pytime.day,
+                                                    pytime.hour, pytime.minute, pytime.second)
+        elif isinstance(pytime, datetime.date):
+            return HistoryTime.date_time_to_seconds(pytime.year, pytime.month, pytime.day)
+        elif isinstance(pytime, time.struct_time):
+            return HistoryTime.date_time_to_seconds(pytime.tm_year, pytime.tm_mon, pytime.tm_mday,
+                                                    pytime.tm_hour, pytime.tm_min, pytime.tm_sec)
+        else:
+            return 0
 
     @staticmethod
     def time_str_to_tick(text: str):
@@ -279,6 +314,11 @@ class HistoryTime:
 
     @staticmethod
     def time_text_to_history_times(text: str) -> [TICK]:
+        # Check standard time
+        pydatetime = text_auto_pytime(text)
+        if pydatetime is not None:
+            return [HistoryTime.pytime_to_tick(pydatetime)]
+        # Check
         time_text_list = HistoryTime.split_normalize_time_text(text)
         return [HistoryTime.time_str_to_history_time(time_text) for time_text in time_text_list]
 

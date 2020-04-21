@@ -132,7 +132,8 @@ class TimeThreadBase:
     def axis_item_from_point(self, point: QPoint) -> AxisItem or None:
         if not self.get_thread_metrics().contains(point):
             return None
-        for item in self.__axis_items:
+        for i in range(len(self.__axis_items) - 1, -1, -1):
+            item = self.__axis_items[i]
             if item.get_item_metrics().contains(point):
                 return item
         return None
@@ -173,6 +174,8 @@ class TimeThreadBase:
 
 
 class HistoryIndexBar(AxisItem):
+    EVENT_BAR_WIDTH_LIMIT = 50
+
     def __init__(self, index: HistoricalRecord, extra: dict = {}):
         super(HistoryIndexBar, self).__init__(index, extra)
         self.__event_bk = QColor(243, 244, 246)
@@ -221,6 +224,7 @@ class HistoryIndexBar(AxisItem):
         if self.index.since() == self.index.until():
             outer_left, outer_right = outer_metrics.get_transverse_limit()
             diagonal = abs(outer_right - outer_left)
+            diagonal = min(diagonal, HistoryIndexBar.EVENT_BAR_WIDTH_LIMIT)
             half_diagonal = diagonal / 2
             since_pixel, until_pixel = self.get_item_metrics().get_longitudinal_range()
             since_pixel -= abs(half_diagonal)
@@ -304,8 +308,7 @@ class HistoryIndexBar(AxisItem):
         qp.setPen(QPen(Qt.black, 1))
         qp.setFont(font)
 
-        abstract_tags = index.get_tags('abstract')
-        abstract = abstract_tags[0] if len(abstract_tags) > 0 else ''
+        abstract = index.abstract()
         qp.drawText(index_rect, Qt.AlignHCenter | Qt.AlignVCenter | Qt.TextWordWrap, abstract)
         # qp.restore()
 
