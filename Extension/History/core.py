@@ -422,6 +422,10 @@ class HistoricalRecord(LabelTag):
     def event(self) -> str:
         return self.get_tags('event')
 
+    def abstract(self) -> str:
+        brief = self.get_tags('abstract_brief')
+        return brief if brief is not None and len(brief) > 0 else self.abstract_brief()
+
     # ---------------------------------------------------- Features ----------------------------------------------------
 
     def reset(self):
@@ -469,14 +473,16 @@ class HistoricalRecord(LabelTag):
         self.__since = his_record.since()
         self.__until = his_record.until()
         self.__record_source = his_record.source()
-
-        abstract = LabelTagParser.tags_to_text(his_record.title())
-        abstract = LabelTagParser.tags_to_text(his_record.brief()) if abstract == '' else abstract
-        abstract = LabelTagParser.tags_to_text(his_record.event()) if abstract == '' else abstract
-        self.set_label_tags('abstract', abstract.strip()[:50])
+        self.set_label_tags('abstract', self.abstract_brief())
 
     def period_adapt(self, since: float, until: float):
         return (self.__since <= until) and (self.__until >= since)
+
+    def abstract_brief(self) -> str:
+        abstract = LabelTagParser.tags_to_text(self.get_tags('title'))
+        abstract = LabelTagParser.tags_to_text(self.get_tags('brief')) if abstract == '' else abstract
+        abstract = LabelTagParser.tags_to_text(self.get_tags('event')) if abstract == '' else abstract
+        return abstract.strip()[:50]
 
     @staticmethod
     def check_label_tags(self, label: str, tags: str or [str]) -> [str]:
