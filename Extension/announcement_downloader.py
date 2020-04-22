@@ -192,46 +192,48 @@ class AnnouncementDownloader:
         for s in stock_identity:
             if s.endswith('.SSE'):
                 s = s[: -4]
-                page_data = AnnouncementDownloader.get_sse_annual_report_pages(1, s, time_range)
+                f = AnnouncementDownloader.get_sse_annual_report_pages
             elif s.endswith('.SZSE'):
                 s = s[: -5]
-                page_data = AnnouncementDownloader.get_szse_annual_report_pages(1, s, time_range)
+                f = AnnouncementDownloader.get_szse_annual_report_pages
             else:
                 exchange = get_stock_exchange(s)
                 if exchange == 'SSE':
-                    page_data = AnnouncementDownloader.get_sse_annual_report_pages(1, s, time_range)
+                    f = AnnouncementDownloader.get_sse_annual_report_pages
                 elif exchange == 'SZSE':
-                    page_data = AnnouncementDownloader.get_szse_annual_report_pages(1, s, time_range)
+                    f = AnnouncementDownloader.get_szse_annual_report_pages
                 else:
-                    page_data = AnnouncementDownloader.get_sse_annual_report_pages(1, s, time_range)
-            AnnouncementDownloader.execute_download(page_data, 
-                                                    include_filter=['年年度报告'],
-                                                    exclude_filter=['确认意见', '摘要'],
-                                                    quit_flag=quit_flag)
+                    f = AnnouncementDownloader.get_sse_annual_report_pages
+            AnnouncementDownloader.__download_annual_report_single_page(s, f, time_range, quit_flag)
 
-
-# allowed_list = [
-#     '2018年年度报告（更新后）',
-#     '2018年年度报告',
-#     '2017年年度报告（更新后）',
-#     '2017年年度报告',
-#     '2016年年度报告（更新后）',
-#     '2016年年度报告',
-# ]
-# allowed_list_2 = [
-#     '招股书',
-#     '招股说明书',
-#     '招股意向书',
-# ]
-#
-# exclude = [
-#     '确认意见'
-# ]
+    @staticmethod
+    def __download_annual_report_single_page(s, f, time_range, quit_flag):
+        page = 1
+        while page < 1000:  # Max limit
+            if quit_flag is not None and quit_flag[0]:
+                break
+            try:
+                page_data = f(page, s, time_range)
+                page += 1
+                if len(page_data) == 0:
+                    break
+                AnnouncementDownloader.execute_download(page_data,
+                                                        include_filter=['年年度报告'],
+                                                        exclude_filter=['确认意见', '摘要'],
+                                                        quit_flag=quit_flag)
+                if len(page_data) != 30:
+                    break
+            except Exception as e:
+                print(e)
+                print('Maybe page reaches end.')
+                break
+            finally:
+                pass
 
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-# --------------------------------------------- UpdateTask ---------------------------------------------
+# ----------------------------------- UpdateTask -----------------------------------
 
 class AnnouncementDownloadTask(TaskQueue.Task):
     REPORT_TYPE_NONE = 0
@@ -273,16 +275,17 @@ class AnnouncementDownloadTask(TaskQueue.Task):
             pass
 
 
-# --------------------------------------- AnnouncementDownloaderUi ---------------------------------------
+# ----------------------------- AnnouncementDownloaderUi -----------------------------
 
 DEFAULT_INFO = '''
-1.本扩展用以从巨朝网下载上市公司的各种公开报告
+本扩展程序功能：从巨朝网下载上市公司公开报告
+1.下载代码来自：https://github.com/gaodechen/cninfo_process
 2.如果选择“自定义”，请自行设置关键字以根据报告标题进行过滤
-3.下载任务会占用系统工作队列，请在View->Task中管理下载任务
 3.默认下载路径为当前目录下Download/report/
-4.如果选择时间范围过大或股票过多，可能会被网站BAN
-5.下载代码来自：https://github.com/gaodechen/cninfo_process
-6.已知缺陷：暂时只能取第一页的报告，后面解决
+4.下载任务会占用系统工作队列，和数据更新功能共享资源
+ - 请在“View->任务管理”中管理下载任务
+ - 在前一个任务没完成时，也可以添加下一个任务
+5.如果选择时间范围过大或股票过多，可能会被网站BAN，切勿贪多
 '''
 
 
@@ -420,7 +423,9 @@ def init(sas) -> bool:
 
 
 def widget(parent: QWidget) -> (QWidget, dict):
-    return AnnouncementDownloaderUi(sasEntry.get_data_hub_entry()), {'name': 'Announcement Downloader', 'show': False}
+    return AnnouncementDownloaderUi(
+        sasEntry.get_data_hub_entry(), sasEntry.get_task_queue()), \
+           {'name': 'Announcement Downloader', 'show': False}
 
 
 # ----------------------------------------------------------------------------------------------------------------------
