@@ -17,10 +17,14 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QHBoxLayout, QWidget, QPu
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def horizon_layout(widgets: list) -> QHBoxLayout:
+def horizon_layout(widgets: list, weights: list = None) -> QHBoxLayout:
     layout = QHBoxLayout()
-    for widget in widgets:
-        layout.addWidget(widget)
+    if weights is None:
+        weights = []
+    while len(weights) < len(widgets):
+        weights.append(1)
+    for widget, weight in zip(widgets, weights):
+        layout.addWidget(widget, weight)
     return layout
 
 
