@@ -37,6 +37,8 @@ https://github.com/SleepySoft/StockAnalysisSystem
 > 请谨慎进行大批量下载  
   
 # 更新计划：
+将分析过程用到的参数抽取为因子  
+加入更多常用的因子  
   
 # 联系作者
 如果有任何意见及建议，或者对此项目感兴趣的，请联系我：  
