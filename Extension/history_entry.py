@@ -410,6 +410,13 @@ class StockHistoryUi(QWidget):
             trade_data['trade_date'] = self.__paint_trade_data['trade_date']
         else:
             trade_data = self.__paint_trade_data
+
+        if return_style == StockHistoryUi.RETURN_LOG:
+            trade_data['open'] = np.log(self.__paint_trade_data['open'])
+            trade_data['close'] = np.log( self.__paint_trade_data['close'])
+            trade_data['high'] = np.log(self.__paint_trade_data['high'])
+            trade_data['low'] = np.log(self.__paint_trade_data['low'])
+
         candle_sticks = build_candle_stick(trade_data)
 
         self.__thread_candlestick.clear()
