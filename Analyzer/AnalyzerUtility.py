@@ -420,11 +420,13 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
             row = 2
 
         if len(score) > 0:
-            avg_score = sum(score) / float(len(score))
+            min_score = min(score)
+            # avg_score = sum(score) / float(len(score))
         else:
-            avg_score = None
-        fill_text = __score_to_fill_text(avg_score)
-        fill_style = __score_to_fill_style(avg_score)
+            min_score = None
+            # avg_score = None
+        fill_text = __score_to_fill_text(min_score)
+        fill_style = __score_to_fill_style(min_score)
 
         ws_score[col + str(row)] = fill_text
         ws_comments[col + str(row)] = fill_text
