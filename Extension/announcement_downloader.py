@@ -144,24 +144,11 @@ class AnnouncementDownloader:
             if quit_flag is not None and quit_flag[0]:
                 break
             title = page['announcementTitle']
-
-            allowed = False
-            if include_filter is not None and len(include_filter) > 0:
-                for inc in include_filter:
-                    if inc in title:
-                        allowed = True
-                        break
-            else:
-                allowed = True
-
-            if exclude_filter is not None and len(exclude_filter) > 0:
-                for exc in exclude_filter:
-                    if exc in title:
-                        allowed = False
-                        break
-            print('Announcement <<' + title + '>> : ' + ('Allowed' if allowed else 'Ignore'))
+            allowed = AnnouncementDownloader.check_filter_allowed(title, include_filter, exclude_filter)
             if not allowed:
+                print('  %s -> Ignore' % title)
                 continue
+            print('  %s -> Download' % title)
 
             download = download_path + page["adjunctUrl"]
             file_name = AnnouncementDownloader.format_download_path(page)
@@ -169,7 +156,7 @@ class AnnouncementDownloader:
             if '*' in file_name:
                 file_name = file_name.replace('*', '')
 
-            time.sleep(random.random() * 2)
+            time.sleep(random.random() * 5)
             r = requests.get(download)
 
             f = open(file_name, "wb")
@@ -183,38 +170,62 @@ class AnnouncementDownloader:
         makedirs(file_path, exist_ok=True)
         return path.join(file_path, file_name)
 
+    @staticmethod
+    def check_filter_allowed(text: str, include_filter: [str] or None, exclude_filter: [str] or None) -> bool:
+        allowed = False
+        if include_filter is not None and len(include_filter) > 0:
+            for inc in include_filter:
+                if inc in text:
+                    allowed = True
+                    break
+        else:
+            allowed = True
+
+        if exclude_filter is not None and len(exclude_filter) > 0:
+            for exc in exclude_filter:
+                if exc in text:
+                    allowed = False
+                    break
+        return allowed
+
     # ----------------------------------------- Interface -----------------------------------------
 
     @staticmethod
     def download_annual_report(stock_identity: str or list, time_range: any = None, quit_flag: [bool] = None):
         if not isinstance(stock_identity, (list, tuple)):
             stock_identity = [stock_identity]
-        for s in stock_identity:
-            if s.endswith('.SSE'):
-                s = s[: -4]
-                f = AnnouncementDownloader.get_sse_annual_report_pages
-            elif s.endswith('.SZSE'):
-                s = s[: -5]
-                f = AnnouncementDownloader.get_szse_annual_report_pages
-            else:
-                exchange = get_stock_exchange(s)
-                if exchange == 'SSE':
-                    f = AnnouncementDownloader.get_sse_annual_report_pages
-                elif exchange == 'SZSE':
-                    f = AnnouncementDownloader.get_szse_annual_report_pages
-                else:
-                    f = AnnouncementDownloader.get_sse_annual_report_pages
-            AnnouncementDownloader.__download_annual_report_single_page(s, f, time_range, quit_flag)
+        for identity in stock_identity:
+            s, f = AnnouncementDownloader.__detect_stock_code_and_page_entry(identity)
+            AnnouncementDownloader.__download_report_for_securities(s, f, time_range, quit_flag)
 
     @staticmethod
-    def __download_annual_report_single_page(s, f, time_range, quit_flag):
+    def __detect_stock_code_and_page_entry(stock_identity: str) -> tuple:
+        if stock_identity.endswith('.SSE'):
+            s = stock_identity[: -4]
+            f = AnnouncementDownloader.get_sse_annual_report_pages
+        elif stock_identity.endswith('.SZSE'):
+            s = stock_identity[: -5]
+            f = AnnouncementDownloader.get_szse_annual_report_pages
+        else:
+            s = stock_identity
+            exchange = get_stock_exchange(stock_identity)
+            if exchange == 'SSE':
+                f = AnnouncementDownloader.get_sse_annual_report_pages
+            elif exchange == 'SZSE':
+                f = AnnouncementDownloader.get_szse_annual_report_pages
+            else:
+                f = AnnouncementDownloader.get_sse_annual_report_pages
+        return s, f
+
+    @staticmethod
+    def __download_report_for_securities(s, f, time_range, quit_flag):
         page = 1
         while page < 1000:  # Max limit
             if quit_flag is not None and quit_flag[0]:
                 break
             try:
+                print('Downloading report for %s, page %s' % (s, page))
                 page_data = f(page, s, time_range)
-                page += 1
                 if len(page_data) == 0:
                     break
                 AnnouncementDownloader.execute_download(page_data,
@@ -228,10 +239,35 @@ class AnnouncementDownloader:
                 print('Maybe page reaches end.')
                 break
             finally:
-                pass
+                page += 1
 
 
 # ----------------------------------------------------------------------------------------------------------------------
+
+ALL_STOCK_TEXT = '所有'
+
+
+DEFAULT_INFO = '''
+本扩展程序功能：从巨朝网下载上市公司公开报告
+1.下载代码来自：https://github.com/gaodechen/cninfo_process
+2.如果选择“自定义”，请自行设置关键字以根据报告标题进行过滤
+3.默认下载路径为当前目录下Download/report/
+4.下载任务会占用系统工作队列，和数据更新功能共享资源
+ - 请在“View->任务管理”中管理下载任务
+ - 在前一个任务没完成时，也可以添加下一个任务
+5.如果选择时间范围过大或股票过多，可能会被网站BAN，切勿贪多
+'''
+
+
+DOWNLOAD_ALL_TIPS = '''
+接下来的操作会为所有股票下载年报
+这会花费很长的时间以及占用很大的磁盘空间
+********并存在被网站BAN的可能性********
+如非特别需要，建议选择个别股票分别下载
+
+-------------是否继续此操作-------------
+'''
+
 
 # ----------------------------------- UpdateTask -----------------------------------
 
@@ -243,6 +279,10 @@ class AnnouncementDownloadTask(TaskQueue.Task):
         super(AnnouncementDownloadTask, self).__init__('AnnouncementDownloadTask')
 
         self.__quit_flag = [False]
+
+        # Modules
+        self.task_manager = None
+        self.data_utility = None
 
         # Parameters
         self.securities = ''
@@ -268,25 +308,33 @@ class AnnouncementDownloadTask(TaskQueue.Task):
         return 'Download Report: ' + self.securities
 
     def __execute_update(self):
-        if self.report_type == AnnouncementDownloadTask.REPORT_TYPE_ANNUAL:
+        if self.securities == ALL_STOCK_TEXT:
+            stock_list = self.data_utility.get_stock_list()
+            for stock_identity, stock_name in stock_list:
+                if self.__quit_flag is not None and self.__quit_flag[0]:
+                    break
+                # self.__build_sub_update(stock_identity)
+                AnnouncementDownloader.download_annual_report(stock_identity, (self.period_since, self.period_until),
+                                                              self.__quit_flag)
+        elif self.report_type == AnnouncementDownloadTask.REPORT_TYPE_ANNUAL:
             AnnouncementDownloader.download_annual_report(self.securities, (self.period_since, self.period_until),
                                                           self.__quit_flag)
         else:
             pass
 
+    # def __build_sub_update(self, securities: str):
+    #     task = AnnouncementDownloadTask()
+    #     task.securities = securities
+    #     task.period_since = self.period_since
+    #     task.period_until = self.period_until
+    #     task.filter_include = self.filter_include
+    #     task.filter_exclude = self.filter_exclude
+    #     task.report_type = self.report_type
+    #     task.task_manager = self.task_manager
+    #     self.task_manager.append_task(task)
+
 
 # ----------------------------- AnnouncementDownloaderUi -----------------------------
-
-DEFAULT_INFO = '''
-本扩展程序功能：从巨朝网下载上市公司公开报告
-1.下载代码来自：https://github.com/gaodechen/cninfo_process
-2.如果选择“自定义”，请自行设置关键字以根据报告标题进行过滤
-3.默认下载路径为当前目录下Download/report/
-4.下载任务会占用系统工作队列，和数据更新功能共享资源
- - 请在“View->任务管理”中管理下载任务
- - 在前一个任务没完成时，也可以添加下一个任务
-5.如果选择时间范围过大或股票过多，可能会被网站BAN，切勿贪多
-'''
 
 
 class AnnouncementDownloaderUi(QWidget):
@@ -299,6 +347,7 @@ class AnnouncementDownloaderUi(QWidget):
         self.__data_center = self.__data_hub.get_data_center() if self.__data_hub is not None else None
         self.__data_utility = self.__data_hub.get_data_utility() if self.__data_hub is not None else None
         self.__task_manager = task_manager
+        self.__translate = QtCore.QCoreApplication.translate
 
         # Timer for update stock list
         self.__timer = QTimer()
@@ -341,6 +390,8 @@ class AnnouncementDownloaderUi(QWidget):
 
     def __config_control(self):
         self.__combo_name.setEditable(True)
+        self.__combo_name.addItem('所有')
+        self.__combo_name.addItem('股票列表载入中')
         self.__radio_annual_report.setChecked(True)
         self.__line_filter_include.setEnabled(False)
         self.__line_filter_exclude.setEnabled(False)
@@ -352,6 +403,8 @@ class AnnouncementDownloaderUi(QWidget):
         # Check stock list ready and update combobox
         if self.__data_utility is not None:
             if self.__data_utility.stock_cache_ready():
+                self.__combo_name.clear()
+                self.__combo_name.addItem(ALL_STOCK_TEXT)
                 stock_list = self.__data_utility.get_stock_list()
                 for stock_identity, stock_name in stock_list:
                     self.__combo_name.addItem(stock_identity + ' | ' + stock_name, stock_identity)
@@ -369,9 +422,25 @@ class AnnouncementDownloaderUi(QWidget):
         input_securities = self.__combo_name.currentText()
         if '|' in input_securities:
             input_securities = input_securities.split('|')[0].strip()
+        if input_securities == ALL_STOCK_TEXT:
+            if self.__data_utility is None:
+                QMessageBox.information(self,
+                                        QtCore.QCoreApplication.translate('main', '提示'),
+                                        QtCore.QCoreApplication.translate('main', '无法获取股票列表'),
+                                        QMessageBox.Yes, QMessageBox.No)
+                return
+            reply = QMessageBox.question(self,
+                                         QtCore.QCoreApplication.translate('main', '操作确认'),
+                                         QtCore.QCoreApplication.translate('main', DOWNLOAD_ALL_TIPS),
+                                         QMessageBox.Yes | QMessageBox.No,
+                                         QMessageBox.No)
+            if reply != QMessageBox.Yes:
+                return
+        self.__build_download_task(input_securities)
 
+    def __build_download_task(self, securities: str):
         task = AnnouncementDownloadTask()
-        task.securities = input_securities
+        task.securities = securities
         task.period_since = self.__datetime_since.dateTime().toPyDateTime()
         task.period_until = self.__datetime_until.dateTime().toPyDateTime()
         task.filter_include = self.__line_filter_include.text().split(',')
@@ -380,6 +449,9 @@ class AnnouncementDownloaderUi(QWidget):
             AnnouncementDownloadTask.REPORT_TYPE_ANNUAL \
                 if self.__radio_annual_report.isChecked() else \
             AnnouncementDownloadTask.REPORT_TYPE_NONE
+
+        task.task_manager = self.__task_manager
+        task.data_utility = self.__data_utility
 
         if self.__task_manager is not None:
             self.__task_manager.append_task(task)
