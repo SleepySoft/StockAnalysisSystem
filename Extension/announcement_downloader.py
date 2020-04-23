@@ -498,7 +498,7 @@ def init(sas) -> bool:
 def widget(parent: QWidget) -> (QWidget, dict):
     return AnnouncementDownloaderUi(
         sasEntry.get_data_hub_entry(), sasEntry.get_task_queue()), \
-           {'name': 'Announcement Downloader', 'show': False}
+           {'name': '年报下载', 'show': False}
 
 
 # ----------------------------------------------------------------------------------------------------------------------
