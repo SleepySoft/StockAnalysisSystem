@@ -230,7 +230,7 @@ class AnnouncementDownloader:
                     break
                 AnnouncementDownloader.execute_download(page_data,
                                                         include_filter=['年年度报告'],
-                                                        exclude_filter=['确认意见', '摘要'],
+                                                        exclude_filter=['确认意见', '摘要', '已取消'],
                                                         quit_flag=quit_flag)
                 if len(page_data) != 30:
                     break
@@ -395,6 +395,7 @@ class AnnouncementDownloaderUi(QWidget):
         self.__radio_annual_report.setChecked(True)
         self.__line_filter_include.setEnabled(False)
         self.__line_filter_exclude.setEnabled(False)
+        self.__radio_customize_filter.setEnabled(False)
         self.__radio_annual_report.clicked.connect(self.on_radio_report_type)
         self.__radio_customize_filter.clicked.connect(self.on_radio_report_type)
         self.__button_download.clicked.connect(self.on_button_download)
