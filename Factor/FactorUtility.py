@@ -1,7 +1,3 @@
-
-
-
-
 import openpyxl
 import datetime
 import pandas as pd
