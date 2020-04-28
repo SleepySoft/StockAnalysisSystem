@@ -1,6 +1,8 @@
+import pandas as pd
+
 
 FACTOR_LIST = {
-    # uuid: (factor name, depends fields, factor comments, factor calc entry, reserve1, reserve2, reserve3)
+    # uuid: (provides, depends, comments, entry, reserve1, reserve2, reserve3)
 }
 
 
@@ -16,19 +18,10 @@ def plugin_prob() -> dict:
     }
 
 
-def plugin_adapt(method: str) -> bool:
-    return method in ['widget']
-
-
-def plugin_capacities() -> list:
-    return [
-        'widget',
-    ]
-
-
 # ----------------------------------------------------------------------------------------------------------------------
 
-
+def calculate(df_in: pd.DataFrame, factor: str, extra: dict) -> pd.DataFrame:
+    return None
 
 
 
