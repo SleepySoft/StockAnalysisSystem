@@ -9,7 +9,6 @@ FACTOR_LIST = {
     '6c568b09-3aee-4a6a-8440-542dfc5e8dc5': (),
     'f4d0cc16-afa5-4bf4-a7eb-0a44074634ec': (),
     '308e04df-6bc7-4724-bbc5-168232327ac6': (),
-    'cc43c66a-dabd-45a8-9698-b32e1817536d': (),
 }
 
 
