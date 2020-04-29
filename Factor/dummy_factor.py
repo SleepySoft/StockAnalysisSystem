@@ -31,9 +31,13 @@ def plugin_prob() -> dict:
     }
 
 
+def plugin_capacities() -> list:
+    return []
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 
-def calculate(df_in: pd.DataFrame, factor: [str],
+def calculate(factor: [str], identity: str or [str], time_serial: tuple, mapping: dict,
               data_hub: DataHubEntry, database: DatabaseEntry, extra: dict) -> pd.DataFrame:
     return None
 

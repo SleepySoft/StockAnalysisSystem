@@ -16,14 +16,24 @@ finally:
     pass
 
 
-def factor_cash_per_loan(df: pd.DataFrame, extra: dict) -> pd.DataFrame:
+def factor_cash_per_loan(identity: str or [str], time_serial: tuple, mapping: dict,
+                         data_hub: DataHubEntry, database: DatabaseEntry, extra: dict) -> pd.DataFrame:
+    fields = ['货币资金', '短期借款', '一年内到期的非流动负债',
+              '其他流动负债', '长期借款', '应付债券', '其他非流动负债']
+    fields = [mapping.get(f, f) for f in fields] + ['stock_identity', 'period']
+
+    data_utility = data_hub.get_data_utility()
+    df = data_utility.auto_query(identity, time_serial, fields, join_on=['stock_identity', 'period'])
+    df.fillna(0.0, inplace=True)
+    df = df.sort_values('period', ascending=False)
+
     df['短期负债'] = df['短期借款'] + df['一年内到期的非流动负债'] + df['其他流动负债']
     df['有息负债'] = df['短期负债'] + df['长期借款'] + df['应付债券'] + df['其他非流动负债']
 
     df['货币资金/有息负债'] = df['货币资金'] / df['有息负债']
     df['货币资金/短期负债'] = df['货币资金'] / df['短期负债']
 
-    return df
+    return df[['货币资金/有息负债', '货币资金/短期负债'] + ['stock_identity', 'period']]
 
 
 FACTOR_TABLE = {
@@ -54,9 +64,17 @@ def plugin_prob() -> dict:
     }
 
 
+def plugin_capacities() -> list:
+    return list(FACTOR_TABLE.keys())
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 
-def calculate(identity: str or [str], factor: [str], time_serial: tuple,
+def calculate(factor: str, identity: str or [str], time_serial: tuple, mapping: dict,
               data_hub: DataHubEntry, database: DatabaseEntry, extra: dict) -> pd.DataFrame:
+    for hash, prob in FACTOR_TABLE.items():
+        provides, depends, comments, entry, _, _, _ = prob
+        if factor in provides:
+            return entry(identity, time_serial, mapping, data_hub, database, extra)
     return None
 
