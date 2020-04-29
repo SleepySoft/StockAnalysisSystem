@@ -33,8 +33,9 @@ finally:
 class FactorCenter:
     FACTOR_PROB_LENGTH = 7
 
-    def __init__(self, data_hub, factor_plugin: PluginManager):
-        self.__datehub_entry = data_hub
+    def __init__(self, data_hub, database: DatabaseEntry, factor_plugin: PluginManager):
+        self.__data_hub_entry = data_hub
+        self.__database_entry = database
         self.__factor_plugin = factor_plugin
         self.__plugin_probs = []
         self.__factor_probs = {}
@@ -69,43 +70,35 @@ class FactorCenter:
                     print('Duplicate factor: ' + provide)
                 self.__factor_depends[provide] = depends
 
-    def query(self, sotck_ideneity: str, factor_name: str or [str],
+    def query(self, sotck_identity: str, factor_name: str or [str],
               time_serial: tuple, mapping: dict, extra: dict) -> pd.DataFrame or None:
-        if self.__datehub_entry is None:
-            return None
+        # if self.__data_hub_entry is None:
+        #     return None
         if not isinstance(factor_name, (list, tuple)):
             factor_name = [factor_name]
 
+        df = pd.DataFrame()
         fields_dependency, factor_dependency = self.calculate_factor_dependency(factor_name)
-        fields_dependency = [mapping.get(field, field) for field in fields_dependency]
 
-    def calculate(self, df_in: pd.DataFrame, factor_name: str or [str], extra: dict) -> pd.DataFrame or None:
-        if not isinstance(factor_name, (list, tuple)):
-            factor_name = [factor_name]
-        full_filled = True
-        factor_depends = self.get_factor_depends(factor_name)
-        for name in factor_depends:
-            if name not in list(df_in.columns):
-                full_filled = False
-                print('Factor depends field missing: ' + name)
-        if not full_filled:
-            return None
-
-        df = df_in[df_in.columns]
-        for factor in factor_name:
+        for factor in factor_dependency:
             if factor in df.columns:
                 continue
             result = self.get_plugin_manager().execute_module_function(
                 self.get_plugin_manager().all_modules(), 'calculate', {
-                    'df_in': df,
                     'factor': factor,
+                    'identity': sotck_identity,
+                    'time_serial': time_serial,
+                    'mapping': mapping,
+                    'data_hub': self.__data_hub_entry,
+                    'database': self.__database_entry,
                     'extra': extra,
-                }, False
+                }, True
             )
             if result is None or len(result) == 0:
                 continue
-            new_columns = result.columns - df.columns
-            df[new_columns] = result
+
+            df = result if len(df) == 0 else pd.merge(df, result, how='left', on=['stock_identity', 'period'])
+        return df
 
     def calculate_factor_dependency(self, factor_name: str or [str]) -> (list, list):
         if not isinstance(factor_name, (list, tuple)):
@@ -129,7 +122,7 @@ class FactorCenter:
 
 def __build_factor_center() -> FactorCenter:
     plugin = PluginManager(path.join(root_path, 'Factor'))
-    factor = FactorCenter(None, plugin)
+    factor = FactorCenter(None, None, plugin)
     return factor
 
 

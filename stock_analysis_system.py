@@ -25,13 +25,15 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         self.__config = config.Config()
         self.__task_queue = TaskQueue()
 
-        self.__collector_plugin = None
+        self.__factor_plugin = None
         self.__strategy_plugin = None
-        self.__extension__plugin = None
+        self.__collector_plugin = None
+        self.__extension_plugin = None
 
         self.__data_hub_entry = None
         self.__strategy_entry = None
         self.__database_entry = None
+        self.__factor_center = None
 
         self.__extension_manager = None
 
@@ -110,20 +112,25 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
             self.__log_errors.append('Config NoSql database fail.')
             return False
 
+        self.__factor_plugin = plugin_manager.PluginManager(path.join(root_path, 'Factor'))
         self.__strategy_plugin = plugin_manager.PluginManager(path.join(root_path, 'Analyzer'))
         self.__collector_plugin = plugin_manager.PluginManager(path.join(root_path, 'Collector'))
-        self.__extension__plugin = plugin_manager.PluginManager(path.join(root_path, 'Extension'))
+        self.__extension_plugin = plugin_manager.PluginManager(path.join(root_path, 'Extension'))
 
+        self.__factor_plugin.refresh()
         self.__strategy_plugin.refresh()
         self.__collector_plugin.refresh()
-        # self.__extension__plugin.refresh()
+        # self.__extension_plugin.refresh()
 
         self.__data_hub_entry = DataHubEntry.DataHubEntry(self.__database_entry, self.__collector_plugin)
         self.__strategy_entry = StrategyEntry.StrategyEntry(self.__strategy_plugin,
                                                             self.__data_hub_entry, self.__database_entry)
 
+        from DataHub.FactorCenter import FactorCenter
+        self.__factor_center = FactorCenter(self.__data_hub_entry, self.__database_entry, self.__factor_plugin)
+
         from extension import ExtensionManager
-        self.__extension_manager = ExtensionManager(self, self.__extension__plugin)
+        self.__extension_manager = ExtensionManager(self, self.__extension_plugin)
         self.__extension_manager.init()
 
         self.__task_queue.start()
@@ -149,6 +156,9 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
 
     def get_extension_manager(self):
         return self.__extension_manager
+
+    def get_factor_center(self):
+        return self.__factor_center
 
 
 

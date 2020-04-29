@@ -11,6 +11,7 @@ import config_ui
 import import_all
 import stock_analysis_system
 from Utiltity.ui_utility import *
+from Utiltity.time_utility import *
 
 
 def run_ui():
@@ -124,29 +125,41 @@ def run_strategy():
     pass
 
 
+def run_calc_factor():
+    sas = stock_analysis_system.StockAnalysisSystem()
+    factor_center = sas.get_factor_center()
+    factor_center.reload_plugin()
+    df = factor_center.query('000021.SZSE', '货币资金/有息负债', (default_since(), now()), {}, {})
+    print(df)
+
+
 def run_console():
+    sas = stock_analysis_system.StockAnalysisSystem()
+    sas.check_initialize()
+
     # update_special()
-    update_local([
-        # 'Market.SecuritiesInfo',
-        #
-        # 'Market.NamingHistory',
-        # 'Market.TradeCalender',
-        #
-        # 'Finance.Audit',
-        # 'Finance.BalanceSheet',
-        # 'Finance.IncomeStatement',
-        # 'Finance.CashFlowStatement',
-        #
-        # 'Stockholder.PledgeStatus',
-        # 'Stockholder.PledgeHistory',
-        # 'Stockholder.Statistics',
-        #
-        # 'TradeData.Stock.Daily',
-        #
-        # 'Market.IndexInfo',
-        'TradeData.Index.Daily',
-    ], True)
+    # update_local([
+    #     # 'Market.SecuritiesInfo',
+    #     #
+    #     # 'Market.NamingHistory',
+    #     # 'Market.TradeCalender',
+    #     #
+    #     # 'Finance.Audit',
+    #     # 'Finance.BalanceSheet',
+    #     # 'Finance.IncomeStatement',
+    #     # 'Finance.CashFlowStatement',
+    #     #
+    #     # 'Stockholder.PledgeStatus',
+    #     # 'Stockholder.PledgeHistory',
+    #     # 'Stockholder.Statistics',
+    #     #
+    #     # 'TradeData.Stock.Daily',
+    #     #
+    #     # 'Market.IndexInfo',
+    #     # 'TradeData.Index.Daily',
+    # ], True)
     # run_strategy()
+    run_calc_factor()
 
     exit(0)
 
@@ -163,8 +176,8 @@ def run_test():
     
 
 def main():
-    # run_console()
-    run_ui()
+    run_console()
+    # run_ui()
     # run_test()
 
     print('Process Quit.')
