@@ -1,4 +1,19 @@
 import pandas as pd
+from datetime import date
+
+from os import sys, path
+root_path = path.dirname(path.dirname(path.abspath(__file__)))
+
+try:
+    from DataHub.DataHubEntry import DataHubEntry
+    from Database.DatabaseEntry import DatabaseEntry
+except Exception as e:
+    sys.path.append(root_path)
+
+    from DataHub.DataHubEntry import DataHubEntry
+    from Database.DatabaseEntry import DatabaseEntry
+finally:
+    pass
 
 
 def factor_cash_per_loan(df: pd.DataFrame, extra: dict) -> pd.DataFrame:
@@ -41,6 +56,7 @@ def plugin_prob() -> dict:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def calculate(df_in: pd.DataFrame, factor: str, extra: dict) -> pd.DataFrame:
+def calculate(identity: str or [str], factor: [str], time_serial: tuple,
+              data_hub: DataHubEntry, database: DatabaseEntry, extra: dict) -> pd.DataFrame:
     return None
 
