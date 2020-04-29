@@ -8,6 +8,7 @@ root_path = path.dirname(path.dirname(path.abspath(__file__)))
 
 try:
     from Utiltity.common import *
+    from Utiltity.dependency import *
     from Utiltity.df_utility import *
     from Utiltity.time_utility import *
     from Database import NoSqlRw
@@ -18,6 +19,7 @@ except Exception as e:
     sys.path.append(root_path)
 
     from Utiltity.common import *
+    from Utiltity.dependency import *
     from Utiltity.df_utility import *
     from Utiltity.time_utility import *
     from Database import NoSqlRw
@@ -67,11 +69,15 @@ class FactorCenter:
                     print('Duplicate factor: ' + provide)
                 self.__factor_depends[provide] = depends
 
-    def query(self, factor_name: str or [str], time_serial: tuple, mapping: dict, extra: dict) -> pd.DataFrame or None:
+    def query(self, sotck_ideneity: str, factor_name: str or [str],
+              time_serial: tuple, mapping: dict, extra: dict) -> pd.DataFrame or None:
         if self.__datehub_entry is None:
             return None
         if not isinstance(factor_name, (list, tuple)):
             factor_name = [factor_name]
+
+        fields_dependency, factor_dependency = self.calculate_factor_dependency(factor_name)
+        fields_dependency = [mapping.get(field, field) for field in fields_dependency]
 
     def calculate(self, df_in: pd.DataFrame, factor_name: str or [str], extra: dict) -> pd.DataFrame or None:
         if not isinstance(factor_name, (list, tuple)):
@@ -101,13 +107,22 @@ class FactorCenter:
             new_columns = result.columns - df.columns
             df[new_columns] = result
 
-    def get_factor_depends(self, factor_name: str or [str]) -> [str]:
+    def calculate_factor_dependency(self, factor_name: str or [str]) -> (list, list):
         if not isinstance(factor_name, (list, tuple)):
             factor_name = [factor_name]
-        factor_depends = []
+        dependency = Dependency()
         for name in factor_name:
-            factor_depends.extend(self.__factor_depends.get(name, []))
-        return factor_depends
+            dependency.add_dependence(name, self.__factor_depends.get(name, []))
+        dependency_list = dependency.sort_by_dependency()
+
+        fields_dependency = []
+        factor_dependency = []
+        for name in dependency_list:
+            if name in self.__factor_depends.keys():
+                factor_dependency.append(name)
+            else:
+                fields_dependency.append(name)
+        return fields_dependency, factor_dependency
 
 
 # ----------------------------------------------------- Test Code ------------------------------------------------------
