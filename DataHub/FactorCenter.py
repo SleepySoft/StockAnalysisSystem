@@ -30,6 +30,10 @@ finally:
     logger = logging.getLogger('')
 
 
+def wrap_list(val: any):
+    return list(val) if isinstance(val, (list, tuple)) else [val]
+
+
 class FactorCenter:
     FACTOR_PROB_LENGTH = 7
 
@@ -65,6 +69,9 @@ class FactorCenter:
 
         for uuid, prob in self.__factor_probs.items():
             provides, depends, comments, _, _, _, _ = prob
+            provides = wrap_list(provides)
+            depends = wrap_list(depends)
+
             for provide in provides:
                 if provide in self.__factor_depends.keys():
                     print('Duplicate factor: ' + provide)
@@ -97,7 +104,7 @@ class FactorCenter:
             if result is None or len(result) == 0:
                 continue
 
-            df = result if len(df) == 0 else pd.merge(df, result, how='left', on=['stock_identity', 'period'])
+            df = result[0] if len(df) == 0 else pd.merge(df, result[0], how='left', on=['stock_identity', 'period'])
         return df
 
     def calculate_factor_dependency(self, factor_name: str or [str]) -> (list, list):
