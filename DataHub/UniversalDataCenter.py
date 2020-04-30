@@ -307,6 +307,10 @@ class UniversalDataCenter:
     def __init__(self, database_entry: DatabaseEntry, collector_plugin: PluginManager):
         self.__database_entry = database_entry
         self.__plugin_manager = collector_plugin
+
+        # self.__data_source = []
+        self.__factor_center = None
+
         self.__last_error = ''
         self.__data_table = []
         self.__field_uri_dict = {}
@@ -330,6 +334,12 @@ class UniversalDataCenter:
 
     def log_error(self, error_text: str):
         self.__last_error = error_text
+
+    # def add_data_source(self, source):
+    #     self.__data_source.append(source)
+
+    def set_factor_center(self, factor_center):
+        self.__factor_center = factor_center
 
     def register_data_table(self, table: UniversalDataTable,
                             params_checker: ParameterChecker or None = None):
@@ -379,6 +389,21 @@ class UniversalDataCenter:
                           time_serial: tuple = None, **extra) -> pd.DataFrame or None:
         if not self.check_query_params(uri, identity, time_serial, **extra):
             return None
+        if 'Factor' in uri:
+            return self.query_from_factor(uri, identity, time_serial, **extra)
+        else:
+            return self.query_from_collector(uri, identity, time_serial, **extra)
+
+    def query_from_factor(self, uri: str, identity: str or [str] = None,
+                          time_serial: tuple = None, **extra) -> pd.DataFrame or None:
+        if self.__factor_center is None:
+            return None
+        factor = extra.get('factor', [])
+        mapping = extra.get('mapping', {})
+        return self.__factor_center.query(identity, factor, time_serial, mapping, extra)
+
+    def query_from_collector(self, uri: str, identity: str or [str] = None,
+                             time_serial: tuple = None, **extra) -> pd.DataFrame or None:
         argv = self.pack_query_params(uri, identity, time_serial, **extra)
         plugins = self.get_plugin_manager().find_module_has_capacity(uri)
         for plugin in plugins:
@@ -387,6 +412,8 @@ class UniversalDataCenter:
             if df is not None and isinstance(df, pd.DataFrame) and len(df) > 0:
                 return df
         return None
+
+    # -----------------------------------------------------------------------------------------
 
     def update_local_data(self, uri: str, identity: str or [str] = None,
                           time_serial: tuple = None, force: bool = False, **extra) -> bool:

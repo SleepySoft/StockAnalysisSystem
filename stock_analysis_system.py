@@ -128,6 +128,9 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
 
         from DataHub.FactorCenter import FactorCenter
         self.__factor_center = FactorCenter(self.__data_hub_entry, self.__database_entry, self.__factor_plugin)
+        self.__factor_center.reload_plugin()
+        # TODO: Refactor
+        self.__data_hub_entry.get_data_center().set_factor_center(self.__factor_center)
 
         from extension import ExtensionManager
         self.__extension_manager = ExtensionManager(self, self.__extension_plugin)

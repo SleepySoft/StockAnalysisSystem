@@ -211,6 +211,18 @@ RESULT_FIELD_TRADE_DAILY = {
     'trade_date':     (['datetime'], [],    True, ''),
 }
 
+# ------------------------ Common ------------------------
+
+QUERY_FIELDS_ANNUAL_DATA = {
+    'stock_identity': ([str], [],                           False, ''),
+    'period':         ([tuple,  None], [],                  False, ''),
+}
+
+RESULT_FIELDS_ANNUAL_DATA = {
+    'stock_identity': (['str'], [],         True, ''),
+    'period':         (['datetime'], [],    True, ''),
+}
+
 
 # --------------------------------------- UniversalDataTableSeparate ---------------------------------------
 
@@ -263,6 +275,8 @@ DATA_FORMAT_DECLARE = [
 
     ('TradeData.Stock.Daily',     'StockDaily', DFTPRX, 'stock_identity', 'trade_date', QUERY_FIELDS_TRADE_DAILY, RESULT_FIELD_TRADE_DAILY),
     ('TradeData.Index.Daily',     'StockDaily', DFTPRX, 'stock_identity', 'trade_date', QUERY_FIELDS_TRADE_DAILY, RESULT_FIELD_TRADE_DAILY),
+
+    ('Factor.Finance',             'Factor', DFTPRX, 'stock_identity', 'period', QUERY_FIELDS_ANNUAL_DATA, RESULT_FIELDS_ANNUAL_DATA),
 ]
 
 SPECIAL_EXTENDER_TABLE = {

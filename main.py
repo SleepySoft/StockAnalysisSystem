@@ -127,9 +127,20 @@ def run_strategy():
 
 def run_calc_factor():
     sas = stock_analysis_system.StockAnalysisSystem()
-    factor_center = sas.get_factor_center()
-    factor_center.reload_plugin()
-    df = factor_center.query('000021.SZSE', '货币资金/有息负债', (default_since(), now()), {}, {})
+    data_hub = sas.get_data_hub_entry()
+    data_center = data_hub.get_data_center()
+
+    # factor_center = sas.get_factor_center()
+    # factor_center.reload_plugin()
+    # df = factor_center.query('000021.SZSE',
+    #                          ['货币资金/有息负债', '货币资金/短期负债', '流动比率', '速动比率'],
+    #                          (default_since(), now()), {}, {})
+    # print(df)
+
+    data_center.update_local_data('Factor.Finance', '000021.SZSE', (default_since(), now()),
+                                  factor=['货币资金/有息负债', '货币资金/短期负债', '流动比率', '速动比率'])
+    df = data_center.query('Factor.Finance', '000021.SZSE', (default_since(), now()),
+                           factor=['货币资金/有息负债', '货币资金/短期负债', '流动比率', '速动比率'])
     print(df)
 
 
