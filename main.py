@@ -138,9 +138,10 @@ def run_calc_factor():
     # print(df)
 
     data_center.update_local_data('Factor.Finance', '000021.SZSE', (default_since(), now()),
-                                  factor=['货币资金/有息负债', '货币资金/短期负债', '流动比率', '速动比率'])
+                                  fields=['货币资金/有息负债', '货币资金/短期负债', '流动比率', '速动比率'])
     df = data_center.query('Factor.Finance', '000021.SZSE', (default_since(), now()),
-                           factor=['货币资金/有息负债', '货币资金/短期负债', '流动比率', '速动比率'])
+                           fields=['货币资金/有息负债', '货币资金/短期负债', '流动比率', '速动比率'],
+                           readable=True)
     print(df)
 
 
