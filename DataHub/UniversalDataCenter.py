@@ -398,7 +398,7 @@ class UniversalDataCenter:
                           time_serial: tuple = None, **extra) -> pd.DataFrame or None:
         if self.__factor_center is None:
             return None
-        factor = extra.get('factor', [])
+        factor = extra.get('fields', [])
         mapping = extra.get('mapping', {})
         return self.__factor_center.query(identity, factor, time_serial, mapping, extra)
 
