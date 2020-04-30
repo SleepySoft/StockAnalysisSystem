@@ -50,8 +50,20 @@ DEPENDS_INDEX = collections.OrderedDict([
 # Principle: Only declare the minimal common field
 # 原则：只限制通用字段且限制的字段尽可能少
 
-# ---------------------- Market.NamingHistory ---------------------
+# ------------------------ Common ------------------------
 
+QUERY_FIELDS_ANNUAL_DATA = {
+    'stock_identity': ([str], [],                           False, ''),
+    'period':         ([tuple,  None], [],                  False, ''),
+}
+
+RESULT_FIELDS_ANNUAL_DATA = {
+    'stock_identity': (['str'], [],         True, ''),
+    'period':         (['datetime'], [],    True, ''),
+}
+
+
+# ---------------------- Market.NamingHistory ---------------------
 
 QUERY_FIELDS_NAMING_HISTORY = {
     'stock_identity': ([str], [],                   False,  ''),
@@ -139,16 +151,6 @@ RESULT_FIELDS_FINANCE_AUDIT = {
 
 # ------------------------ FinanceData.* ------------------------
 
-QUERY_FIELDS_FINANCE_DATA = {
-    'stock_identity': ([str], [],                           False, ''),
-    'period':         ([tuple,  None], [],                  False, ''),
-}
-
-RESULT_FIELDS_FINANCE_DATA = {
-    'stock_identity': (['str'], [],         True, ''),
-    'period':         (['datetime'], [],    True, ''),                # The last day of report period
-}
-
 RESULT_FIELDS_MAIN_BUSINESS = {
     'stock_identity': (['str'], [],         True, ''),
     'period':         (['datetime'], [],    True, ''),                # The last day of report period
@@ -211,18 +213,6 @@ RESULT_FIELD_TRADE_DAILY = {
     'trade_date':     (['datetime'], [],    True, ''),
 }
 
-# ------------------------ Common ------------------------
-
-QUERY_FIELDS_ANNUAL_DATA = {
-    'stock_identity': ([str], [],                           False, ''),
-    'period':         ([tuple,  None], [],                  False, ''),
-}
-
-RESULT_FIELDS_ANNUAL_DATA = {
-    'stock_identity': (['str'], [],         True, ''),
-    'period':         (['datetime'], [],    True, ''),
-}
-
 
 # --------------------------------------- UniversalDataTableSeparate ---------------------------------------
 
@@ -264,10 +254,10 @@ DATA_FORMAT_DECLARE = [
     ('Market.NamingHistory',  DFTDB, DFTPRX, 'stock_identity', 'naming_date', QUERY_FIELDS_NAMING_HISTORY, RESULT_FIELDS_NAMING_HISTORY),
 
     ('Finance.Audit',               DFTDB, DFTPRX, 'stock_identity', 'period', QUERY_FIELDS_FINANCE_AUDIT, RESULT_FIELDS_FINANCE_AUDIT),
-    ('Finance.BalanceSheet',        DFTDB, DFTPRX, 'stock_identity', 'period', QUERY_FIELDS_FINANCE_DATA, RESULT_FIELDS_FINANCE_DATA),
-    ('Finance.IncomeStatement',     DFTDB, DFTPRX, 'stock_identity', 'period', QUERY_FIELDS_FINANCE_DATA, RESULT_FIELDS_FINANCE_DATA),
-    ('Finance.CashFlowStatement',   DFTDB, DFTPRX, 'stock_identity', 'period', QUERY_FIELDS_FINANCE_DATA, RESULT_FIELDS_FINANCE_DATA),
-    ('Finance.BusinessComposition', DFTDB, DFTPRX, 'stock_identity', 'period', QUERY_FIELDS_FINANCE_DATA, RESULT_FIELDS_MAIN_BUSINESS),
+    ('Finance.BalanceSheet',        DFTDB, DFTPRX, 'stock_identity', 'period', QUERY_FIELDS_ANNUAL_DATA, RESULT_FIELDS_ANNUAL_DATA),
+    ('Finance.IncomeStatement',     DFTDB, DFTPRX, 'stock_identity', 'period', QUERY_FIELDS_ANNUAL_DATA, RESULT_FIELDS_ANNUAL_DATA),
+    ('Finance.CashFlowStatement',   DFTDB, DFTPRX, 'stock_identity', 'period', QUERY_FIELDS_ANNUAL_DATA, RESULT_FIELDS_ANNUAL_DATA),
+    ('Finance.BusinessComposition', DFTDB, DFTPRX, 'stock_identity', 'period', QUERY_FIELDS_ANNUAL_DATA, RESULT_FIELDS_MAIN_BUSINESS),
 
     ('Stockholder.PledgeStatus',  DFTDB, DFTPRX, 'stock_identity', 'due_date', QUERY_FIELDS_PLEDGE_STATUS, RESULT_FIELDS_PLEDGE_STATUS),
     ('Stockholder.PledgeHistory', DFTDB, DFTPRX, 'stock_identity', 'due_date', QUERY_FIELDS_PLEDGE_HISTORY, RESULT_FIELDS_PLEDGE_HISTORY),

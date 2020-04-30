@@ -184,6 +184,10 @@ class UniversalDataTable:
             # self.fields = fields
             return [(uri, identity, time_serial, extra, fields)]
 
+        def ref_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
+            nop(self, uri, identity)
+            return None, None
+
         def table_name(self, uri: str, identity: str, time_serial: tuple, extra: dict, fields: list) -> str:
             nop(self, identity, time_serial, extra, fields)
             return uri.replace('.', '_')
@@ -281,8 +285,7 @@ class UniversalDataTable:
             if str_available(self.datetime_field()) else (None, None)
 
     def ref_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
-        nop(self, uri, identity)
-        return None, None
+        return self.__extender.ref_range(uri, identity)
 
     def update_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
         local_since, local_until = self.range(uri, identity)
@@ -350,31 +353,35 @@ class UniversalDataCenter:
 
     def query(self, uri: str, identity: str or [str] = None,
               time_serial: tuple = None, **extra) -> pd.DataFrame or None:
-        return self.query_from_local(uri, identity, time_serial, extra)
+        result = self.query_from_local(uri, identity, time_serial, extra)
+        if result is None or len(result) == 0:
+            result = self.query_from_plugin(uri, identity, time_serial, **extra)
+        return result
 
     def query_from_local(self, uri: str, identity: str or [str] = None,
                          time_serial: tuple = None, extra: dict = None) -> pd.DataFrame or None:
+        extra_param = extra.copy()
         table, checker = self.get_data_table(uri)
         if table is None:
             self.log_error('Cannot find data table for : ' + uri)
             return None
-        if not self.check_query_params(uri, identity, time_serial, **extra):
+        if not self.check_query_params(uri, identity, time_serial, **extra_param):
             return None
-        if 'fields' in extra:
-            fields = extra.get('fields')
-            del extra['fields']
+        if 'fields' in extra_param:
+            fields = extra_param.get('fields')
+            del extra_param['fields']
         else:
             fields = None
-        if 'readable' in extra:
-            readable = extra.get('readable')
-            del extra['readable']
+        if 'readable' in extra_param:
+            readable = extra_param.get('readable')
+            del extra_param['readable']
         else:
             readable = False
 
         if fields is not None and readable:
             fields = self.readable_to_fields(fields)
 
-        result = table.query(uri, identity, time_serial, extra, fields)
+        result = table.query(uri, identity, time_serial, extra_param, fields)
 
         if fields is not None:
             # Fill the missing columns
@@ -387,12 +394,13 @@ class UniversalDataCenter:
 
     def query_from_plugin(self, uri: str, identity: str or [str] = None,
                           time_serial: tuple = None, **extra) -> pd.DataFrame or None:
-        if not self.check_query_params(uri, identity, time_serial, **extra):
+        extra_param = extra.copy()
+        if not self.check_query_params(uri, identity, time_serial, **extra_param):
             return None
         if 'Factor' in uri:
-            return self.query_from_factor(uri, identity, time_serial, **extra)
+            return self.query_from_factor(uri, identity, time_serial, **extra_param)
         else:
-            return self.query_from_collector(uri, identity, time_serial, **extra)
+            return self.query_from_collector(uri, identity, time_serial, **extra_param)
 
     def query_from_factor(self, uri: str, identity: str or [str] = None,
                           time_serial: tuple = None, **extra) -> pd.DataFrame or None:
