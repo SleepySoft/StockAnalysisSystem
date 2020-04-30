@@ -18,24 +18,6 @@ finally:
     pass
 
 
-def factor_cash_per_loan(identity: str or [str], time_serial: tuple, mapping: dict,
-                         data_hub: DataHubEntry, database: DatabaseEntry, extra: dict) -> pd.DataFrame:
-    fields = ['资产总计', '货币资金', '交易性金融资产', '可供出售金融资产',
-              '短期借款', '一年内到期的非流动负债', '其他流动负债', '长期借款', '应付债券', '其他非流动负债']
-    df = query_finance_pattern(data_hub, identity, time_serial, fields, mapping)
-
-    df['短期负债'] = df['短期借款'] + df['一年内到期的非流动负债'] + df['其他流动负债']
-    df['有息负债'] = df['短期负债'] + df['长期借款'] + df['应付债券'] + df['其他非流动负债']
-    df['金融资产'] = df['交易性金融资产'] + df['可供出售金融资产']
-
-    df['货币资金/有息负债'] = df['货币资金'] / df['有息负债']
-    df['货币资金/短期负债'] = df['货币资金'] / df['短期负债']
-    df['有息负债/资产总计'] = df['有息负债'] / df['资产总计']
-    df['有息负债/货币金融资产'] = df['有息负债'] / (df['货币资金'] + df['金融资产'])
-
-    return df[['货币资金/有息负债', '货币资金/短期负债', '有息负债/资产总计', '有息负债/货币金融资产'] + ['stock_identity', 'period']]
-
-
 def factor_current_ratio(identity: str or [str], time_serial: tuple, mapping: dict,
                          data_hub: DataHubEntry, database: DatabaseEntry, extra: dict) -> pd.DataFrame:
     fields = ['流动资产合计', '流动负债合计']
@@ -64,15 +46,6 @@ def factor_quick_ratio(identity: str or [str], time_serial: tuple, mapping: dict
 # ----------------------------------------------------------------------------------------------------------------------
 
 FACTOR_TABLE = {
-    '67392ca6-f081-41e5-8dde-9530148bf203': (
-        ('货币资金/有息负债', '货币资金/短期负债', '有息负债/资产总计', '有息负债/货币金融资产'),
-        ('资产总计', '货币资金', '交易性金融资产', '可供出售金融资产',
-         '短期借款', '一年内到期的非流动负债', '其他流动负债', '长期借款', '应付债券', '其他非流动负债'),
-        '老唐的指标，其中 短期负债 = 短期借款 + 一年内到期的非流动负债 + 其他流动负债；有息负债 = 短期负债 + 长期借款 + 应付债券 + 其他非流动负债',
-        factor_cash_per_loan, None, None, None),
-
-    '83172ea4-5cd2-4bb2-8703-f66fdba9e58b': (),
-
     '77d075b3-fa36-446b-a31e-855ea5d1fdaa': (
         '流动比率',
         ('流动资产合计', '流动负债合计'),
@@ -87,6 +60,8 @@ FACTOR_TABLE = {
         factor_quick_ratio, None, None, None
     ),
 
+    '83172ea4-5cd2-4bb2-8703-f66fdba9e58b': (),
+
     'a518ccd5-525e-4d5f-8e84-1f77bbb8f7af': (),
     'f747c9b1-ed98-4a28-8107-d3fa13d0e5ed': (),
     '6c568b09-3aee-4a6a-8440-542dfc5e8dc5': (),
@@ -100,9 +75,9 @@ FACTOR_TABLE = {
 def plugin_prob() -> dict:
     return {
         'plugin_id': '',
-        'plugin_name': 'DummyFactor',
+        'plugin_name': 'Basic Finince Factor',
         'plugin_version': '0.0.0.1',
-        'tags': ['Dummy', 'Sleepy'],
+        'tags': ['Basic', 'Sleepy'],
         'factor': FACTOR_TABLE,
     }
 
@@ -114,12 +89,6 @@ def plugin_capacities() -> list:
 # ----------------------------------------------------------------------------------------------------------------------
 
 def calculate(factor: str, identity: str or [str], time_serial: tuple, mapping: dict,
-              data_hub: DataHubEntry, database: DatabaseEntry, extra: dict) -> pd.DataFrame:
-    for hash, prob in FACTOR_TABLE.items():
-        if prob is None or len(prob) != 7:
-            continue
-        provides, depends, comments, entry, _, _, _ = prob
-        if factor in provides:
-            return entry(identity, time_serial, mapping, data_hub, database, extra)
-    return None
+              data_hub: DataHubEntry, database: DatabaseEntry, extra: dict) -> pd.DataFrame or None:
+    return dispatch_calculation_pattern(factor, identity, time_serial, mapping, data_hub, database, extra, FACTOR_TABLE)
 

@@ -24,6 +24,18 @@ finally:
     pass
 
 
+def dispatch_calculation_pattern(factor: str, identity: str or [str], time_serial: tuple, mapping: dict,
+                                 data_hub: DataHubEntry, database: DatabaseEntry, extra: dict,
+                                 FACTOR_TABLE) -> pd.DataFrame or None:
+    for uuid, prob in FACTOR_TABLE.items():
+        if prob is None or len(prob) != 7:
+            continue
+        provides, depends, comments, entry, _, _, _ = prob
+        if factor in provides:
+            return entry(identity, time_serial, mapping, data_hub, database, extra)
+    return None
+
+
 def query_finance_pattern(data_hub: DataHubEntry, identity: str,
                           time_serial: tuple, fields: list, mapping: dict) -> pd.DataFrame:
     query_fields = [mapping.get(f, f) for f in fields]
