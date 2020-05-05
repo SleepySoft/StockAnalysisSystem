@@ -192,8 +192,8 @@ def run_test():
     
 
 def main():
-    run_console()
-    # run_ui()
+    # run_console()
+    run_ui()
     # run_test()
 
     print('Process Quit.')
