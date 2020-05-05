@@ -6,19 +6,19 @@ from os import sys, path
 root_path = path.dirname(path.dirname(path.abspath(__file__)))
 
 try:
-    from FactorTest.test_amazing_formula_factor import *
     from stock_analysis_system import StockAnalysisSystem
+    import FactorTest.test_most_useful_factor as test_most_useful_factor
 except Exception as e:
     sys.path.append(root_path)
 
-    from FactorTest.test_amazing_formula_factor import *
     from stock_analysis_system import StockAnalysisSystem
+    import FactorTest.test_most_useful_factor as test_most_useful_factor
 finally:
     pass
 
 
 def factor_test_entry(sas: StockAnalysisSystem):
-    test_amazing_formula_factor(sas)
+    test_most_useful_factor.test_entry(sas)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
