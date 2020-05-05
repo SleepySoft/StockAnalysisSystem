@@ -146,13 +146,7 @@ class FinanceFactorEngine(FactorEngine):
                   data_hub: DataHubEntry, database: DatabaseEntry, extra: dict):
         df = query_finance_pattern(data_hub, identity, time_serial, self.depends(), mapping)
         eval_formula = self.eval_formula()
-
-        df['无息流动负债'] = df['应付账款'] + df['预收款项'] + df['应付职工薪酬'] + df['应交税费'] + df['其他应付款'] + df['预提费用'] + df['递延收益'] + df['其他流动负债']
-        df['净营运资本'] = df['应收账款'] + df['其他应收款'] + df['预付款项'] + df['存货'] - df['无息流动负债'] + df['长期股权投资'] + df['投资性房地产']
-        df['资本收益率'] = df['息税前利润'] / (df['净营运资本'] + df['固定资产'])
-        df['息税前利润'] = df['息税前利润'] + df['应付利息']
-
-        eval(eval_formula)
+        exec(eval_formula)
         return df[self.provides()]
 
 
