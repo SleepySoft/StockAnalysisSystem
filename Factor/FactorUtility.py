@@ -147,7 +147,7 @@ class FinanceFactorEngine(FactorEngine):
         df = query_finance_pattern(data_hub, identity, time_serial, self.depends(), mapping)
         eval_formula = self.eval_formula()
         exec(eval_formula)
-        return df[self.provides()]
+        return df[self.provides() + ['stock_identity', 'period']]
 
 
 # ----------------------------------------------------------------------------------------------------------------------
