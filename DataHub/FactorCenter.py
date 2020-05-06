@@ -43,39 +43,24 @@ class FactorCenter:
         self.__factor_plugin = factor_plugin
         self.__plugin_probs = []
         self.__factor_probs = {}
+        self.__factor_index = {}
         self.__factor_depends = {}
 
     def get_plugin_manager(self) -> PluginManager:
         return self.__factor_plugin
 
+    def get_all_factors(self) -> [str]:
+        return list(self.__factor_depends.keys())
+
+    def get_factor_depends(self, factor: str) -> [str]:
+        return self.__factor_depends.get(factor, [])
+
+    def get_factor_comments(self, factor: str) -> str:
+        factor_uuid = self.__factor_index.get(factor, '')
+        factor_probs = self.__factor_probs.get(factor_uuid, ())
+        return factor_probs[2] if len(factor_probs) > 2 else ''
+
     # -------------------------------------------------------------------------
-
-    def reload_plugin(self):
-        self.get_plugin_manager().refresh()
-        self.__plugin_probs = self.get_plugin_manager().execute_module_function(
-            self.get_plugin_manager().all_modules(), 'plugin_prob', {}, False
-        )
-        self.__factor_probs.clear()
-        self.__factor_depends.clear()
-
-        for plugin_prob in self.__plugin_probs:
-            factor_probs = plugin_prob.get('factor')
-            if isinstance(factor_probs, dict):
-                for uuid, prob in factor_probs.items():
-                    if prob is not None and len(prob) == FactorCenter.FACTOR_PROB_LENGTH and prob[3] is not None:
-                        self.__factor_probs[uuid] = prob
-                    else:
-                        print('Drop factor - ' + str(uuid) + ' : ' + str(prob))
-
-        for uuid, prob in self.__factor_probs.items():
-            provides, depends, comments, _, _, _, _ = prob
-            provides = wrap_list(provides)
-            depends = wrap_list(depends)
-
-            for provide in provides:
-                if provide in self.__factor_depends.keys():
-                    print('Duplicate factor: ' + provide)
-                self.__factor_depends[provide] = depends
 
     def query(self, sotck_identity: str, factor_name: str or [str],
               time_serial: tuple, mapping: dict, extra: dict) -> pd.DataFrame or None:
@@ -106,6 +91,35 @@ class FactorCenter:
 
             df = result[0] if len(df) == 0 else pd.merge(df, result[0], how='left', on=['stock_identity', 'period'])
         return df
+
+    def reload_plugin(self):
+        self.get_plugin_manager().refresh()
+        self.__plugin_probs = self.get_plugin_manager().execute_module_function(
+            self.get_plugin_manager().all_modules(), 'plugin_prob', {}, False
+        )
+        self.__factor_probs.clear()
+        self.__factor_index.clear()
+        self.__factor_depends.clear()
+
+        for plugin_prob in self.__plugin_probs:
+            factor_probs = plugin_prob.get('factor')
+            if isinstance(factor_probs, dict):
+                for uuid, prob in factor_probs.items():
+                    if prob is not None and len(prob) == FactorCenter.FACTOR_PROB_LENGTH and prob[3] is not None:
+                        self.__factor_probs[uuid] = prob
+                    else:
+                        print('Drop factor - ' + str(uuid) + ' : ' + str(prob))
+
+        for uuid, prob in self.__factor_probs.items():
+            provides, depends, comments, _, _, _, _ = prob
+            provides = wrap_list(provides)
+            depends = wrap_list(depends)
+
+            for provide in provides:
+                if provide in self.__factor_depends.keys():
+                    print('Duplicate factor: ' + provide)
+                self.__factor_index[provide] = uuid
+                self.__factor_depends[provide] = depends
 
     def calculate_factor_dependency(self, factor_name: str or [str]) -> (list, list):
         if not isinstance(factor_name, (list, tuple)):

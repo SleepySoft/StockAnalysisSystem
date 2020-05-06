@@ -3,7 +3,8 @@ import matplotlib
 from pylab import mpl
 from os import sys, path
 from PyQt5.QtCore import pyqtSignal, QProcess
-from PyQt5.QtWidgets import QWidget, QPushButton, QGridLayout, QLineEdit, QFileDialog, QComboBox, QVBoxLayout
+from PyQt5.QtWidgets import QWidget, QPushButton, QGridLayout, QLineEdit, QFileDialog, QComboBox, QVBoxLayout, \
+    QApplication, QLabel, QRadioButton, QHBoxLayout
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -11,15 +12,21 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 root_path = path.dirname(path.dirname(path.abspath(__file__)))
 
 try:
+    from Utiltity.ui_utility import *
     from Analyzer.AnalyzerUtility import *
+    from Utiltity.securities_selector import *
     from DataHub.DataHubEntry import DataHubEntry
+    from DataHub.FactorCenter import FactorCenter
     from Database.DatabaseEntry import DatabaseEntry
     from stock_analysis_system import StockAnalysisSystem
 except Exception as e:
     sys.path.append(root_path)
 
+    from Utiltity.ui_utility import *
     from Analyzer.AnalyzerUtility import *
+    from Utiltity.securities_selector import *
     from DataHub.DataHubEntry import DataHubEntry
+    from DataHub.FactorCenter import FactorCenter
     from Database.DatabaseEntry import DatabaseEntry
     from stock_analysis_system import StockAnalysisSystem
 finally:
@@ -37,12 +44,13 @@ pyplot_logger.setLevel(level=logging.INFO)
 # https://stackoverflow.com/questions/42373104/since-matplotlib-finance-has-been-deprecated-how-can-i-use-the-new-mpl-finance
 
 class ChartLab(QWidget):
-    def __init__(self, datahub_entry: DataHubEntry):
+    def __init__(self, datahub_entry: DataHubEntry, factor_center: FactorCenter):
         super(ChartLab, self).__init__()
 
         # ---------------- ext var ----------------
 
         self.__data_hub = datahub_entry
+        self.__factor_center = factor_center
         self.__data_center = self.__data_hub.get_data_center() if self.__data_hub is not None else None
         self.__data_utility = self.__data_hub.get_data_utility() if self.__data_hub is not None else None
 
@@ -56,7 +64,23 @@ class ChartLab(QWidget):
 
         # -------------- ui resource --------------
 
-        self.__button_draw = QPushButton('Draw')
+        self.__combo_factor = QComboBox()
+        self.__label_comments = QLabel('')
+
+        # Parallel comparison
+        self.__radio_parallel_comparison = QRadioButton('横向比较')
+        self.__combo_year = QComboBox()
+        self.__combo_quarter = QComboBox()
+
+        # Longitudinal comparison
+        self.__radio_longitudinal_comparison = QRadioButton('纵向比较')
+        self.__combo_stock = SecuritiesSelector(self.__data_utility)
+
+        # Limitation
+        self.__line_lower = QLineEdit('')
+        self.__line_upper = QLineEdit('')
+
+        self.__button_draw = QPushButton('绘图')
 
         self.init_ui()
 
@@ -71,14 +95,141 @@ class ChartLab(QWidget):
         self.setLayout(main_layout)
         self.setMinimumSize(1280, 800)
 
-        main_layout.addWidget(self.__canvas)
-        main_layout.addWidget(self.__button_draw)
+        bottom_layout = QHBoxLayout()
+        main_layout.addWidget(self.__canvas, 99)
+        main_layout.addLayout(bottom_layout, 1)
+
+        group_box, group_layout = create_v_group_box('因子')
+        bottom_layout.addWidget(group_box, 2)
+
+        group_layout.addWidget(self.__combo_factor)
+        group_layout.addWidget(self.__label_comments)
+
+        group_box, group_layout = create_v_group_box('比较方式')
+        bottom_layout.addWidget(group_box, 2)
+
+        line = QHBoxLayout()
+        line.addWidget(self.__radio_parallel_comparison, 1)
+        line.addWidget(self.__combo_year, 5)
+        line.addWidget(self.__combo_quarter, 5)
+        group_layout.addLayout(line)
+
+        line = QHBoxLayout()
+        line.addWidget(self.__radio_longitudinal_comparison, 1)
+        line.addWidget(self.__combo_stock, 10)
+        group_layout.addLayout(line)
+
+        group_box, group_layout = create_v_group_box('范围限制')
+        bottom_layout.addWidget(group_box, 1)
+
+        line = QHBoxLayout()
+        line.addWidget(QLabel('下限'))
+        line.addWidget(self.__line_lower)
+        group_layout.addLayout(line)
+
+        line = QHBoxLayout()
+        line.addWidget(QLabel('上限'))
+        line.addWidget(self.__line_upper)
+        group_layout.addLayout(line)
+
+        bottom_layout.addWidget(self.__button_draw, 1)
 
     def __config_control(self):
+        for year in range(now().year, 1989, -1):
+            self.__combo_year.addItem(str(year), str(year))
+        self.__combo_year.setCurrentIndex(1)
+
+        self.__combo_quarter.addItem('一季报', '03-31')
+        self.__combo_quarter.addItem('中报', '06-30')
+        self.__combo_quarter.addItem('三季报', '09-30')
+        self.__combo_quarter.addItem('年报', '12-31')
+        self.__combo_quarter.setCurrentIndex(3)
+
+        if self.__factor_center is not None:
+            factors = self.__factor_center.get_all_factors()
+            for fct in factors:
+                self.__combo_factor.addItem(fct, fct)
+        self.on_factor_updated(0)
+
+        self.__combo_stock.setEnabled(False)
+        self.__radio_parallel_comparison.setChecked(True)
+
+        self.__combo_factor.currentIndexChanged.connect(self.on_factor_updated)
         self.__button_draw.clicked.connect(self.on_button_draw)
+        self.__radio_parallel_comparison.clicked.connect(self.on_radio_comparison)
+        self.__radio_longitudinal_comparison.clicked.connect(self.on_radio_comparison)
+
+        mpl.rcParams['font.sans-serif'] = ['Microsoft YaHei']
+        mpl.rcParams['axes.unicode_minus'] = False
+
+    def on_factor_updated(self, value):
+        self.__line_lower.setText('')
+        self.__line_upper.setText('')
+        factor = self.__combo_factor.itemData(value)
+        comments = self.__factor_center.get_factor_comments(factor)
+        self.__label_comments.setText(comments)
 
     def on_button_draw(self):
-        self.plot()
+        factor = self.__combo_factor.currentData()
+        lower = str2float_safe(self.__line_lower.text(), None)
+        upper = str2float_safe(self.__line_upper.text(), None)
+
+        if self.__radio_parallel_comparison.isChecked():
+            year = self.__combo_year.currentData()
+            month_day = self.__combo_quarter.currentData()
+            period = year + '-' + month_day
+            self.plot_factor_parallel_comparison(factor, text_auto_time(period), lower, upper)
+        else:
+            securities = self.__combo_stock.get_input_securities()
+            self.plot_factor_longitudinal_comparison(factor, securities)
+
+    def on_radio_comparison(self):
+        if self.__radio_parallel_comparison.isChecked():
+            self.__combo_year.setEnabled(True)
+            self.__combo_quarter.setEnabled(True)
+            self.__combo_stock.setEnabled(False)
+        else:
+            self.__combo_year.setEnabled(False)
+            self.__combo_quarter.setEnabled(False)
+            self.__combo_stock.setEnabled(True)
+
+    # ---------------------------------------------------------------------------------------
+
+    def plot_factor_parallel_comparison(self, factor: str, period: datetime.datetime, lower: float, upper: float):
+        df = self.__data_center.query_from_factor('Factor.Finance', '', (period, period),
+                                                  fields=[factor], readable=True)
+
+        s1 = df[factor]
+        if lower is not None and upper is not None:
+            s1 = s1.apply(lambda x: (x if x < upper else upper) if x > lower else lower)
+        elif lower is not None:
+            s1 = s1.apply(lambda x: x if x > lower else lower)
+        elif upper is not None:
+            s1 = s1.apply(lambda x: x if x < upper else upper)
+
+        plt.clf()
+        plt.subplot(1, 1, 1)
+        s1.hist(bins=100)
+        plt.title(factor)
+
+        self.__canvas.draw()
+        self.__canvas.flush_events()
+
+    def plot_factor_longitudinal_comparison(self, factor: str, securities: str):
+        df = self.__data_center.query_from_factor('Factor.Finance', securities, None,
+                                                  fields=[factor], readable=True)
+
+        s1 = df[factor]
+
+        plt.clf()
+        plt.subplot(1, 1, 1)
+        s1.plot.line()
+        plt.title(factor)
+
+        self.__canvas.draw()
+        self.__canvas.flush_events()
+
+    # ---------------------------------------------------------------------------------------
 
     def plot(self):
         self.plot_histogram_statistics()
@@ -311,7 +462,55 @@ def init(sas: StockAnalysisSystem) -> bool:
 
 
 def widget(parent: QWidget) -> (QWidget, dict):
-    return ChartLab(sasEntry.get_data_hub_entry()), {'name': 'Chart Lab', 'show': False}
+    sasEntry.get_factor_center()
+    return ChartLab(sasEntry.get_data_hub_entry(), sasEntry.get_factor_center()), {'name': '因子图表', 'show': False}
+
+
+# ------------------------------------------------ File Entry : main() -------------------------------------------------
+
+def main():
+    app = QApplication(sys.argv)
+    wnd = ChartLab(None, None)
+    wnd.show()
+    sys.exit(app.exec())
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def exception_hook(type, value, tback):
+    # log the exception here
+    print('Exception hook triggered.')
+    print(type)
+    print(value)
+    print(tback)
+    # then call the default handler
+    sys.__excepthook__(type, value, tback)
+
+
+if __name__ == "__main__":
+    sys.excepthook = exception_hook
+    try:
+        main()
+    except Exception as e:
+        print('Error =>', e)
+        print('Error =>', traceback.format_exc())
+        exit()
+    finally:
+        pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
