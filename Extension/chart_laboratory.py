@@ -218,6 +218,10 @@ class ChartLab(QWidget):
     def plot_factor_longitudinal_comparison(self, factor: str, securities: str):
         df = self.__data_center.query_from_factor('Factor.Finance', securities, None,
                                                   fields=[factor], readable=True)
+        # Only for annual report
+        df = df[df['period'].dt.month == 12]
+        df['报告期'] = df['period']
+        df.set_index('报告期', inplace=True)
 
         s1 = df[factor]
 
