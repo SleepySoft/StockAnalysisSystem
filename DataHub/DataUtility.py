@@ -122,6 +122,7 @@ class DataUtility:
         self.__data_center = data_center
         self.__lock = threading.Lock()
 
+        self.__stock_dict = {}
         self.__stock_cache_ready = False
         self.__stock_cache = IdentityNameInfoCache()
 
@@ -243,28 +244,43 @@ class DataUtility:
     def refresh_cache(self):
         self.__lock.acquire()
         self.__refresh_stock_cache()
+        self.__lock.release()
+
+        self.__lock.acquire()
         self.__refresh_index_cache()
         self.__lock.release()
-        self.__stock_cache_ready = True
 
     # ------------------------------------------------------------------------------------------------------------------
 
     def __refresh_stock_cache(self):
-        securities_info = self.__data_center.query('Market.SecuritiesInfo',
-                                                   fields=['stock_identity', 'name', 'listing_date'])
-        if securities_info is not None:
-            for index, row in securities_info.iterrows():
-                self.__stock_cache.set_id_name(row['stock_identity'], row['name'])
-                self.__stock_cache.set_id_info(row['stock_identity'], 'listing_date', row['listing_date'])
+        df = self.__data_center.query('Market.SecuritiesInfo')
 
-        securities_used_name = self.__data_center.query('Market.NamingHistory',
-                                                        fields=['stock_identity', 'name', 'naming_date'])
-        for index, row in securities_used_name.iterrows():
-            self.__stock_cache.set_id_name(row['stock_identity'], row['name'].lower().replace('*', ''))
+        clock = Clock()
+        self.__stock_dict = df.set_index('stock_identity').T.to_dict('dict')
+        print('Stock frame to stock dict time spending: %sms' % clock.elapsed_ms())
+
+        clock.reset()
+        name_id_dict = dict(zip(df.name, df.stock_identity))
+        print('Build name identity mapping time spending: %sms' % clock.elapsed_ms())
+
+        clock.reset()
+        df = self.__data_center.query('Market.NamingHistory', fields=['stock_identity', 'name'])
+        his_name_id_dict = dict(zip(df.name, df.stock_identity))
+        print('Build history name identity mapping time spending: %sms' % clock.elapsed_ms())
+
+        clock.reset()
+        name_id_dict.update(his_name_id_dict)
+        print('Merge name identity mapping time spending: %sms' % clock.elapsed_ms())
+
+        self.__stock_cache_ready = True
 
     def __refresh_index_cache(self):
-        index_info = self.__data_center.query('Market.IndexInfo',
-                                              fields=['index_identity', 'name', 'listing_date'])
+        df = self.__data_center.query('Market.IndexInfo')
+
+        clock = Clock()
+        name_id_dict = dict(zip(df.name, df.stock_identity))
+        print('Build index name identity mapping time spending: %sms' % clock.elapsed_ms())
+
         for index, row in index_info.iterrows():
             self.__index_cache.set_id_name(row['index_identity'], row['name'])
             self.__index_cache.set_id_info(row['index_identity'], 'listing_date', row['listing_date'])
