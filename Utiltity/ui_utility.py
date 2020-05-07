@@ -8,7 +8,7 @@ from types import SimpleNamespace
 
 from PyQt5 import QtCore
 from PyQt5.QtGui import QFont, QStandardItemModel, QStandardItem
-from PyQt5.QtCore import pyqtSignal, Qt, QAbstractTableModel, QModelIndex, QRect, QVariant
+from PyQt5.QtCore import pyqtSignal, Qt, QAbstractTableModel, QModelIndex, QRect, QVariant, QSize
 from PyQt5.QtWidgets import QMainWindow, QApplication, QHBoxLayout, QWidget, QPushButton, \
     QDockWidget, QAction, qApp, QMessageBox, QDialog, QVBoxLayout, QLabel, QGroupBox, QTableWidget, \
     QTableWidgetItem, QTabWidget, QLayout, QTextEdit, QListWidget, QListWidgetItem, QMenu, QHeaderView, \
@@ -102,6 +102,40 @@ class InfoDialog(QDialog):
 
     def on_btn_click_ok(self):
         self.close()
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+#                                                   DataFrameWidget
+# ----------------------------------------------------------------------------------------------------------------------
+
+class DataFrameWidget(QWidget):
+    def __init__(self, df: pd.DataFrame = None):
+        super(DataFrameWidget, self).__init__()
+
+        self.__data_frame = df
+        self.__table_main = EasyQTableWidget()
+
+        self.init_ui()
+        self.update_table(df)
+
+    # ---------------------------------------------------- UI Init -----------------------------------------------------
+
+    def init_ui(self):
+        self.__layout_control()
+        self.__config_control()
+
+    def __layout_control(self):
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(self.__table_main)
+        self.setLayout(main_layout)
+
+    def __config_control(self):
+        self.setMinimumSize(QSize(1000, 700))
+
+    def update_table(self, df: pd.DataFrame):
+        if df is not None:
+            self.__data_frame = df
+            write_df_to_qtable(self.__data_frame, self.__table_main)
 
 
 # ----------------------------------------------------------------------------------------------------------------------

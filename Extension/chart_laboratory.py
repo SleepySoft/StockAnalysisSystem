@@ -56,6 +56,7 @@ class ChartLab(QWidget):
 
         self.__inited = False
         self.__plot_table = {}
+        self.__paint_data = None
 
         # ------------- plot resource -------------
 
@@ -63,6 +64,8 @@ class ChartLab(QWidget):
         self.__canvas = FigureCanvas(self.__figure)
 
         # -------------- ui resource --------------
+
+        self.__data_frame_widget = None
 
         self.__combo_factor = QComboBox()
         self.__label_comments = QLabel('')
@@ -82,6 +85,7 @@ class ChartLab(QWidget):
         self.__line_upper = QLineEdit('')
 
         self.__button_draw = QPushButton('绘图')
+        self.__button_show = QPushButton('数据')
 
         self.init_ui()
 
@@ -134,7 +138,10 @@ class ChartLab(QWidget):
         line.addWidget(self.__line_upper)
         group_layout.addLayout(line)
 
-        bottom_layout.addWidget(self.__button_draw, 1)
+        line = QHBoxLayout()
+        line.addWidget(self.__button_draw)
+        line.addWidget(self.__button_show)
+        bottom_layout.addLayout(line, 1)
 
     def __config_control(self):
         for year in range(now().year, 1989, -1):
@@ -161,8 +168,10 @@ class ChartLab(QWidget):
         self.__combo_stock.setEnabled(False)
         self.__radio_parallel_comparison.setChecked(True)
 
-        self.__combo_factor.currentIndexChanged.connect(self.on_factor_updated)
         self.__button_draw.clicked.connect(self.on_button_draw)
+        self.__button_show.clicked.connect(self.on_button_show)
+
+        self.__combo_factor.currentIndexChanged.connect(self.on_factor_updated)
         self.__radio_parallel_comparison.clicked.connect(self.on_radio_comparison)
         self.__radio_longitudinal_comparison.clicked.connect(self.on_radio_comparison)
 
@@ -190,6 +199,14 @@ class ChartLab(QWidget):
         else:
             securities = self.__combo_stock.get_input_securities()
             self.plot_factor_longitudinal_comparison(factor, securities)
+
+    def on_button_show(self):
+        if self.__data_frame_widget is not None and \
+                self.__data_frame_widget.isVisible():
+            return
+        if self.__paint_data is not None:
+            self.__data_frame_widget = DataFrameWidget(self.__paint_data)
+            self.__data_frame_widget.show()
 
     def on_radio_comparison(self):
         if self.__radio_parallel_comparison.isChecked():
@@ -231,6 +248,9 @@ class ChartLab(QWidget):
         self.__canvas.draw()
         self.__canvas.flush_events()
 
+        self.__paint_data = df
+        self.__paint_data.sort_values(factor, inplace=True)
+
     def plot_factor_longitudinal_comparison(self, factor: str, securities: str):
         df = self.__data_center.query_from_factor('Factor.Finance', securities, None,
                                                   fields=[factor], readable=True)
@@ -248,6 +268,9 @@ class ChartLab(QWidget):
 
         self.__canvas.draw()
         self.__canvas.flush_events()
+
+        self.__paint_data = df
+        self.__paint_data.sort_values('period', ascending=False, inplace=True)
 
     # ---------------------------------------------------------------------------------------
 
