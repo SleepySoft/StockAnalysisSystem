@@ -37,7 +37,10 @@ class ConfigUi(QWidget):
         self.__line_nosql_db_user = QLineEdit()
         self.__line_nosql_db_pass = QLineEdit()
 
-        self.__line_mongo_db_binary = QLineEdit('C:\\Program Files\\MongoDB\Server\\4.0\\bin')
+        if sys.platform=='linux':
+            self.__line_mongo_db_binary = QLineEdit('/bin')
+        else:
+            self.__line_mongo_db_binary = QLineEdit('C:\\Program Files\\MongoDB\Server\\4.0\\bin')
         self.__button_browse = QPushButton('Browse')
         self.__button_import = QPushButton('Import')
         self.__button_export = QPushButton('Export')
@@ -171,7 +174,10 @@ class ConfigUi(QWidget):
         mongodb_host = self.__line_nosql_db_host.text()
         mongodb_port = self.__line_nosql_db_port.text()
 
-        import_binary = path.join(mongodb_bin, 'mongorestore.exe')
+        if sys.platform=='linux':
+            import_binary = path.join(mongodb_bin, 'mongorestore')
+        else:
+            import_binary = path.join(mongodb_bin, 'mongorestore.exe')
         import_command = '"' + import_binary + '"' + \
                          ' --drop '\
                          ' --host ' + mongodb_host + \
@@ -191,7 +197,10 @@ class ConfigUi(QWidget):
         mongodb_host = self.__line_nosql_db_host.text()
         mongodb_port = self.__line_nosql_db_port.text()
 
-        export_binary = path.join(mongodb_bin, 'mongodump.exe')
+        if sys.platform=='linux':
+            export_binary = path.join(mongodb_bin, 'mongodump')
+        else:
+            export_binary = path.join(mongodb_bin, 'mongodump.exe')
 
         export_command_sd = '"' + export_binary + '"' + \
                             ' -h ' + mongodb_host + ':' + mongodb_port + \
