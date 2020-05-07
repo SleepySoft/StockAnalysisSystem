@@ -71,6 +71,7 @@ class ChartLab(QWidget):
         self.__radio_parallel_comparison = QRadioButton('横向比较')
         self.__combo_year = QComboBox()
         self.__combo_quarter = QComboBox()
+        self.__combo_industry = QComboBox()
 
         # Longitudinal comparison
         self.__radio_longitudinal_comparison = QRadioButton('纵向比较')
@@ -110,6 +111,7 @@ class ChartLab(QWidget):
 
         line = QHBoxLayout()
         line.addWidget(self.__radio_parallel_comparison, 1)
+        line.addWidget(self.__combo_industry, 5)
         line.addWidget(self.__combo_year, 5)
         line.addWidget(self.__combo_quarter, 5)
         group_layout.addLayout(line)
@@ -145,6 +147,11 @@ class ChartLab(QWidget):
         self.__combo_quarter.addItem('年报', '12-31')
         self.__combo_quarter.setCurrentIndex(3)
 
+        self.__combo_industry.addItem('全部', '全部')
+        identities = self.__data_utility.get_all_identities()
+        for identity in identities:
+            self.__combo_industry.addItem(identity, identity)
+
         if self.__factor_center is not None:
             factors = self.__factor_center.get_all_factors()
             for fct in factors:
@@ -178,7 +185,8 @@ class ChartLab(QWidget):
             year = self.__combo_year.currentData()
             month_day = self.__combo_quarter.currentData()
             period = year + '-' + month_day
-            self.plot_factor_parallel_comparison(factor, text_auto_time(period), lower, upper)
+            industry = self.__combo_industry.currentData()
+            self.plot_factor_parallel_comparison(factor, industry, text_auto_time(period), lower, upper)
         else:
             securities = self.__combo_stock.get_input_securities()
             self.plot_factor_longitudinal_comparison(factor, securities)
@@ -187,16 +195,24 @@ class ChartLab(QWidget):
         if self.__radio_parallel_comparison.isChecked():
             self.__combo_year.setEnabled(True)
             self.__combo_quarter.setEnabled(True)
+            self.__line_lower.setEnabled(True)
+            self.__line_upper.setEnabled(True)
             self.__combo_stock.setEnabled(False)
         else:
             self.__combo_year.setEnabled(False)
             self.__combo_quarter.setEnabled(False)
+            self.__line_lower.setEnabled(False)
+            self.__line_upper.setEnabled(False)
             self.__combo_stock.setEnabled(True)
 
     # ---------------------------------------------------------------------------------------
 
-    def plot_factor_parallel_comparison(self, factor: str, period: datetime.datetime, lower: float, upper: float):
-        df = self.__data_center.query_from_factor('Factor.Finance', '', (period, period),
+    def plot_factor_parallel_comparison(self, factor: str, industry: str, period: datetime.datetime,
+                                        lower: float, upper: float):
+        identities = ''
+        if industry != '全部':
+            identities = self.__data_utility.get_industry_stocks(industry)
+        df = self.__data_center.query_from_factor('Factor.Finance', identities, (period, period),
                                                   fields=[factor], readable=True)
 
         s1 = df[factor]
