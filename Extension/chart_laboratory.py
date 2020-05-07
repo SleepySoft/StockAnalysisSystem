@@ -1,6 +1,5 @@
 import logging
-import matplotlib
-from pylab import mpl
+import matplotlib as mpl
 from os import sys, path
 from PyQt5.QtCore import pyqtSignal, QProcess
 from PyQt5.QtWidgets import QWidget, QPushButton, QGridLayout, QLineEdit, QFileDialog, QComboBox, QVBoxLayout, \
