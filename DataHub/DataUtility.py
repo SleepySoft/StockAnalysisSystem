@@ -159,12 +159,7 @@ class DataUtility:
         return ret
 
     def get_stock_listing_date(self, stock_identity: str, default_val: datetime.datetime) -> datetime.datetime:
-        result = self.__data_center.query('Market.SecuritiesInfo', stock_identity, fields=['listing_date'])
-        if result is None or len(result) == 0 or 'listing_date' not in result.columns:
-            return default_val
-        else:
-            ret = result['listing_date'][0]
-            return ret
+        return self.__query_identity_filed_value('Market.SecuritiesInfo', stock_identity, 'listing_date', default_val)
 
     # --------------------------------------- Index ---------------------------------------
 
@@ -182,12 +177,7 @@ class DataUtility:
         return ret
 
     def get_index_listing_date(self, index_identity: str, default_val: datetime.datetime) -> datetime.datetime:
-        result = self.__data_center.query('Market.IndexInfo', index_identity, fields=['listing_date'])
-        if result is None or len(result) == 0 or 'listing_date' not in result.columns:
-            return default_val
-        else:
-            ret = result['listing_date'][0]
-            return ret
+        return self.__query_identity_filed_value('Market.IndexInfo', index_identity, 'listing_date', default_val)
 
     # --------------------------------------- Query ---------------------------------------
 
@@ -298,6 +288,16 @@ class DataUtility:
         self.__index_id_name = id_name_dict
         self.__index_name_id = name_id_dict
         self.__index_cache_ready = True
+
+    # --------------------------------------- Assistance ---------------------------------------
+
+    def __query_identity_filed_value(self, uri: str, identity: str, field: str, default_val: any) -> any:
+        result = self.__data_center.query(uri, identity, fields=[field])
+        if result is None or len(result) == 0 or field not in result.columns:
+            return default_val
+        else:
+            ret = result[field][0]
+            return ret
 
 
 # ----------------------------------------------------------------------------------------------------------------------
