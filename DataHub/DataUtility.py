@@ -122,17 +122,21 @@ class DataUtility:
         self.__data_center = data_center
         self.__lock = threading.Lock()
 
-        self.__stock_dict = {}
+        self.__stock_id_name = {}
+        self.__stock_name_id = {}
         self.__stock_cache_ready = False
-        self.__stock_cache = IdentityNameInfoCache()
+        # self.__stock_cache = IdentityNameInfoCache()
 
+        self.__index_id_name = {}
+        self.__index_name_id = {}
         self.__index_cache_ready = False
-        self.__index_cache = IdentityNameInfoCache()
+        # self.__index_cache = IdentityNameInfoCache()
 
     # ------------------------------- General -------------------------------
 
     def get_securities_listing_date(self, securities: str, default_val: datetime.datetime) -> datetime.datetime:
-        return self.get_stock_listing_date(securities, self.get_index_listing_date(securities, default_val))
+        return self.get_stock_listing_date(securities, default_val) if securities in self.__stock_id_name.keys() else \
+               self.get_index_listing_date(securities, default_val)
 
     # -------------------------------- Stock --------------------------------
 
@@ -140,37 +144,27 @@ class DataUtility:
         return self.__stock_cache_ready
 
     def get_stock_list(self) -> [(str, str)]:
-        self.__lock.acquire()
-        if not self.__stock_cache_ready:
-            self.__refresh_stock_cache()
-        ids = self.__stock_cache.get_ids()
-        ret = [(_id, self.__stock_cache.id_to_names(_id)[0]) for _id in ids]
-        self.__lock.release()
+        self.__check_refresh_stock_cache()
+        ret = [(key, value) for key, value in self.__stock_id_name.items()]
         return ret
 
     def get_stock_identities(self) -> [str]:
-        self.__lock.acquire()
-        if not self.__stock_cache_ready:
-            self.__refresh_stock_cache()
-        ids = self.__stock_cache.get_ids()
-        self.__lock.release()
-        return ids
+        self.__check_refresh_stock_cache()
+        ret = list(self.__stock_id_name.keys())
+        return ret
 
     def names_to_stock_identity(self, names: [str]) -> [str]:
-        self.__lock.acquire()
-        if not self.__stock_cache_ready:
-            self.__refresh_stock_cache()
-        ids = self.__stock_cache.name_to_id(names)
-        self.__lock.release()
-        return ids
+        self.__check_refresh_stock_cache()
+        ret = [self.__stock_name_id.get(name, name) for name in names]
+        return ret
 
     def get_stock_listing_date(self, stock_identity: str, default_val: datetime.datetime) -> datetime.datetime:
-        self.__lock.acquire()
-        if not self.__stock_cache_ready:
-            self.__refresh_stock_cache()
-        ret = self.__stock_cache.get_id_info(stock_identity, 'listing_date', default_val)
-        self.__lock.release()
-        return ret
+        result = self.__data_center.query('Market.SecuritiesInfo', stock_identity, fields=['listing_date'])
+        if result is None or len(result) == 0 or 'listing_date' not in result.columns:
+            return default_val
+        else:
+            ret = result['listing_date'][0]
+            return ret
 
     # --------------------------------------- Index ---------------------------------------
 
@@ -178,29 +172,22 @@ class DataUtility:
         return self.__index_cache_ready
 
     def get_index_list(self) -> [(str, str)]:
-        self.__lock.acquire()
-        if not self.__index_cache_ready:
-            self.__refresh_index_cache()
-        ids = self.__index_cache.get_ids()
-        ret = [(_id, self.__index_cache.id_to_names(_id)[0]) for _id in ids]
-        self.__lock.release()
+        self.__check_refresh_index_cache()
+        ret = [(key, value) for key, value in self.__index_id_name.items()]
         return ret
 
     def get_index_identities(self) -> [str]:
-        self.__lock.acquire()
-        if not self.__index_cache_ready:
-            self.__refresh_index_cache()
-        ids = self.__index_cache.get_ids()
-        self.__lock.release()
-        return ids
+        self.__check_refresh_index_cache()
+        ret = list(self.__index_id_name.keys())
+        return ret
 
     def get_index_listing_date(self, index_identity: str, default_val: datetime.datetime) -> datetime.datetime:
-        self.__lock.acquire()
-        if not self.__index_cache_ready:
-            self.__refresh_index_cache()
-        ret = self.__index_cache.get_id_info(index_identity, 'listing_date', default_val)
-        self.__lock.release()
-        return ret
+        result = self.__data_center.query('Market.IndexInfo', index_identity, fields=['listing_date'])
+        if result is None or len(result) == 0 or 'listing_date' not in result.columns:
+            return default_val
+        else:
+            ret = result['listing_date'][0]
+            return ret
 
     # --------------------------------------- Query ---------------------------------------
 
@@ -239,51 +226,77 @@ class DataUtility:
         df = self.__data_center.query('TradeData.Stock.Daily', identity, time_serial, fields=fields)
         return df
 
-    # -------------------------------------- Refresh --------------------------------------
+    # ------------------------------------------------- Refresh Cache --------------------------------------------------
+
+    # --------------------------- All ---------------------------
 
     def refresh_cache(self):
         self.__lock.acquire()
         self.__refresh_stock_cache()
-        self.__lock.release()
-
-        self.__lock.acquire()
         self.__refresh_index_cache()
         self.__lock.release()
 
-    # ------------------------------------------------------------------------------------------------------------------
+    # -------------------------- Stock --------------------------
+
+    def __check_refresh_stock_cache(self):
+        if not self.__stock_cache_ready:
+            self.__lock.acquire()
+            if not self.__stock_cache_ready:
+                self.__refresh_stock_cache()
+            self.__lock.release()
 
     def __refresh_stock_cache(self):
-        df = self.__data_center.query('Market.SecuritiesInfo')
-
         clock = Clock()
-        self.__stock_dict = df.set_index('stock_identity').T.to_dict('dict')
-        print('Stock frame to stock dict time spending: %sms' % clock.elapsed_ms())
+        df = self.__data_center.query('Market.SecuritiesInfo')
+        print('Query stock info time spending: %sms' % clock.elapsed_ms())
+
+        clock.reset()
+        id_name_dict = dict(zip(df.stock_identity, df.name))
+        print('Build stock identity name mapping time spending: %sms' % clock.elapsed_ms())
 
         clock.reset()
         name_id_dict = dict(zip(df.name, df.stock_identity))
-        print('Build name identity mapping time spending: %sms' % clock.elapsed_ms())
+        print('Build stock name identity mapping time spending: %sms' % clock.elapsed_ms())
 
         clock.reset()
         df = self.__data_center.query('Market.NamingHistory', fields=['stock_identity', 'name'])
         his_name_id_dict = dict(zip(df.name, df.stock_identity))
-        print('Build history name identity mapping time spending: %sms' % clock.elapsed_ms())
+        print('Build stock history name identity mapping time spending: %sms' % clock.elapsed_ms())
 
         clock.reset()
         name_id_dict.update(his_name_id_dict)
-        print('Merge name identity mapping time spending: %sms' % clock.elapsed_ms())
+        print('Merge stock name identity mapping time spending: %sms' % clock.elapsed_ms())
 
+        # Assignment at last to make access lock free
+        self.__stock_id_name = id_name_dict
+        self.__stock_name_id = name_id_dict
         self.__stock_cache_ready = True
 
-    def __refresh_index_cache(self):
-        df = self.__data_center.query('Market.IndexInfo')
+    # -------------------------- Index --------------------------
 
+    def __check_refresh_index_cache(self):
+        if not self.__index_cache_ready:
+            self.__lock.acquire()
+            if not self.__index_cache_ready:
+                self.__refresh_index_cache()
+            self.__lock.release()
+
+    def __refresh_index_cache(self):
         clock = Clock()
-        name_id_dict = dict(zip(df.name, df.stock_identity))
+        df = self.__data_center.query('Market.IndexInfo')
+        print('Query index info time spending: %sms' % clock.elapsed_ms())
+
+        clock.reset()
+        id_name_dict = dict(zip(df.index_identity, df.name))
         print('Build index name identity mapping time spending: %sms' % clock.elapsed_ms())
 
-        for index, row in index_info.iterrows():
-            self.__index_cache.set_id_name(row['index_identity'], row['name'])
-            self.__index_cache.set_id_info(row['index_identity'], 'listing_date', row['listing_date'])
+        clock.reset()
+        name_id_dict = dict(zip(df.name, df.index_identity))
+        print('Build index name identity mapping time spending: %sms' % clock.elapsed_ms())
+
+        # Assignment at last to make access lock free
+        self.__index_id_name = id_name_dict
+        self.__index_name_id = name_id_dict
         self.__index_cache_ready = True
 
 
