@@ -43,6 +43,14 @@ pyplot_logger.setLevel(level=logging.INFO)
 # https://stackoverflow.com/questions/12459811/how-to-embed-matplotlib-in-pyqt-for-dummies
 # https://stackoverflow.com/questions/42373104/since-matplotlib-finance-has-been-deprecated-how-can-i-use-the-new-mpl-finance
 
+
+TIP_PARALLEL_COMPARISON = '''横向比较：将同一报告期内所有的或某行业的股票的同一参数进行比较，将其分布绘制在直方图上'''
+TIP_LONGITUDINAL_COMPARISON = '''纵向比较：将某一股票所有报告期内的某一参数绘制在折线图上，以查看其发展趋势'''
+TIP_LIMIT_UPPER_LOWER = '''在直方图中，某些极端值会拉长坐标轴，导致重要部分显示不清晰；
+这种情况可以设置上下限将所有数值限制到某一范围内，使得重要数据更为突出'''
+TIP_BUTTON_SHOW = '''显示当然绘制的图表所依赖的数据'''
+
+
 class ChartLab(QWidget):
     def __init__(self, datahub_entry: DataHubEntry, factor_center: FactorCenter):
         super(ChartLab, self).__init__()
@@ -138,10 +146,10 @@ class ChartLab(QWidget):
         line.addWidget(self.__line_upper)
         group_layout.addLayout(line)
 
-        line = QHBoxLayout()
-        line.addWidget(self.__button_draw)
-        line.addWidget(self.__button_show)
-        bottom_layout.addLayout(line, 1)
+        col = QVBoxLayout()
+        col.addWidget(self.__button_draw)
+        col.addWidget(self.__button_show)
+        bottom_layout.addLayout(col, 1)
 
     def __config_control(self):
         for year in range(now().year, 1989, -1):
@@ -167,6 +175,12 @@ class ChartLab(QWidget):
 
         self.__combo_stock.setEnabled(False)
         self.__radio_parallel_comparison.setChecked(True)
+
+        self.__radio_parallel_comparison.setToolTip(TIP_PARALLEL_COMPARISON)
+        self.__radio_longitudinal_comparison.setToolTip(TIP_LONGITUDINAL_COMPARISON)
+        self.__line_lower.setToolTip(TIP_LIMIT_UPPER_LOWER)
+        self.__line_upper.setToolTip(TIP_LIMIT_UPPER_LOWER)
+        self.__button_show.setToolTip(TIP_BUTTON_SHOW)
 
         self.__button_draw.clicked.connect(self.on_button_draw)
         self.__button_show.clicked.connect(self.on_button_show)
@@ -203,7 +217,7 @@ class ChartLab(QWidget):
     def on_button_show(self):
         if self.__data_frame_widget is not None and \
                 self.__data_frame_widget.isVisible():
-            return
+            self.__data_frame_widget.close()
         if self.__paint_data is not None:
             self.__data_frame_widget = DataFrameWidget(self.__paint_data)
             self.__data_frame_widget.show()
