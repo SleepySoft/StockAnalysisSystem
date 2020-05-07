@@ -354,8 +354,11 @@ class UniversalDataCenter:
     def query(self, uri: str, identity: str or [str] = None,
               time_serial: tuple = None, **extra) -> pd.DataFrame or None:
         result = self.query_from_local(uri, identity, time_serial, extra)
-        if result is None or len(result) == 0:
-            result = self.query_from_plugin(uri, identity, time_serial, **extra)
+        # TODO: It's not a good way. Some problem need to be resolved.
+        # 1.The field not exists at all
+        # 2.Query multiple fields, some of them not persist on local
+        # if result is None or len(result) == 0:
+        #     result = self.query_from_plugin(uri, identity, time_serial, **extra)
         return result
 
     def query_from_local(self, uri: str, identity: str or [str] = None,
