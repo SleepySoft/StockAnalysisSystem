@@ -256,6 +256,10 @@ class ItkvTable:
         keys.remove('_id')
         return keys
 
+    def get_distinct_values(self, field: str) -> [str]:
+        collection = self.__get_collection()
+        return collection.distinct(field)
+
     def remove_key(self, key: str) -> bool:
         collection = self.__get_collection()
         if collection is None:
