@@ -58,6 +58,7 @@ goto end
 	pip install pymongo
 	pip install openpyxl
 	pip install tushare
+	pip install pylab-sdk
 	pip install matplotlib
 	pip install mpl_finance
 
@@ -111,8 +112,12 @@ goto end
 	xcopy "Analyzer" "dist/main/Analyzer" /e /i /h /s
 	xcopy "Collector" "dist/main/Collector" /e /i /h /s
 	xcopy "Extension" "dist/main/Extension" /e /i /h /s
+	xcopy "Factor" "dist/main/Factor" /e /i /h /s
 	
 	xcopy "README.md" "dist\main\"
+	
+	Rem Avoid exception on old platform
+	del "dist\main\Qt5Bluetooth.dll"
 
 	Rem Copy empty sqlite db to data path
 	Rem xcopy "res\sAsUtility.db.empty" "dist\main\Data\"
@@ -121,6 +126,8 @@ goto end
 	Rem Copy export mongodb and sqlite db to offline_data path
 	xcopy "Data\sAsUtility.db" "dist\main\Data\"
 	Rem xcopy "res\StockAnalysisSystem.zip.*" "dist\offline_data\"
+	
+	ren dist\main StockAnalysisSystem
 	
 	goto end
 
