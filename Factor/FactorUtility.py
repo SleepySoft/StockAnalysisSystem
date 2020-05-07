@@ -180,6 +180,9 @@ def query_finance_pattern(data_hub: DataHubEntry, identity: str,
     df.fillna(0.0, inplace=True)
     df = df.sort_values('period', ascending=False)
 
+    inv_dict = {v: k for k, v in mapping.items()}
+    df = df.rename(inv_dict, axis='columns')
+
     return df
 
 

@@ -629,7 +629,8 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
     # --------------------------------------------------------------------------
 
     def __to_top_level(self):
-        self.__display_uri = [declare[0] for declare in DATA_FORMAT_DECLARE]
+        # Temporary exclude Factor release data
+        self.__display_uri = [declare[0] for declare in DATA_FORMAT_DECLARE if 'Factor' not in declare[0]]
         self.__display_identities = None
         self.__page = 0
         self.update_table()
