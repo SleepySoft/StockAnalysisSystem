@@ -60,13 +60,13 @@ FACTOR_TABLE = {
         factor_quick_ratio, None, None, None
     ),
 
-    '83172ea4-5cd2-4bb2-8703-f66fdba9e58b': (),
-
-    'a518ccd5-525e-4d5f-8e84-1f77bbb8f7af': (),
-    'f747c9b1-ed98-4a28-8107-d3fa13d0e5ed': (),
-    '6c568b09-3aee-4a6a-8440-542dfc5e8dc5': (),
-    'f4d0cc16-afa5-4bf4-a7eb-0a44074634ec': (),
-    '308e04df-6bc7-4724-bbc5-168232327ac6': (),
+    # '83172ea4-5cd2-4bb2-8703-f66fdba9e58b': (),
+    #
+    # 'a518ccd5-525e-4d5f-8e84-1f77bbb8f7af': (),
+    # 'f747c9b1-ed98-4a28-8107-d3fa13d0e5ed': (),
+    # '6c568b09-3aee-4a6a-8440-542dfc5e8dc5': (),
+    # 'f4d0cc16-afa5-4bf4-a7eb-0a44074634ec': (),
+    # '308e04df-6bc7-4724-bbc5-168232327ac6': (),
 }
 
 
