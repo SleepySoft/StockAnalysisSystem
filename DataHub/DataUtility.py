@@ -134,6 +134,20 @@ class DataUtility:
 
     # ------------------------------- General -------------------------------
 
+    def get_all_identities(self) -> [str]:
+        data_table, checker = self.__data_center.get_data_table('Market.SecuritiesInfo')
+        itkv_table = data_table.data_table('Market.SecuritiesInfo', '', None, {}, [])
+        industries = itkv_table.get_distinct_values('industry')
+        return industries
+
+    def get_industry_stocks(self, industry: str) -> [str]:
+        result = self.__data_center.query('Market.SecuritiesInfo', '', fields=['stock_identity'], industry=industry)
+        if result is None or len(result) == 0 or 'stock_identity' not in result.columns:
+            return []
+        else:
+            ret = result['stock_identity'].tolist()
+            return ret
+
     def get_securities_listing_date(self, securities: str, default_val: datetime.datetime) -> datetime.datetime:
         return self.get_stock_listing_date(securities, default_val) if securities in self.__stock_id_name.keys() else \
                self.get_index_listing_date(securities, default_val)
@@ -158,6 +172,9 @@ class DataUtility:
         ret = [self.__stock_name_id.get(name, name) for name in names]
         return ret
 
+    def get_stock_industry(self, stock_identity: str, default_val: str = '') -> str:
+        return self.__query_identity_filed_value('Market.SecuritiesInfo', stock_identity, 'industry', default_val)
+
     def get_stock_listing_date(self, stock_identity: str, default_val: datetime.datetime) -> datetime.datetime:
         return self.__query_identity_filed_value('Market.SecuritiesInfo', stock_identity, 'listing_date', default_val)
 
@@ -175,6 +192,9 @@ class DataUtility:
         self.__check_refresh_index_cache()
         ret = list(self.__index_id_name.keys())
         return ret
+
+    def get_index_category(self, index_identity: str, default_val: str = '') -> str:
+        return self.__query_identity_filed_value('Market.IndexInfo', index_identity, 'category', default_val)
 
     def get_index_listing_date(self, index_identity: str, default_val: datetime.datetime) -> datetime.datetime:
         return self.__query_identity_filed_value('Market.IndexInfo', index_identity, 'listing_date', default_val)
