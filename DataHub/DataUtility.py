@@ -13,7 +13,7 @@ try:
     from Database.DatabaseEntry import DatabaseEntry
     from Utiltity.plugin_manager import PluginManager
     from DataHub.UniversalDataCenter import ParameterChecker
-    from DataHub.UniversalDataCenter import UniversalDataTable
+    from DataHub.UniversalDataCenter import DataAgent
     from DataHub.UniversalDataCenter import UniversalDataCenter
 except Exception as e:
     sys.path.append(root_path)
@@ -23,7 +23,7 @@ except Exception as e:
     from Database.DatabaseEntry import DatabaseEntry
     from Utiltity.plugin_manager import PluginManager
     from DataHub.UniversalDataCenter import ParameterChecker
-    from DataHub.UniversalDataCenter import UniversalDataTable
+    from DataHub.UniversalDataCenter import DataAgent
     from DataHub.UniversalDataCenter import UniversalDataCenter
 finally:
     logger = logging.getLogger('')
@@ -135,7 +135,7 @@ class DataUtility:
     # ------------------------------- General -------------------------------
 
     def get_all_identities(self) -> [str]:
-        data_table, checker = self.__data_center.get_data_table('Market.SecuritiesInfo')
+        data_table, checker = self.__data_center.get_data_agent('Market.SecuritiesInfo')
         itkv_table = data_table.data_table('Market.SecuritiesInfo', '', None, {}, [])
         industries = itkv_table.get_distinct_values('industry')
         return industries

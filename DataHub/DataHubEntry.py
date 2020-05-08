@@ -10,7 +10,7 @@ try:
     from Utiltity.plugin_manager import PluginManager
     from DataHub.DataUtility import DataUtility
     from DataHub.UniversalDataCenter import ParameterChecker
-    from DataHub.UniversalDataCenter import UniversalDataTable
+    from DataHub.UniversalDataCenter import DataAgent
     from DataHub.UniversalDataCenter import UniversalDataCenter
 except Exception as e:
     sys.path.append(root_path)
@@ -20,7 +20,7 @@ except Exception as e:
     from Utiltity.plugin_manager import PluginManager
     from DataHub.DataUtility import DataUtility
     from DataHub.UniversalDataCenter import ParameterChecker
-    from DataHub.UniversalDataCenter import UniversalDataTable
+    from DataHub.UniversalDataCenter import DataAgent
     from DataHub.UniversalDataCenter import UniversalDataCenter
 finally:
     logger = logging.getLogger('')
@@ -216,7 +216,7 @@ RESULT_FIELD_TRADE_DAILY = {
 
 # --------------------------------------- UniversalDataTableSeparate ---------------------------------------
 
-class IdentityTableExtender(UniversalDataTable.Extender):
+class IdentityTableExtender(DataAgent.Extender):
     def __init__(self):
         super(IdentityTableExtender, self).__init__()
 
@@ -297,10 +297,10 @@ class DataHubEntry:
                 print('Error data declare format: ' + data_format[DATA_FORMAT_URI])
                 continue
             self.get_data_center().register_data_table(
-                UniversalDataTable(data_format[DATA_FORMAT_URI], self.__database_entry,
-                                   data_format[DATA_FORMAT_DATABASE], data_format[DATA_FORMAT_TABLE_PREFIX],
-                                   data_format[DATA_FORMAT_IDENTITY_FIELD], data_format[DATA_FORMAT_DATETIME_FIELD],
-                                   SPECIAL_EXTENDER_TABLE.get(data_format[DATA_FORMAT_URI], None)),
+                DataAgent(data_format[DATA_FORMAT_URI], self.__database_entry,
+                          data_format[DATA_FORMAT_DATABASE], data_format[DATA_FORMAT_TABLE_PREFIX],
+                          data_format[DATA_FORMAT_IDENTITY_FIELD], data_format[DATA_FORMAT_DATETIME_FIELD],
+                          SPECIAL_EXTENDER_TABLE.get(data_format[DATA_FORMAT_URI], None)),
                 ParameterChecker(data_format[DATA_FORMAT_RESULT_FIELD_INFO],
                                  data_format[DATA_FORMAT_QUERY_FIELD_INFO])
             )
