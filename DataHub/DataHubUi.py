@@ -14,7 +14,7 @@ try:
     from DataHub.DataUtility import DataUtility
     from DataHub.DataHubEntry import DATA_FORMAT_DECLARE
     from Database.DatabaseEntry import DatabaseEntry
-    from DataHub.UniversalDataCenter import UniversalDataTable
+    from DataHub.UniversalDataCenter import DataAgent
     from DataHub.UniversalDataCenter import UniversalDataCenter
 except Exception as e:
     sys.path.append(root_path)
@@ -26,7 +26,7 @@ except Exception as e:
     from DataHub.DataUtility import DataUtility
     from DataHub.DataHubEntry import DATA_FORMAT_DECLARE
     from Database.DatabaseEntry import DatabaseEntry
-    from DataHub.UniversalDataCenter import UniversalDataTable
+    from DataHub.UniversalDataCenter import DataAgent
     from DataHub.UniversalDataCenter import UniversalDataCenter
 finally:
     logger = logging.getLogger('')

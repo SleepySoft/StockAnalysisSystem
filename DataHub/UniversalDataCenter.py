@@ -158,10 +158,10 @@ class ParameterChecker:
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-#                                                 UniversalDataTable
+#                                                 DataAgent
 # ----------------------------------------------------------------------------------------------------------------------
 
-class UniversalDataTable:
+class DataAgent:
     DEFAULT_SINCE_DATE = default_since()
 
     # -------------------------------- Base Separator --------------------------------
@@ -192,7 +192,7 @@ class UniversalDataTable:
             nop(self, identity, time_serial, extra, fields)
             return uri.replace('.', '_')
 
-    # ------------------------------- UniversalDataTable -------------------------------
+    # ------------------------------- DataAgent -------------------------------
 
     def __init__(self,
                  uri: str, database_entry: DatabaseEntry,
@@ -223,7 +223,7 @@ class UniversalDataTable:
         self.__table_prefix = table_prefix
         self.__identity_field = identity_field
         self.__datetime_field = datetime_field
-        self.__extender = extender if extender is not None else UniversalDataTable.Extender()
+        self.__extender = extender if extender is not None else DataAgent.Extender()
 
     def identity_field(self) -> str or None:
         return self.__identity_field
@@ -315,7 +315,7 @@ class UniversalDataCenter:
         self.__factor_center = None
 
         self.__last_error = ''
-        self.__data_table = []
+        self.__data_agent = []
         self.__field_uri_dict = {}
         self.__field_readable_dict = {}
         self.__readable_field_dict = {}
@@ -326,10 +326,10 @@ class UniversalDataCenter:
     def get_update_table(self) -> UpdateTableEx:
         return self.__database_entry.get_update_table()
 
-    def get_data_table(self, uri: str) -> (UniversalDataTable, ParameterChecker):
-        for table, checker in self.__data_table:
-            if table.adapt(uri):
-                return table, checker
+    def get_data_agent(self, uri: str) -> (DataAgent, ParameterChecker):
+        for agent, checker in self.__data_agent:
+            if agent.adapt(uri):
+                return agent, checker
         return None, None
 
     def get_last_error(self) -> str:
@@ -344,10 +344,10 @@ class UniversalDataCenter:
     def set_factor_center(self, factor_center):
         self.__factor_center = factor_center
 
-    def register_data_table(self, table: UniversalDataTable,
+    def register_data_table(self, table: DataAgent,
                             params_checker: ParameterChecker or None = None):
-        if table not in self.__data_table:
-            self.__data_table.append((table, params_checker))
+        if table not in self.__data_agent:
+            self.__data_agent.append((table, params_checker))
 
     # ------------------------------------------------ Data Management -------------------------------------------------
 
@@ -364,8 +364,8 @@ class UniversalDataCenter:
     def query_from_local(self, uri: str, identity: str or [str] = None,
                          time_serial: tuple = None, extra: dict = None) -> pd.DataFrame or None:
         extra_param = extra.copy()
-        table, checker = self.get_data_table(uri)
-        if table is None:
+        agent, checker = self.get_data_agent(uri)
+        if agent is None:
             self.log_error('Cannot find data table for : ' + uri)
             return None
         if not self.check_query_params(uri, identity, time_serial, **extra_param):
@@ -384,7 +384,7 @@ class UniversalDataCenter:
         if fields is not None and readable:
             fields = self.readable_to_fields(fields)
 
-        result = table.query(uri, identity, time_serial, extra_param, fields)
+        result = agent.query(uri, identity, time_serial, extra_param, fields)
 
         if fields is not None:
             # Fill the missing columns
@@ -436,10 +436,10 @@ class UniversalDataCenter:
         """
         Calculate update range and fetch from plug-in, then pack for local persistence.
         """
-        table, checker = self.get_data_table(uri)
-        if table is None:
+        agent, checker = self.get_data_agent(uri)
+        if agent is None:
             self.log_error('Cannot find data table for : ' + uri)
-            return False, (uri, identity, None, None, table), None
+            return False, (uri, identity, None, None, agent), None
 
         # ---------------- Decide update time range ----------------
         if force:
@@ -449,21 +449,21 @@ class UniversalDataCenter:
         # TODO: How to be more grace?
         if date2text(since) == date2text(until):
             # Does not need update.
-            return True, (uri, identity, since, until, table), None
+            return True, (uri, identity, since, until, agent), None
         print('%s: [%s] -> Update range: %s - %s' % (uri, str(identity), date2text(since), date2text(until)))
 
         # ------------------------- Fetch -------------------------
         result = self.query_from_plugin(uri, identity, (min(since, until), max(since, until)), **extra)
         if result is None or not isinstance(result, pd.DataFrame):
             self.log_error('Cannot fetch data from plugin for : ' + uri)
-            return False, (uri, identity, since, until, table), result
+            return False, (uri, identity, since, until, agent), result
 
         # ------------------------- Check -------------------------
         if checker is not None:
             if not checker.check_dataframe(result):
                 self.log_error('Result format error: ' + uri)
-                return False, (uri, identity, since, until, table), result
-        return True, (uri, identity, since, until, table), result
+                return False, (uri, identity, since, until, agent), result
+        return True, (uri, identity, since, until, agent), result
 
     def apply_local_data_patch(self, patch: tuple) -> bool:
         """
@@ -506,8 +506,8 @@ class UniversalDataCenter:
 
     def calc_update_range(self, uri: str, identity: str or [str] = None,
                           time_serial: tuple = None) -> (datetime.datetime, datetime.datetime):
-        table, _ = self.get_data_table(uri)
-        if table is None:
+        agent, _ = self.get_data_agent(uri)
+        if agent is None:
             self.log_error('Cannot find data table for : ' + uri)
             return None, None
 
@@ -518,7 +518,7 @@ class UniversalDataCenter:
         # ----------------- Decide update time range -----------------
 
         since, until = normalize_time_serial(time_serial, None, None)
-        update_since, update_until = table.update_range(uri, identity)
+        update_since, update_until = agent.update_range(uri, identity)
 
         # Guess the update date time range
         # If the parameter user specified. Just use user specified.
@@ -531,7 +531,7 @@ class UniversalDataCenter:
                 since = update_since
             else:
                 last_update = self.get_update_table().get_last_update_time(update_tags)
-                since = last_update if last_update is not None else UniversalDataTable.DEFAULT_SINCE_DATE
+                since = last_update if last_update is not None else DataAgent.DEFAULT_SINCE_DATE
         if until is None:
             if update_until is not None:
                 until = update_until
@@ -540,11 +540,11 @@ class UniversalDataCenter:
         return since, until
 
     def pack_query_params(self, uri: str, identity: str or [str], time_serial: tuple, **extra) -> dict:
-        table, _ = self.get_data_table(uri)
+        agent, _ = self.get_data_agent(uri)
 
-        if table is not None:
-            identity_field = table.identity_field()
-            datetime_field = table.datetime_field()
+        if agent is not None:
+            identity_field = agent.identity_field()
+            datetime_field = agent.datetime_field()
         else:
             identity_field = None
             datetime_field = None
@@ -564,7 +564,7 @@ class UniversalDataCenter:
         return pack
 
     def check_query_params(self, uri: str, identity: str or [str], time_serial: tuple, **extra) -> bool:
-        _, checker = self.get_data_table(uri)
+        _, checker = self.get_data_agent(uri)
         if checker is not None:
             argv = self.pack_query_params(uri, identity, time_serial, **extra)
             if not checker.check_dict(argv):
@@ -673,7 +673,7 @@ def test_entry1():
 def test_update():
     data_center = __build_data_center()
     data_center.register_data_table(
-        UniversalDataTable('test.entry1', DatabaseEntry(), 'test_db', 'test_table'))
+        DataAgent('test.entry1', DatabaseEntry(), 'test_db', 'test_table'))
     data_center.update_local_data('test.entry1', 'identity_test1')
 
 

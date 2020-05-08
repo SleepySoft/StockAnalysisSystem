@@ -474,7 +474,7 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
     def generate_line_content(self, uri: str, identity: str or None) -> [list] or None:
         line = []
 
-        data_table, _ = self.__data_center.get_data_table(uri)
+        data_table, _ = self.__data_center.get_data_agent(uri)
         update_table = self.__update_table
 
         if data_table is None:
