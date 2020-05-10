@@ -28,15 +28,94 @@ finally:
     logger = logging.getLogger('')
 
 
+# --------------------------------------------- Data Declaration Functions ---------------------------------------------
+
+# --------------------- Update List ---------------------
+
+def a_stock_list() -> [str]:
+    pass
+
+
+def hk_stock_list() -> [str]:
+    return []
+
+
+def support_stock_list() -> [str]:
+    return a_stock_list() + hk_stock_list()
+
+
+def support_index_list() -> [str]:
+    pass
+
+
+def support_exchange_list() -> [str]:
+    pass
+
+
+# ------------------------ Splitter ------------------------
+
+def split_none(uri: str, identity: str or [str], time_serial: tuple, extra: dict, fields: list) -> \
+        [(str, str or [str], tuple, dict, list)]:
+    return uri, identity, time_serial, extra, fields
+
+
+def split_by_identity(uri: str, identity: str or [str], time_serial: tuple, extra: dict, fields: list) -> \
+        [(str, str or [str], tuple, dict, list)]:
+    if not isinstance(identity, (list, tuple)):
+        identity = [identity]
+    return [(uri, _id, time_serial, extra, fields) for _id in identity]
+
+
+# ------------------------ Time Node ------------------------
+
+def stock_listing(securities: str) -> datetime.datetime:
+    pass
+
+
+def a_share_market_start(securities: str) -> datetime.datetime:
+    return text_auto_time('1990-12-19')
+
+
+def latest_day(securities: str) -> datetime.datetime:
+    pass
+
+
+def latest_quarter(securities: str) -> datetime.datetime:
+    pass
+
+
+def latest_trade_day(securities: str) -> datetime.datetime:
+    pass
+
+
+# ---------------------------------------------- Data Declaration Element ----------------------------------------------
+
+UPDATE_LIST_STOCK = support_stock_list
+UPDATE_LIST_INDEX = support_index_list
+UPDATE_LIST_EXCHANGE = support_exchange_list
+
+SPLIT_NONE = split_none
+SPLIT_BY_IDENTITY = split_by_identity
+
+TIME_STOCK_LISTING = stock_listing
+TIME__A_SHARE_MARKET_START = a_share_market_start
+
+TIME_TODAY = latest_day
+TIME_LATEST_QUARTER = latest_quarter
+TIME_LATEST_TRADE_DAY = latest_trade_day
+
+DATA_DURATION_AUTO = 0  # Not specify
+DATA_DURATION_NONE = 10  # Data without timestamp
+DATA_DURATION_FLOW = 50  # Data with uncertain timestamp
+DATA_DURATION_DAILY = 100  # Daily data
+DATA_DURATION_QUARTER = 500  # Quarter data
+DATA_DURATION_ANNUAL = 1000  # Annual Data
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
 class DataAgent:
     DEFAULT_SINCE_DATE = default_since()
-
-    DATA_DURATION_AUTO = 0          # Not specify
-    DATA_DURATION_NONE = 10         # Data without timestamp
-    DATA_DURATION_FLOW = 50         # Data with uncertain timestamp
-    DATA_DURATION_DAILY = 100       # Daily data
-    DATA_DURATION_QUARTER = 500     # Quarter data
-    DATA_DURATION_ANNUAL = 1000     # Annual Data
 
     # ------------------------------- DataAgent -------------------------------
 
@@ -237,7 +316,11 @@ class DataAgentFactory:
         pass
 
     @staticmethod
-    def create_data_agent(self, uri: str, *args, **kwargs) -> DataAgent:
+    def create_data_agent(
+            uri: str, database: str, table_prefix: str,
+            ideneity_field: str, ideneity_update_list,
+            datetime_field: str, data_since, data_until, data_duration: int,
+            query_split, merge_split) -> DataAgent:
         uri = uri.lower()
         if uri.lower().startswith('factor'):
             if uri.endswith('daily'):
