@@ -94,11 +94,14 @@ UPDATE_LIST_STOCK = support_stock_list
 UPDATE_LIST_INDEX = support_index_list
 UPDATE_LIST_EXCHANGE = support_exchange_list
 
+KEY_TYPE_UNIQUE = 1
+KEY_TYPE_GROUP = 2
+
 SPLIT_NONE = split_none
 SPLIT_BY_IDENTITY = split_by_identity
 
 TIME_STOCK_LISTING = stock_listing
-TIME__A_SHARE_MARKET_START = a_share_market_start
+TIME_A_SHARE_MARKET_START = a_share_market_start
 
 TIME_TODAY = latest_day
 TIME_LATEST_QUARTER = latest_quarter
@@ -146,6 +149,14 @@ class DataAgent:
         self.__table_prefix = table_prefix
         self.__identity_field = identity_field
         self.__datetime_field = datetime_field
+
+        self.identity_update_list = None
+        self.data_since = None
+        self.data_until = None
+        self.data_duration = None
+        self.query_split = None
+        self.merge_split = None
+        self.checker = None
 
         # -------------------------------------------------------------------
 
@@ -245,6 +256,123 @@ class DataAgent:
                                                        self.__identity_field, self.__datetime_field)
 
 
+class ParameterChecker:
+
+    """
+    Key: str - The key you need to check in the dict param
+    Val: tuple - The first item: The list of expect types for this key, you can specify a None if None is allowed
+                 The second item: The list of expect values for this key, an empty list means it can be any value
+                 The third item: True if it's necessary, False if it's optional.
+    DICT_PARAM_INFO_EXAMPLE = {
+        'identity':     ([str], ['id1', 'id2'], True),
+        'datetime':     ([datetime.datetime, None], [], False)
+    }
+
+    The param info for checking a dataframe.
+    It's almost likely to the dict param info except the type should be str instead of real python type
+    DATAFRAME_PARAM_INFO_EXAMPLE = {
+        'identity':         (['str'], [], False),
+        'period':           (['datetime'], [], True)
+    }
+    """
+
+    PYTHON_DATAFRAME_TYPE_MAPPING = {
+        'str': 'object',
+        'list': 'object',
+        'dict': 'object',
+        'int': 'int64',
+        'float': 'float64',
+        'datetime': 'datetime64[ns]',
+    }
+
+    def __init__(self, df_param_info: dict = None, dict_param_info: dict = None):
+        self.__df_param_info = df_param_info
+        self.__dict_param_info = dict_param_info
+
+    def check_dict(self, argv: dict) -> bool:
+        if self.__dict_param_info is None or len(self.__dict_param_info) == 0:
+            return True
+        return ParameterChecker.check_dict_param(argv, self.__dict_param_info)
+
+    def check_dataframe(self, df: dict) -> bool:
+        if self.__df_param_info is None or len(self.__df_param_info) == 0:
+            return True
+        return ParameterChecker.check_dataframe_field(df, self.__df_param_info)
+
+    @staticmethod
+    def check_dict_param(argv: dict, param_info: dict) -> bool:
+        if argv is None or len(argv) == 0:
+            return False
+        keys = list(argv.keys())
+
+        for param in param_info.keys():
+            types, values, must, _ = param_info[param]
+
+            if param not in keys:
+                if must:
+                    logger.info('Param key check error: Param is missing - ' + param)
+                    return False
+                else:
+                    continue
+
+            value = argv[param]
+            if value is None and None in types:
+                continue
+            if not isinstance(value, tuple([t for t in types if t is not None])):
+                logger.info('Param key check error: Param type mismatch - ' +
+                            str(type(value)) + ' is not in ' + str(types))
+                return False
+
+            if len(values) > 0:
+                if value not in values:
+                    logger.info('Param key check error: Param value out of range - ' +
+                                str(value) + ' is not in ' + str(values))
+                    return False
+        return True
+
+    @staticmethod
+    def check_dataframe_field(df: pd.DataFrame, field_info: dict) -> bool:
+        """
+        Check whether DataFrame filed fits the field info.
+        :param df: The DataFrame you want to check
+        :param field_info: The definition of fields info
+        :return: True if all fields are satisfied. False if not.
+        """
+        if df is None or len(df) == 0:
+            return False
+        columns = list(df.columns)
+
+        for field in field_info.keys():
+            types, values, must, _ = field_info[field]
+
+            if field not in columns:
+                if must:
+                    logger.info('DataFrame field check error: Field is missing - ' + field)
+                    return False
+                else:
+                    continue
+
+            type_ok = False
+            type_df = df[field].dtype
+            for py_type in types:
+                df_type = ParameterChecker.PYTHON_DATAFRAME_TYPE_MAPPING.get(py_type)
+                if df_type is not None and df_type == type_df:
+                    type_ok = True
+                    break
+            if not type_ok:
+                logger.info('DataFrame field check error: Field type mismatch - ' +
+                            field + ': ' + str(df_type) + ' not match ' + str(type_df))
+                return False
+
+            if len(values) > 0:
+                out_of_range_values = df[~df[field].isin(values)]
+                if len(out_of_range_values) > 0:
+                    logger.info('DataFrame field check error: Field value out of range - ' +
+                                str(out_of_range_values) + ' is not in ' + str(values))
+                    return False
+        return True
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 class DataAgentSecurityDaily(DataAgent):
@@ -312,27 +440,56 @@ class DataAgentFactorDaily(DataAgentSecurityDaily):
 # ----------------------------------------------------------------------------------------------------------------------
 
 class DataAgentFactory:
+    NO_SQL_ENTRY = None
+
     def __init__(self):
         pass
 
     @staticmethod
-    def create_data_agent(
-            uri: str, database: str, table_prefix: str,
-            ideneity_field: str, ideneity_update_list,
-            datetime_field: str, data_since, data_until, data_duration: int,
-            query_split, merge_split) -> DataAgent:
-        uri = uri.lower()
-        if uri.lower().startswith('factor'):
-            if uri.endswith('daily'):
-                return DataAgentFactorDaily(uri, *args, **kwargs)
-            else:
-                return DataAgentFactorQuarter(uri, *args, **kwargs)
-        else:
-            if uri.endswith('daily'):
-                return DataAgentSecurityDaily(uri, *args, **kwargs)
-        return DataAgent(uri, *args, **kwargs)
+    def create_data_agent(uri: str, database: str, table_prefix: str, 
+                          identity_field: str or None, datetime_field: str or None, **argv) -> DataAgent:
+        """
+
+        :param uri:
+        :param database:
+        :param table_prefix:
+        :param identity_field:
+        :param identity_update_list:
+        :param datetime_field:
+        :param data_since:
+        :param data_until:
+        :param data_duration:
+        :param extra_key:
+        :param key_type:
+        :param table_name:
+        :param query_split:
+        :param merge_split:
+        :param query_declare:
+        :param result_declare:
+        :param argv:
+        :return:
+        """
+
+        data_agent = DataAgent(uri, DataAgentFactory.NO_SQL_ENTRY,
+                               database, table_prefix, identity_field, datetime_field)
+
+        data_agent.identity_update_list = argv.get('identity_update_list', None)
+
+        data_agent.data_since = argv.get('data_since', None)
+        data_agent.data_until = argv.get('data_until', None)
+        data_agent.data_duration = argv.get('data_duration', None)
+
+        data_agent.extra_key = argv.get('extra_key', None)
+        data_agent.key_type = argv.get('key_type', None)
+        data_agent.table_name = argv.get('table_name', None)
+
+        data_agent.query_split = argv.get('query_split', None)
+        data_agent.merge_split = argv.get('merge_split', None)
+
+        data_agent.checker = ParameterChecker(argv.get('query_declare', None), argv.get('result_declare', None))
 
 
+DECLARE_DATA_AGENT = DataAgentFactory.create_data_agent
 
 
 
