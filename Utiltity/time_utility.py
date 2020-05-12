@@ -167,7 +167,7 @@ class DateTimeIterator:
     def end(self) -> bool:
         return self.__iter_to >= self.__until
 
-    def range(self) -> (datetime.datetime, datetime.datetime):
+    def data_range(self) -> (datetime.datetime, datetime.datetime):
         return self.__iter_from, self.__iter_to
 
     def iter_days(self, days: int) -> (datetime.datetime, datetime.datetime):
@@ -181,7 +181,7 @@ class DateTimeIterator:
         self.__iter_to += delta
         if self.end():
             self.__iter_to = self.__until
-        return self.range()
+        return self.data_range()
 
 
 

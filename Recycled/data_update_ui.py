@@ -484,7 +484,7 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
         if since is None or until is None:
             # TODO: Workaround - because each stock storage in each table.
             # So we cannot fetch its time range with this method.
-            since, until = data_table.range(uri, identity)
+            since, until = data_table.data_range(uri, identity)
         if until is not None:
             update_since = min(tomorrow_of(until), now())
             update_until = now()

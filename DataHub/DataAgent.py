@@ -30,230 +30,87 @@ finally:
 
 # --------------------------------------------- Data Declaration Functions ---------------------------------------------
 
-# --------------------- Update List ---------------------
+class DataAgentUtility:
+    def __init__(self):
+        pass
 
-def a_stock_list() -> [str]:
-    pass
+    # ------------------------ Update List ------------------------
 
+    @staticmethod
+    def a_stock_list() -> [str]:
+        pass
 
-def hk_stock_list() -> [str]:
-    return []
+    @staticmethod
+    def hk_stock_list() -> [str]:
+        return []
 
+    @staticmethod
+    def support_stock_list() -> [str]:
+        return DataAgentUtility.a_stock_list() + DataAgentUtility.hk_stock_list()
 
-def support_stock_list() -> [str]:
-    return a_stock_list() + hk_stock_list()
+    @staticmethod
+    def support_index_list() -> [str]:
+        pass
 
+    @staticmethod
+    def support_exchange_list() -> [str]:
+        pass
 
-def support_index_list() -> [str]:
-    pass
+    # --------    ---------------- Splitter - -----------------------
 
-
-def support_exchange_list() -> [str]:
-    pass
-
-
-# ------------------------ Splitter ------------------------
-
-def split_none(uri: str, identity: str or [str], time_serial: tuple, extra: dict, fields: list) -> \
-        [(str, str or [str], tuple, dict, list)]:
-    return uri, identity, time_serial, extra, fields
-
-
-def split_by_identity(uri: str, identity: str or [str], time_serial: tuple, extra: dict, fields: list) -> \
-        [(str, str or [str], tuple, dict, list)]:
-    if not isinstance(identity, (list, tuple)):
-        identity = [identity]
-    return [(uri, _id, time_serial, extra, fields) for _id in identity]
+    @staticmethod
+    def split_none(uri: str, identity: str or [str], time_serial: tuple, extra: dict, fields: list) -> \
+            [(str, str or [str], tuple, dict, list)]:
+        return uri, identity, time_serial, extra, fields
 
 
-# ------------------------ Time Node ------------------------
+    @staticmethod
+    def split_by_identity(uri: str, identity: str or [str], time_serial: tuple, extra: dict, fields: list) -> \
+            [(str, str or [str], tuple, dict, list)]:
+        if not isinstance(identity, (list, tuple)):
+            identity = [identity]
+        return [(uri, _id, time_serial, extra, fields) for _id in identity]
 
-def stock_listing(securities: str) -> datetime.datetime:
-    pass
+    # ------------------------ Time Node ------------------------
 
+    @staticmethod
+    def stock_listing(securities: str) -> datetime.datetime:
+        pass
 
-def a_share_market_start(securities: str) -> datetime.datetime:
-    return text_auto_time('1990-12-19')
+    @staticmethod
+    def a_share_market_start() -> datetime.datetime:
+        return text_auto_time('1990-12-19')
 
+    @staticmethod
+    def latest_day() -> datetime.datetime:
+        pass
 
-def latest_day(securities: str) -> datetime.datetime:
-    pass
+    @staticmethod
+    def latest_quarter() -> datetime.datetime:
+        pass
 
+    @staticmethod
+    def latest_trade_day() -> datetime.datetime:
+        pass
 
-def latest_quarter(securities: str) -> datetime.datetime:
-    pass
+    # ------------------------ Table Name ------------------------
 
-
-def latest_trade_day(securities: str) -> datetime.datetime:
-    pass
-
-
-# ---------------------------------------------- Data Declaration Element ----------------------------------------------
-
-UPDATE_LIST_STOCK = support_stock_list
-UPDATE_LIST_INDEX = support_index_list
-UPDATE_LIST_EXCHANGE = support_exchange_list
-
-KEY_TYPE_UNIQUE = 1
-KEY_TYPE_GROUP = 2
-
-SPLIT_NONE = split_none
-SPLIT_BY_IDENTITY = split_by_identity
-
-TIME_STOCK_LISTING = stock_listing
-TIME_A_SHARE_MARKET_START = a_share_market_start
-
-TIME_TODAY = latest_day
-TIME_LATEST_QUARTER = latest_quarter
-TIME_LATEST_TRADE_DAY = latest_trade_day
-
-DATA_DURATION_AUTO = 0  # Not specify
-DATA_DURATION_NONE = 10  # Data without timestamp
-DATA_DURATION_FLOW = 50  # Data with uncertain timestamp
-DATA_DURATION_DAILY = 100  # Daily data
-DATA_DURATION_QUARTER = 500  # Quarter data
-DATA_DURATION_ANNUAL = 1000  # Annual Data
-
-# ----------------------------------------------------------------------------------------------------------------------
+    def table_name_by_uri(**argv) -> str:
+        uri = argv.get('uri', '')
+        return uri.replace('.', '_')
 
 
-class DataAgent:
-    DEFAULT_SINCE_DATE = default_since()
+    def table_name_by_uri_identity(**argv):
+        uri = argv.get('uri', '')
+        identity = argv.get('identity', '')
+        name = (uri + '_' + identity) if str_available(identity) else uri
+        return name.replace('.', '_')
 
-    # ------------------------------- DataAgent -------------------------------
 
-    def __init__(self,
-                 uri: str, database_entry: DatabaseEntry,
-                 depot_name: str, table_prefix: str = '',
-                 identity_field: str or None = 'Identity',
-                 datetime_field: str or None = 'DateTime'):
-        """
-        If you specify both identity_field and datetime_field, the combination will be the primary key. Which means
-            an id can have multiple different time serial record. e.g. stock daily price table.
-        If you only specify the identity_field, the identity_field will be the only primary key. Which means
-            its a time independent serial record with id. e.g. stock information table
-        If you only specify the datetime_field, the datetime_field will be the only primary key. Which means
-            it's a time serial record without id. e.g. log table
-        If you do not specify neither identity_field and datetime_field, the table has not primary key. Which means
-            the table cannot not updated by id or time. Record is increase only except update by manual.
-        :param uri: The URI of the resource.
-        :param database_entry: The instance of DatabaseEntry.
-        :param depot_name: The name of database.
-        :param table_prefix: The prefix of table, default empty.
-        :param identity_field: The identity filed name.
-        :param datetime_field: The datetime filed name.
-        """
-        self.__uri = uri
-        self.__database_entry = database_entry
-        self.__depot_name = depot_name
-        self.__table_prefix = table_prefix
-        self.__identity_field = identity_field
-        self.__datetime_field = datetime_field
+# ------------------------ Table Name ------------------------
 
-        self.identity_update_list = None
-        self.data_since = None
-        self.data_until = None
-        self.data_duration = None
-        self.query_split = None
-        self.merge_split = None
-        self.checker = None
-
-        # -------------------------------------------------------------------
-
-    def base_uri(self) -> str:
-        return self.__uri
-
-    def database_entry(self) -> DatabaseEntry:
-        return self.__database_entry
-
-    def depot_name(self) -> str:
-        return self.__depot_name
-
-    def table_prefix(self) -> str:
-        return self.__table_prefix
-
-    def identity_field(self) -> str or None:
-        return self.__identity_field
-
-    def datetime_field(self) -> str or None:
-        return self.__datetime_field
-
-    def data_duration(self) -> int:
-        nop(self)
-        return DataAgent.DATA_DURATION_AUTO
-
-    # -------------------------------------------------------------------
-
-    def merge_on_column(self) -> list:
-        on_column = []
-        if str_available(self.__identity_field):
-            on_column.append(self.__identity_field)
-        if str_available(self.__datetime_field):
-            on_column.append(self.__datetime_field)
-        return on_column
-
-    def ref_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
-        nop(self, uri, identity)
-        return None, None
-
-    def table_name(self, uri: str, identity: str or [str], time_serial: tuple, extra: dict, fields: list) -> str:
-        nop(self, identity, time_serial, extra, fields)
-        return self.table_prefix() + uri.replace('.', '_')
-
-    # -------------------------------------------------------------------
-
-    def adapt(self, uri: str) -> bool:
-        return self.__uri.lower() == uri.lower()
-
-    def query(self, uri: str, identity: str or [str], time_serial: tuple,
-              extra: dict, fields: list) -> pd.DataFrame or None:
-        table = self.data_table(uri, identity, time_serial, extra, fields)
-        since, until = normalize_time_serial(time_serial)
-        result = table.query(identity, since, until, extra, fields)
-        df = pd.DataFrame(result)
-        return df
-
-    def merge(self, uri: str, identity: str, df: pd.DataFrame):
-        table = self.data_table(uri, identity, (None, None), {}, [])
-        identity_field, datetime_field = table.identity_field(), table.datetime_field()
-
-        table.set_connection_threshold(1)
-        for index, row in df.iterrows():
-            identity_value = None
-            if NoSqlRw.str_available(identity_field):
-                if identity_field in list(row.index):
-                    identity_value = row[identity_field]
-            if NoSqlRw.str_available(identity_field) and identity_value is None:
-                print('Warning: identity field "' + identity_field + '" of <' + uri + '> missing.')
-                continue
-
-            datetime_value = None
-            if NoSqlRw.str_available(datetime_field):
-                if datetime_field in list(row.index):
-                    datetime_value = row[datetime_field]
-                    if isinstance(datetime_value, str):
-                        datetime_value = text_auto_time(datetime_value)
-            if NoSqlRw.str_available(datetime_field) and datetime_value is None:
-                print('Warning: datetime field "' + datetime_field + '" of <' + uri + '> missing.')
-                continue
-            table.bulk_upsert(identity_value, datetime_value, row.dropna().to_dict())
-        table.bulk_flush()
-
-    def range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
-        table = self.data_table(uri, identity, (None, None), {}, [])
-        return (table.min_of(self.datetime_field(), identity), table.max_of(self.datetime_field(), identity)) \
-            if str_available(self.datetime_field()) else (None, None)
-
-    def update_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
-        local_since, local_until = self.range(uri, identity)
-        ref_since, ref_until = self.ref_range(uri, identity)
-        return local_until, ref_until
-
-    def data_table(self, uri: str, identity: str or [str],
-                   time_serial: tuple, extra: dict, fields: list) -> NoSqlRw.ItkvTable:
-        table_name = self.table_name(uri, identity, time_serial, extra, fields)
-        return self.__database_entry.query_nosql_table(self.__depot_name, table_name,
-                                                       self.__identity_field, self.__datetime_field)
+def not_split(*args) -> tuple:
+    return args
 
 
 class ParameterChecker:
@@ -373,24 +230,224 @@ class ParameterChecker:
         return True
 
 
+# ---------------------------------------------- Data Declaration Element ----------------------------------------------
+
+# UPDATE_LIST_STOCK = support_stock_list
+# UPDATE_LIST_INDEX = support_index_list
+# UPDATE_LIST_EXCHANGE = support_exchange_list
+#
+# KEY_TYPE_UNIQUE = 1
+# KEY_TYPE_GROUP = 2
+#
+# SPLIT_NONE = split_none
+# SPLIT_BY_IDENTITY = split_by_identity
+#
+# TIME_STOCK_LISTING = stock_listing
+# TIME_A_SHARE_MARKET_START = a_share_market_start
+#
+# TIME_TODAY = latest_day
+# TIME_LATEST_QUARTER = latest_quarter
+# TIME_LATEST_TRADE_DAY = latest_trade_day
+#
+# TABLE_NAME_FROM_URI = table_name_by_uri
+# TABLE_NAME_FROM_URI_ID = table_name_by_uri_identity
+
+DATA_DURATION_AUTO = 0  # Not specify
+DATA_DURATION_NONE = 10  # Data without timestamp
+DATA_DURATION_FLOW = 50  # Data with uncertain timestamp
+DATA_DURATION_DAILY = 100  # Daily data
+DATA_DURATION_QUARTER = 500  # Quarter data
+DATA_DURATION_ANNUAL = 1000  # Annual Data
+
+
 # ----------------------------------------------------------------------------------------------------------------------
+
+class DataAgent:
+    def __init__(self,
+                 uri: str, database_entry: DatabaseEntry,
+                 depot_name: str, table_prefix: str = '',
+                 identity_field: str or None = 'Identity',
+                 datetime_field: str or None = 'DateTime',
+                 query_declare: dict = None, result_declare: dict = None,
+                 **argv):
+        """
+        If you specify both identity_field and datetime_field, the combination will be the primary key. Which means
+            an id can have multiple different time serial record. e.g. stock daily price table.
+        If you only specify the identity_field, the identity_field will be the only primary key. Which means
+            its a time independent serial record with id. e.g. stock information table
+        If you only specify the datetime_field, the datetime_field will be the only primary key. Which means
+            it's a time serial record without id. e.g. log table
+        If you do not specify neither identity_field and datetime_field, the table has not primary key. Which means
+            the table cannot not updated by id or time. Record is increase only except update by manual.
+        """
+        self.__uri = uri
+        self.__database_entry = database_entry
+        self.__depot_name = depot_name
+        self.__table_prefix = table_prefix
+        self.__identity_field = identity_field
+        self.__datetime_field = datetime_field
+        self.__checker = ParameterChecker(query_declare, result_declare)
+        self.__extra = argv
+
+    # ---------------------------------- Constant ----------------------------------
+
+    def base_uri(self) -> str:
+        return self.__uri
+
+    def depot_name(self) -> str:
+        return self.__depot_name
+
+    def table_prefix(self) -> str:
+        return self.__table_prefix
+
+    def identity_field(self) -> str or None:
+        return self.__identity_field
+
+    def datetime_field(self) -> str or None:
+        return self.__datetime_field
+
+    def extra_param(self, key: str, default: any = None) -> any:
+        return self.__extra.get(key, default)
+
+    def database_entry(self) -> DatabaseEntry:
+        return self.__database_entry
+
+    def data_table(self, uri: str, identity: str or [str],
+                   time_serial: tuple, extra: dict, fields: list) -> NoSqlRw.ItkvTable:
+        table_name = self.table_name(uri, identity, time_serial, extra, fields)
+        return self.__database_entry.query_nosql_table(self.__depot_name, table_name,
+                                                       self.__identity_field, self.__datetime_field)
+
+    # ------------------------------- Overrideable -------------------------------
+
+    def adapt(self, uri: str) -> bool:
+        return self.__uri.lower() == uri.lower()
+
+    def data_duration(self) -> int:
+        nop(self)
+        return self.extra_param('duration', DATA_DURATION_AUTO)
+
+    def ref_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
+        nop(self, uri, identity)
+        return None, None
+
+    def data_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
+        table = self.data_table(uri, identity, (None, None), {}, [])
+        return (table.min_of(self.datetime_field(), identity), table.max_of(self.datetime_field(), identity)) \
+            if str_available(self.datetime_field()) else (None, None)
+
+    def update_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
+        local_since, local_until = self.data_range(uri, identity)
+        ref_since, ref_until = self.ref_range(uri, identity)
+        return local_until, ref_until
+
+    def merge_on(self) -> list:
+        on_column = []
+        if str_available(self.__identity_field):
+            on_column.append(self.__identity_field)
+        if str_available(self.__datetime_field):
+            on_column.append(self.__datetime_field)
+        return on_column
+
+    def table_name(self, uri: str, identity: str or [str], time_serial: tuple, extra: dict, fields: list) -> str:
+        nop(self, identity, time_serial, extra, fields)
+        return self.table_prefix() + uri.replace('.', '_')
+
+    # ------------------------------ Overrideable but -------------------------------------
+
+    def query(self, uri: str, identity: str or [str], time_serial: tuple,
+              extra: dict, fields: list) -> pd.DataFrame or None:
+        table = self.data_table(uri, identity, time_serial, extra, fields)
+        since, until = normalize_time_serial(time_serial)
+        result = table.query(identity, since, until, extra, fields)
+        df = pd.DataFrame(result)
+        return df
+
+    def merge(self, uri: str, identity: str, df: pd.DataFrame):
+        table = self.data_table(uri, identity, (None, None), {}, [])
+        identity_field, datetime_field = table.identity_field(), table.datetime_field()
+
+        table.set_connection_threshold(1)
+        for index, row in df.iterrows():
+            identity_value = None
+            if NoSqlRw.str_available(identity_field):
+                if identity_field in list(row.index):
+                    identity_value = row[identity_field]
+            if NoSqlRw.str_available(identity_field) and identity_value is None:
+                print('Warning: identity field "' + identity_field + '" of <' + uri + '> missing.')
+                continue
+
+            datetime_value = None
+            if NoSqlRw.str_available(datetime_field):
+                if datetime_field in list(row.index):
+                    datetime_value = row[datetime_field]
+                    if isinstance(datetime_value, str):
+                        datetime_value = text_auto_time(datetime_value)
+            if NoSqlRw.str_available(datetime_field) and datetime_value is None:
+                print('Warning: datetime field "' + datetime_field + '" of <' + uri + '> missing.')
+                continue
+            table.bulk_upsert(identity_value, datetime_value, row.dropna().to_dict())
+        table.bulk_flush()
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+class DataAgentStockQuarter(DataAgent):
+    def __init__(self, **argv):
+        super(DataAgentStockQuarter, self).__init__(**argv)
+
+    def data_duration(self) -> int:
+        nop(self)
+        return DATA_DURATION_QUARTER
+
+    def ref_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
+        nop(self, uri)
+        return DataAgentUtility.stock_listing(identity), DataAgentUtility.latest_quarter()
+
+
+# ---------------------------- Agent for Index Non-Daily Data ----------------------------
+
+class DataAgentFactorQuarter(DataAgent):
+    def __init__(self,
+                 uri: str, database_entry: DatabaseEntry,
+                 depot_name: str, table_prefix: str = '',
+                 identity_field: str or None = 'Identity',
+                 datetime_field: str or None = 'DateTime',
+                 query_declare: dict = None, result_declare: dict = None,
+                 **argv):
+        super(DataAgentFactorQuarter, self).__init__(
+            uri, database_entry, depot_name, table_prefix, identity_field, datetime_field,
+            query_declare, result_declare, **argv)
+
+    def adapt(self, uri: str) -> bool:
+        return 'factor' in uri.lower() and 'daily' not in uri.lower()
+
+
+# --------------------------- Agent for Securities Daily Data ---------------------------
 
 class DataAgentSecurityDaily(DataAgent):
     def __init__(self,
                  uri: str, database_entry: DatabaseEntry,
                  depot_name: str, table_prefix: str = '',
                  identity_field: str or None = 'Identity',
-                 datetime_field: str or None = 'DateTime'):
+                 datetime_field: str or None = 'DateTime',
+                 query_declare: dict = None, result_declare: dict = None,
+                 **argv):
         super(DataAgentSecurityDaily, self).__init__(
-            uri, database_entry, depot_name, table_prefix, identity_field, datetime_field)
+            uri, database_entry, depot_name, table_prefix, identity_field, datetime_field,
+            query_declare, result_declare, **argv)
+
+    # ----------------------------------------------------------------------------
 
     def data_duration(self) -> int:
         nop(self)
-        return DataAgent.DATA_DURATION_DAILY
+        return DATA_DURATION_DAILY
 
     def table_name(self, uri: str, identity: str, time_serial: tuple, extra: dict, fields: list) -> str:
         name = (uri + '_' + identity) if str_available(identity) else uri
         return name.replace('.', '_')
+
+    # ----------------------------------------------------------------------------
 
     def query(self, uri: str, identity: str or [str], time_serial: tuple,
               extra: dict, fields: list) -> pd.DataFrame or None:
@@ -402,23 +459,14 @@ class DataAgentSecurityDaily(DataAgent):
             result = df if result is None else pd.merge(result, df, on=self.merge_on_column())
         return result
 
+    def merge(self, uri: str, identity: str, df: pd.DataFrame):
+        grouped = df.groupby(df[self.identity_field()])
+        for sub_identity in grouped.groups:
+            sub_dataframe = grouped.get_group(sub_identity)
+            super(DataAgentSecurityDaily, self).merge(uri, sub_identity, sub_dataframe)
 
-class DataAgentFactorQuarter(DataAgent):
-    def __init__(self,
-                 uri: str, database_entry: DatabaseEntry,
-                 depot_name: str, table_prefix: str = '',
-                 identity_field: str or None = 'Identity',
-                 datetime_field: str or None = 'DateTime'):
-        super(DataAgentFactorQuarter, self).__init__(
-            uri, database_entry, depot_name, table_prefix, identity_field, datetime_field)
 
-    def data_duration(self) -> int:
-        nop(self)
-        return DataAgent.DATA_DURATION_QUARTER
-
-    def adapt(self, uri: str) -> bool:
-        return 'factor' in uri.lower() and 'daily' not in uri.lower()
-
+# ----------------------------- Agent for Index Daily Data -----------------------------
 
 class DataAgentFactorDaily(DataAgentSecurityDaily):
     def __init__(self,
@@ -429,67 +477,63 @@ class DataAgentFactorDaily(DataAgentSecurityDaily):
         super(DataAgentFactorDaily, self).__init__(
             uri, database_entry, depot_name, table_prefix, identity_field, datetime_field)
 
-    def data_duration(self) -> int:
-        nop(self)
-        return DataAgent.DATA_DURATION_QUARTER
-
     def adapt(self, uri: str) -> bool:
-        return 'factor' in uri.lower() and 'daily' not in uri.lower()
+        return 'factor' in uri.lower() and 'daily' in uri.lower()
 
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-class DataAgentFactory:
-    NO_SQL_ENTRY = None
-
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def create_data_agent(uri: str, database: str, table_prefix: str, 
-                          identity_field: str or None, datetime_field: str or None, **argv) -> DataAgent:
-        """
-
-        :param uri:
-        :param database:
-        :param table_prefix:
-        :param identity_field:
-        :param identity_update_list:
-        :param datetime_field:
-        :param data_since:
-        :param data_until:
-        :param data_duration:
-        :param extra_key:
-        :param key_type:
-        :param table_name:
-        :param query_split:
-        :param merge_split:
-        :param query_declare:
-        :param result_declare:
-        :param argv:
-        :return:
-        """
-
-        data_agent = DataAgent(uri, DataAgentFactory.NO_SQL_ENTRY,
-                               database, table_prefix, identity_field, datetime_field)
-
-        data_agent.identity_update_list = argv.get('identity_update_list', None)
-
-        data_agent.data_since = argv.get('data_since', None)
-        data_agent.data_until = argv.get('data_until', None)
-        data_agent.data_duration = argv.get('data_duration', None)
-
-        data_agent.extra_key = argv.get('extra_key', None)
-        data_agent.key_type = argv.get('key_type', None)
-        data_agent.table_name = argv.get('table_name', None)
-
-        data_agent.query_split = argv.get('query_split', None)
-        data_agent.merge_split = argv.get('merge_split', None)
-
-        data_agent.checker = ParameterChecker(argv.get('query_declare', None), argv.get('result_declare', None))
-
-
-DECLARE_DATA_AGENT = DataAgentFactory.create_data_agent
+# class DataAgentFactory:
+#     NO_SQL_ENTRY = None
+#
+#     def __init__(self):
+#         pass
+#
+#     @staticmethod
+#     def create_data_agent(uri: str, database: str, table_prefix: str,
+#                           identity_field: str or None, datetime_field: str or None, **argv) -> DataAgent:
+#         """
+#
+#         :param uri:
+#         :param database:
+#         :param table_prefix:
+#         :param identity_field:
+#         :param identity_update_list:
+#         :param datetime_field:
+#         :param data_since:
+#         :param data_until:
+#         :param data_duration:
+#         :param extra_key:
+#         :param key_type:
+#         :param table_name:
+#         :param query_split:
+#         :param merge_split:
+#         :param query_declare:
+#         :param result_declare:
+#         :param argv:
+#         :return:
+#         """
+#
+#         data_agent = DataAgent(uri, DataAgentFactory.NO_SQL_ENTRY,
+#                                database, table_prefix, identity_field, datetime_field)
+#
+#         data_agent.identity_update_list = argv.get('identity_update_list', None)
+#
+#         data_agent.data_since = argv.get('data_since', None)
+#         data_agent.data_until = argv.get('data_until', None)
+#         data_agent.data_duration = argv.get('data_duration', None)
+#
+#         data_agent.extra_key = argv.get('extra_key', None)
+#         data_agent.key_type = argv.get('key_type', None)
+#         data_agent.table_name = argv.get('table_name', None)
+#
+#         data_agent.query_split = argv.get('query_split', None)
+#         data_agent.merge_split = argv.get('merge_split', None)
+#
+#         data_agent.checker = ParameterChecker(argv.get('query_declare', None), argv.get('result_declare', None))
+#
+#
+# DECLARE_DATA_AGENT = DataAgentFactory.create_data_agent
 
 
 

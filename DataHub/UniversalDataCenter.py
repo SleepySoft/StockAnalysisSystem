@@ -279,7 +279,7 @@ class DataAgent:
             table.bulk_upsert(identity_value, datetime_value, row.dropna().to_dict())
         table.bulk_flush()
 
-    def range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
+    def data_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
         table = self.data_table(uri, identity, (None, None), {}, [])
         return (table.min_of(self.datetime_field(), identity), table.max_of(self.datetime_field(), identity)) \
             if str_available(self.datetime_field()) else (None, None)
@@ -288,7 +288,7 @@ class DataAgent:
         return self.__extender.ref_range(uri, identity)
 
     def update_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
-        local_since, local_until = self.range(uri, identity)
+        local_since, local_until = self.data_range(uri, identity)
         ref_since, ref_until = self.ref_range(uri, identity)
         return local_until, ref_until
 
