@@ -10,20 +10,14 @@ try:
     from Utiltity.common import *
     from Utiltity.df_utility import *
     from Utiltity.time_utility import *
-    from Database import NoSqlRw
-    from Database import UpdateTableEx
     from Database.DatabaseEntry import DatabaseEntry
-    from Utiltity.plugin_manager import PluginManager
 except Exception as e:
     sys.path.append(root_path)
 
     from Utiltity.common import *
     from Utiltity.df_utility import *
     from Utiltity.time_utility import *
-    from Database import NoSqlRw
-    from Database import UpdateTableEx
     from Database.DatabaseEntry import DatabaseEntry
-    from Utiltity.plugin_manager import PluginManager
 finally:
     logger = logging.getLogger('')
 
@@ -31,7 +25,10 @@ finally:
 # --------------------------------------------- Data Declaration Functions ---------------------------------------------
 
 class DataAgentUtility:
-    def __init__(self):
+    sas_entry = None
+
+    @staticmethod
+    def init(sas):
         pass
 
     # ------------------------ Update List ------------------------
@@ -62,7 +59,6 @@ class DataAgentUtility:
     def split_none(uri: str, identity: str or [str], time_serial: tuple, extra: dict, fields: list) -> \
             [(str, str or [str], tuple, dict, list)]:
         return uri, identity, time_serial, extra, fields
-
 
     @staticmethod
     def split_by_identity(uri: str, identity: str or [str], time_serial: tuple, extra: dict, fields: list) -> \
@@ -232,26 +228,6 @@ class ParameterChecker:
 
 # ---------------------------------------------- Data Declaration Element ----------------------------------------------
 
-# UPDATE_LIST_STOCK = support_stock_list
-# UPDATE_LIST_INDEX = support_index_list
-# UPDATE_LIST_EXCHANGE = support_exchange_list
-#
-# KEY_TYPE_UNIQUE = 1
-# KEY_TYPE_GROUP = 2
-#
-# SPLIT_NONE = split_none
-# SPLIT_BY_IDENTITY = split_by_identity
-#
-# TIME_STOCK_LISTING = stock_listing
-# TIME_A_SHARE_MARKET_START = a_share_market_start
-#
-# TIME_TODAY = latest_day
-# TIME_LATEST_QUARTER = latest_quarter
-# TIME_LATEST_TRADE_DAY = latest_trade_day
-#
-# TABLE_NAME_FROM_URI = table_name_by_uri
-# TABLE_NAME_FROM_URI_ID = table_name_by_uri_identity
-
 DATA_DURATION_AUTO = 0  # Not specify
 DATA_DURATION_NONE = 10  # Data without timestamp
 DATA_DURATION_FLOW = 50  # Data with uncertain timestamp
@@ -268,7 +244,6 @@ class DataAgent:
                  depot_name: str, table_prefix: str = '',
                  identity_field: str or None = 'Identity',
                  datetime_field: str or None = 'DateTime',
-                 query_declare: dict = None, result_declare: dict = None,
                  **argv):
         """
         If you specify both identity_field and datetime_field, the combination will be the primary key. Which means
@@ -286,8 +261,10 @@ class DataAgent:
         self.__table_prefix = table_prefix
         self.__identity_field = identity_field
         self.__datetime_field = datetime_field
-        self.__checker = ParameterChecker(query_declare, result_declare)
+        self.__checker = None
         self.__extra = argv
+
+        self.config_field_checker(argv.get('query_declare', None), argv.get('result_declare', None))
 
     # ---------------------------------- Constant ----------------------------------
 
@@ -317,6 +294,13 @@ class DataAgent:
         table_name = self.table_name(uri, identity, time_serial, extra, fields)
         return self.__database_entry.query_nosql_table(self.__depot_name, table_name,
                                                        self.__identity_field, self.__datetime_field)
+        
+    def get_field_checker(self) -> ParameterChecker:
+        return self.__checker
+
+    def config_field_checker(self, query_declare: dict, result_declare: dict):
+        if query_declare is not None or result_declare is not None:
+            self.__checker = ParameterChecker(query_declare, result_declare)
 
     # ------------------------------- Overrideable -------------------------------
 
@@ -391,6 +375,8 @@ class DataAgent:
 
 
 # ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------ DataAgent Implements ------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 class DataAgentStockQuarter(DataAgent):
     def __init__(self, **argv):
@@ -408,16 +394,8 @@ class DataAgentStockQuarter(DataAgent):
 # ---------------------------- Agent for Index Non-Daily Data ----------------------------
 
 class DataAgentFactorQuarter(DataAgent):
-    def __init__(self,
-                 uri: str, database_entry: DatabaseEntry,
-                 depot_name: str, table_prefix: str = '',
-                 identity_field: str or None = 'Identity',
-                 datetime_field: str or None = 'DateTime',
-                 query_declare: dict = None, result_declare: dict = None,
-                 **argv):
-        super(DataAgentFactorQuarter, self).__init__(
-            uri, database_entry, depot_name, table_prefix, identity_field, datetime_field,
-            query_declare, result_declare, **argv)
+    def __init__(self, **argv):
+        super(DataAgentFactorQuarter, self).__init__(**argv)
 
     def adapt(self, uri: str) -> bool:
         return 'factor' in uri.lower() and 'daily' not in uri.lower()
@@ -426,16 +404,8 @@ class DataAgentFactorQuarter(DataAgent):
 # --------------------------- Agent for Securities Daily Data ---------------------------
 
 class DataAgentSecurityDaily(DataAgent):
-    def __init__(self,
-                 uri: str, database_entry: DatabaseEntry,
-                 depot_name: str, table_prefix: str = '',
-                 identity_field: str or None = 'Identity',
-                 datetime_field: str or None = 'DateTime',
-                 query_declare: dict = None, result_declare: dict = None,
-                 **argv):
-        super(DataAgentSecurityDaily, self).__init__(
-            uri, database_entry, depot_name, table_prefix, identity_field, datetime_field,
-            query_declare, result_declare, **argv)
+    def __init__(self, **argv):
+        super(DataAgentSecurityDaily, self).__init__(**argv)
 
     # ----------------------------------------------------------------------------
 

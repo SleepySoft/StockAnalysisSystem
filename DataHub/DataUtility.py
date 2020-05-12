@@ -29,16 +29,16 @@ finally:
     logger = logging.getLogger('')
 
 
-def csv_name_column_to_identity(csv_file: str, column: str) -> bool:
-    df = pd.read_csv(csv_file, index_col=None)
-    if column not in list(df.columns):
-        return False
-    from stock_analysis_system import StockAnalysisSystem
-    data_utility = StockAnalysisSystem().get_data_hub_entry().get_data_utility()
-    name_column = df[column].values.tolist()
-    id_column = data_utility.names_to_stock_identity(name_column)
-    df[column] = np.array(id_column)
-    df.to_csv(csv_file + '_parsed.csv')
+# def csv_name_column_to_identity(csv_file: str, column: str) -> bool:
+#     df = pd.read_csv(csv_file, index_col=None)
+#     if column not in list(df.columns):
+#         return False
+#     from stock_analysis_system import StockAnalysisSystem
+#     data_utility = StockAnalysisSystem().get_data_hub_entry().get_data_utility()
+#     name_column = df[column].values.tolist()
+#     id_column = data_utility.names_to_stock_identity(name_column)
+#     df[column] = np.array(id_column)
+#     df.to_csv(csv_file + '_parsed.csv')
 
 
 # ----------------------------------------------- IdentityNameInfoCache ------------------------------------------------
