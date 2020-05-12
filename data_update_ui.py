@@ -487,7 +487,7 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
         if since is None or until is None:
             # TODO: Workaround - because each stock storage in each table.
             # So we cannot fetch its time range with this method.
-            since, until = data_table.range(uri, identity)
+            since, until = data_table.data_range(uri, identity)
         if until is not None:
             update_since = min(tomorrow_of(until), now())
             update_until = now()
@@ -530,7 +530,7 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
     #         data_table, _ = self.__data_center.get_data_table(uri)
     #
     #         # TODO: Fetching finance data's date range spends a lost of time because the data is huge.
-    #         since, until = data_table.range(uri, None)
+    #         since, until = data_table.data_range(uri, None)
     #         update_since, update_until = self.__data_center.calc_update_range(uri)
     #
     #         update_tags = uri.split('.')
@@ -590,7 +590,7 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
     #         stock_identity, name = stock_list[index]
     #         data_table, _ = self.__data_center.get_data_table(uri)
     #
-    #         since, until = data_table.range(uri, stock_identity)
+    #         since, until = data_table.data_range(uri, stock_identity)
     #         update_since, update_until = self.__data_center.calc_update_range(uri, stock_identity)
     #
     #         update_tags = uri.split('.')

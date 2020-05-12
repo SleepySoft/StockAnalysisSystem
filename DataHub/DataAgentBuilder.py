@@ -12,33 +12,33 @@ finally:
 
 
 def build_data_agent():
-    DECLARE_DATA_AGENT(
-        uri='Market.SecuritiesInfo',
-        database='StockAnalysisSystem',
-        table_prefix='',
+    return [
+        DataAgent(
+            uri='Market.SecuritiesInfo',
+            database_entry=None,
 
-        identity_field='stock_identity',
-        identity_update_list=None,
+            depot_name='StockAnalysisSystem',
+            table_prefix='',
 
-        datetime_field=None,
-        data_since=None,
-        data_until=None,
-        data_duration=DATA_DURATION_NONE,
+            identity_field='stock_identity',
+            datetime_field=None,
 
-        query_split=None,
-        merge_split=None,
+            query_declare={
+                'stock_identity': ([str], [],                   False,  ''),
+            },
+            result_declare={
+                'stock_identity': (['str'], [],                 True,  ''),
+                'code':           (['str'], [],                 True,  ''),
+                'name':           (['str'], [],                 True,  ''),
+                'exchange':       (['str'], [],                 True,  ''),
+                'listing_date':   (['datetime'], [],            True,  ''),
+            },
 
-        query_declare={
-            'stock_identity': ([str], [],                   False,  ''),
-        },
-        result_declare={
-            'stock_identity': (['str'], [],                 True,  ''),
-            'code':           (['str'], [],                 True,  ''),
-            'name':           (['str'], [],                 True,  ''),
-            'exchange':       (['str'], [],                 True,  ''),
-            'listing_date':   (['datetime'], [],            True,  ''),
-        },
-    )
+            data_duration=DATA_DURATION_NONE,
+        ),
+
+
+    ]
 
     DECLARE_DATA_AGENT(
         uri='Market.IndexInfo',
