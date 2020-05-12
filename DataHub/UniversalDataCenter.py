@@ -8,6 +8,7 @@ root_path = path.dirname(path.dirname(path.abspath(__file__)))
 
 try:
     from Utiltity.common import *
+    from DataHub.DataAgent import *
     from Utiltity.df_utility import *
     from Utiltity.time_utility import *
     from Database import NoSqlRw
@@ -18,6 +19,7 @@ except Exception as e:
     sys.path.append(root_path)
 
     from Utiltity.common import *
+    from DataHub.DataAgent import *
     from Utiltity.df_utility import *
     from Utiltity.time_utility import *
     from Database import NoSqlRw
@@ -26,280 +28,6 @@ except Exception as e:
     from Utiltity.plugin_manager import PluginManager
 finally:
     logger = logging.getLogger('')
-
-
-# UPDATE_STRATEGY_TYPE = int
-#
-# UPDATE_STRATEGY_AUTO = 1
-# UPDATE_STRATEGY_POSITIVE = 2
-# UPDATE_STRATEGY_MANUAL = 3
-# UPDATE_STRATEGY_OFFLINE = 4
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-#                                                 ParameterChecker
-# ----------------------------------------------------------------------------------------------------------------------
-
-class ParameterChecker:
-
-    """
-    Key: str - The key you need to check in the dict param
-    Val: tuple - The first item: The list of expect types for this key, you can specify a None if None is allowed
-                 The second item: The list of expect values for this key, an empty list means it can be any value
-                 The third item: True if it's necessary, False if it's optional.
-    DICT_PARAM_INFO_EXAMPLE = {
-        'identity':     ([str], ['id1', 'id2'], True),
-        'datetime':     ([datetime.datetime, None], [], False)
-    }
-
-    The param info for checking a dataframe.
-    It's almost likely to the dict param info except the type should be str instead of real python type
-    DATAFRAME_PARAM_INFO_EXAMPLE = {
-        'identity':         (['str'], [], False),
-        'period':           (['datetime'], [], True)
-    }
-    """
-
-    PYTHON_DATAFRAME_TYPE_MAPPING = {
-        'str': 'object',
-        'list': 'object',
-        'dict': 'object',
-        'int': 'int64',
-        'float': 'float64',
-        'datetime': 'datetime64[ns]',
-    }
-
-    def __init__(self, df_param_info: dict = None, dict_param_info: dict = None):
-        self.__df_param_info = df_param_info
-        self.__dict_param_info = dict_param_info
-
-    def check_dict(self, argv: dict) -> bool:
-        if self.__dict_param_info is None or len(self.__dict_param_info) == 0:
-            return True
-        return ParameterChecker.check_dict_param(argv, self.__dict_param_info)
-
-    def check_dataframe(self, df: dict) -> bool:
-        if self.__df_param_info is None or len(self.__df_param_info) == 0:
-            return True
-        return ParameterChecker.check_dataframe_field(df, self.__df_param_info)
-
-    @staticmethod
-    def check_dict_param(argv: dict, param_info: dict) -> bool:
-        if argv is None or len(argv) == 0:
-            return False
-        keys = list(argv.keys())
-
-        for param in param_info.keys():
-            types, values, must, _ = param_info[param]
-
-            if param not in keys:
-                if must:
-                    logger.info('Param key check error: Param is missing - ' + param)
-                    return False
-                else:
-                    continue
-
-            value = argv[param]
-            if value is None and None in types:
-                continue
-            if not isinstance(value, tuple([t for t in types if t is not None])):
-                logger.info('Param key check error: Param type mismatch - ' +
-                            str(type(value)) + ' is not in ' + str(types))
-                return False
-
-            if len(values) > 0:
-                if value not in values:
-                    logger.info('Param key check error: Param value out of range - ' +
-                                str(value) + ' is not in ' + str(values))
-                    return False
-        return True
-
-    @staticmethod
-    def check_dataframe_field(df: pd.DataFrame, field_info: dict) -> bool:
-        """
-        Check whether DataFrame filed fits the field info.
-        :param df: The DataFrame you want to check
-        :param field_info: The definition of fields info
-        :return: True if all fields are satisfied. False if not.
-        """
-        if df is None or len(df) == 0:
-            return False
-        columns = list(df.columns)
-
-        for field in field_info.keys():
-            types, values, must, _ = field_info[field]
-
-            if field not in columns:
-                if must:
-                    logger.info('DataFrame field check error: Field is missing - ' + field)
-                    return False
-                else:
-                    continue
-
-            type_ok = False
-            type_df = df[field].dtype
-            for py_type in types:
-                df_type = ParameterChecker.PYTHON_DATAFRAME_TYPE_MAPPING.get(py_type)
-                if df_type is not None and df_type == type_df:
-                    type_ok = True
-                    break
-            if not type_ok:
-                logger.info('DataFrame field check error: Field type mismatch - ' +
-                            field + ': ' + str(df_type) + ' not match ' + str(type_df))
-                return False
-
-            if len(values) > 0:
-                out_of_range_values = df[~df[field].isin(values)]
-                if len(out_of_range_values) > 0:
-                    logger.info('DataFrame field check error: Field value out of range - ' +
-                                str(out_of_range_values) + ' is not in ' + str(values))
-                    return False
-        return True
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-#                                                 DataAgent
-# ----------------------------------------------------------------------------------------------------------------------
-
-class DataAgent:
-    DEFAULT_SINCE_DATE = default_since()
-
-    # -------------------------------- Base Separator --------------------------------
-
-    class Extender:
-        def __init__(self):
-            pass
-            # self.uri = ''
-            # self.identity = ''
-            # self.time_serial = ()
-            # self.extra = {}
-            # self.fields = []
-
-        def parts(self, uri: str, identity: str or [str], time_serial: tuple, extra: dict, fields: list) -> \
-                [(str, str or [str], tuple, dict, list)]:
-            # self.uri = uri
-            # self.identity = identity
-            # self.time_serial = time_serial
-            # self.extra = extra
-            # self.fields = fields
-            return [(uri, identity, time_serial, extra, fields)]
-
-        def ref_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
-            nop(self, uri, identity)
-            return None, None
-
-        def table_name(self, uri: str, identity: str, time_serial: tuple, extra: dict, fields: list) -> str:
-            nop(self, identity, time_serial, extra, fields)
-            return uri.replace('.', '_')
-
-    # ------------------------------- DataAgent -------------------------------
-
-    def __init__(self,
-                 uri: str, database_entry: DatabaseEntry,
-                 depot_name: str, table_prefix: str = '',
-                 identity_field: str or None = 'Identity',
-                 datetime_field: str or None = 'DateTime',
-                 extender: Extender = None):
-        """
-        If you specify both identity_field and datetime_field, the combination will be the primary key. Which means
-            an id can have multiple different time serial record. e.g. stock daily price table.
-        If you only specify the identity_field, the identity_field will be the only primary key. Which means
-            its a time independent serial record with id. e.g. stock information table
-        If you only specify the datetime_field, the datetime_field will be the only primary key. Which means
-            it's a time serial record without id. e.g. log table
-        If you do not specify neither identity_field and datetime_field, the table has not primary key. Which means
-            the table cannot not updated by id or time. Record is increase only except update by manual.
-        :param uri: The URI of the resource.
-        :param database_entry: The instance of DatabaseEntry.
-        :param depot_name: The name of database.
-        :param table_prefix: The prefix of table, default empty.
-        :param identity_field: The identity filed name.
-        :param datetime_field: The datetime filed name.
-        :param separator: The Separator to split data into parts.
-        """
-        self.__uri = uri
-        self.__database_entry = database_entry
-        self.__depot_name = depot_name
-        self.__table_prefix = table_prefix
-        self.__identity_field = identity_field
-        self.__datetime_field = datetime_field
-        self.__extender = extender if extender is not None else DataAgent.Extender()
-
-    def identity_field(self) -> str or None:
-        return self.__identity_field
-
-    def datetime_field(self) -> str or None:
-        return self.__datetime_field
-
-    # -------------------------------------------------------------------
-
-    def adapt(self, uri: str) -> bool:
-        return self.__uri.lower() == uri.lower()
-
-    def query(self, uri: str, identity: str or [str], time_serial: tuple,
-              extra: dict, fields: list) -> pd.DataFrame or None:
-        on_column = []
-        if str_available(self.__identity_field):
-            on_column.append(self.__identity_field)
-        if str_available(self.__datetime_field):
-            on_column.append(self.__datetime_field)
-        df_total = None
-        for _uri, _identity, _time_serial, _extra, _fields in \
-                self.__extender.parts(uri, identity, time_serial, extra, fields):
-            table = self.data_table(_uri, _identity, _time_serial, _extra, fields)
-            since, until = normalize_time_serial(_time_serial)
-            result = table.query(_identity, since, until, _extra, _fields)
-            df = pd.DataFrame(result)
-            df_total = merge_on_columns(df_total, df, on_column)
-        return df_total
-
-    def merge(self, uri: str, identity: str, df: pd.DataFrame):
-        table = self.data_table(uri, identity, (None, None), {}, [])
-        identity_field, datetime_field = table.identity_field(), table.datetime_field()
-
-        table.set_connection_threshold(1)
-        for index, row in df.iterrows():
-            identity_value = None
-            if NoSqlRw.str_available(identity_field):
-                if identity_field in list(row.index):
-                    identity_value = row[identity_field]
-            if NoSqlRw.str_available(identity_field) and identity_value is None:
-                print('Warning: identity field "' + identity_field + '" of <' + uri + '> missing.')
-                continue
-
-            datetime_value = None
-            if NoSqlRw.str_available(datetime_field):
-                if datetime_field in list(row.index):
-                    datetime_value = row[datetime_field]
-                    if isinstance(datetime_value, str):
-                        datetime_value = text_auto_time(datetime_value)
-            if NoSqlRw.str_available(datetime_field) and datetime_value is None:
-                print('Warning: datetime field "' + datetime_field + '" of <' + uri + '> missing.')
-                continue
-            table.bulk_upsert(identity_value, datetime_value, row.dropna().to_dict())
-        table.bulk_flush()
-
-    def data_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
-        table = self.data_table(uri, identity, (None, None), {}, [])
-        return (table.min_of(self.datetime_field(), identity), table.max_of(self.datetime_field(), identity)) \
-            if str_available(self.datetime_field()) else (None, None)
-
-    def ref_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
-        return self.__extender.ref_range(uri, identity)
-
-    def update_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
-        local_since, local_until = self.data_range(uri, identity)
-        ref_since, ref_until = self.ref_range(uri, identity)
-        return local_until, ref_until
-
-    def data_table(self, uri: str, identity: str or [str],
-                   time_serial: tuple, extra: dict, fields: list) -> NoSqlRw.ItkvTable:
-        table_name = self.table_name(uri, identity, time_serial, extra, fields)
-        return self.__database_entry.query_nosql_table(self.__depot_name, table_name,
-                                                       self.__identity_field, self.__datetime_field)
-
-    def table_name(self, uri: str, identity: str or [str], time_serial: tuple, extra: dict, fields: list) -> str:
-        return self.__table_prefix + self.__extender.table_name(uri, identity, time_serial, extra, fields)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -326,11 +54,11 @@ class UniversalDataCenter:
     def get_update_table(self) -> UpdateTableEx:
         return self.__database_entry.get_update_table()
 
-    def get_data_agent(self, uri: str) -> (DataAgent, ParameterChecker):
-        for agent, checker in self.__data_agent:
+    def get_data_agent(self, uri: str) -> DataAgent or None:
+        for agent in self.__data_agent:
             if agent.adapt(uri):
-                return agent, checker
-        return None, None
+                return agent
+        return None
 
     def get_last_error(self) -> str:
         return self.__last_error
@@ -344,10 +72,9 @@ class UniversalDataCenter:
     def set_factor_center(self, factor_center):
         self.__factor_center = factor_center
 
-    def register_data_table(self, table: DataAgent,
-                            params_checker: ParameterChecker or None = None):
-        if table not in self.__data_agent:
-            self.__data_agent.append((table, params_checker))
+    def register_data_agent(self, agent: DataAgent):
+        if agent not in self.__data_agent:
+            self.__data_agent.append(agent)
 
     # ------------------------------------------------ Data Management -------------------------------------------------
 
@@ -364,7 +91,8 @@ class UniversalDataCenter:
     def query_from_local(self, uri: str, identity: str or [str] = None,
                          time_serial: tuple = None, extra: dict = None) -> pd.DataFrame or None:
         extra_param = extra.copy()
-        agent, checker = self.get_data_agent(uri)
+        agent = self.get_data_agent(uri)
+        
         if agent is None:
             self.log_error('Cannot find data table for : ' + uri)
             return None
@@ -437,6 +165,8 @@ class UniversalDataCenter:
         Calculate update range and fetch from plug-in, then pack for local persistence.
         """
         agent, checker = self.get_data_agent(uri)
+        checker = agent.get_field_checker() if agent is not None else None
+
         if agent is None:
             self.log_error('Cannot find data table for : ' + uri)
             return False, (uri, identity, None, None, agent), None
@@ -506,7 +236,7 @@ class UniversalDataCenter:
 
     def calc_update_range(self, uri: str, identity: str or [str] = None,
                           time_serial: tuple = None) -> (datetime.datetime, datetime.datetime):
-        agent, _ = self.get_data_agent(uri)
+        agent = self.get_data_agent(uri)
         if agent is None:
             self.log_error('Cannot find data table for : ' + uri)
             return None, None
@@ -540,7 +270,7 @@ class UniversalDataCenter:
         return since, until
 
     def pack_query_params(self, uri: str, identity: str or [str], time_serial: tuple, **extra) -> dict:
-        agent, _ = self.get_data_agent(uri)
+        agent = self.get_data_agent(uri)
 
         if agent is not None:
             identity_field = agent.identity_field()
@@ -564,7 +294,9 @@ class UniversalDataCenter:
         return pack
 
     def check_query_params(self, uri: str, identity: str or [str], time_serial: tuple, **extra) -> bool:
-        _, checker = self.get_data_agent(uri)
+        agent = self.get_data_agent(uri)
+        checker = agent.get_field_checker() if agent is not None else None
+
         if checker is not None:
             argv = self.pack_query_params(uri, identity, time_serial, **extra)
             if not checker.check_dict(argv):
@@ -672,7 +404,7 @@ def test_entry1():
 
 def test_update():
     data_center = __build_data_center()
-    data_center.register_data_table(
+    data_center.register_data_agent(
         DataAgent('test.entry1', DatabaseEntry(), 'test_db', 'test_table'))
     data_center.update_local_data('test.entry1', 'identity_test1')
 
