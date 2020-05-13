@@ -85,10 +85,8 @@ def update_local(update_list: [str], force: bool = False):
         print('Updating IndexInfo...')
         data_center.update_local_data('Market.IndexInfo', force=force, dump_flag=True)
 
-    from DataHub.DataHubEntry import DEPENDS_INDEX
-    # index_list = data_utility.get_index_list()
-    index_list = list(DEPENDS_INDEX.keys())
-
+    index_dict = data_utility.get_support_index_identities()
+    index_list = list(index_dict.keys())
     print('Updating Index Data for All Support Market.')
 
     counter = 0
