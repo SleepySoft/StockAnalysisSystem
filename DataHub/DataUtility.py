@@ -1,6 +1,7 @@
 import logging
 import threading
 import traceback
+import collections
 
 import numpy as np
 import pandas as pd
@@ -27,6 +28,27 @@ except Exception as e:
     from DataHub.UniversalDataCenter import UniversalDataCenter
 finally:
     logger = logging.getLogger('')
+
+
+A_SHARE_MARKET = collections.OrderedDict([
+    ('SSE', '上海证券交易所'),
+    ('SZSE', '深圳证券交易所'),
+])
+ALL_SHARE_MARKET = ['SSE', 'SZSE', 'CSI', 'CICC', 'SW', 'MSCI', 'OTH']
+
+# Too much indexes (more than 9000)
+# Hard coded. Select form TestData/Market_IndexInfo.csv
+# TODO: Configurable
+
+SUPPORT_INDEX = collections.OrderedDict([
+    ('000001.SSE', '上证综指'),
+    ('000002.SSE', '上证A指'),
+    ('000003.SSE', '上证B指'),
+    ('000016.SSE', '上证50'),
+    ('399001.SESZ', '深证成指'),
+    ('399005.SESZ', '中小板指'),
+    ('399006.SESZ', '创业板指'),
+])
 
 
 # def csv_name_column_to_identity(csv_file: str, column: str) -> bool:
@@ -134,9 +156,12 @@ class DataUtility:
 
     # ------------------------------- General -------------------------------
 
-    def get_all_identities(self) -> [str]:
-        data_table, checker = self.__data_center.get_data_agent('Market.SecuritiesInfo')
-        itkv_table = data_table.data_table('Market.SecuritiesInfo', '', None, {}, [])
+    def get_support_exchange(self) -> dict:
+        return A_SHARE_MARKET
+
+    def get_all_industries(self) -> [str]:
+        agent = self.__data_center.get_data_agent('Market.SecuritiesInfo')
+        itkv_table = agent.data_table('Market.SecuritiesInfo', '', None, {}, [])
         industries = itkv_table.get_distinct_values('industry')
         return industries
 
@@ -192,6 +217,9 @@ class DataUtility:
         self.__check_refresh_index_cache()
         ret = list(self.__index_id_name.keys())
         return ret
+
+    def get_support_index(self) -> dict:
+        return SUPPORT_INDEX
 
     def get_index_category(self, index_identity: str, default_val: str = '') -> str:
         return self.__query_identity_filed_value('Market.IndexInfo', index_identity, 'category', default_val)

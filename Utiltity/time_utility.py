@@ -46,6 +46,18 @@ def yesterday_of(time: datetime.datetime):
     return time - datetime.timedelta(days=1)
 
 
+# From https://stackoverflow.com/a/16864368/12929244
+
+def previous_quarter(reference_date):
+    if reference_date.month < 4:
+        return datetime.date(reference_date.year - 1, 12, 31)
+    elif reference_date.month < 7:
+        return datetime.date(reference_date.year, 3, 31)
+    elif reference_date.month < 10:
+        return datetime.date(reference_date.year, 6, 30)
+    return datetime.date(reference_date.year, 9, 30)
+
+
 def text_auto_time(text: str) -> datetime.datetime:
     if isinstance(text, datetime.datetime):
         return text

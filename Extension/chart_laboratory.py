@@ -162,7 +162,7 @@ class ChartLab(QWidget):
         self.__combo_quarter.setCurrentIndex(3)
 
         self.__combo_industry.addItem('全部', '全部')
-        identities = self.__data_utility.get_all_identities()
+        identities = self.__data_utility.get_all_industries()
         for identity in identities:
             self.__combo_industry.addItem(identity, identity)
 

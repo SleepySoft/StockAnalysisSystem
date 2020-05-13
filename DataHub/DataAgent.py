@@ -7,17 +7,21 @@ from os import sys, path
 root_path = path.dirname(path.dirname(path.abspath(__file__)))
 
 try:
+    import Database.NoSqlRw as NoSqlRw
     from Utiltity.common import *
     from Utiltity.df_utility import *
     from Utiltity.time_utility import *
-    from Database.DatabaseEntry import DatabaseEntry
+    from stock_analysis_system import *
+    from Database.DatabaseEntry import *
 except Exception as e:
     sys.path.append(root_path)
 
+    import Database.NoSqlRw as NoSqlRw
     from Utiltity.common import *
     from Utiltity.df_utility import *
     from Utiltity.time_utility import *
-    from Database.DatabaseEntry import DatabaseEntry
+    from stock_analysis_system import *
+    from Database.DatabaseEntry import *
 finally:
     logger = logging.getLogger('')
 
@@ -25,17 +29,17 @@ finally:
 # --------------------------------------------- Data Declaration Functions ---------------------------------------------
 
 class DataAgentUtility:
-    sas_entry = None
-
     @staticmethod
-    def init(sas):
-        pass
+    def data_utility():
+        sas = StockAnalysisSystem()
+        return sas.get_data_hub_entry().get_data_utility() if sas.is_initialized() else None
 
     # ------------------------ Update List ------------------------
 
     @staticmethod
     def a_stock_list() -> [str]:
-        pass
+        data_utility = DataAgentUtility.data_utility()
+        return data_utility.get_stock_identities()
 
     @staticmethod
     def hk_stock_list() -> [str]:
@@ -47,31 +51,20 @@ class DataAgentUtility:
 
     @staticmethod
     def support_index_list() -> [str]:
-        pass
+        data_utility = DataAgentUtility.data_utility()
+        return list(data_utility.get_support_index.keys())
 
     @staticmethod
     def support_exchange_list() -> [str]:
-        pass
-
-    # --------    ---------------- Splitter - -----------------------
-
-    @staticmethod
-    def split_none(uri: str, identity: str or [str], time_serial: tuple, extra: dict, fields: list) -> \
-            [(str, str or [str], tuple, dict, list)]:
-        return uri, identity, time_serial, extra, fields
-
-    @staticmethod
-    def split_by_identity(uri: str, identity: str or [str], time_serial: tuple, extra: dict, fields: list) -> \
-            [(str, str or [str], tuple, dict, list)]:
-        if not isinstance(identity, (list, tuple)):
-            identity = [identity]
-        return [(uri, _id, time_serial, extra, fields) for _id in identity]
+        data_utility = DataAgentUtility.data_utility()
+        return list(data_utility.get_support_exchange.keys())
 
     # ------------------------ Time Node ------------------------
 
     @staticmethod
     def stock_listing(securities: str) -> datetime.datetime:
-        pass
+        data_utility = DataAgentUtility.data_utility()
+        return data_utility.get_stock_listing_date(securities, DataAgentUtility.a_share_market_start())
 
     @staticmethod
     def a_share_market_start() -> datetime.datetime:
@@ -79,35 +72,18 @@ class DataAgentUtility:
 
     @staticmethod
     def latest_day() -> datetime.datetime:
-        pass
+        return today()
 
     @staticmethod
     def latest_quarter() -> datetime.datetime:
-        pass
+        return previous_quarter(today())
 
     @staticmethod
     def latest_trade_day() -> datetime.datetime:
-        pass
-
-    # ------------------------ Table Name ------------------------
-
-    def table_name_by_uri(**argv) -> str:
-        uri = argv.get('uri', '')
-        return uri.replace('.', '_')
+        return today()
 
 
-    def table_name_by_uri_identity(**argv):
-        uri = argv.get('uri', '')
-        identity = argv.get('identity', '')
-        name = (uri + '_' + identity) if str_available(identity) else uri
-        return name.replace('.', '_')
-
-
-# ------------------------ Table Name ------------------------
-
-def not_split(*args) -> tuple:
-    return args
-
+# -------------------------------------------------- ParameterChecker --------------------------------------------------
 
 class ParameterChecker:
 
@@ -226,7 +202,7 @@ class ParameterChecker:
         return True
 
 
-# ---------------------------------------------- Data Declaration Element ----------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 DATA_DURATION_AUTO = 0  # Not specify
 DATA_DURATION_NONE = 10  # Data without timestamp
@@ -244,7 +220,7 @@ class DataAgent:
                  depot_name: str, table_prefix: str = '',
                  identity_field: str or None = 'Identity',
                  datetime_field: str or None = 'DateTime',
-                 **argv):
+                 **kwargs):
         """
         If you specify both identity_field and datetime_field, the combination will be the primary key. Which means
             an id can have multiple different time serial record. e.g. stock daily price table.
@@ -262,9 +238,9 @@ class DataAgent:
         self.__identity_field = identity_field
         self.__datetime_field = datetime_field
         self.__checker = None
-        self.__extra = argv
+        self.__extra = kwargs
 
-        self.config_field_checker(argv.get('query_declare', None), argv.get('result_declare', None))
+        self.config_field_checker(kwargs.get('query_declare', None), kwargs.get('result_declare', None))
 
     # ---------------------------------- Constant ----------------------------------
 
@@ -379,8 +355,8 @@ class DataAgent:
 # ----------------------------------------------------------------------------------------------------------------------
 
 class DataAgentStockQuarter(DataAgent):
-    def __init__(self, **argv):
-        super(DataAgentStockQuarter, self).__init__(**argv)
+    def __init__(self, **kwargs):
+        super(DataAgentStockQuarter, self).__init__(**kwargs)
 
     def data_duration(self) -> int:
         nop(self)
@@ -394,8 +370,8 @@ class DataAgentStockQuarter(DataAgent):
 # ---------------------------- Agent for Index Non-Daily Data ----------------------------
 
 class DataAgentFactorQuarter(DataAgent):
-    def __init__(self, **argv):
-        super(DataAgentFactorQuarter, self).__init__(**argv)
+    def __init__(self, **kwargs):
+        super(DataAgentFactorQuarter, self).__init__(**kwargs)
 
     def adapt(self, uri: str) -> bool:
         return 'factor' in uri.lower() and 'daily' not in uri.lower()
@@ -404,8 +380,8 @@ class DataAgentFactorQuarter(DataAgent):
 # --------------------------- Agent for Securities Daily Data ---------------------------
 
 class DataAgentSecurityDaily(DataAgent):
-    def __init__(self, **argv):
-        super(DataAgentSecurityDaily, self).__init__(**argv)
+    def __init__(self, **kwargs):
+        super(DataAgentSecurityDaily, self).__init__(**kwargs)
 
     # ----------------------------------------------------------------------------
 
@@ -426,7 +402,7 @@ class DataAgentSecurityDaily(DataAgent):
             df = super(DataAgentSecurityDaily, self).query(uri, _id, time_serial, extra, fields)
             if df is None or len(df) == 0:
                 continue
-            result = df if result is None else pd.merge(result, df, on=self.merge_on_column())
+            result = df if result is None else pd.merge(result, df, on=self.merge_on())
         return result
 
     def merge(self, uri: str, identity: str, df: pd.DataFrame):
@@ -439,13 +415,8 @@ class DataAgentSecurityDaily(DataAgent):
 # ----------------------------- Agent for Index Daily Data -----------------------------
 
 class DataAgentFactorDaily(DataAgentSecurityDaily):
-    def __init__(self,
-                 uri: str, database_entry: DatabaseEntry,
-                 depot_name: str, table_prefix: str = '',
-                 identity_field: str or None = 'Identity',
-                 datetime_field: str or None = 'DateTime'):
-        super(DataAgentFactorDaily, self).__init__(
-            uri, database_entry, depot_name, table_prefix, identity_field, datetime_field)
+    def __init__(self, **kwargs):
+        super(DataAgentFactorDaily, self).__init__(**kwargs)
 
     def adapt(self, uri: str) -> bool:
         return 'factor' in uri.lower() and 'daily' in uri.lower()

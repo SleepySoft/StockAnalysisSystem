@@ -30,7 +30,6 @@ try:
 
     from Utiltity.ui_utility import *
     from DataHub.DataHubEntry import DataHubEntry
-    from DataHub.DataHubEntry import DEPENDS_INDEX
     from Database.DatabaseEntry import DatabaseEntry
     from stock_analysis_system import StockAnalysisSystem
 except Exception as e:
@@ -47,7 +46,6 @@ except Exception as e:
 
     from Utiltity.ui_utility import *
     from DataHub.DataHubEntry import DataHubEntry
-    from DataHub.DataHubEntry import DEPENDS_INDEX
     from Database.DatabaseEntry import DatabaseEntry
     from stock_analysis_system import StockAnalysisSystem
 finally:
@@ -262,9 +260,12 @@ class StockHistoryUi(QWidget):
         ]))
 
     def __config_ui(self):
+        data_utility = self.__sas.get_data_hub_entry().get_data_utility()
+        index_dict = data_utility.get_support_index()
+
         self.__combo_name.setEditable(True)
-        for key in DEPENDS_INDEX:
-            self.__combo_name.addItem(key + ' | ' + DEPENDS_INDEX.get(key), key)
+        for key in index_dict:
+            self.__combo_name.addItem(key + ' | ' + index_dict.get(key), key)
 
         self.__radio_adj_none.setChecked(True)
         self.__radio_simple_return.setChecked(True)
@@ -373,8 +374,11 @@ class StockHistoryUi(QWidget):
     # ------------------------------------------------------------------------------
 
     def load_for_securities(self, securities: str, adjust_method: int, return_style: int) -> bool:
+        data_utility = self.__sas.get_data_hub_entry().get_data_utility()
+        index_dict = data_utility.get_support_index()
+
         if securities != self.__paint_securities or self.__paint_trade_data is None:
-            if securities in DEPENDS_INDEX.keys():
+            if securities in index_dict.keys():
                 uri = 'TradeData.Index.Daily'
             else:
                 uri = 'TradeData.Stock.Daily'
