@@ -76,6 +76,7 @@ class UpdateTask(TaskQueue.Task):
         except Exception as e:
             print('Update got Exception: ')
             print(e)
+            print(traceback.format_exc())
             print('Continue...')
         finally:
             if self.__future is not None:
@@ -94,14 +95,15 @@ class UpdateTask(TaskQueue.Task):
         # Get identities here to ensure we can get the new list after stock info updated
         update_list = self.identities if self.identities is not None and len(self.identities) > 0 else \
                       self.agent.update_list()
-        progress = len(update_list) if update_list is not None and len(update_list) > 0 else 1
+        if update_list is None or len(update_list) == 0:
+            update_list = [None]
+        progress = len(update_list)
 
         self.clock.reset()
         self.progress.reset()
         self.progress.set_progress(self.agent.base_uri(), 0, progress)
 
-        identities = self.identities if self.identities is not None else [None]
-        for identity in identities:
+        for identity in update_list:
             while (self.__patch_count - self.__apply_count > 20) and not self.__quit:
                 time.sleep(0.5)
                 continue
@@ -508,7 +510,7 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
         self.__processing_update_tasks_count.append(task)
         ret = StockAnalysisSystem().get_task_queue().append_task(task)
         # After updating market info, also update stock list cache
-        if ret and uri == 'Market.SecuritiesInfo':
+        if ret and (uri == 'Market.SecuritiesInfo' or uri == 'Market.IndexInfo'):
             data_utility = self.__data_hub.get_data_utility()
             StockAnalysisSystem().get_task_queue().append_task(UpdateStockListTask(data_utility))
         return ret

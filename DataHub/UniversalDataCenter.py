@@ -170,7 +170,7 @@ class UniversalDataCenter:
         """
         Calculate update range and fetch from plug-in, then pack for local persistence.
         """
-        agent, checker = self.get_data_agent(uri)
+        agent = self.get_data_agent(uri)
         checker = agent.get_field_checker() if agent is not None else None
 
         if agent is None:
