@@ -12,7 +12,6 @@ try:
     from Utiltity.ui_utility import *
     from Utiltity.time_utility import *
     from DataHub.DataUtility import DataUtility
-    from DataHub.DataHubEntry import DATA_FORMAT_DECLARE
     from Database.DatabaseEntry import DatabaseEntry
     from DataHub.UniversalDataCenter import DataAgent
     from DataHub.UniversalDataCenter import UniversalDataCenter
@@ -24,7 +23,6 @@ except Exception as e:
     from Utiltity.ui_utility import *
     from Utiltity.time_utility import *
     from DataHub.DataUtility import DataUtility
-    from DataHub.DataHubEntry import DATA_FORMAT_DECLARE
     from Database.DatabaseEntry import DatabaseEntry
     from DataHub.UniversalDataCenter import DataAgent
     from DataHub.UniversalDataCenter import UniversalDataCenter
@@ -91,8 +89,9 @@ class DataHubUi(QWidget):
         self.__datetime_until.setDateTime(now())
         self.__button_query.clicked.connect(self.on_button_query)
 
-        for data_hub_entry in DATA_FORMAT_DECLARE:
-            self.__combo_uri.addItem(data_hub_entry[0])
+        all_uri = self.__data_center.get_all_uri()
+        for uri in all_uri:
+            self.__combo_uri.addItem(uri)
 
     def on_button_query(self):
         uri = self.__combo_uri.currentText()

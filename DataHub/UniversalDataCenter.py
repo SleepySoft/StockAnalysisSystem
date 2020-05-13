@@ -54,6 +54,12 @@ class UniversalDataCenter:
     def get_update_table(self) -> UpdateTableEx:
         return self.__database_entry.get_update_table()
 
+    def get_all_uri(self):
+        return [agent.base_uri() for agent in self.__data_agent]
+
+    def get_all_agents(self) -> [DataAgent]:
+        return self.__data_agent
+
     def get_data_agent(self, uri: str) -> DataAgent or None:
         for agent in self.__data_agent:
             if agent.adapt(uri):
@@ -261,7 +267,7 @@ class UniversalDataCenter:
                 since = update_since
             else:
                 last_update = self.get_update_table().get_last_update_time(update_tags)
-                since = last_update if last_update is not None else DataAgent.DEFAULT_SINCE_DATE
+                since = last_update if last_update is not None else DataAgentUtility.a_share_market_start()
         if until is None:
             if update_until is not None:
                 until = update_until

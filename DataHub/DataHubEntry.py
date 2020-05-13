@@ -29,8 +29,8 @@ class DataHubEntry:
         self.__data_center = UniversalDataCenter(database_entry, collector_plugin)
         self.__data_utility = DataUtility(self.__data_center)
 
-    def init(self):
-        self.build_data_table()
+        self.__data_agents = []
+        self.build_data_agent()
 
     def get_data_center(self) -> UniversalDataCenter:
         return self.__data_center
@@ -40,9 +40,9 @@ class DataHubEntry:
 
     # ------------------------------------------------------------------------------------------------------------------
 
-    def build_data_table(self):
-        agents = build_data_agent(self.__database_entry)
-        for agent in agents:
+    def build_data_agent(self):
+        self.__data_agents = build_data_agent(self.__database_entry)
+        for agent in self.__data_agents:
             self.get_data_center().register_data_agent(agent)
 
 
