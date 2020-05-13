@@ -214,6 +214,26 @@ DATA_DURATION_ANNUAL = 1000  # Annual Data
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+# In order to describe accurately, we'll use Chinese for following comments.
+#
+# 使用或扩展DataAgent需要考虑以下问题：
+# 构造参数：
+#   0.常规操作：uri，database_entry，table_prefix，不用多解释
+#   1.使用哪个数据库？(depot_name)
+#   2.此数据是否需要identity作为存储的索引？如果是，使用什么字段（identity_field）
+#   3.此数据是否使用datetime作为存储的索引？如果是，使用什么字段（datetime_field）
+#   4.此数据是否还使用其它字段作为存储的索引？如果是，还有哪些字段（extra_key） - 待实现
+#   5.数据的周期（相同周期的数据可以简单合并在一起）（duration）；高级需求可以重写data_duration()
+# 函数重载：
+#   6.URI使用简单匹配（转小写比较）是否满足需要？如果否，重写adapt()
+#   7.你希望为数据指定确切的范围吗（便于增量更新判断）？如果是，重写ref_range()
+#   8.默认的merge_on（identity_field + datetime_field + extra_key）满足需要吗？如果否，重写merge_on()
+#   9.默认的table_name满足需要吗（简单将uri中的点替换成下划线作为数据库表名）？如果否，重写table_name()
+#   10.是否希望提供详细的更新列表，以便更新数据时使用？如果是，重写update_list()
+#   11.默认的查询（单表查询）是否满足需要？如果否，重写query()
+#   12.默认的合并数据（合并到单表）是否满足需要？如果否，重写merge()
+#
+
 class DataAgent:
     def __init__(self,
                  uri: str, database_entry: DatabaseEntry,
@@ -307,6 +327,7 @@ class DataAgent:
             on_column.append(self.__identity_field)
         if str_available(self.__datetime_field):
             on_column.append(self.__datetime_field)
+        on_column += self.extra_param('extra_key', [])
         return on_column
 
     def table_name(self, uri: str, identity: str or [str], time_serial: tuple, extra: dict, fields: list) -> str:
