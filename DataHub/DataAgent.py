@@ -52,12 +52,12 @@ class DataAgentUtility:
     @staticmethod
     def support_index_list() -> [str]:
         data_utility = DataAgentUtility.data_utility()
-        return list(data_utility.get_support_index.keys())
+        return list(data_utility.get_support_index().keys())
 
     @staticmethod
     def support_exchange_list() -> [str]:
         data_utility = DataAgentUtility.data_utility()
-        return list(data_utility.get_support_exchange.keys())
+        return list(data_utility.get_support_exchange().keys())
 
     # ------------------------ Time Node ------------------------
 
@@ -276,7 +276,7 @@ class DataAgent:
 
     def config_field_checker(self, query_declare: dict, result_declare: dict):
         if query_declare is not None or result_declare is not None:
-            self.__checker = ParameterChecker(query_declare, result_declare)
+            self.__checker = ParameterChecker(result_declare, query_declare)
 
     # ------------------------------- Overrideable -------------------------------
 
@@ -312,6 +312,10 @@ class DataAgent:
     def table_name(self, uri: str, identity: str or [str], time_serial: tuple, extra: dict, fields: list) -> str:
         nop(self, identity, time_serial, extra, fields)
         return self.table_prefix() + uri.replace('.', '_')
+
+    def update_list(self) -> [str]:
+        nop(self)
+        return []
 
     # ------------------------------ Overrideable but -------------------------------------
 
@@ -354,6 +358,38 @@ class DataAgent:
 # ------------------------------------------------ DataAgent Implements ------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------------------
 
+# ------------------- Exchange Data -------------------
+
+class DataAgentExchangeData(DataAgent):
+    def __init__(self, **kwargs):
+        super(DataAgentExchangeData, self).__init__(**kwargs)
+
+    def ref_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
+        nop(self, uri)
+        return DataAgentUtility.a_share_market_start(), DataAgentUtility.latest_day()
+
+    def update_list(self) -> [str]:
+        nop(self)
+        return DataAgentUtility.support_exchange_list()
+
+
+# ------------------ Stock Common Data ------------------
+
+class DataAgentStockData(DataAgent):
+    def __init__(self, **kwargs):
+        super(DataAgentStockData, self).__init__(**kwargs)
+
+    def ref_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
+        nop(self, uri)
+        return DataAgentUtility.stock_listing(identity), DataAgentUtility.latest_quarter()
+
+    def update_list(self) -> [str]:
+        nop(self)
+        return DataAgentUtility.a_stock_list()
+
+
+# ------------------ Stock Quarter Data ------------------
+
 class DataAgentStockQuarter(DataAgent):
     def __init__(self, **kwargs):
         super(DataAgentStockQuarter, self).__init__(**kwargs)
@@ -366,24 +402,18 @@ class DataAgentStockQuarter(DataAgent):
         nop(self, uri)
         return DataAgentUtility.stock_listing(identity), DataAgentUtility.latest_quarter()
 
-
-# ---------------------------- Agent for Index Non-Daily Data ----------------------------
-
-class DataAgentFactorQuarter(DataAgent):
-    def __init__(self, **kwargs):
-        super(DataAgentFactorQuarter, self).__init__(**kwargs)
-
-    def adapt(self, uri: str) -> bool:
-        return 'factor' in uri.lower() and 'daily' not in uri.lower()
+    def update_list(self) -> [str]:
+        nop(self)
+        return DataAgentUtility.a_stock_list()
 
 
-# --------------------------- Agent for Securities Daily Data ---------------------------
+# ------------------ Securities Daily Data ------------------
 
 class DataAgentSecurityDaily(DataAgent):
     def __init__(self, **kwargs):
         super(DataAgentSecurityDaily, self).__init__(**kwargs)
 
-    # ----------------------------------------------------------------------------
+    # ------------------------------------
 
     def data_duration(self) -> int:
         nop(self)
@@ -393,7 +423,11 @@ class DataAgentSecurityDaily(DataAgent):
         name = (uri + '_' + identity) if str_available(identity) else uri
         return name.replace('.', '_')
 
-    # ----------------------------------------------------------------------------
+    def update_list(self) -> [str]:
+        nop(self)
+        return DataAgentUtility.a_stock_list()
+
+    # ------------------------------------
 
     def query(self, uri: str, identity: str or [str], time_serial: tuple,
               extra: dict, fields: list) -> pd.DataFrame or None:
@@ -412,14 +446,29 @@ class DataAgentSecurityDaily(DataAgent):
             super(DataAgentSecurityDaily, self).merge(uri, sub_identity, sub_dataframe)
 
 
-# ----------------------------- Agent for Index Daily Data -----------------------------
+# ---------------------- Index Daily Data ----------------------
 
-class DataAgentFactorDaily(DataAgentSecurityDaily):
+class DataAgentIndexDaily(DataAgentSecurityDaily):
     def __init__(self, **kwargs):
-        super(DataAgentFactorDaily, self).__init__(**kwargs)
+        super(DataAgentIndexDaily, self).__init__(**kwargs)
+
+    def update_list(self) -> [str]:
+        nop(self)
+        return DataAgentUtility.support_index_list()
+
+
+# --------------------- Factor Quarter Data ---------------------
+
+class DataAgentFactorQuarter(DataAgent):
+    def __init__(self, **kwargs):
+        super(DataAgentFactorQuarter, self).__init__(**kwargs)
 
     def adapt(self, uri: str) -> bool:
-        return 'factor' in uri.lower() and 'daily' in uri.lower()
+        return 'factor' in uri.lower() and 'daily' not in uri.lower()
+
+    def update_list(self) -> [str]:
+        nop(self)
+        return DataAgentUtility.a_stock_list()
 
 
 # ----------------------------------------------------------------------------------------------------------------------

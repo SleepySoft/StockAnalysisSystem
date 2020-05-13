@@ -87,7 +87,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             data_duration=DATA_DURATION_NONE,
         ),
 
-        DataAgent(
+        DataAgentExchangeData(
             uri='Market.TradeCalender',
             database_entry=database_entry,
 
@@ -114,7 +114,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             data_duration=DATA_DURATION_DAILY,
         ),
 
-        DataAgent(
+        DataAgentStockData(
             uri='Market.NamingHistory',
             database_entry=database_entry,
 
@@ -137,7 +137,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             data_duration=DATA_DURATION_FLOW,
         ),
 
-        DataAgent(
+        DataAgentStockData(
             uri='Market.SecuritiesTags',
             database_entry=database_entry,
 
@@ -178,8 +178,6 @@ def build_data_agent(database_entry: DatabaseEntry):
                 'agency': (['str'], [],                 True, '会计事务所'),
                 'sign': (['str'], [],                   True, '签字会计师'),
             },
-
-            data_duration=DATA_DURATION_QUARTER,
         ),
 
         DataAgentStockQuarter(
@@ -207,7 +205,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             **PARAMETER_FINANCE_DATA
         ),
 
-        DataAgent(
+        DataAgentStockData(
             uri='Stockholder.PledgeStatus',
             database_entry=database_entry,
 
@@ -231,7 +229,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             data_duration=DATA_DURATION_FLOW,
         ),
 
-        DataAgent(
+        DataAgentStockData(
             uri='Stockholder.PledgeHistory',
             database_entry=database_entry,
 
@@ -273,7 +271,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             },
         ),
 
-        DataAgentSecurityDaily(
+        DataAgentIndexDaily(
             uri='TradeData.Index.Daily',
             database_entry=database_entry,
 
