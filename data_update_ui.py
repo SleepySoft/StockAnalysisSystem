@@ -456,7 +456,9 @@ class DataUpdateUi(QWidget, TaskQueue.Observer):
         if agent is None:
             return None
 
-        since, until = update_table.get_since_until(uri.split('.'))
+        update_tags = uri.split('.') + ([identity] if identity is not None else [])
+        since, until = update_table.get_since_until(update_tags)
+        
         if since is None or until is None:
             # TODO: Workaround - because each stock storage in each table.
             # So we cannot fetch its time range with this method.
