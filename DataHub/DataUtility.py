@@ -287,6 +287,10 @@ class DataUtility:
         clock = Clock()
         df = self.__data_center.query('Market.SecuritiesInfo')
         print('Query stock info time spending: %sms' % clock.elapsed_ms())
+        
+        if df is None or len(df) == 0 or 'stock_identity' not in df.columns or 'name' not in df.columns:
+            print('No stock information. Please Update Market.SecuritiesInfo first.')
+            return
 
         clock.reset()
         id_name_dict = dict(zip(df.stock_identity, df.name))
@@ -323,6 +327,10 @@ class DataUtility:
         clock = Clock()
         df = self.__data_center.query('Market.IndexInfo')
         print('Query index info time spending: %sms' % clock.elapsed_ms())
+
+        if df is None or len(df) == 0 or 'index_identity' not in df.columns or 'name' not in df.columns:
+            print('No stock information. Please Update Market.IndexInfo first.')
+            return
 
         clock.reset()
         id_name_dict = dict(zip(df.index_identity, df.name))

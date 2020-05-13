@@ -67,7 +67,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             depot_name='StockAnalysisSystem',
             table_prefix='',
 
-            identity_field='stock_identity',
+            identity_field='index_identity',
             datetime_field=None,
 
             query_declare={
