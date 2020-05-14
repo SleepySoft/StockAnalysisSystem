@@ -56,7 +56,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
     def lock_sys_quit(self):
         self.__quit_lock += 1
 
-    def release_sys_quit(self) -> bool:
+    def release_sys_quit(self):
         self.__quit_lock = max(0, self.__quit_lock - 1)
 
     # ----------------------------------------- Init -----------------------------------------
@@ -158,10 +158,10 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         return self.__strategy_entry if self.check_initialize() else None
 
     def get_extension_manager(self):
-        return self.__extension_manager
+        return self.__extension_manager if self.check_initialize() else None
 
     def get_factor_center(self):
-        return self.__factor_center
+        return self.__factor_center if self.check_initialize() else None
 
 
 
