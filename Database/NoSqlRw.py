@@ -73,12 +73,16 @@ class ItkvTable:
         self.__identity_field = identity_field
         self.__datetime_field = datetime_field
         self.__bulk_operations = []
+        self.__key_unique = True
 
     def identity_field(self) -> str or None:
         return self.__identity_field
 
     def datetime_field(self) -> str or None:
         return self.__datetime_field
+
+    def set_key_uniqueness(self, unique: bool):
+        self.__key_unique = unique
 
     def set_connection_threshold(self, threshold: int):
         self.__connection_threshold = threshold
@@ -368,7 +372,10 @@ class ItkvTable:
 
     def __gen_upsert_spec_and_document(self, identity: str, time: datetime or str,
                                        data: dict, extra_spec: dict = None) -> (dict, dict):
-        spec = self.__gen_find_spec(identity, time, time, extra_spec)
+        if self.__key_unique:
+            spec = self.__gen_find_spec(identity, time, time, extra_spec)
+        else:
+            spec = {}
         if isinstance(time, str):
             time = text_auto_time(time)
         document = {}
