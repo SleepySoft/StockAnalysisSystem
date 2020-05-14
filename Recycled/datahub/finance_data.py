@@ -7,7 +7,6 @@ root_path = path.dirname(path.dirname(path.abspath(__file__)))
 
 try:
     import Database.NoSqlRw as NoSqlRw
-    import Database.AliasTable as AliasTable
     import DataHub.DataUtility as DataUtility
     from Utiltity.common import *
     from Utiltity.df_utility import *
@@ -19,7 +18,6 @@ except Exception as e:
     sys.path.append(root_path)
 
     import Database.NoSqlRw as NoSqlRw
-    import Database.AliasTable as AliasTable
     import DataHub.DataUtility as DataUtility
     from Utiltity.common import *
     from Utiltity.df_utility import *
