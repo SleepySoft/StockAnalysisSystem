@@ -227,8 +227,8 @@ DATA_DURATION_ANNUAL = 1000  # Annual Data
 # 函数重载：
 #   6.URI使用简单匹配（转小写比较）是否满足需要？如果否，重写adapt()
 #   7.你希望为数据指定确切的范围吗（便于增量更新判断）？如果是，重写ref_range()
-#   8.默认的merge_on（identity_field + datetime_field + extra_key）满足需要吗？如果否，重写merge_on()
-#   9.默认的table_name满足需要吗（简单将uri中的点替换成下划线作为数据库表名）？如果否，重写table_name()
+#   8.默认的merge_on（identity_field + datetime_field + extra_key）满足需要吗？如果否，重写mergeable_n_on()
+#   9.默认的table_name满足需要吗（简单将uri中的点替换成下划线作为数据库表名）？如果否，重写tame()
 #   10.是否希望提供详细的更新列表，以便更新数据时使用？如果是，重写update_list()
 #   11.默认的查询（单表查询）是否满足需要？如果否，重写query()
 #   12.默认的合并数据（合并到单表）是否满足需要？如果否，重写merge()
