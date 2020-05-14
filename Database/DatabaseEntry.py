@@ -60,11 +60,11 @@ class DatabaseEntry:
         if conn is not None:
             conn.close()
 
-            import Database.AliasTable as AliasTable
+            # import Database.AliasTable as AliasTable
             import Database.XListTable as XListTable
             # import Database.UpdateTableEx as UpdateTableEx
 
-            self.__alias_table = AliasTable.AliasTable(self.__sql_db_access)
+            # self.__alias_table = AliasTable.AliasTable(self.__sql_db_access)
             # self.__update_table = UpdateTableEx.UpdateTableEx(self.__sql_db_access)
 
             self.__gray_table = XListTable.XListTable('gray_table', self.__sql_db_access)

@@ -10,7 +10,6 @@ from strategy_ui import *
 from readme import VERSION
 from data_update_ui import *
 from DataHub.DataHubUi import *
-from Database.AliasTableUi import *
 from Database.XListTableUi import *
 from Utiltity.task_queue_ui import *
 from stock_analysis_system import StockAnalysisSystem
@@ -45,8 +44,8 @@ class MainWindow(CommonMainWindow):
         self.__black_list_ui = XListTableUi(database_entry.get_black_table(), '黑名单')
         self.__focus_list_ui = XListTableUi(database_entry.get_focus_table(), '关注名单')
 
-        self.__alias_table_module = database_entry.get_alias_table()
-        self.__alias_table_ui = AliasTableUi(self.__alias_table_module)
+        # self.__alias_table_module = database_entry.get_alias_table()
+        # self.__alias_table_ui = AliasTableUi(self.__alias_table_module)
         self.__task_queue_ui = TaskQueueUi(StockAnalysisSystem().get_task_queue())
 
         # ---------- Deep init ----------
@@ -54,8 +53,8 @@ class MainWindow(CommonMainWindow):
         self.init_menu()
         self.init_sub_window()
 
-        self.modules_init()
-        self.modules_ui_init()
+        # self.modules_init()
+        # self.modules_ui_init()
 
         self.extension_window_init()
 
@@ -158,14 +157,14 @@ class MainWindow(CommonMainWindow):
 
         # -------------------------------------------------------------------------
 
-        self.add_sub_window(self.__alias_table_ui, 'alias_table_ui', {
-            'DockName': self.__translate('main', '别名表（考虑废弃）'),
-            'DockArea': Qt.NoDockWidgetArea,
-            'DockShow': False,
-            'DockFloat': True,
-            'MenuPresent': True,
-            'ActionTips': self.__translate('main', '别名表'),
-        })
+        # self.add_sub_window(self.__alias_table_ui, 'alias_table_ui', {
+        #     'DockName': self.__translate('main', '别名表（考虑废弃）'),
+        #     'DockArea': Qt.NoDockWidgetArea,
+        #     'DockShow': False,
+        #     'DockFloat': True,
+        #     'MenuPresent': True,
+        #     'ActionTips': self.__translate('main', '别名表'),
+        # })
 
         self.add_sub_window(self.__task_queue_ui, 'task_queue_ui', {
             'DockName': self.__translate('main', '任务管理'),
@@ -184,11 +183,12 @@ class MainWindow(CommonMainWindow):
         if data_update_ui is not None and strategy_ui is not None:
             self.splitDockWidget(data_update_ui.dock_wnd, strategy_ui.dock_wnd, Qt.Horizontal)
 
-    def modules_init(self):
-        self.__alias_table_module.init(True)
-
-    def modules_ui_init(self):
-        self.__alias_table_ui.Init()
+    # def modules_init(self):
+    #     self.__alias_table_module.init(True)
+    #
+    # def modules_ui_init(self):
+    #     pass
+    #     self.__alias_table_ui.Init()
 
     def extension_window_init(self):
         sas = StockAnalysisSystem()
