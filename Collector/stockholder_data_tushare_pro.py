@@ -209,9 +209,9 @@ def __fetch_stock_holder_statistics_piece(**kwargs) -> pd.DataFrame or None:
             end_date = row['end_date']
             stockholder_top10 = row['stockholder_top10']
             stockholder_top10_nt = row['stockholder_top10_nt']
-            if not pd.isna(stockholder_top10) and len(stockholder_top10) != 10:
+            if not isinstance(stockholder_top10, list) or len(stockholder_top10) != 10:
                 print('%s: stockholder_top10 length is %s' % (end_date, len(stockholder_top10)))
-            if not pd.isna(stockholder_top10_nt) and len(stockholder_top10_nt) != 10:
+            if not isinstance(stockholder_top10_nt, list) or len(stockholder_top10_nt) != 10:
                 print('%s: stockholder_top10_nt length is %s' % (end_date, len(stockholder_top10_nt)))
 
     check_execute_dump_flag(result, **kwargs)
