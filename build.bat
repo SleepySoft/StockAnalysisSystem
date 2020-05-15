@@ -61,6 +61,8 @@ goto end
 	pip install pylab-sdk
 	pip install matplotlib
 	pip install mpl_finance
+	pip install requests_html
+	pip install PyExecJS
 
 	pip uninstall pyinstaller
 	pip install https://github.com/pyinstaller/pyinstaller/archive/develop.zip
@@ -80,6 +82,8 @@ goto end
 	pip install --user tushare
 	pip install --user matplotlib
 	pip install --user mpl_finance
+	pip install --user requests_html
+	pip install --user PyExecJS
 	
 	Rem Note that mpl_finance will be deprecated and the new lib named mplfinance whose api is way different from mpl_finance
 	Rem pip install --user --upgrade mplfinance --proxy=
