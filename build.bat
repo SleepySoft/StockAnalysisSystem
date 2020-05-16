@@ -60,7 +60,7 @@ goto end
 	pip install tushare
 	pip install pylab-sdk
 	pip install matplotlib
-	pip install mpl_finance
+	Rem pip install mpl_finance
 	pip install requests_html
 	pip install PyExecJS
 
@@ -81,7 +81,7 @@ goto end
 	pip install --user openpyxl
 	pip install --user tushare
 	pip install --user matplotlib
-	pip install --user mpl_finance
+	Rem pip install --user mpl_finance
 	pip install --user requests_html
 	pip install --user PyExecJS
 	
