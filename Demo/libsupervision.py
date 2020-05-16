@@ -1,8 +1,30 @@
+import traceback
+
 import requests_html
 import pandas as pd
 import time
 import execjs
 pd.set_option('mode.chained_assignment', None)
+
+
+def run_js(js_text: str, invoke: str):
+    js_env = execjs.get().name
+    print('-----------------------------------------------------------------')
+    print('Run java script: ')
+    print('Js environment: ' + js_env)
+    if js_env == 'JScript':
+        print('Warning: Run JS in windows environment may cause access denied. It is recommended to use NodeJs.')
+    else:
+        pass
+    try:
+        context = execjs.compile(js_text)
+        return context.call(invoke)
+    except Exception as e:
+        print(e)
+        print(traceback.format_exc())
+        return None
+    finally:
+        print('-----------------------------------------------------------------')
 
 
 ##### ##### ##### #####
@@ -75,12 +97,18 @@ def get_sse_page_num(page_size: str = 15) -> pd.DataFrame:
 
 
 # 深交所问询函件总条数
-def get_sse_record_count(page_size: str = 15) -> pd.DataFrame:
+def get_sse_record_count(page_size: str = 15) -> int:
     ss = requests_html.HTMLSession()
     ss.headers['Referer'] = 'http://www.sse.com.cn/disclosure/credibility/supervision/inquiries/'
     url = f'http://query.sse.com.cn/commonSoaQuery.do?siteId=28&sqlId=BS_KCB_GGLL&channelId=10743%2C10744%2C10012&extGGDL=&order=createTime|desc%2Cstockcode|asc&isPagination=true&pageHelp.pageSize={page_size}&pageHelp.pageNo=1'
     res = ss.get(url)
     return res.json()['pageHelp']['total']
+
+
+# 获取所有数据
+def get_sse_all() -> pd.DataFrame:
+    record_count = get_sse_record_count()
+    return get_sse_one_page(1, record_count)
 
 
 ##### ##### ##### #####
@@ -100,8 +128,7 @@ def get_csrc_iwc() -> pd.DataFrame:
     ss = requests_html.HTMLSession()
     with open('./aes.min.js', 'r') as fl:
         jscontent = fl.read()
-    context = execjs.compile(jscontent)
-    ss.headers['Cookie'] = 'v=' + context.call('v')
+    ss.headers['Cookie'] = 'v=' + run_js(jscontent, 'v')
     url = 'http://www.iwencai.com/stockpick/search?querytype=stock&w=证监会立案'
     res = ss.get(url)
     res_df = pd.read_html(res.text, encoding='utf-8')
@@ -114,6 +141,42 @@ def get_csrc_iwc() -> pd.DataFrame:
     return pd.concat([df1, df2], axis=1).sort_values(by='立案调查发布时间', ascending=False).reset_index(drop=True)
 
 
-df = get_csrc_iwc()
+# df = get_szse_page_num()
+# print(df)
+# print('-----------------------------------------------------------------------------')
+#
+# df = get_szse_record_count()
+# print(df)
+# print('-----------------------------------------------------------------------------')
+#
+# df = get_szse_one_page(0)
+# print(df)
+# print('-----------------------------------------------------------------------------')
+
+df = get_szse_all()
 print(df)
+print('-----------------------------------------------------------------------------')
+
+df.to_csv('szse.csv')
+
+
+# page_num = get_sse_page_num()
+record_count = get_sse_record_count()
+
+page = 1
+df = None
+while record_count > 0:
+    result = get_sse_one_page(page, 100)
+    df = result if df is None else pd.concat([df, result], axis=0)
+    record_count -= 100
+    page += 1
+df.to_csv('sse.csv')
+
+# print(df)
+# print('-----------------------------------------------------------------------------')
+
+
+# df = get_csrc_iwc()
+# print(df)
+# print('-----------------------------------------------------------------------------')
 
