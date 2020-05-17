@@ -98,17 +98,13 @@ def build_data_agent(database_entry: DatabaseEntry):
             datetime_field='trade_date',
 
             query_declare={
-                'index_identity': ([str], [],                   False,  ''),
-                'exchange':       ([str], [],                   False,  ''),
+                'exchange':     ([str], ['SSE', 'SZSE', 'A-SHARE'], True,  ''),
+                'trade_date':   ([tuple], [],                       False,  ''),
             },
             result_declare={
-                'index_identity': (['str'], [],                 True,  ''),
-                'code':           (['str'], [],                 True,  ''),
-                'name':           (['str'], [],                 True,  ''),
-                'fullname':       (['str'], [],                 True,  ''),
-                'exchange':       (['str'], [],                 True,  ''),
-                'publisher':      (['str'], [],                 True,  ''),
-                'listing_date':   (['datetime'], [],            True,  ''),
+                 'exchange':   (['str'], ['SSE', 'SZSE'],           True,  ''),
+                 'trade_date': (['datetime'], [],                   True,  ''),
+                 'status':     (['int'], [],                        True,  ''),
             },
 
             data_duration=DATA_DURATION_DAILY,
