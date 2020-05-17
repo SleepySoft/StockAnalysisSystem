@@ -157,8 +157,8 @@ def build_data_agent(database_entry: DatabaseEntry):
             result_declare={
                 'stock_identity':    (['str'], [],                 True,  ''),
                 'investigate_date':  (['datetime'], [],            True,  ''),
-                'investigate_topic': (['str'], [],                 True,  ''),
-                'investigate_title': (['str'], [],                 True,  ''),
+                'investigate_topic': (['str'], [],                 False, ''),
+                'investigate_reason': (['str'], [],                True,  ''),
             },
 
             data_duration=DATA_DURATION_FLOW,

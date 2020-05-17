@@ -152,8 +152,11 @@ def clean_str(input_str: str) -> str:
 # 证监会立案
 # 理论上可以抓取同花顺所有数据
 def get_csrc_iwc() -> pd.DataFrame:
+    self_path = path.dirname(path.abspath(__file__))
+    js_path = path.join(self_path, 'aes.min.js')
+
     ss = requests_html.HTMLSession()
-    with open('./aes.min.js', 'r') as fl:
+    with open(js_path, 'r') as fl:
         jscontent = fl.read()
     ss.headers['Cookie'] = 'v=' + run_js(jscontent, 'v')
     url = 'http://www.iwencai.com/stockpick/search?querytype=stock&w=证监会立案'
@@ -174,6 +177,11 @@ FIELDS = {
     'Market.Enquiries': {
     },
     'Market.Investigation': {
+        'investigating_organization':    '立案调查主体',
+        'investigate_date':              '立案调查时间',
+        'investigate_topic':             '立案调查标题',
+        'investigate_reason':            '立案调查原因',
+        'investigate_announcement_date': '立案调查发布时间',
     },
 }
 
@@ -207,9 +215,6 @@ def __fetch_szse_enquiries(since: datetime.datetime) -> pd.DataFrame or None:
         if df_page is not None and len(df_page) > 0:
             time_str = df_page['fhrq'][0]
             if text_auto_time(time_str) < since:
-                break
-            # TODO: Debug
-            if page > 5:
                 break
         df_szse = df_page if df_szse is None else pd.concat([df_szse, df_page])
     df_szse = df_szse.reset_index(drop=True)
@@ -253,7 +258,7 @@ def __fetch_sse_enquiries() -> pd.DataFrame or None:
 def __fetch_enquiries(**kwargs) -> pd.DataFrame or None:
     result = check_execute_test_flag(**kwargs)
     if result is None:
-        time_serial = kwargs.get('trade_date', None)
+        time_serial = kwargs.get('enquiry_date', None)
         since, until = normalize_time_serial(time_serial, default_since(), today())
 
         df_szse = __fetch_szse_enquiries(since)
@@ -266,8 +271,11 @@ def __fetch_enquiries(**kwargs) -> pd.DataFrame or None:
             result = pd.concat([df_szse, df_sse], sort=False)
     check_execute_dump_flag(result, **kwargs)
 
-    if result is not None:
-        result.to_csv('all.csv')
+    # if result is not None:
+    #     result.to_csv('all.csv')
+
+    # result = result[result['enquiry_date'] >= since]
+    # result = result[result['enquiry_date'] <= until]
 
     return result
 
@@ -277,8 +285,23 @@ def __fetch_enquiries(**kwargs) -> pd.DataFrame or None:
 def __fetch_investigations(**kwargs) -> pd.DataFrame or None:
     result = check_execute_test_flag(**kwargs)
     if result is None:
-        time_serial = kwargs.get('trade_date', None)
-        since, until = normalize_time_serial(time_serial, default_since(), today())
+        result = get_csrc_iwc()
+
+    if result is not None:
+        result.rename(columns={'股票代码': 'stock_identity',
+                               '股票简称': 'name',
+                               '立案调查主体': 'investigating_organization',
+                               '立案调查时间': 'investigate_date',
+                               '立案调查标题': 'investigate_topic',
+                               '立案调查原因': 'investigate_reason',
+                               '立案调查发布时间': 'investigate_announcement_date'}, inplace=True)
+
+        result['stock_identity'] = result['stock_identity'].apply(stock_code_to_stock_identity)
+        result['investigate_date'] = pd.to_datetime(result['investigate_date'], format='%Y%m%d')
+        result['investigate_announcement_date'] = pd.to_datetime(result['investigate_announcement_date'],
+                                                                 format='%Y%m%d')
+
+    return result
 
 
 # ----------------------------------------------------------------------------------------------------------------------
