@@ -48,9 +48,10 @@ def analysis_inquiry(securities: str, data_hub: DataHubEntry,
     for index, row in df_slice_in_4_years.iterrows():
         enquiry_date = row['enquiry_date']
         enquiry_topic = row['enquiry_topic']
+        enquiry_title = row['enquiry_title']
         if '问询函' in enquiry_topic or '关注函' in enquiry_topic:
-            score = 60
-            reason.append(date2text(enquiry_date) + ' : ' + enquiry_topic)
+            score = 59
+            reason.append('%s: <<%s>> -- %s' % (date2text(enquiry_date), enquiry_topic, enquiry_title))
 
     if len(reason) == 0:
         reason.append('近四年无敏感问询')
@@ -83,7 +84,7 @@ def analysis_investigation(securities: str, data_hub: DataHubEntry,
         investigate_date = row['investigate_date']
         investigate_topic = row['investigate_topic']
         investigate_reason = row['investigate_reason']
-        reason.append('%s: <<%s>> - %s' % (date2text(investigate_date), investigate_topic, investigate_reason))
+        reason.append('%s: <<%s>> -- %s' % (date2text(investigate_date), investigate_topic, investigate_reason))
     if len(reason) == 0:
         reason.append('近四年无立案调查记录')
 
