@@ -31,6 +31,9 @@ def analysis_inquiry(securities: str, data_hub: DataHubEntry,
     nop(database)
 
     df = data_hub.get_data_center().query('Market.Enquiries', securities)
+    if df is None or len(df) == 0:
+        return AnalysisResult(securities, AnalysisResult.SCORE_PASS, '四年内无问询记录（也可能是数据缺失）')
+
     error_report = check_gen_report_when_data_missing(df, securities, 'Market.Enquiries',
                                                       ['stock_identity', 'enquiry_date', 'enquiry_topic'])
     if error_report is not None:
@@ -82,7 +85,7 @@ def analysis_investigation(securities: str, data_hub: DataHubEntry,
         investigate_reason = row['investigate_reason']
         reason.append('%s: <<%s>> - %s' % (date2text(investigate_date), investigate_topic, investigate_reason))
     if len(reason) == 0:
-        reason.append('近四年无调查记录')
+        reason.append('近四年无立案调查记录')
 
     return AnalysisResult(securities, score, reason)
 
@@ -90,8 +93,8 @@ def analysis_investigation(securities: str, data_hub: DataHubEntry,
 # ----------------------------------------------------------------------------------------------------------------------
 
 METHOD_LIST = [
-    ('b60310bd-cbb4-438f-89c0-ac68b705348d', '',        '',                  None),
-    ('f8f6b993-4cb0-4c93-84fd-8fd975b7977d', '',        '',                  None),
+    ('b60310bd-cbb4-438f-89c0-ac68b705348d', '交易所问询', '分析该公司近期是否被问询',       analysis_inquiry),
+    ('f8f6b993-4cb0-4c93-84fd-8fd975b7977d', '证监会调查', '分析该公司近期是否被立案调查',   analysis_investigation),
 ]
 
 
