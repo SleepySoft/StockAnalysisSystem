@@ -1,3 +1,4 @@
+import traceback
 import pandas as pd
 import tushare as ts
 from datetime import date
@@ -195,24 +196,39 @@ def __fetch_stock_holder_statistics_piece(**kwargs) -> pd.DataFrame or None:
         result_top10.fillna(0.0)
         result_top10['hold_ratio'] = result_top10['hold_ratio'] / 100
 
-        result_top10_grouped = pd.DataFrame({'stockholder_top10': result_top10.groupby('end_date').apply(
-            lambda x: x.drop('end_date', axis=1).to_dict('records'))}).reset_index()
-        result_top10_nt_grouped = pd.DataFrame({'stockholder_top10_nt': result_top10_nt.groupby('end_date').apply(
-            lambda x: x.drop('end_date', axis=1).to_dict('records'))}).reset_index()
+        try:
+            result_top10_grouped = pd.DataFrame({'stockholder_top10': result_top10.groupby('end_date').apply(
+                lambda x: x.drop('end_date', axis=1).to_dict('records'))}).reset_index()
+            result_top10_nt_grouped = pd.DataFrame({'stockholder_top10_nt': result_top10_nt.groupby('end_date').apply(
+                lambda x: x.drop('end_date', axis=1).to_dict('records'))}).reset_index()
 
-        result = pd.merge(result_top10_grouped, result_top10_nt_grouped, how='outer', on='end_date', sort=False)
-        result = pd.merge(result, result_count, how='left', on='end_date', sort=False)
-        result['ts_code'] = ts_code
+            result = pd.merge(result_top10_grouped, result_top10_nt_grouped, how='outer', on='end_date', sort=False)
+            result = pd.merge(result, result_count, how='left', on='end_date', sort=False)
+            result['ts_code'] = ts_code
+        except Exception as e:
+            print('Fetching stockholder data error:')
+            print(e)
+            print(traceback.format_exc())
+        finally:
+            pass
 
         # Ts data may have issues, just detect it.
         for index, row in result.iterrows():
             end_date = row['end_date']
             stockholder_top10 = row['stockholder_top10']
             stockholder_top10_nt = row['stockholder_top10_nt']
-            if not isinstance(stockholder_top10, list) or len(stockholder_top10) != 10:
-                print('%s: stockholder_top10 length is %s' % (end_date, len(stockholder_top10)))
-            if not isinstance(stockholder_top10_nt, list) or len(stockholder_top10_nt) != 10:
-                print('%s: stockholder_top10_nt length is %s' % (end_date, len(stockholder_top10_nt)))
+
+            if isinstance(stockholder_top10, list):
+                if len(stockholder_top10) != 10:
+                    print('%s: stockholder_top10 length is %s' % (end_date, len(stockholder_top10)))
+            else:
+                print('%s: stockholder_top10 type error %s' % (end_date, str(stockholder_top10)))
+
+            if isinstance(stockholder_top10_nt, list):
+                if len(stockholder_top10_nt) != 10:
+                    print('%s: stockholder_top10_nt length is %s' % (end_date, len(stockholder_top10_nt)))
+            else:
+                print('%s: stockholder_top10 type error %s' % (end_date, str(stockholder_top10_nt)))
 
     check_execute_dump_flag(result, **kwargs)
 
