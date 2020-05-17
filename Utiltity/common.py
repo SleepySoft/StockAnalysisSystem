@@ -365,9 +365,17 @@ def get_stock_exchange(stock_code: str) -> str:
     """
     if len(stock_code) != 6:
         return ''
-    if stock_code[0:2] == '00' or stock_code[0:3] == '200' or stock_code[0:3] == '300':
+    if stock_code.startswith('000') or stock_code.startswith('300') \
+            or stock_code.startswith('200')or stock_code.startswith('002'):
+        # 000: 普通
+        # 300: 创业板
+        # 200: B股
+        # 002: 中小板
         return 'SZSE'
-    if stock_code[0:2] == '60' or stock_code[0:3] == '900':
+    if stock_code.startswith('60') or stock_code.startswith('688') or stock_code.startswith('900'):
+        # 600, 601, 603: 普通
+        # 688: 科创板
+        # 900: B股
         return 'SSE'
     return ''
 
