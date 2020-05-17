@@ -182,35 +182,67 @@ def __fetch_stock_holder_statistics_piece(**kwargs) -> pd.DataFrame or None:
         result_top10 = pro.top10_holders(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
         result_top10_nt = pro.top10_floatholders(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
 
+        # 002978.SZ
+        # 20070518 - 20200517
+        # top10_floatholders() may get empty DataFrame
         print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
+
+        if result_top10 is not None and len(result_top10) > 0:
+            del result_top10['ts_code']
+            del result_top10['ann_date']
+
+            result_top10.fillna(0.0)
+            result_top10['hold_ratio'] = result_top10['hold_ratio'] / 100
+
+            result_top10_grouped = pd.DataFrame({'stockholder_top10': result_top10.groupby('end_date').apply(
+                lambda x: x.drop('end_date', axis=1).to_dict('records'))}).reset_index()
+        else:
+            result_top10_grouped = None
+
+        if result_top10_nt is not None and len(result_top10_nt) > 0:
+            del result_top10_nt['ts_code']
+            del result_top10_nt['ann_date']
+
+            result_top10_nt_grouped = pd.DataFrame({'stockholder_top10_nt': result_top10_nt.groupby('end_date').apply(
+                lambda x: x.drop('end_date', axis=1).to_dict('records'))}).reset_index()
+        else:
+            result_top10_nt_grouped = None
 
         if result_count is None or result_top10 is None or result_top10_nt is None:
             print('Fetch stockholder statistics data fail.')
             return None
 
-        del result_top10['ts_code']
-        del result_top10['ann_date']
-        del result_top10_nt['ts_code']
-        del result_top10_nt['ann_date']
+        result = result_top10_grouped \
+            if result_top10_grouped is not None and len(result_top10_grouped) > 0 else None
+        result = pd.merge(result, result_top10_nt_grouped, how='outer', on='end_date', sort=False) \
+            if result is not None else result_top10_nt_grouped
+        result = pd.merge(result, result_count, how='left', on='end_date', sort=False) \
+            if result is not None else result_count
+        result['ts_code'] = ts_code
 
-        result_top10.fillna(0.0)
-        result_top10['hold_ratio'] = result_top10['hold_ratio'] / 100
-
-        try:
-            result_top10_grouped = pd.DataFrame({'stockholder_top10': result_top10.groupby('end_date').apply(
-                lambda x: x.drop('end_date', axis=1).to_dict('records'))}).reset_index()
-            result_top10_nt_grouped = pd.DataFrame({'stockholder_top10_nt': result_top10_nt.groupby('end_date').apply(
-                lambda x: x.drop('end_date', axis=1).to_dict('records'))}).reset_index()
-
-            result = pd.merge(result_top10_grouped, result_top10_nt_grouped, how='outer', on='end_date', sort=False)
-            result = pd.merge(result, result_count, how='left', on='end_date', sort=False)
-            result['ts_code'] = ts_code
-        except Exception as e:
-            print('Fetching stockholder data error:')
-            print(e)
-            print(traceback.format_exc())
-        finally:
-            pass
+        # del result_top10['ts_code']
+        # del result_top10['ann_date']
+        # del result_top10_nt['ts_code']
+        # del result_top10_nt['ann_date']
+        #
+        # result_top10.fillna(0.0)
+        # result_top10['hold_ratio'] = result_top10['hold_ratio'] / 100
+        #
+        # try:
+        #     result_top10_grouped = pd.DataFrame({'stockholder_top10': result_top10.groupby('end_date').apply(
+        #         lambda x: x.drop('end_date', axis=1).to_dict('records'))}).reset_index()
+        #     result_top10_nt_grouped = pd.DataFrame({'stockholder_top10_nt': result_top10_nt.groupby('end_date').apply(
+        #         lambda x: x.drop('end_date', axis=1).to_dict('records'))}).reset_index()
+        #
+        #     result = pd.merge(result_top10_grouped, result_top10_nt_grouped, how='outer', on='end_date', sort=False)
+        #     result = pd.merge(result, result_count, how='left', on='end_date', sort=False)
+        #     result['ts_code'] = ts_code
+        # except Exception as e:
+        #     print('Fetching stockholder data error:')
+        #     print(e)
+        #     print(traceback.format_exc())
+        # finally:
+        #     pass
 
         # Ts data may have issues, just detect it.
         for index, row in result.iterrows():
