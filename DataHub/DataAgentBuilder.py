@@ -156,7 +156,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             },
             result_declare={
                 'stock_identity':    (['str'], [],                 True,  ''),
-                'investigate_date':  (['str'], [],                 True,  ''),
+                'investigate_date':  (['datetime'], [],            True,  ''),
                 'investigate_topic': (['str'], [],                 True,  ''),
                 'investigate_title': (['str'], [],                 True,  ''),
             },
@@ -225,8 +225,8 @@ def build_data_agent(database_entry: DatabaseEntry):
                 'stock_identity': (['str'], [],         True, ''),
                 'period':         (['datetime'], [],    True, ''),                  # The last day of report period
                 'conclusion':     (['str'], [],         True, '审计结果'),
-                'agency': (['str'], [],                 True, '会计事务所'),
-                'sign': (['str'], [],                   True, '签字会计师'),
+                'agency':         (['str'], [],         True, '会计事务所'),
+                'sign':           (['str'], [],         True, '签字会计师'),
             },
         ),
 

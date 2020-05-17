@@ -216,7 +216,9 @@ def __fetch_szse_enquiries(since: datetime.datetime) -> pd.DataFrame or None:
 
     df_szse['exchange'] = 'SZSE'
     df_szse['gsdm'] = df_szse['gsdm'] + '.SZSE'
-    df_szse['fhrq'] = df_szse['fhrq'].apply(text_auto_time)
+    # Because the format checker expects datetime64[ns]
+    # df_szse['fhrq'] = df_szse['fhrq'].apply(text_auto_time)
+    df_szse['fhrq'] = pd.to_datetime(df_szse['fhrq'], format='%Y/%m/%d')
 
     df_szse.rename(columns={'gsdm': 'stock_identity',
                             'gsjc': 'name',
@@ -234,12 +236,14 @@ def __fetch_sse_enquiries() -> pd.DataFrame or None:
 
     df_sse['exchange'] = 'SSE'
     df_sse['stockcode'] = df_sse['stockcode'] + '.SSE'
-    df_sse['cmsOpDate'] = df_sse['cmsOpDate'].apply(text_auto_time)
+    # Because the format checker expects datetime64[ns]
+    # df_sse['cmsOpDate'] = df_sse['cmsOpDate'].apply(text_auto_time)
+    df_sse['cmsOpDate'] = pd.to_datetime(df_sse['cmsOpDate'], format='%Y-%m-%d %H:%M:%S')
 
     df_sse.rename(columns={'stockcode': 'stock_identity',
                            'extGSJC': 'name',
-                           'extWTFL': 'enquiry_date',
-                           'cmsOpDate': 'enquiry_topic',
+                           'cmsOpDate': 'enquiry_date',
+                           'extWTFL': 'enquiry_topic',
                            'docTitle': 'enquiry_title'}, inplace=True)
     del df_sse['docURL']
 
