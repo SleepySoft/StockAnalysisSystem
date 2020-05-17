@@ -83,11 +83,13 @@ def get_szse_one_page(page_num: str) -> pd.DataFrame:
         df = pd.DataFrame(res.json()[0]['data'])
         df['ck'] = df['ck'].apply(lambda x: clean_str(x))
         df['hfck'] = df['hfck'].apply(lambda x: clean_str(x))
+        return df
     except Exception as e:
+        print('Get enquiries from szse fail.')
         print(e)
     finally:
         pass
-    return df
+    return None
 
 
 # 获取所有数据
