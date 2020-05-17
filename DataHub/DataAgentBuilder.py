@@ -114,6 +114,56 @@ def build_data_agent(database_entry: DatabaseEntry):
             data_duration=DATA_DURATION_DAILY,
         ),
 
+        DataAgent(
+            uri='Market.Enquiries',
+            database_entry=database_entry,
+
+            depot_name='StockAnalysisSystem',
+            table_prefix='',
+
+            identity_field='stock_identity',
+            datetime_field='enquiry_date',
+
+            query_declare={
+                'stock_identity': ([str], [],                   False,  ''),
+                'exchange':       ([str], [],                   False,  ''),
+                'enquiry_date':   ([tuple, datetime, None], [], False,  ''),
+            },
+            result_declare={
+                'stock_identity': (['str'], [],                 True,  ''),
+                'exchange':       (['str'], [],                 True,  ''),
+                'enquiry_date':   (['datetime'], [],            True,  ''),
+                'enquiry_topic':   (['str'], [],                True,  ''),
+                'enquiry_title':   (['str'], [],                False,  ''),
+            },
+
+            data_duration=DATA_DURATION_FLOW,
+        ),
+
+        DataAgent(
+            uri='Market.Investigation',
+            database_entry=database_entry,
+
+            depot_name='StockAnalysisSystem',
+            table_prefix='',
+
+            identity_field='stock_identity',
+            datetime_field='investigate_date',
+
+            query_declare={
+                'stock_identity':    ([str], [],                   False,  ''),
+                'investigate_date':  ([tuple, datetime, None], [], False,  ''),
+            },
+            result_declare={
+                'stock_identity':    (['str'], [],                 True,  ''),
+                'investigate_date':  (['str'], [],                 True,  ''),
+                'investigate_topic': (['str'], [],                 True,  ''),
+                'investigate_title': (['str'], [],                 True,  ''),
+            },
+
+            data_duration=DATA_DURATION_FLOW,
+        ),
+
         DataAgentStockData(
             uri='Market.NamingHistory',
             database_entry=database_entry,
