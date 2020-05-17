@@ -79,9 +79,14 @@ def get_szse_one_page(page_num: str) -> pd.DataFrame:
     ss = requests_html.HTMLSession()
     url = f'http://www.szse.cn/api/report/ShowReport/data?SHOWTYPE=JSON&CATALOGID=main_wxhj&PAGENO={page_num}'
     res = ss.get(url)
-    df = pd.DataFrame(res.json()[0]['data'])
-    df['ck'] = df['ck'].apply(lambda x: clean_str(x))
-    df['hfck'] = df['hfck'].apply(lambda x: clean_str(x))
+    try:
+        df = pd.DataFrame(res.json()[0]['data'])
+        df['ck'] = df['ck'].apply(lambda x: clean_str(x))
+        df['hfck'] = df['hfck'].apply(lambda x: clean_str(x))
+    except Exception as e:
+        print(e)
+    finally:
+        pass
     return df
 
 
@@ -208,7 +213,7 @@ def plugin_capacities() -> list:
 
 def __fetch_szse_enquiries(since: datetime.datetime) -> pd.DataFrame or None:
     df_szse = None
-    szse_page_count = get_szse_record_count()
+    szse_page_count = get_szse_page_num()
     for page in range(szse_page_count):
         df_page = get_szse_one_page(page + 1)
         # Only update data that later than specified for saving time
