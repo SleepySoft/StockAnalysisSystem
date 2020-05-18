@@ -33,7 +33,7 @@ class Config:
     def save_config(self, config_file: str = 'config.json') -> bool:
         try:
             with open(config_file, 'wt') as f:
-                json.dump(self.__config_dict, f)
+                json.dump(self.__config_dict, f, indent=4)
             global TS_TOKEN
             TS_TOKEN = self.get('TS_TOKEN')
             return True
