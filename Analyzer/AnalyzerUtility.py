@@ -373,7 +373,7 @@ def __calc_avg_score_with_weight(scores: list, weights: list) -> int or None:
             if score != AnalysisResult.SCORE_PASS:
                 return 0
         else:
-            sum_score += score
+            sum_score += score * weight
             sum_weight += weight
     return (sum_score / sum_weight) if sum_weight > 0 else None
 
@@ -388,8 +388,8 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
     ws_comments['A1'] = 'Securities\\Analyzer'
 
     ROW_OFFSET = 2
-    weight_sum = []
-    total_score = []
+    all_weight = []
+    all_score = []
 
     column = 1
     for analyzer_uuid, analysis_result in result.items():
@@ -402,8 +402,8 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
         if column == 1:
             # The first run. Init the total score list here.
             # Flaw: The first column of result should be the full one. Otherwise the index may out of range.
-            weight_sum = [[] for _ in range(0, len(analysis_result))]
-            total_score = [[] for _ in range(0, len(analysis_result))]      # 100: Pass; 0: Fail; 60: Pass with Flaw
+            all_score = [[] for _ in range(0, len(analysis_result))]      # 100: Pass; 0: Fail; 60: Pass with Flaw
+            all_weight = [[] for _ in range(0, len(analysis_result))]
 
             row = 2
             col = index_to_excel_column_name(column)
@@ -429,8 +429,8 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
             ws_comments[col + str(row)] = r.reason
 
             if r.score is not None:
-                weight_sum[row - ROW_OFFSET].append(r.weight)
-                total_score[row - ROW_OFFSET].append(r.score * r.weight)
+                all_score[row - ROW_OFFSET].append(r.score)
+                all_weight[row - ROW_OFFSET].append(r.weight)
             fill_style = __score_to_fill_style(r.score)
 
             ws_score[col + str(row)].fill = fill_style
@@ -442,24 +442,25 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
     row = 1
     col = index_to_excel_column_name(column)
 
-    for score, weight in zip(total_score, weight_sum):
+    for scores, weights in zip(all_score, all_weight):
         if row == 1:
             ws_score[col + str(row)] = 'Total Result'
             row = 2
 
-        if len(score) > 0:
+        if len(scores) > 0:
             # min_score = min(score)
-            avg_score = __calc_avg_score_with_weight(score, weight)
+            avg_score = __calc_avg_score_with_weight(scores, weights)
         else:
             # min_score = None
             avg_score = None
         # fill_text = __score_to_fill_text(min_score)
         # fill_style = __score_to_fill_style(min_score)
+
         fill_text = __score_to_fill_text(avg_score)
         fill_style = __score_to_fill_style(avg_score)
 
         ws_score[col + str(row)] = fill_text
-        ws_comments[col + str(row)] = fill_text
+        ws_comments[col + str(row)] = '%s | %s' % (str(avg_score), fill_text)
 
         ws_score[col + str(row)].fill = fill_style
         ws_comments[col + str(row)].fill = fill_style
