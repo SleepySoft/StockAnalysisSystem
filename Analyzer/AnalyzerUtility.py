@@ -341,9 +341,9 @@ fill_none = openpyxl.styles.PatternFill(patternType="solid", start_color="808080
 def __score_to_fill_style(score: int or None):
     if score is None:
         fill_style = fill_none
-    elif score < 40:
+    elif score < 50:
         fill_style = fill_fail
-    elif score < 60:
+    elif score <= 75:
         fill_style = fill_flaw
     else:
         fill_style = fill_pass
@@ -353,11 +353,13 @@ def __score_to_fill_style(score: int or None):
 def __score_to_fill_text(score: int or None):
     if score is None:
         return '-'
-    elif score < 40:
+    elif score == 0:
+        return 'VETO'
+    elif score <= 50:
         return 'FAIL'
-    elif score < 60:
+    elif score <= 75:
         return 'FLAW'
-    elif score < 100:
+    elif score <= 90:
         return 'WELL'
     else:
         return 'PASS'
@@ -402,7 +404,7 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
         if column == 1:
             # The first run. Init the total score list here.
             # Flaw: The first column of result should be the full one. Otherwise the index may out of range.
-            all_score = [[] for _ in range(0, len(analysis_result))]      # 100: Pass; 0: Fail; 60: Pass with Flaw
+            all_score = [[] for _ in range(0, len(analysis_result))]
             all_weight = [[] for _ in range(0, len(analysis_result))]
 
             row = 2
@@ -440,11 +442,13 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
 
     # Write total score
     row = 1
-    col = index_to_excel_column_name(column)
+    col_rate = index_to_excel_column_name(column)
+    col_vote = index_to_excel_column_name(column + 1)
 
     for scores, weights in zip(all_score, all_weight):
         if row == 1:
-            ws_score[col + str(row)] = 'Total Result'
+            ws_score[col_rate + str(row)] = 'Total Rate'
+            ws_score[col_vote + str(row)] = 'Vote'
             row = 2
 
         if len(scores) > 0:
@@ -459,11 +463,21 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
         fill_text = __score_to_fill_text(avg_score)
         fill_style = __score_to_fill_style(avg_score)
 
-        ws_score[col + str(row)] = fill_text
-        ws_comments[col + str(row)] = '%s | %s' % (str(avg_score), fill_text)
+        # ------------------- Rate -------------------
 
-        ws_score[col + str(row)].fill = fill_style
-        ws_comments[col + str(row)].fill = fill_style
+        ws_score[col_rate + str(row)] = str(int(avg_score))
+        ws_comments[col_rate + str(row)] = str(int(avg_score))
+
+        ws_score[col_rate + str(row)].fill = fill_style
+        ws_comments[col_rate + str(row)].fill = fill_style
+
+        # ------------------- Vote -------------------
+
+        ws_score[col_vote + str(row)] = fill_text
+        ws_comments[col_vote + str(row)] = fill_text
+
+        ws_score[col_vote + str(row)].fill = fill_style
+        ws_comments[col_vote + str(row)].fill = fill_style
 
         row += 1
 
