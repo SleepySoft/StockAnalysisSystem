@@ -1,17 +1,20 @@
-import logging
-logging.getLogger('matplotlib').setLevel(logging.WARNING)
-
 import sys
 import time
 import traceback
+import logging
+from os import sys, path
 from PyQt5.QtWidgets import QApplication
 
-import main_ui
-import config_ui
-import import_all
-import stock_analysis_system
-from Utiltity.ui_utility import *
-from Utiltity.time_utility import *
+self_path = path.dirname(path.abspath(__file__))
+logging.getLogger('matplotlib').setLevel(logging.WARNING)
+
+
+from .import_all import *
+from .UI.main_ui import MainWindow
+from .UI.config_ui import ConfigUi
+from .Conponents.stock_analysis_system as stock_analysis_system
+from .Utiltity.ui_utility import *
+from .Utiltity.time_utility import *
 
 
 def run_ui():
