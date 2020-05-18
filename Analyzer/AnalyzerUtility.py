@@ -363,6 +363,21 @@ def __score_to_fill_text(score: int or None):
         return 'PASS'
 
 
+def __calc_avg_score_with_weight(scores: list, weights: list) -> int or None:
+    sum_score = 0
+    sum_weight = 0
+    for score, weight in zip(scores, weights):
+        if score is None:
+            continue
+        elif weight == AnalysisResult.WEIGHT_ONE_VOTE_VETO:
+            if score != AnalysisResult.SCORE_PASS:
+                return 0
+        else:
+            sum_score += score
+            sum_weight += weight
+    return (sum_score / sum_weight) if sum_weight > 0 else None
+
+
 def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: dict = {}, stock_name_dict: dict = {}):
     wb = openpyxl.Workbook()
     ws_score = wb.active
@@ -373,15 +388,22 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
     ws_comments['A1'] = 'Securities\\Analyzer'
 
     ROW_OFFSET = 2
+    weight_sum = []
     total_score = []
 
     column = 1
     for analyzer_uuid, analysis_result in result.items():
+        # Note that this function will generate the report column by column
+        #   The first column is the securities code and name
+        #   The first row of each column is the name of analyzer
+        # So we need to record the score for each cell, then we can calculate the total score by row at the end
+
         # Write securities column
         if column == 1:
             # The first run. Init the total score list here.
             # Flaw: The first column of result should be the full one. Otherwise the index may out of range.
-            total_score = [[] for _ in range(0, len(analysis_result))]      # 100: Pass; 0: Fail; 50: Pass with None
+            weight_sum = [[] for _ in range(0, len(analysis_result))]
+            total_score = [[] for _ in range(0, len(analysis_result))]      # 100: Pass; 0: Fail; 60: Pass with Flaw
 
             row = 2
             col = index_to_excel_column_name(column)
@@ -407,7 +429,8 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
             ws_comments[col + str(row)] = r.reason
 
             if r.score is not None:
-                total_score[row - ROW_OFFSET].append(r.score)
+                weight_sum[row - ROW_OFFSET].append(r.weight)
+                total_score[row - ROW_OFFSET].append(r.score * r.weight)
             fill_style = __score_to_fill_style(r.score)
 
             ws_score[col + str(row)].fill = fill_style
@@ -419,19 +442,21 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
     row = 1
     col = index_to_excel_column_name(column)
 
-    for score in total_score:
+    for score, weight in zip(total_score, weight_sum):
         if row == 1:
             ws_score[col + str(row)] = 'Total Result'
             row = 2
 
         if len(score) > 0:
-            min_score = min(score)
-            # avg_score = sum(score) / float(len(score))
+            # min_score = min(score)
+            avg_score = __calc_avg_score_with_weight(score, weight)
         else:
-            min_score = None
-            # avg_score = None
-        fill_text = __score_to_fill_text(min_score)
-        fill_style = __score_to_fill_style(min_score)
+            # min_score = None
+            avg_score = None
+        # fill_text = __score_to_fill_text(min_score)
+        # fill_style = __score_to_fill_style(min_score)
+        fill_text = __score_to_fill_text(avg_score)
+        fill_style = __score_to_fill_style(avg_score)
 
         ws_score[col + str(row)] = fill_text
         ws_comments[col + str(row)] = fill_text
