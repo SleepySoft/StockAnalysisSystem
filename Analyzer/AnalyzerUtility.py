@@ -447,8 +447,10 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
 
     for scores, weights in zip(all_score, all_weight):
         if row == 1:
-            ws_score[col_rate + str(row)] = 'Total Rate'
             ws_score[col_vote + str(row)] = 'Vote'
+            ws_comments[col_vote + str(row)] = 'Vote'
+            ws_score[col_rate + str(row)] = 'Total Rate'
+            ws_comments[col_rate + str(row)] = 'Total Rate'
             row = 2
 
         if len(scores) > 0:
