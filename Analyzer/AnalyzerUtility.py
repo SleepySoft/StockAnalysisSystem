@@ -66,7 +66,10 @@ class AnalysisResult:
     SCORE_FAIL = SCORE_MIN
     SCORE_NOT_APPLIED = None
 
-    def __init__(self, securities: str, score: int or bool, reason: str or [str] = ''):
+    WEIGHT_NORMAL = 1
+    WEIGHT_ONE_VOTE_VETO = 999999
+
+    def __init__(self, securities: str, score: int or bool, reason: str or [str] = '', weight: int = WEIGHT_NORMAL):
         self.method = ''
         self.securities = securities
 
@@ -85,6 +88,8 @@ class AnalysisResult:
             self.reason = '\n'.join(reason)
         else:
             self.reason = reason
+
+        self.weight = weight
 
 
 # ----------------------------------------------------------------------------------------------------------------------

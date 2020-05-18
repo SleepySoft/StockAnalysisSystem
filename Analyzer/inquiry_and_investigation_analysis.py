@@ -88,7 +88,7 @@ def analysis_investigation(securities: str, data_hub: DataHubEntry,
     if len(reason) == 0:
         reason.append('近四年无立案调查记录')
 
-    return AnalysisResult(securities, score, reason)
+    return AnalysisResult(securities, score, reason, AnalysisResult.WEIGHT_ONE_VOTE_VETO)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
