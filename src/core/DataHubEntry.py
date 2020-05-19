@@ -1,25 +1,8 @@
-import logging
-from os import sys, path
-root_path = path.dirname(path.dirname(path.abspath(__file__)))
-
-try:
-    from Utiltity.common import *
-    from DataHub.DataAgentBuilder import *
-    from DataHub.DataUtility import DataUtility
-    from Database.DatabaseEntry import DatabaseEntry
-    from Utiltity.plugin_manager import PluginManager
-    from DataHub.UniversalDataCenter import UniversalDataCenter
-except Exception as e:
-    sys.path.append(root_path)
-
-    from Utiltity.common import *
-    from DataHub.DataAgentBuilder import *
-    from DataHub.DataUtility import DataUtility
-    from Database.DatabaseEntry import DatabaseEntry
-    from Utiltity.plugin_manager import PluginManager
-    from DataHub.UniversalDataCenter import UniversalDataCenter
-finally:
-    logger = logging.getLogger('')
+from .DataHub.DataAgentBuilder import *
+from .DataHub.DataUtility import DataUtility
+from .Database.DatabaseEntry import DatabaseEntry
+from .Utiltity.plugin_manager import PluginManager
+from .DataHub.UniversalDataCenter import UniversalDataCenter
 
 
 class DataHubEntry:
