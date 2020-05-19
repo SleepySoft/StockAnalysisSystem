@@ -1,11 +1,8 @@
 import traceback
-
 import numpy as np
 import pandas as pd
 import datetime as datetime
-
 from os import sys, path
-root_path = path.dirname(path.dirname(path.abspath(__file__)))
 
 
 def get_series_item(series: pd.Series, order: int, default: any = None) -> any:
@@ -181,6 +178,7 @@ def DataFrameColumnCopy(df_from: pd.DataFrame, df_to: pd.DataFrame, columns: [st
 
 
 def test_check_date_continuity():
+    root_path = path.dirname(path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
     df = pd.DataFrame.from_csv(root_path + '/TestData/Market_TradeCalender.csv')
     continuity, min_date, max_date = check_date_continuity(df, 'cal_date')
     print('continuity = ' + str(continuity))

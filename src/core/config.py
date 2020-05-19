@@ -1,11 +1,6 @@
 import json
 import traceback
 
-# NOSQL_DB_HOST = 'localhost'
-# NOSQL_DB_PORT = 27017
-# NOSQL_DB_USER = ''
-# NOSQL_DB_PASS = ''
-
 
 # How to get a tushare pro token:
 #   Register an account with this link (my referral link): https://tushare.pro/register?reg=271027

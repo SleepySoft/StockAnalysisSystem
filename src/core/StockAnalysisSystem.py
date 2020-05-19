@@ -9,10 +9,11 @@ author:YuQiu
 @modify:
 """
 
-from os import sys, path
-from Utiltity.common import *
-from Utiltity.task_queue import *
-from Utiltity.time_utility import *
+import os
+
+from .Utiltity.common import *
+from .Utiltity.task_queue import *
+from .Utiltity.time_utility import *
 
 
 class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
@@ -21,8 +22,8 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         self.__quit_lock = 0
         self.__log_errors = []
 
-        import config
-        self.__config = config.Config()
+        from .config import Config
+        self.__config = Config()
         self.__task_queue = TaskQueue()
 
         self.__factor_plugin = None
@@ -72,14 +73,14 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
 
         clock = Clock()
         self.__log_errors = []
-        root_path = path.dirname(path.abspath(__file__))
+        root_path = os.path.dirname(os.path.abspath(__file__))
 
-        import DataHub.DataHubEntry as DataHubEntry
-        import Strategy.StrategyEntry as StrategyEntry
-        import Database.DatabaseEntry as DatabaseEntry
-        import Utiltity.plugin_manager as plugin_manager
+        from .DataHubEntry import DataHubEntry
+        from .StrategyEntry import StrategyEntry
+        from .Database.DatabaseEntry import DatabaseEntry
+        from .Utiltity.plugin_manager import PluginManager
 
-        if not self.__config.load_config(path.join(root_path, 'config.json')):
+        if not self.__config.load_config(os.path.join(root_path, 'config.json')):
             self.__log_errors.append('Load config fail.')
             return False
 
@@ -91,7 +92,6 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         proxy_protocol = self.__config.get('PROXY_PROTOCOL')
         proxy_host = self.__config.get('PROXY_HOST')
         if str_available(proxy_protocol):
-            import os
             if str_available(proxy_host):
                 os.environ[proxy_protocol] = proxy_host
                 print('Set proxy: %s = %s' % (proxy_protocol, proxy_host))
@@ -101,7 +101,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
 
         self.__database_entry = DatabaseEntry.DatabaseEntry()
 
-        if not self.__database_entry.config_sql_db(path.join(root_path, 'Data')):
+        if not self.__database_entry.config_sql_db(os.path.join(root_path, 'Data')):
             self.__log_errors.append('Config SQL database fail.')
             return False
 
@@ -112,27 +112,27 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
             self.__log_errors.append('Config NoSql database fail.')
             return False
 
-        self.__factor_plugin = plugin_manager.PluginManager(path.join(root_path, 'Factor'))
-        self.__strategy_plugin = plugin_manager.PluginManager(path.join(root_path, 'Analyzer'))
-        self.__collector_plugin = plugin_manager.PluginManager(path.join(root_path, 'Collector'))
-        self.__extension_plugin = plugin_manager.PluginManager(path.join(root_path, 'Extension'))
+        self.__factor_plugin = PluginManager(os.path.join(root_path, 'Factor'))
+        self.__strategy_plugin = PluginManager(os.path.join(root_path, 'Analyzer'))
+        self.__collector_plugin = PluginManager(os.path.join(root_path, 'Collector'))
+        self.__extension_plugin = PluginManager(os.path.join(root_path, 'Extension'))
 
         self.__factor_plugin.refresh()
         self.__strategy_plugin.refresh()
         self.__collector_plugin.refresh()
         # self.__extension_plugin.refresh()
 
-        self.__data_hub_entry = DataHubEntry.DataHubEntry(self.__database_entry, self.__collector_plugin)
-        self.__strategy_entry = StrategyEntry.StrategyEntry(self.__strategy_plugin,
+        self.__data_hub_entry = DataHubEntry(self.__database_entry, self.__collector_plugin)
+        self.__strategy_entry = StrategyEntry(self.__strategy_plugin,
                                                             self.__data_hub_entry, self.__database_entry)
 
-        from DataHub.FactorCenter import FactorCenter
+        from .FactorEntry import FactorCenter
         self.__factor_center = FactorCenter(self.__data_hub_entry, self.__database_entry, self.__factor_plugin)
         self.__factor_center.reload_plugin()
         # TODO: Refactor
         self.__data_hub_entry.get_data_center().set_factor_center(self.__factor_center)
 
-        from extension import ExtensionManager
+        from .ExtensionEntry import ExtensionManager
         self.__extension_manager = ExtensionManager(self, self.__extension_plugin)
         self.__extension_manager.init()
 

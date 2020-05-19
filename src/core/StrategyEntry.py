@@ -1,23 +1,10 @@
-import logging
 import traceback
-
 from os import sys, path
-root_path = path.dirname(path.dirname(path.abspath(__file__)))
 
-try:
-    import Utiltity.common as common
-    from DataHub.DataHubEntry import DataHubEntry
-    from Database.DatabaseEntry import DatabaseEntry
-    from Utiltity.plugin_manager import PluginManager
-except Exception as e:
-    sys.path.append(root_path)
-
-    import Utiltity.common as common
-    from DataHub.DataHubEntry import DataHubEntry
-    from Database.DatabaseEntry import DatabaseEntry
-    from Utiltity.plugin_manager import PluginManager
-finally:
-    logger = logging.getLogger('')
+from .Utiltity.common import *
+from .DataHubEntry import DataHubEntry
+from .Database.DatabaseEntry import DatabaseEntry
+from .Utiltity.plugin_manager import PluginManager
 
 
 class StrategyEntry:
@@ -69,6 +56,7 @@ class StrategyEntry:
 # ----------------------------------------------------------------------------------------------------------------------
 
 def __prepare_instance() -> StrategyEntry:
+    root_path = path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
     plugin_mgr = PluginManager(path.join(root_path, 'Analyzer'))
     plugin_mgr.refresh()
     return StrategyEntry(plugin_mgr, None, None)

@@ -2,32 +2,16 @@ import sys
 import datetime
 import traceback
 import pandas as pd
-
 from os import sys, path
-root_path = path.dirname(path.dirname(path.abspath(__file__)))
 
-try:
-    from Utiltity.common import *
-    from Utiltity.dependency import *
-    from Utiltity.df_utility import *
-    from Utiltity.time_utility import *
-    from Database import NoSqlRw
-    from Database import UpdateTableEx
-    from Database.DatabaseEntry import DatabaseEntry
-    from Utiltity.plugin_manager import PluginManager
-except Exception as e:
-    sys.path.append(root_path)
-
-    from Utiltity.common import *
-    from Utiltity.dependency import *
-    from Utiltity.df_utility import *
-    from Utiltity.time_utility import *
-    from Database import NoSqlRw
-    from Database import UpdateTableEx
-    from Database.DatabaseEntry import DatabaseEntry
-    from Utiltity.plugin_manager import PluginManager
-finally:
-    logger = logging.getLogger('')
+from .Database import NoSqlRw
+from .Database import UpdateTableEx
+from .Utiltity.common import *
+from .Utiltity.dependency import *
+from .Utiltity.df_utility import *
+from .Utiltity.time_utility import *
+from .Database.DatabaseEntry import DatabaseEntry
+from .Utiltity.plugin_manager import PluginManager
 
 
 def wrap_list(val: any):
@@ -142,6 +126,7 @@ class FactorCenter:
 # ----------------------------------------------------- Test Code ------------------------------------------------------
 
 def __build_factor_center() -> FactorCenter:
+    root_path = path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
     plugin = PluginManager(path.join(root_path, 'Factor'))
     factor = FactorCenter(None, None, plugin)
     return factor
