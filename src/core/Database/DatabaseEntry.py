@@ -10,24 +10,12 @@ author:Sleepy
 @modify:
 """
 import traceback
-from os import sys, path
+from os import path
 from pymongo import MongoClient
-root_path = path.dirname(path.dirname(path.abspath(__file__)))
 
-try:
-    import config
-    import Utiltity.common as common
-    from Database.SqlRw import SqlAccess
-    from Database.NoSqlRw import ItkvTable
-except Exception as e:
-    sys.path.append(root_path)
-
-    import config
-    import Utiltity.common as common
-    from Database.SqlRw import SqlAccess
-    from Database.NoSqlRw import ItkvTable
-finally:
-    pass
+from .SqlRw import SqlAccess
+from .NoSqlRw import ItkvTable
+from ..Utiltity.common import *
 
 
 class DatabaseEntry:
@@ -36,7 +24,7 @@ class DatabaseEntry:
         self.__mongo_db_port = '27017'
         self.__mongo_db_user = ''
         self.__mongo_db_pass = ''
-        self.__sqlite_db_file = path.join(path.join(root_path, 'Data'), 'sAsUtility.db')
+        self.__sqlite_db_file = ''
 
         self.__mongo_db_url = ''
         self.__sql_db_access = None

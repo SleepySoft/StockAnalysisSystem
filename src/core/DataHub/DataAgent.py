@@ -1,29 +1,14 @@
-import sys
 import datetime
-import traceback
 import pandas as pd
 
-from os import sys, path
-root_path = path.dirname(path.dirname(path.abspath(__file__)))
+from ..Utiltity.common import *
+from ..Utiltity.df_utility import *
+from ..Utiltity.time_utility import *
+from ..Database.NoSqlRw import ItkvTable
+from ..Database.DatabaseEntry import DatabaseEntry
+from ..StockAnalysisSystem import StockAnalysisSystem
 
-try:
-    import Database.NoSqlRw as NoSqlRw
-    from Utiltity.common import *
-    from Utiltity.df_utility import *
-    from Utiltity.time_utility import *
-    from stock_analysis_system import *
-    from Database.DatabaseEntry import *
-except Exception as e:
-    sys.path.append(root_path)
-
-    import Database.NoSqlRw as NoSqlRw
-    from Utiltity.common import *
-    from Utiltity.df_utility import *
-    from Utiltity.time_utility import *
-    from stock_analysis_system import *
-    from Database.DatabaseEntry import *
-finally:
-    logger = logging.getLogger('')
+logger = logging.getLogger('')
 
 
 # --------------------------------------------- Data Declaration Functions ---------------------------------------------
@@ -286,7 +271,7 @@ class DataAgent:
         return self.__database_entry
 
     def data_table(self, uri: str, identity: str or [str],
-                   time_serial: tuple, extra: dict, fields: list) -> NoSqlRw.ItkvTable:
+                   time_serial: tuple, extra: dict, fields: list) -> ItkvTable:
         table_name = self.table_name(uri, identity, time_serial, extra, fields)
         return self.__database_entry.query_nosql_table(self.__depot_name, table_name,
                                                        self.__identity_field, self.__datetime_field)
@@ -355,20 +340,20 @@ class DataAgent:
         table.set_connection_threshold(1)
         for index, row in df.iterrows():
             identity_value = None
-            if NoSqlRw.str_available(identity_field):
+            if str_available(identity_field):
                 if identity_field in list(row.index):
                     identity_value = row[identity_field]
-            if NoSqlRw.str_available(identity_field) and identity_value is None:
+            if str_available(identity_field) and identity_value is None:
                 print('Warning: identity field "' + identity_field + '" of <' + uri + '> missing.')
                 continue
 
             datetime_value = None
-            if NoSqlRw.str_available(datetime_field):
+            if str_available(datetime_field):
                 if datetime_field in list(row.index):
                     datetime_value = row[datetime_field]
                     if isinstance(datetime_value, str):
                         datetime_value = text_auto_time(datetime_value)
-            if NoSqlRw.str_available(datetime_field) and datetime_value is None:
+            if str_available(datetime_field) and datetime_value is None:
                 print('Warning: datetime field "' + datetime_field + '" of <' + uri + '> missing.')
                 continue
             table.bulk_upsert(identity_value, datetime_value, row.dropna().to_dict())

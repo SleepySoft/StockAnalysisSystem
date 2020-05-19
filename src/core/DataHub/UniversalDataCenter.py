@@ -2,32 +2,16 @@ import sys
 import datetime
 import traceback
 import pandas as pd
+from os import path
 
-from os import sys, path
-root_path = path.dirname(path.dirname(path.abspath(__file__)))
-
-try:
-    from Utiltity.common import *
-    from DataHub.DataAgent import *
-    from Utiltity.df_utility import *
-    from Utiltity.time_utility import *
-    from Database import NoSqlRw
-    from Database import UpdateTableEx
-    from Database.DatabaseEntry import DatabaseEntry
-    from Utiltity.plugin_manager import PluginManager
-except Exception as e:
-    sys.path.append(root_path)
-
-    from Utiltity.common import *
-    from DataHub.DataAgent import *
-    from Utiltity.df_utility import *
-    from Utiltity.time_utility import *
-    from Database import NoSqlRw
-    from Database import UpdateTableEx
-    from Database.DatabaseEntry import DatabaseEntry
-    from Utiltity.plugin_manager import PluginManager
-finally:
-    logger = logging.getLogger('')
+from .DataAgent import *
+from ..Utiltity.common import *
+from ..Utiltity.df_utility import *
+from ..Utiltity.time_utility import *
+from ..Database import NoSqlRw
+from ..Database import UpdateTableEx
+from ..Database.DatabaseEntry import DatabaseEntry
+from ..Utiltity.plugin_manager import PluginManager
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -392,6 +376,7 @@ class UniversalDataCenter:
 # ----------------------------------------------------------------------------------------------------------------------
 
 def __build_data_center() -> UniversalDataCenter:
+    root_path = path.dirname(path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
     plugin_path = root_path + '/Collector/'
 
     collector_plugin = PluginManager(plugin_path)

@@ -1,19 +1,8 @@
 import traceback
 from pymongo import MongoClient
 
-from os import sys, path
-root_path = path.dirname(path.dirname(path.abspath(__file__)))
-
-try:
-    from Database.NoSqlRw import *
-    from Utiltity.time_utility import *
-except Exception as e:
-    sys.path.append(root_path)
-
-    from Database.NoSqlRw import *
-    from Utiltity.time_utility import *
-finally:
-    pass
+from .NoSqlRw import *
+from ..Utiltity.time_utility import *
 
 
 class UpdateTableEx:
