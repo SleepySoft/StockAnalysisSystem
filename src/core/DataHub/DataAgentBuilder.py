@@ -1,16 +1,5 @@
-import logging
-from os import sys, path
-root_path = path.dirname(path.dirname(path.abspath(__file__)))
-
-try:
-    from DataHub.DataAgent import *
-    from Database.DatabaseEntry import DatabaseEntry
-except Exception as e:
-    sys.path.append(root_path)
-    from DataHub.DataAgent import *
-    from Database.DatabaseEntry import DatabaseEntry
-finally:
-    logger = logging.getLogger('')
+from .DataAgent import *
+from ..Database.DatabaseEntry import DatabaseEntry
 
 
 def build_data_agent(database_entry: DatabaseEntry):

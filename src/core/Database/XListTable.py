@@ -8,14 +8,13 @@ author:Sleepy
 @function:
 @modify:
 """
-from os import sys, path
-root_path = path.dirname(path.dirname(path.abspath(__file__)))
-
+from os import path
 import pandas as pd
-from Utiltity.common import *
-from Utiltity.time_utility import *
-from Database.SqlRw import SqlAccess
-from stock_analysis_system import StockAnalysisSystem
+
+from .SqlRw import SqlAccess
+from ..Utiltity.common import *
+from ..Utiltity.time_utility import *
+from ..StockAnalysisSystem import StockAnalysisSystem
 
 
 class XListTable:
@@ -85,6 +84,7 @@ class XListTable:
 # ----------------------------------------------------------------------------------------------------------------------
 
 def __prepare_x_table(name: str) -> XListTable:
+    root_path = path.dirname(path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
     data_path = root_path + '/Temporary/'
     sql_db = SqlAccess(data_path + 'sAsUtility.db')
     x_table = XListTable(name, sql_db)

@@ -1,33 +1,11 @@
-import logging
 import threading
 import traceback
 import collections
-
-import numpy as np
 import pandas as pd
-from os import sys, path
-root_path = path.dirname(path.dirname(path.abspath(__file__)))
 
-try:
-    import Utiltity.common as common
-    from Utiltity.time_utility import *
-    from Database.DatabaseEntry import DatabaseEntry
-    from Utiltity.plugin_manager import PluginManager
-    from DataHub.UniversalDataCenter import ParameterChecker
-    from DataHub.UniversalDataCenter import DataAgent
-    from DataHub.UniversalDataCenter import UniversalDataCenter
-except Exception as e:
-    sys.path.append(root_path)
-
-    import Utiltity.common as common
-    from Utiltity.time_utility import *
-    from Database.DatabaseEntry import DatabaseEntry
-    from Utiltity.plugin_manager import PluginManager
-    from DataHub.UniversalDataCenter import ParameterChecker
-    from DataHub.UniversalDataCenter import DataAgent
-    from DataHub.UniversalDataCenter import UniversalDataCenter
-finally:
-    logger = logging.getLogger('')
+from ..Utiltity.common import *
+from ..Utiltity.time_utility import *
+from .UniversalDataCenter import UniversalDataCenter
 
 
 A_SHARE_MARKET = collections.OrderedDict([
