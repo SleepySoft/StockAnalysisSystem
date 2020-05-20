@@ -15,9 +15,6 @@ from datetime import time, datetime
 
 # -----------------------------------------------------------------------------------------------------
 
-
-import logging
-
 logging.basicConfig(
     level=logging.DEBUG,
     format='[%(asctime)s.%(msecs)03d] [ %(levelname)6s ] --- %(message)-200s | (%(filename)s:%(lineno)s)',

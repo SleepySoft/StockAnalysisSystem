@@ -29,7 +29,7 @@ def check_date_continuity(df: pd.DataFrame, field: str) -> tuple:
     min_date = min(date_serial.index)
     max_date = max(date_serial.index)
     date_serial.reindex(index=pd.date_range(min_date, max_date), fill_value=0)
-    continuity = (0 not in date_serial.data)
+    continuity = (0 not in date_serial.values)
     return continuity, min_date, max_date
 
 
@@ -176,16 +176,6 @@ def DataFrameColumnCopy(df_from: pd.DataFrame, df_to: pd.DataFrame, columns: [st
 
 # ----------------------------------------------------- Test Code ------------------------------------------------------
 
-
-def test_check_date_continuity():
-    root_path = path.dirname(path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
-    df = pd.DataFrame.from_csv(root_path + '/TestData/Market_TradeCalender.csv')
-    continuity, min_date, max_date = check_date_continuity(df, 'cal_date')
-    print('continuity = ' + str(continuity))
-    print('min_date = ' + str(min_date))
-    print('max_date = ' + str(max_date))
-
-
 def generate_test_dataframe(rows: [str], cols: [str]) -> pd.DataFrame:
     """
     Generate a test DataFrame
@@ -313,7 +303,6 @@ def test_concat_dataframe_by_row_with_duplicate_column():
 
 
 def test_entry():
-    test_check_date_continuity()
     test_concat_dataframe_by_index()
     test_clip_dataframe()
     test_slice_dataframe_by_datetime()
