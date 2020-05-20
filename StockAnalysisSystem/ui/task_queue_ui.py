@@ -12,14 +12,10 @@ import copy
 import traceback
 import threading
 
-from PyQt5.QtCore import QTimer, pyqtSignal
 from PyQt5.QtWidgets import QHeaderView
+from PyQt5.QtCore import QTimer, pyqtSignal
 
-from Utiltity.common import *
-from Utiltity.ui_utility import *
-from Utiltity.task_queue import *
-from DataHub.DataHubEntry import *
-from Database.UpdateTableEx import *
+from ..core.Utiltity.ui_utility import *
 
 
 # ---------------------------------------------------- self ----------------------------------------------------

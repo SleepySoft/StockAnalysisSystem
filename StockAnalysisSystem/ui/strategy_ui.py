@@ -15,14 +15,12 @@ import threading
 from PyQt5.QtCore import QTimer, pyqtSignal
 from PyQt5.QtWidgets import QHeaderView, QLineEdit, QFileDialog
 
-from Utiltity.common import *
-from Utiltity.ui_utility import *
-from Utiltity.task_queue import *
-from Utiltity.TableViewEx import *
-from Utiltity.time_utility import *
-from Strategy.StrategyEntry import *
-from Analyzer.AnalyzerUtility import *
-from stock_analysis_system import StockAnalysisSystem
+from ..core.StrategyEntry import *
+from ..core.Utiltity.ui_utility import *
+from ..core.Utiltity.TableViewEx import *
+from ..core.Utiltity.time_utility import *
+from ..core.Utiltity.AnalyzerUtility import *
+from ..core.StockAnalysisSystem import StockAnalysisSystem
 
 
 # ---------------------------------------------------- StrategyUi ----------------------------------------------------

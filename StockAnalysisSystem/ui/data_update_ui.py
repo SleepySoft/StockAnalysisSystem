@@ -16,13 +16,13 @@ from PyQt5.QtCore import QTimer, pyqtSignal
 from PyQt5.QtWidgets import QHeaderView
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, Executor
 
-from Utiltity.common import *
-from Utiltity.ui_utility import *
-from Utiltity.task_queue import *
-from Utiltity.TableViewEx import *
-from DataHub.DataHubEntry import *
-from Database.UpdateTableEx import *
-from stock_analysis_system import StockAnalysisSystem
+from ..core.DataHubEntry import *
+from ..core.Utiltity.common import *
+from ..core.Utiltity.ui_utility import *
+from ..core.Utiltity.task_queue import *
+from ..core.Utiltity.TableViewEx import *
+from ..core.Database.UpdateTableEx import *
+from ..core.StockAnalysisSystem import StockAnalysisSystem
 
 
 DEFAULT_INFO = """数据更新界面说明：

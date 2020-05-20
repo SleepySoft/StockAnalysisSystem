@@ -9,14 +9,12 @@ author:Sleepy
 @modify:
 """
 from PyQt5.QtCore import QSize
-from PyQt5.QtWidgets import QLineEdit, QAbstractItemView, QFileDialog, QCheckBox, QComboBox, QGridLayout
+from PyQt5.QtWidgets import QFileDialog, QComboBox
 
-from Utiltity.ui_utility import *
-from Utiltity.df_utility import *
-from Database.XListTable import *
-from DataHub.DataUtility import *
-from Database.DatabaseEntry import *
-from stock_analysis_system import StockAnalysisSystem
+from ..core.Utiltity.ui_utility import *
+from ..core.Database.XListTable import *
+from ..core.Database.DatabaseEntry import *
+from ..core.StockAnalysisSystem import StockAnalysisSystem
 
 
 class XListTableUi(QWidget):
