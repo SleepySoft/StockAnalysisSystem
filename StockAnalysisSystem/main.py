@@ -5,36 +5,35 @@ import logging
 from os import sys, path
 from PyQt5.QtWidgets import QApplication
 
+from StockAnalysisSystem.import_all import *
+from StockAnalysisSystem.ui.main_ui import MainWindow
+from StockAnalysisSystem.ui.config_ui import ConfigUi
+from StockAnalysisSystem.core.Utiltity.ui_utility import *
+from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
+
 self_path = path.dirname(path.abspath(__file__))
 logging.getLogger('matplotlib').setLevel(logging.WARNING)
-
-
-from .import_all import *
-from .UI.main_ui import MainWindow
-from .UI.config_ui import ConfigUi
-from .Conponents.stock_analysis_system as stock_analysis_system
-from .Utiltity.ui_utility import *
-from .Utiltity.time_utility import *
 
 
 def run_ui():
     app = QApplication(sys.argv)
 
-    sas = stock_analysis_system.StockAnalysisSystem()
+    sas = StockAnalysisSystem()
     sas.check_initialize()
 
     while not sas.is_initialized():
-        dlg = WrapperQDialog(config_ui.ConfigUi(False))
+        dlg = WrapperQDialog(ConfigUi(False))
         dlg.exec()
         sas.check_initialize()
 
-    main_wnd = main_ui.MainWindow()
+    main_wnd = MainWindow()
     main_wnd.show()
     sys.exit(app.exec())
 
 
 def update_local(update_list: [str], force: bool = False):
-    sas = stock_analysis_system.StockAnalysisSystem()
+    sas = StockAnalysisSystem()
     sas.check_initialize()
 
     data_hub = sas.get_data_hub_entry()
@@ -106,7 +105,7 @@ def update_local(update_list: [str], force: bool = False):
 
 
 def update_special():
-    sas = stock_analysis_system.StockAnalysisSystem()
+    sas = StockAnalysisSystem()
     data_hub = sas.get_data_hub_entry()
     data_center = data_hub.get_data_center()
     data_utility = data_hub.get_data_utility()
@@ -127,7 +126,7 @@ def run_strategy():
 
 
 def run_calc_factor():
-    sas = stock_analysis_system.StockAnalysisSystem()
+    sas = StockAnalysisSystem()
     data_hub = sas.get_data_hub_entry()
     data_center = data_hub.get_data_center()
 
@@ -151,7 +150,7 @@ def run_calc_factor():
 
 
 def run_console():
-    sas = stock_analysis_system.StockAnalysisSystem()
+    sas = StockAnalysisSystem()
     sas.check_initialize()
 
     # update_special()
@@ -182,7 +181,7 @@ def run_console():
 
 
 def run_test():
-    sas = stock_analysis_system.StockAnalysisSystem()
+    sas = StockAnalysisSystem()
     data_hub = sas.get_data_hub_entry()
     data_center = data_hub.get_data_center()
     result = data_center.query('Finance.BalanceSheet', '600000.SSE',

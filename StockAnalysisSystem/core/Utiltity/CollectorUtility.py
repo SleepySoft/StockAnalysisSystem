@@ -1,20 +1,10 @@
-import datetime
 import pandas as pd
-from os import sys, path
+from os import path
+
+from .common import *
+from .time_utility import *
+
 root_path = path.dirname(path.dirname(path.abspath(__file__)))
-
-try:
-    import config
-    from Utiltity.common import *
-    from Utiltity.time_utility import *
-except Exception as e:
-    sys.path.append(root_path)
-
-    import config
-    from Utiltity.common import *
-    from Utiltity.time_utility import *
-finally:
-    pass
 
 
 def param_as_date_str(kwargs: dict, param: str) -> str:
