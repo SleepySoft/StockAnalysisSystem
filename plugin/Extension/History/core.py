@@ -11,11 +11,9 @@ import traceback
 import posixpath
 from os import sys, path, listdir
 
-sys.path.append(path.dirname(__file__))
-
-from Utility.to_arab import *
-from Utility.history_public import *
-from Utility.history_time import *
+from .Utility.to_arab import *
+from .Utility.history_time import *
+from .Utility.history_public import *
 
 
 # ---------------------------------------------------- Token Parser ----------------------------------------------------

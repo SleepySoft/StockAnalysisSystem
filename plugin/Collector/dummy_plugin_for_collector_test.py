@@ -1,23 +1,8 @@
 import pandas as pd
-from datetime import date
 
-from os import sys, path
-root_path = path.dirname(path.dirname(path.abspath(__file__)))
-
-try:
-    import config
-    from Utiltity.common import *
-    from Utiltity.time_utility import *
-    from Collector.CollectorUtility import *
-except Exception as e:
-    sys.path.append(root_path)
-
-    import config
-    from Utiltity.common import *
-    from Utiltity.time_utility import *
-    from Collector.CollectorUtility import *
-finally:
-    pass
+from StockAnalysisSystem.core.Utiltity.common import *
+from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.Utiltity.CollectorUtility import *
 
 
 # ----------------------------------------------------------------------------------------------------------------------

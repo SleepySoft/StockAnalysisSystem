@@ -1,27 +1,10 @@
-import traceback
 import pandas as pd
 import tushare as ts
-from datetime import date
 
-from os import sys, path
-root_path = path.dirname(path.dirname(path.abspath(__file__)))
-
-try:
-    import config
-    from Utiltity.common import *
-    from Utiltity.df_utility import *
-    from Utiltity.time_utility import *
-    from Collector.CollectorUtility import *
-except Exception as e:
-    sys.path.append(root_path)
-
-    import config
-    from Utiltity.common import *
-    from Utiltity.df_utility import *
-    from Utiltity.time_utility import *
-    from Collector.CollectorUtility import *
-finally:
-    pass
+from StockAnalysisSystem.core.config import TS_TOKEN
+from StockAnalysisSystem.core.Utiltity.common import *
+from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.Utiltity.CollectorUtility import *
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -91,7 +74,7 @@ def __fetch_stock_holder_data(**kwargs) -> pd.DataFrame:
         ts_code = pickup_ts_code(kwargs)
         # since, until = normalize_time_serial(period, default_since(), today())
 
-        pro = ts.pro_api(config.TS_TOKEN)
+        pro = ts.pro_api(TS_TOKEN)
         # time_iter = DateTimeIterator(since, until)
         #
         # result = None
@@ -172,7 +155,7 @@ def __fetch_stock_holder_statistics_piece(**kwargs) -> pd.DataFrame or None:
         since = max([since, since_limit])
 
         clock = Clock()
-        pro = ts.pro_api(config.TS_TOKEN)
+        pro = ts.pro_api(TS_TOKEN)
 
         ts_since = since.strftime('%Y%m%d')
         ts_until = until.strftime('%Y%m%d')
@@ -285,7 +268,7 @@ def __fetch_stock_holder_statistics_full(**kwargs) -> pd.DataFrame or None:
         since, until = normalize_time_serial(period, default_since(), today())
 
         clock = Clock()
-        pro = ts.pro_api(config.TS_TOKEN)
+        pro = ts.pro_api(TS_TOKEN)
         time_iter = DateTimeIterator(since, until)
 
         ts_since = since.strftime('%Y%m%d')

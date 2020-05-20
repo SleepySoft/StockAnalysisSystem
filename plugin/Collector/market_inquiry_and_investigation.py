@@ -1,25 +1,11 @@
-import execjs
-import time
-import traceback
-import requests_html
 import pandas as pd
-from os import sys, path
-root_path = path.dirname(path.dirname(path.abspath(__file__)))
+import execjs
+import requests_html
 
-try:
-    import config
-    from Utiltity.common import *
-    from Utiltity.time_utility import *
-    from Collector.CollectorUtility import *
-except Exception as e:
-    sys.path.append(root_path)
-
-    import config
-    from Utiltity.common import *
-    from Utiltity.time_utility import *
-    from Collector.CollectorUtility import *
-finally:
-    pass
+from StockAnalysisSystem.core.Utiltity.common import *
+from StockAnalysisSystem.core.Utiltity.df_utility import *
+from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.Utiltity.CollectorUtility import *
 
 
 # ----------------------------------------------------------------------------------------------------------------------

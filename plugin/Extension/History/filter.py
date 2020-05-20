@@ -12,8 +12,8 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QTableWidget, QHBoxLayout
     QWidget, QPushButton, QDockWidget, QLineEdit, QAction, qApp, QMessageBox, QDialog, QVBoxLayout, QLabel, QTextEdit, \
     QListWidget, QShortcut
 
-from core import *
-from Utility.ui_utility import *
+from .core import *
+from .Utility.ui_utility import *
 
 
 # ---------------------------------------------------- FilterEditor ----------------------------------------------------

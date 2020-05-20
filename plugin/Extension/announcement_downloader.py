@@ -12,20 +12,10 @@ from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QComboBox
 
 root_path = path.dirname(path.dirname(path.abspath(__file__)))
 
-try:
-    from Utiltity.common import *
-    from Utiltity.ui_utility import *
-    from Utiltity.task_queue import *
-    from Utiltity.time_utility import *
-except Exception as e:
-    sys.path.append(root_path)
-
-    from Utiltity.common import *
-    from Utiltity.ui_utility import *
-    from Utiltity.task_queue import *
-    from Utiltity.time_utility import *
-finally:
-    pass
+from StockAnalysisSystem.core.Utiltity.common import *
+from StockAnalysisSystem.core.Utiltity.ui_utility import *
+from StockAnalysisSystem.core.Utiltity.task_queue import *
+from StockAnalysisSystem.core.Utiltity.time_utility import *
 
 
 # -------------------------------------------- class AnnouncementDownloader --------------------------------------------

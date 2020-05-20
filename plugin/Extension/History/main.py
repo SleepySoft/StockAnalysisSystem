@@ -11,12 +11,12 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QTableWidget, QHBoxLayout
     QWidget, QPushButton, QDockWidget, QLineEdit, QAction, qApp, QMessageBox, QDialog, QVBoxLayout, QLabel, QTextEdit, \
     QListWidget, QShortcut
 
-from core import *
-from editor import *
-from filter import *
-from indexer import *
-from viewer_ex import *
-from Utility.ui_utility import *
+from .core import *
+from .editor import *
+from .filter import *
+from .indexer import *
+from .viewer_ex import *
+from .Utility.ui_utility import *
 
 
 # --------------------------------------------------- Thread Editor ----------------------------------------------------
@@ -458,8 +458,8 @@ class HistoryUi(QMainWindow):
         dialog with options on how to proceed - Save, Close, Cancel buttons
         """
         reply = QMessageBox.question(self,
-                                     QtCore.QCoreApplication.translate('main', "退�?),
-                                     QtCore.QCoreApplication.translate('main', "是否确认退出？"),
+                                     QtCore.QCoreApplication.translate('main', '退出?'),
+                                     QtCore.QCoreApplication.translate('main', '是否确认退出？'),
                                      QMessageBox.Close | QMessageBox.Cancel,
                                      QMessageBox.Cancel)
         if reply == QMessageBox.Close:

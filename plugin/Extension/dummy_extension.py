@@ -1,20 +1,6 @@
-from os import sys, path
 from PyQt5.QtWidgets import QWidget
 
-root_path = path.dirname(path.dirname(path.abspath(__file__)))
-
-try:
-    from DataHub.DataHubEntry import DataHubEntry
-    from Database.DatabaseEntry import DatabaseEntry
-    from stock_analysis_system import StockAnalysisSystem
-except Exception as e:
-    sys.path.append(root_path)
-
-    from DataHub.DataHubEntry import DataHubEntry
-    from Database.DatabaseEntry import DatabaseEntry
-    from stock_analysis_system import StockAnalysisSystem
-finally:
-    pass
+from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 
 
 # ----------------------------------------------------------------------------------------------------------------------

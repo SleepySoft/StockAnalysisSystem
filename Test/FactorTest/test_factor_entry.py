@@ -5,8 +5,8 @@ import traceback
 from os import sys, path
 root_path = path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
 
-from src.core.FactorEntry import FactorCenter
-from src.core.Utiltity.plugin_manager import PluginManager
+from StockAnalysisSystem.core.FactorEntry import FactorCenter
+from StockAnalysisSystem.core.Utiltity.plugin_manager import PluginManager
 
 
 # ----------------------------------------------------- Test Code ------------------------------------------------------
