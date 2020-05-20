@@ -1,21 +1,8 @@
 import pandas as pd
-from datetime import date
 
-from os import sys, path
-root_path = path.dirname(path.dirname(path.abspath(__file__)))
-
-try:
-    from Factor.FactorUtility import *
-    from DataHub.DataHubEntry import DataHubEntry
-    from Database.DatabaseEntry import DatabaseEntry
-except Exception as e:
-    sys.path.append(root_path)
-
-    from Factor.FactorUtility import *
-    from DataHub.DataHubEntry import DataHubEntry
-    from Database.DatabaseEntry import DatabaseEntry
-finally:
-    pass
+from StockAnalysisSystem.core.Utiltity.FactorUtility import *
+from StockAnalysisSystem.core.DataHubEntry import DataHubEntry
+from StockAnalysisSystem.core.Database.DatabaseEntry import DatabaseEntry
 
 
 # Tushare has this item

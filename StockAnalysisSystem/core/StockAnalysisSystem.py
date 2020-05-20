@@ -22,6 +22,8 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         self.__quit_lock = 0
         self.__log_errors = []
 
+        self.__root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
         from .config import Config
         self.__config = Config()
         self.__task_queue = TaskQueue()
@@ -37,6 +39,14 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         self.__factor_center = None
 
         self.__extension_manager = None
+
+    # ----------------------------------------- Path -----------------------------------------
+
+    def get_root_path(self) -> str:
+        return self.__root_path
+
+    def set_root_path(self, root_path: str) -> str:
+        self.__root_path = root_path
 
     # ---------------------------------------- Config ----------------------------------------
 
