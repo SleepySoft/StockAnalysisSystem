@@ -2,32 +2,13 @@ import logging
 import traceback
 
 from os import sys, path
-from PyQt5.QtWidgets import QLineEdit, QAbstractItemView, QFileDialog, QCheckBox, QWidget, QComboBox, QDateTimeEdit
+from PyQt5.QtWidgets import QLineEdit, QCheckBox, QWidget, QComboBox, QDateTimeEdit
 
-root_path = path.dirname(path.dirname(path.abspath(__file__)))
-
-try:
-    import stock_analysis_system
-    import Utiltity.common as common
-    from Utiltity.ui_utility import *
-    from Utiltity.time_utility import *
-    from DataHub.DataUtility import DataUtility
-    from Database.DatabaseEntry import DatabaseEntry
-    from DataHub.UniversalDataCenter import DataAgent
-    from DataHub.UniversalDataCenter import UniversalDataCenter
-except Exception as e:
-    sys.path.append(root_path)
-
-    import stock_analysis_system
-    import Utiltity.common as common
-    from Utiltity.ui_utility import *
-    from Utiltity.time_utility import *
-    from DataHub.DataUtility import DataUtility
-    from Database.DatabaseEntry import DatabaseEntry
-    from DataHub.UniversalDataCenter import DataAgent
-    from DataHub.UniversalDataCenter import UniversalDataCenter
-finally:
-    logger = logging.getLogger('')
+from ..core.Utiltity.common import *
+from ..core.Utiltity.ui_utility import *
+from ..core.Utiltity.time_utility import *
+from ..core.DataHub.UniversalDataCenter import UniversalDataCenter
+from ..core.StockAnalysisSystem import  StockAnalysisSystem
 
 
 class DataHubUi(QWidget):
@@ -110,7 +91,7 @@ class DataHubUi(QWidget):
 
 def main():
     app = QApplication(sys.argv)
-    sas = stock_analysis_system.StockAnalysisSystem()
+    sas = StockAnalysisSystem()
     data_hub = sas.get_data_hub_entry()
     data_center = data_hub.get_data_center()
     dlg = WrapperQDialog(DataHubUi(data_center))
