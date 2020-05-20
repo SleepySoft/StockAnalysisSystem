@@ -49,15 +49,15 @@ class DatabaseEntry:
             conn.close()
 
             # import Database.AliasTable as AliasTable
-            import Database.XListTable as XListTable
+            from .XListTable import XListTable
             # import Database.UpdateTableEx as UpdateTableEx
 
             # self.__alias_table = AliasTable.AliasTable(self.__sql_db_access)
             # self.__update_table = UpdateTableEx.UpdateTableEx(self.__sql_db_access)
 
-            self.__gray_table = XListTable.XListTable('gray_table', self.__sql_db_access)
-            self.__focus_table = XListTable.XListTable('focus_table', self.__sql_db_access)
-            self.__black_table = XListTable.XListTable('black_table', self.__sql_db_access)
+            self.__gray_table = XListTable('gray_table', self.__sql_db_access)
+            self.__focus_table = XListTable('focus_table', self.__sql_db_access)
+            self.__black_table = XListTable('black_table', self.__sql_db_access)
 
             return True
         else:
@@ -89,8 +89,8 @@ class DatabaseEntry:
                                                  waitQueueTimeoutMS=1000)
             self.__mongo_db_client.server_info()
 
-            import Database.UpdateTableEx as UpdateTableEx
-            self.__update_table = UpdateTableEx.UpdateTableEx(self.__mongo_db_client)
+            from .UpdateTableEx import UpdateTableEx
+            self.__update_table = UpdateTableEx(self.__mongo_db_client)
 
             return True
         except Exception as e:

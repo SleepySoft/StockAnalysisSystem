@@ -17,12 +17,13 @@ from .Utiltity.time_utility import *
 
 
 class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
-    def __init__(self):
+    def __init__(self, root_path: str = None):
         self.__inited = False
         self.__quit_lock = 0
         self.__log_errors = []
 
-        self.__root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.__root_path = root_path if str_available(root_path) else \
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
         from .config import Config
         self.__config = Config()
@@ -83,14 +84,13 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
 
         clock = Clock()
         self.__log_errors = []
-        root_path = os.path.dirname(os.path.abspath(__file__))
 
         from .DataHubEntry import DataHubEntry
         from .StrategyEntry import StrategyEntry
         from .Database.DatabaseEntry import DatabaseEntry
         from .Utiltity.plugin_manager import PluginManager
 
-        if not self.__config.load_config(os.path.join(root_path, 'config.json')):
+        if not self.__config.load_config(os.path.join(self.get_root_path(), 'config.json')):
             self.__log_errors.append('Load config fail.')
             return False
 
@@ -109,9 +109,9 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
                 os.environ[proxy_protocol] = ''
                 print('Clear proxy: %s' % proxy_protocol)
 
-        self.__database_entry = DatabaseEntry.DatabaseEntry()
+        self.__database_entry = DatabaseEntry()
 
-        if not self.__database_entry.config_sql_db(os.path.join(root_path, 'Data')):
+        if not self.__database_entry.config_sql_db(os.path.join(self.get_root_path(), 'Data')):
             self.__log_errors.append('Config SQL database fail.')
             return False
 
@@ -122,10 +122,10 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
             self.__log_errors.append('Config NoSql database fail.')
             return False
 
-        self.__factor_plugin = PluginManager(os.path.join(root_path, 'Factor'))
-        self.__strategy_plugin = PluginManager(os.path.join(root_path, 'Analyzer'))
-        self.__collector_plugin = PluginManager(os.path.join(root_path, 'Collector'))
-        self.__extension_plugin = PluginManager(os.path.join(root_path, 'Extension'))
+        self.__factor_plugin = PluginManager(os.path.join(self.get_root_path(), 'plugin', 'Factor'))
+        self.__strategy_plugin = PluginManager(os.path.join(self.get_root_path(), 'plugin', 'Analyzer'))
+        self.__collector_plugin = PluginManager(os.path.join(self.get_root_path(), 'plugin', 'Collector'))
+        self.__extension_plugin = PluginManager(os.path.join(self.get_root_path(), 'plugin', 'Extension'))
 
         self.__factor_plugin.refresh()
         self.__strategy_plugin.refresh()

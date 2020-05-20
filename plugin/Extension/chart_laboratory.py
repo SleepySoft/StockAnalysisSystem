@@ -13,6 +13,7 @@ root_path = path.dirname(path.dirname(path.abspath(__file__)))
 from StockAnalysisSystem.core.FactorEntry import FactorCenter
 from StockAnalysisSystem.core.DataHubEntry import DataHubEntry
 from StockAnalysisSystem.core.Utiltity.ui_utility import *
+from StockAnalysisSystem.core.Utiltity.time_utility import *
 from StockAnalysisSystem.core.Utiltity.AnalyzerUtility import *
 from StockAnalysisSystem.core.Utiltity.securities_selector import *
 from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
