@@ -1,24 +1,10 @@
 import pandas as pd
 import tushare as ts
-from datetime import date
 
-from os import sys, path
-root_path = path.dirname(path.dirname(path.abspath(__file__)))
-
-try:
-    import config
-    from Utiltity.common import *
-    from Utiltity.time_utility import *
-    from Collector.CollectorUtility import *
-except Exception as e:
-    sys.path.append(root_path)
-
-    import config
-    from Utiltity.common import *
-    from Utiltity.time_utility import *
-    from Collector.CollectorUtility import *
-finally:
-    pass
+from StockAnalysisSystem.core.config import TS_TOKEN
+from StockAnalysisSystem.core.Utiltity.common import *
+from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.Utiltity.CollectorUtility import *
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -69,7 +55,7 @@ def __fetch_business_data(**kwargs) -> pd.DataFrame:
         until_year = until.year
 
         result = None
-        pro = ts.pro_api(config.TS_TOKEN)
+        pro = ts.pro_api(TS_TOKEN)
 
         clock = Clock()
         for year in range(since_year, until_year):

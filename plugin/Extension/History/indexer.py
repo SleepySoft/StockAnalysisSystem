@@ -1,7 +1,7 @@
 import sys
 import traceback
 
-from core import *
+from .core import *
 
 
 def main():

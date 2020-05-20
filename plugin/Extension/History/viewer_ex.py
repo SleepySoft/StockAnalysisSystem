@@ -6,10 +6,10 @@ import traceback, math
 from PyQt5.QtCore import QRect, QPoint, QSize
 from PyQt5.QtGui import QPainter, QColor, QFont, QPen, QPolygon, QFontMetrics
 
-from editor import *
-from Utility.ui_utility import *
-from Utility.viewer_utility import *
-from Utility.history_public import *
+from .editor import *
+from .Utility.ui_utility import *
+from .Utility.viewer_utility import *
+from .Utility.history_public import *
 
 
 # ------------------------------------------------------- Clock --------------------------------------------------------

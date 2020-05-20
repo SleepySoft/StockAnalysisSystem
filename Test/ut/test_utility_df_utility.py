@@ -4,8 +4,8 @@ from os import sys, path
 root_path = path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
 sys.path.append(root_path)
 
-from src.core.Utiltity.df_utility import check_date_continuity
-from src.core.Utiltity.df_utility import test_entry as test_entry_df_utility
+from StockAnalysisSystem.core.Utiltity.df_utility import check_date_continuity
+from StockAnalysisSystem.core.Utiltity.df_utility import test_entry as test_entry_df_utility
 
 
 def test_check_date_continuity():

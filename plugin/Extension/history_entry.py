@@ -1,55 +1,13 @@
-import datetime
+from os import path
 
-import pandas as pd
-from datetime import date
-from os import sys, path
+from PyQt5.QtCore import QTimer, QDateTime
+from PyQt5.QtWidgets import QButtonGroup, QDateTimeEdit
 
-from PyQt5.QtWidgets import QWidget, QMainWindow, QButtonGroup, QDateTimeEdit
-from PyQt5.QtWidgets import QApplication, QScrollBar, QSlider, QMenu
-
-from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtCore import Qt, QTimer, QDateTime
-from PyQt5.QtGui import QKeySequence
-from PyQt5.QtWidgets import QStyledItemDelegate, QTreeWidgetItem, QComboBox, QInputDialog, QFileDialog
-
-from PyQt5.QtWidgets import QMainWindow, QApplication, QTableWidget, QHBoxLayout, QTableWidgetItem, \
-    QWidget, QPushButton, QDockWidget, QLineEdit, QAction, qApp, QMessageBox, QDialog, QVBoxLayout, QLabel, QTextEdit, \
-    QListWidget, QShortcut
-
-root_path = path.dirname(path.dirname(path.abspath(__file__)))
-
-try:
-    from Extension.History.core import *
-    from Extension.History.editor import *
-    from Extension.History.filter import *
-    from Extension.History.indexer import *
-    from Extension.History.viewer_ex import *
-    from Extension.History.Utility.candlestick import *
-    from Extension.History.Utility.history_public import *
-    from Extension.History.Utility.viewer_utility import *
-
-    from Utiltity.ui_utility import *
-    from DataHub.DataHubEntry import DataHubEntry
-    from Database.DatabaseEntry import DatabaseEntry
-    from stock_analysis_system import StockAnalysisSystem
-except Exception as e:
-    sys.path.append(root_path)
-
-    from Extension.History.core import *
-    from Extension.History.editor import *
-    from Extension.History.filter import *
-    from Extension.History.indexer import *
-    from Extension.History.viewer_ex import *
-    from Extension.History.Utility.candlestick import *
-    from Extension.History.Utility.history_public import *
-    from Extension.History.Utility.viewer_utility import *
-
-    from Utiltity.ui_utility import *
-    from DataHub.DataHubEntry import DataHubEntry
-    from Database.DatabaseEntry import DatabaseEntry
-    from stock_analysis_system import StockAnalysisSystem
-finally:
-    pass
+from .History.viewer_ex import *
+from .History.Utility.candlestick import *
+from .History.Utility.viewer_utility import *
+from StockAnalysisSystem.core.Utiltity.ui_utility import *
+from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 
 
 class StockMemoEditor(QDialog):

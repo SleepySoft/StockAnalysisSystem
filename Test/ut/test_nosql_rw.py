@@ -2,7 +2,7 @@ from os import sys, path
 root_path = path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
 sys.path.append(root_path)
 
-from src.core.Database.NoSqlRw import test_entry as sub_test_entry
+from StockAnalysisSystem.core.Database.NoSqlRw import test_entry as sub_test_entry
 
 
 def test_entry():

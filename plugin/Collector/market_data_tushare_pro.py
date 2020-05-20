@@ -1,24 +1,10 @@
 import pandas as pd
 import tushare as ts
-from datetime import date
 
-from os import sys, path
-root_path = path.dirname(path.dirname(path.abspath(__file__)))
-
-try:
-    import config
-    from Utiltity.common import *
-    from Utiltity.time_utility import *
-    from Collector.CollectorUtility import *
-except Exception as e:
-    sys.path.append(root_path)
-
-    import config
-    from Utiltity.common import *
-    from Utiltity.time_utility import *
-    from Collector.CollectorUtility import *
-finally:
-    pass
+from StockAnalysisSystem.core.config import TS_TOKEN
+from StockAnalysisSystem.core.Utiltity.common import *
+from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.Utiltity.CollectorUtility import *
 
 
 # ------------------------------------------------------- Fields -------------------------------------------------------
@@ -113,7 +99,7 @@ def plugin_capacities() -> list:
 def __fetch_securities_info(**kwargs) -> pd.DataFrame or None:
     result = check_execute_test_flag(**kwargs)
     if result is None:
-        pro = ts.pro_api(config.TS_TOKEN)
+        pro = ts.pro_api(TS_TOKEN)
         # If we specify the exchange parameter, it raises error.
         result = pro.stock_basic(fields=list(FIELDS.get('Market.SecuritiesInfo').keys()))
     check_execute_dump_flag(result, **kwargs)
@@ -139,7 +125,7 @@ def __fetch_stock_concept(**kwargs) -> pd.DataFrame or None:
     result = check_execute_test_flag(**kwargs)
     if result is None:
         ts_code = pickup_ts_code(kwargs)
-        pro = ts.pro_api(config.TS_TOKEN)
+        pro = ts.pro_api(TS_TOKEN)
         result = pro.concept_detail(ts_code=ts_code, fields=[
             'id', 'concept_name', 'ts_code', 'name', 'in_date', 'out_date'])
     check_execute_dump_flag(result, **kwargs)
@@ -156,7 +142,7 @@ def __fetch_indexes_info(**kwargs) -> pd.DataFrame or None:
 
     result = check_execute_test_flag(**kwargs)
     if result is None:
-        pro = ts.pro_api(config.TS_TOKEN)
+        pro = ts.pro_api(TS_TOKEN)
 
         result = None
         for market in SUPPORT_MARKETS:
@@ -187,7 +173,7 @@ def __fetch_trade_calender(**kwargs) -> pd.DataFrame or None:
         ts_since = since.strftime('%Y%m%d')
         ts_until = until.strftime('%Y%m%d')
 
-        pro = ts.pro_api(config.TS_TOKEN)
+        pro = ts.pro_api(TS_TOKEN)
         # If we specify the exchange parameter, it raises error.
         result = pro.trade_cal('', start_date=ts_since, end_date=ts_until)
     check_execute_dump_flag(result, **kwargs)
@@ -214,7 +200,7 @@ def __fetch_naming_history(**kwargs):
         ts_since = since.strftime('%Y%m%d')
         ts_until = until.strftime('%Y%m%d')
 
-        pro = ts.pro_api(config.TS_TOKEN)
+        pro = ts.pro_api(TS_TOKEN)
         result = pro.namechange(ts_code=ts_code, start_date=ts_since, end_date=ts_until,
                                 fields='ts_code,name,start_date,end_date,ann_date,change_reason')
     check_execute_dump_flag(result, **kwargs)

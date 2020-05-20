@@ -10,26 +10,12 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 root_path = path.dirname(path.dirname(path.abspath(__file__)))
 
-try:
-    from Utiltity.ui_utility import *
-    from Analyzer.AnalyzerUtility import *
-    from Utiltity.securities_selector import *
-    from DataHub.DataHubEntry import DataHubEntry
-    from DataHub.FactorCenter import FactorCenter
-    from Database.DatabaseEntry import DatabaseEntry
-    from stock_analysis_system import StockAnalysisSystem
-except Exception as e:
-    sys.path.append(root_path)
-
-    from Utiltity.ui_utility import *
-    from Analyzer.AnalyzerUtility import *
-    from Utiltity.securities_selector import *
-    from DataHub.DataHubEntry import DataHubEntry
-    from DataHub.FactorCenter import FactorCenter
-    from Database.DatabaseEntry import DatabaseEntry
-    from stock_analysis_system import StockAnalysisSystem
-finally:
-    pass
+from StockAnalysisSystem.core.FactorEntry import FactorCenter
+from StockAnalysisSystem.core.DataHubEntry import DataHubEntry
+from StockAnalysisSystem.core.Utiltity.ui_utility import *
+from StockAnalysisSystem.core.Utiltity.AnalyzerUtility import *
+from StockAnalysisSystem.core.Utiltity.securities_selector import *
+from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 
 
 # ----------------------------------------------------------------------------------------------------------------------

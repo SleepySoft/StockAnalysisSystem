@@ -1,8 +1,8 @@
 from os import sys, path
 root_path = path.dirname(path.dirname(path.abspath(__file__)))
 
-from src.core.Utiltity.time_utility import *
-from src.core.StockAnalysisSystem import StockAnalysisSystem
+from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 
 
 def __test_factor_for_one_stock(sas: StockAnalysisSystem, factors: [str]):

@@ -3,7 +3,7 @@ from os import sys, path
 root_path = path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
 sys.path.append(root_path)
 
-from src.core.Utiltity.common import test_entry as test_entry_common
+from StockAnalysisSystem.core.Utiltity.common import test_entry as test_entry_common
 
 
 def test_entry():

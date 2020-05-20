@@ -3,8 +3,8 @@ import traceback
 from PyQt5.QtWidgets import QLineEdit, QAbstractItemView, QFileDialog, QCheckBox, QWidget, QLabel, QTextEdit, \
     QTabWidget, QComboBox, QGridLayout, QRadioButton, QListWidget, QListWidgetItem, QInputDialog
 
-from core import *
-from Utility.ui_utility import *
+from .core import *
+from .Utility.ui_utility import *
 
 
 # ---------------------------------------------- class HistoryRecordEditor ---------------------------------------------
