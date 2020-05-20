@@ -1,16 +1,8 @@
 from os import sys, path
 root_path = path.dirname(path.dirname(path.abspath(__file__)))
 
-try:
-    from Utiltity.time_utility import *
-    from stock_analysis_system import StockAnalysisSystem
-except Exception as e:
-    sys.path.append(root_path)
-
-    from Utiltity.time_utility import *
-    from stock_analysis_system import StockAnalysisSystem
-finally:
-    pass
+from src.core.Utiltity.time_utility import *
+from src.core.StockAnalysisSystem import StockAnalysisSystem
 
 
 def __test_factor_for_one_stock(sas: StockAnalysisSystem, factors: [str]):
@@ -80,6 +72,40 @@ def test_entry(sas: StockAnalysisSystem):
     test_gross_margin(sas)
     test_operating_margin(sas)
     test_net_profit_rate(sas)
+
+
+# ----------------------------------------------------- File Entry -----------------------------------------------------
+
+def main():
+    test_entry()
+
+    # If program reaches here, all test passed.
+    print('All test passed.')
+
+
+# ------------------------------------------------- Exception Handling -------------------------------------------------
+
+def exception_hook(type, value, tback):
+    # log the exception here
+    print('Exception hook triggered.')
+    print(type)
+    print(value)
+    print(tback)
+    # then call the default handler
+    sys.__excepthook__(type, value, tback)
+
+
+if __name__ == "__main__":
+    sys.excepthook = exception_hook
+    try:
+        main()
+    except Exception as e:
+        print('Error =>', e)
+        print('Error =>', traceback.format_exc())
+        exit()
+    finally:
+        pass
+
 
 
 
