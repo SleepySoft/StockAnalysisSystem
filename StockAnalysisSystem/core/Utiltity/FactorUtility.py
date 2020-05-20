@@ -1,30 +1,9 @@
 import re
-import openpyxl
-import datetime
-import pandas as pd
-from os import sys, path
-root_path = path.dirname(path.dirname(path.abspath(__file__)))
 
-try:
-    import config
-    from Utiltity.common import *
-    from Utiltity.dependency import *
-    from Utiltity.df_utility import *
-    from Utiltity.time_utility import *
-    from DataHub.DataHubEntry import DataHubEntry
-    from Database.DatabaseEntry import DatabaseEntry
-except Exception as e:
-    sys.path.append(root_path)
-
-    import config
-    from Utiltity.common import *
-    from Utiltity.dependency import *
-    from Utiltity.df_utility import *
-    from Utiltity.time_utility import *
-    from DataHub.DataHubEntry import DataHubEntry
-    from Database.DatabaseEntry import DatabaseEntry
-finally:
-    pass
+from .dependency import *
+from .df_utility import *
+from ..DataHubEntry import DataHubEntry
+from ..Database.DatabaseEntry import DatabaseEntry
 
 
 class FactorEngine:
