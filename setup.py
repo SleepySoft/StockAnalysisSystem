@@ -1,5 +1,4 @@
 import os
-import glob
 from setuptools import setup, find_packages
 
 
@@ -18,10 +17,7 @@ def pack_params(**kwargs) -> dict:
 
 
 if __name__ == "__main__":
-    # root_path = os.path.abspath(os.path.dirname(__file__))
-    # plugin_path = os.path.join(root_path, 'plugin', '**', '*')
-    # plugin_files = [filename for filename in glob.iglob(plugin_path, recursive=True)]
-
+    # root_path = os.path.dirname(__file__)
     extra_files = package_files('plugin')
 
     setup_params = pack_params(
