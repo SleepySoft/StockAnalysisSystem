@@ -17,22 +17,19 @@ from .Utiltity.time_utility import *
 
 
 class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
-    def __init__(self, root_path: str = None):
+    def __init__(self, project_path: str = None):
         self.__inited = False
         self.__quit_lock = 0
         self.__log_errors = []
 
-        self.__root_path = root_path if str_available(root_path) else \
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        self.__root_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        self.__project_path = project_path if str_available(project_path) else self.__root_path
 
         from .config import Config
         self.__config = Config()
         self.__task_queue = TaskQueue()
 
-        self.__factor_plugin = None
-        self.__strategy_plugin = None
-        self.__collector_plugin = None
-        self.__extension_plugin = None
+        self.__plugin_table = {}
 
         self.__data_hub_entry = None
         self.__strategy_entry = None
@@ -122,28 +119,35 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
             self.__log_errors.append('Config NoSql database fail.')
             return False
 
-        self.__factor_plugin = PluginManager(os.path.join(self.get_root_path(), 'plugin', 'Factor'))
-        self.__strategy_plugin = PluginManager(os.path.join(self.get_root_path(), 'plugin', 'Analyzer'))
-        self.__collector_plugin = PluginManager(os.path.join(self.get_root_path(), 'plugin', 'Collector'))
-        self.__extension_plugin = PluginManager(os.path.join(self.get_root_path(), 'plugin', 'Extension'))
+        factor_plugin = PluginManager(os.path.join(self.get_root_path(), 'plugin', 'Factor'))
+        strategy_plugin = PluginManager(os.path.join(self.get_root_path(), 'plugin', 'Analyzer'))
+        collector_plugin = PluginManager(os.path.join(self.get_root_path(), 'plugin', 'Collector'))
+        extension_plugin = PluginManager(os.path.join(self.get_root_path(), 'plugin', 'Extension'))
 
-        self.__factor_plugin.refresh()
-        self.__strategy_plugin.refresh()
-        self.__collector_plugin.refresh()
-        # self.__extension_plugin.refresh()
+        self.__plugin_table['Factor'] = factor_plugin
+        self.__plugin_table['Analyzer'] = strategy_plugin
+        self.__plugin_table['Collector'] = collector_plugin
+        self.__plugin_table['Extension'] = extension_plugin
 
-        self.__data_hub_entry = DataHubEntry(self.__database_entry, self.__collector_plugin)
-        self.__strategy_entry = StrategyEntry(self.__strategy_plugin,
+        factor_plugin.refresh()
+        strategy_plugin.refresh()
+        collector_plugin.refresh()
+
+        # Because the ExtensionManager will refresh it.
+        # extension_plugin.refresh()
+
+        self.__data_hub_entry = DataHubEntry(self.__database_entry, collector_plugin)
+        self.__strategy_entry = StrategyEntry(strategy_plugin,
                                                             self.__data_hub_entry, self.__database_entry)
 
         from .FactorEntry import FactorCenter
-        self.__factor_center = FactorCenter(self.__data_hub_entry, self.__database_entry, self.__factor_plugin)
+        self.__factor_center = FactorCenter(self.__data_hub_entry, self.__database_entry, factor_plugin)
         self.__factor_center.reload_plugin()
         # TODO: Refactor
         self.__data_hub_entry.get_data_center().set_factor_center(self.__factor_center)
 
         from .ExtensionEntry import ExtensionManager
-        self.__extension_manager = ExtensionManager(self, self.__extension_plugin)
+        self.__extension_manager = ExtensionManager(self, extension_plugin)
         self.__extension_manager.init()
 
         self.__task_queue.start()
@@ -157,6 +161,12 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         self.__task_queue.join(5)
 
     # -------------------------------------------- Entry --------------------------------------------
+
+    def get_plugin_manager(self, name: str):
+        if name not in self.__plugin_table:
+            print('Warning: the plugin manager name should be one of: ' + str(self.__plugin_table.keys()))
+            return None
+        return self.__plugin_table.get(name, None)
 
     def get_database_entry(self):
         return self.__database_entry if self.check_initialize() else None

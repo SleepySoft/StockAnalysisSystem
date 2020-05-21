@@ -11,41 +11,32 @@ A plug-in module should include following functions:
 
 
 class PluginManager:
-    def __init__(self, plugin_path: str):
-        self.__path = plugin_path
+    def __init__(self, plugin_path: str = ''):
+        self.__path = []
         self.__plugins = []
+        if plugin_path != '':
+            self.add_plugin_path(plugin_path)
+
+    def add_plugin_path(self, plugin_path: str):
+        self.__path.append(plugin_path)
 
     def refresh(self):
         """
         Refresh plugin list immediately. You should call this function if any updates to the plug-in folder.
         :return: None
         """
-
-        from os import sys
-        sys.path.append(self.__path)
-
-        plugin_list = []
-        module_files = os.listdir(self.__path)
-
-        for file_name in module_files:
-            if not file_name.endswith('.py') or file_name.startswith('_') or file_name.startswith('.'):
-                continue
-            plugin_name = os.path.splitext(file_name)[0]
+        all_plugin_list = []
+        for plugin_path in self.__path:
             try:
-                plugin = __import__(plugin_name)
+                plugin_list = self.__load_from_single_path(plugin_path)
+                all_plugin_list.extend(plugin_list)
             except Exception as e:
-                print('Error => When import module: ' + plugin_name)
-                print('Error =>', e)
-                print('Error =>', traceback.format_exc())
-                print('Error => Ignore')
-                continue
+                print('Load plugin from path % Fail.', plugin_path)
+                print(str(e))
+                print('Ignore.')
             finally:
                 pass
-            if not self.check_module_has_function(plugin, 'plugin_prob') or \
-                    not self.check_module_has_function(plugin, 'plugin_capacities'):
-                continue
-            plugin_list.append((file_name, plugin))
-        self.__plugins = plugin_list
+        self.__plugins = all_plugin_list
 
     def all_modules(self) -> list:
         return [plugin for file_name, plugin in self.__plugins]
@@ -104,6 +95,40 @@ class PluginManager:
                 if end_if_success:
                     break
         return result_list
+
+    # ---------------------------------------------------------------------------------------
+
+    def __load_from_single_path(self, plugin_path) -> list:
+        """
+        Refresh plugin list immediately. You should call this function if any updates to the plug-in folder.
+        :return: None
+        """
+
+        from os import sys
+        sys.path.append(plugin_path)
+
+        plugin_list = []
+        module_files = os.listdir(plugin_path)
+
+        for file_name in module_files:
+            if not file_name.endswith('.py') or file_name.startswith('_') or file_name.startswith('.'):
+                continue
+            plugin_name = os.path.splitext(file_name)[0]
+            try:
+                plugin = __import__(plugin_name)
+            except Exception as e:
+                print('Error => When import module: ' + plugin_name)
+                print('Error =>', e)
+                print('Error =>', traceback.format_exc())
+                print('Error => Ignore')
+                continue
+            finally:
+                pass
+            if not self.check_module_has_function(plugin, 'plugin_prob') or \
+                    not self.check_module_has_function(plugin, 'plugin_capacities'):
+                continue
+            plugin_list.append((file_name, plugin))
+        return plugin_list
 
     # --------------------------------------- Execute ---------------------------------------
 
