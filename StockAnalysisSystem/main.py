@@ -5,7 +5,6 @@ import logging
 from os import sys, path
 from PyQt5.QtWidgets import QApplication
 
-from StockAnalysisSystem.import_all import *
 from StockAnalysisSystem.ui.main_ui import MainWindow
 from StockAnalysisSystem.ui.config_ui import ConfigUi
 from StockAnalysisSystem.core.Utiltity.ui_utility import *
