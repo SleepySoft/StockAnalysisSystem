@@ -1,4 +1,16 @@
+import os
+import glob
 from setuptools import setup, find_packages
+
+
+def package_files(directory):
+    paths = []
+    for (path, directories, filenames) in os.walk(directory):
+        if '__pycache__' in path:
+            continue
+        for filename in filenames:
+            paths.append(os.path.join('.', path, filename))
+    return paths
 
 
 def pack_params(**kwargs) -> dict:
@@ -6,6 +18,12 @@ def pack_params(**kwargs) -> dict:
 
 
 if __name__ == "__main__":
+    # root_path = os.path.abspath(os.path.dirname(__file__))
+    # plugin_path = os.path.join(root_path, 'plugin', '**', '*')
+    # plugin_files = [filename for filename in glob.iglob(plugin_path, recursive=True)]
+
+    extra_files = package_files('plugin')
+
     setup_params = pack_params(
         name='StockAnalysisSystem',
         version='0.0.6',
@@ -23,8 +41,7 @@ if __name__ == "__main__":
 
         url='https://gitee.com/SleepySoft/StockAnalysisSystem',
 
-        packages=find_packages(where='.'),
-        include_package_data=True,
+        packages=find_packages(exclude=["Test", "*.tests", "*.tests.*"]),
         platforms='any',
         install_requires=[
             'pyqt5',
@@ -40,6 +57,10 @@ if __name__ == "__main__":
             'matplotlib',
             'requests_html',
             'PyExecJS',
+        ],
+
+        data_files=[
+            ('plugin', extra_files),
         ],
     )
     setup(**setup_params)
