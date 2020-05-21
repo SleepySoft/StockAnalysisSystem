@@ -15,6 +15,7 @@ import tushare as ts
 from .core.Utiltity import *
 
 __all__ = [
+    'api',
     'main',
     'readme',
 ]
