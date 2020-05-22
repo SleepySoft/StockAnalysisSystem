@@ -1,8 +1,11 @@
 import os
+import shutil
 from setuptools import setup, find_packages
 
+root_path = os.path.dirname(__file__)
 
-def package_files(directory):
+
+def pack_files(directory) -> [str]:
     paths = []
     for (path, directories, filenames) in os.walk(directory):
         if '__pycache__' in path:
@@ -12,13 +15,27 @@ def package_files(directory):
     return paths
 
 
+def pack_plugin() -> list:
+    shutil.rmtree(os.path.join(root_path, 'plugin', 'Analyzer', '__pycache__'), ignore_errors=True)
+    shutil.rmtree(os.path.join(root_path, 'plugin', 'Collector', '__pycache__'), ignore_errors=True)
+    shutil.rmtree(os.path.join(root_path, 'plugin', 'Extension', '__pycache__'), ignore_errors=True)
+    shutil.rmtree(os.path.join(root_path, 'plugin', 'Factor', '__pycache__'), ignore_errors=True)
+    return pack_files('plugin')
+
+    # return {
+    #     'plugin/Analyzer', pack_files('plugin/')
+    #     'plugin/Collector', pack_files('plugin')
+    #     'plugin/Extension', pack_files('plugin')
+    #     'plugin/Factor', pack_files('plugin')
+    # }
+
+
 def pack_params(**kwargs) -> dict:
     return kwargs
 
 
 if __name__ == "__main__":
-    # root_path = os.path.dirname(__file__)
-    extra_files = package_files('plugin')
+    # extra_files = pack_plugin()
 
     setup_params = pack_params(
         name='StockAnalysisSystem',
@@ -55,8 +72,8 @@ if __name__ == "__main__":
             'PyExecJS',
         ],
 
-        data_files=[
-            ('plugin', extra_files),
-        ],
+        # data_files=[
+        #     ('StockAnalysisSystem/plugin', extra_files),
+        # ],
     )
     setup(**setup_params)

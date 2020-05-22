@@ -148,7 +148,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         else:
             print('Default plugin not found.')
 
-        if project_plugin_path != default_plugin_path:
+        if os.path.isdir(project_plugin_path) and project_plugin_path != default_plugin_path:
             print('Load project plugin.')
             factor_plugin.add_plugin_path(os.path.join(project_plugin_path, 'Factor'))
             strategy_plugin.add_plugin_path(os.path.join(project_plugin_path, 'Analyzer'))
