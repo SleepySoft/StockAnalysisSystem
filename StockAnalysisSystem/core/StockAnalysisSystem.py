@@ -163,8 +163,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         # extension_plugin.refresh()
 
         self.__data_hub_entry = DataHubEntry(self.__database_entry, collector_plugin)
-        self.__strategy_entry = StrategyEntry(strategy_plugin,
-                                                            self.__data_hub_entry, self.__database_entry)
+        self.__strategy_entry = StrategyEntry(strategy_plugin, self.__data_hub_entry, self.__database_entry)
 
         from .FactorEntry import FactorCenter
         self.__factor_center = FactorCenter(self.__data_hub_entry, self.__database_entry, factor_plugin)

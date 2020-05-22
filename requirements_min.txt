@@ -1,0 +1,13 @@
+pyqt5
+pyqtwebengine
+bs4
+lxml
+requests
+pandas
+pymongo
+openpyxl
+tushare
+pylab-sdk
+matplotlib
+requests_html
+PyExecJS
