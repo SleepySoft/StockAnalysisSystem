@@ -54,7 +54,11 @@ if __name__ == "__main__":
 
         url='https://gitee.com/SleepySoft/StockAnalysisSystem',
 
-        packages=find_packages(exclude=["Test", "*.tests", "*.tests.*"]),
+        packages=find_packages(exclude=["Test", 'test', "*.tests", "*.tests.*"]),
+
+        # packages=find_packages(where='StockAnalysisSystem', exclude=["Test", 'test', "*.tests", "*.tests.*"]),
+        # package_dir={'': 'StockAnalysisSystem'},
+
         platforms='any',
         install_requires=[
             'pyqt5',
