@@ -140,7 +140,7 @@ class ThreadSafeSingleton(type):
 
 # -------------------------------------------- Web related --------------------------------------------
 
-def Download(url: str) -> bytes:
+def Download(url: str) -> bytes or None:
     try:
         r = requests.get(url)
         return r.content

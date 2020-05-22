@@ -43,7 +43,7 @@ class StrategyUi(QWidget):
         self.__task_thread = None
         self.__selector_list = []
         self.__analyzer_list = []
-        self.__result_output = StockAnalysisSystem.get_project_path()
+        self.__result_output = StockAnalysisSystem().get_project_path()
         self.__timing_clock = Clock()
         self.__progress_rate = ProgressRate()
         self.task_finish_signal.connect(self.__on_task_done)
