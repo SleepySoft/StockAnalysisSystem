@@ -17,13 +17,13 @@ from .Utiltity.time_utility import *
 
 
 class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
-    def __init__(self, project_path: str = None):
+    def __init__(self):
         self.__inited = False
         self.__quit_lock = 0
         self.__log_errors = []
 
-        self.__root_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        self.__project_path = project_path if str_available(project_path) else self.__root_path
+        self.__root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.__project_path = self.__root_path
 
         from .config import Config
         self.__config = Config()
@@ -43,8 +43,11 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
     def get_root_path(self) -> str:
         return self.__root_path
 
-    def set_root_path(self, root_path: str) -> str:
-        self.__root_path = root_path
+    def get_project_path(self) -> str:
+        return self.__project_path
+
+    def set_project_path(self, root_path: str):
+        self.__project_path = root_path
 
     # ---------------------------------------- Config ----------------------------------------
 
@@ -73,11 +76,14 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
     def is_initialized(self) -> bool:
         return self.__inited
 
-    def check_initialize(self) -> bool:
+    def check_initialize(self, project_path: str = '') -> bool:
         if self.__inited:
             return True
 
         print('Initializing Stock Analysis System ...')
+
+        if str_available(project_path):
+            self.__project_path = project_path
 
         clock = Clock()
         self.__log_errors = []
@@ -87,7 +93,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         from .Database.DatabaseEntry import DatabaseEntry
         from .Utiltity.plugin_manager import PluginManager
 
-        if not self.__config.load_config(os.path.join(self.get_root_path(), 'config.json')):
+        if not self.__config.load_config(os.path.join(self.get_project_path(), 'config.json')):
             self.__log_errors.append('Load config fail.')
             return False
 
@@ -108,7 +114,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
 
         self.__database_entry = DatabaseEntry()
 
-        if not self.__database_entry.config_sql_db(os.path.join(self.get_root_path(), 'Data')):
+        if not self.__database_entry.config_sql_db(os.path.join(self.get_project_path(), 'Data')):
             self.__log_errors.append('Config SQL database fail.')
             return False
 
@@ -119,15 +125,35 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
             self.__log_errors.append('Config NoSql database fail.')
             return False
 
-        factor_plugin = PluginManager(os.path.join(self.get_root_path(), 'plugin', 'Factor'))
-        strategy_plugin = PluginManager(os.path.join(self.get_root_path(), 'plugin', 'Analyzer'))
-        collector_plugin = PluginManager(os.path.join(self.get_root_path(), 'plugin', 'Collector'))
-        extension_plugin = PluginManager(os.path.join(self.get_root_path(), 'plugin', 'Extension'))
+        factor_plugin = PluginManager()
+        strategy_plugin = PluginManager()
+        collector_plugin = PluginManager()
+        extension_plugin = PluginManager()
 
         self.__plugin_table['Factor'] = factor_plugin
         self.__plugin_table['Analyzer'] = strategy_plugin
         self.__plugin_table['Collector'] = collector_plugin
         self.__plugin_table['Extension'] = extension_plugin
+
+        default_plugin_path = os.path.join(self.get_root_path(), 'plugin')
+        project_plugin_path = os.path.join(self.get_project_path(), 'plugin')
+
+        # Import default plugin
+        if os.path.isdir(default_plugin_path):
+            print('Load default plugin.')
+            factor_plugin.add_plugin_path(os.path.join(default_plugin_path, 'Factor'))
+            strategy_plugin.add_plugin_path(os.path.join(default_plugin_path, 'Analyzer'))
+            collector_plugin.add_plugin_path(os.path.join(default_plugin_path, 'Collector'))
+            extension_plugin.add_plugin_path(os.path.join(default_plugin_path, 'Extension'))
+        else:
+            print('Default plugin not found.')
+
+        if project_plugin_path != default_plugin_path:
+            print('Load project plugin.')
+            factor_plugin.add_plugin_path(os.path.join(project_plugin_path, 'Factor'))
+            strategy_plugin.add_plugin_path(os.path.join(project_plugin_path, 'Analyzer'))
+            collector_plugin.add_plugin_path(os.path.join(project_plugin_path, 'Collector'))
+            extension_plugin.add_plugin_path(os.path.join(project_plugin_path, 'Extension'))
 
         factor_plugin.refresh()
         strategy_plugin.refresh()
