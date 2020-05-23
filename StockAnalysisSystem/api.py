@@ -1,3 +1,5 @@
+import os
+
 from StockAnalysisSystem.ui.main_ui import MainWindow
 from StockAnalysisSystem.ui.config_ui import ConfigUi
 
@@ -20,6 +22,12 @@ from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 
 
 # ---------------------------------- Execution Entry ----------------------------------
+
+def main(project_path: str = None):
+    sas_path = project_path if str_available(project_path) else os.getcwd()
+    sas().check_initialize(sas_path)
+    run_ui()
+
 
 def run_ui():
     app = QApplication(sys.argv)
