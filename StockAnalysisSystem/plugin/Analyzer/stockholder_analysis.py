@@ -26,15 +26,22 @@ def equity_interest_pledge_too_high(securities: str, data_hub: DataHubEntry,
 
     score = 100
     reason = []
+    previous_pledge_times = 0
     for index, row in df.iterrows():
         due_date = row['due_date']
 
         pledge_rate = row['质押比例']
-        if pledge_rate > 50.0:
-            score = 0
-        if pledge_rate > 20.0:
-            reason.append('%s: 质押比例：%.2f%%' % (str(due_date), pledge_rate * 100))
+        pledge_times = row['质押次数']
+        if pledge_times != previous_pledge_times:
+            if pledge_rate > 50.0:
+                score = 0
+            if pledge_rate > 20.0:
+                score = 60
+                reason.append('%s: 质押比例：%.2f%%' % (str(due_date), pledge_rate))
+            previous_pledge_times = pledge_times
 
+    if len(reason) == 0:
+        reason = '近4年没有超过20%的质押记录'
     return AnalysisResult(securities, score, reason)
 
 
