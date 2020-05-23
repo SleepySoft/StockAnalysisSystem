@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     setup_params = pack_params(
         name='StockAnalysisSystem',
-        version='0.0.6',
+        version='0.0.7',
         license='Apache License',
 
         keywords='stock analysis system sas',

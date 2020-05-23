@@ -9,6 +9,14 @@ if "X%1" == "X" (
 ) else if "%1" == "-c" (
 	echo clean
 	goto clean
+	
+) else if "%1" == "-p" (
+	echo pack library
+	goto pack_library
+) else if "%1" == "-u" (
+	echo upload library
+	goto upload_library
+	
 ) else if "%1" == "-e" (
 	echo setup_env
 	goto setup_env
@@ -31,6 +39,8 @@ goto end
 :help
 	echo -b or no param : Build
 	echo -c             : Clean Build
+	echo -p				: Pack library in dist/
+	echo -u				: Upload library in dist/ to pypi
 	echo -e             : Setup cuurent env
 	echo -s             : Re-setup virtual enviroment
 	echo -d             : Delete virtual enviroment
@@ -97,7 +107,18 @@ goto end
 :build
 	pipenv run %0 -build_in_virtual_env
 	goto end
+	
+:pack_library:
+	rmdir /s /q StockAnalysisSystem.egg-info
+	python setup.py clean --all
+	python setup.py sdist
+	goto end
 
+:upload_library
+	pip install --user twine
+	twine upload ./dist/*
+	goto end
+	
 :build_in_virtual_env
 	del main.spec
 	rmdir /s /q dist
@@ -140,6 +161,8 @@ goto end
 	del main.spec
 	rmdir /s /q dist
 	rmdir /s /q build
+	python setup.py clean --all
+	rmdir /s /q StockAnalysisSystem.egg-info
 	goto end
 
 :end
