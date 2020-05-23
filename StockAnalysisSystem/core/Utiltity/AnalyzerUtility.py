@@ -450,8 +450,12 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
 
         # ------------------- Rate -------------------
 
-        ws_score[col_rate + str(row)] = str(int(avg_score))
-        ws_comments[col_rate + str(row)] = str(int(avg_score))
+        if avg_score is not None:
+            ws_score[col_rate + str(row)] = str(int(avg_score))
+            ws_comments[col_rate + str(row)] = str(int(avg_score))
+        else:
+            ws_score[col_rate + str(row)] = '-'
+            ws_comments[col_rate + str(row)] = '-'
 
         ws_score[col_rate + str(row)].fill = fill_style
         ws_comments[col_rate + str(row)].fill = fill_style
