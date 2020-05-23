@@ -80,7 +80,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         if self.__inited:
             return True
 
-        print('Initializing Stock Analysis System ...')
+        print('Initializing Stock Analysis System with project path ' + project_path)
 
         if str_available(project_path):
             self.__project_path = project_path

@@ -7,9 +7,8 @@ import StockAnalysisSystem.api as sas_api
 
 
 def main():
-    project_path = os.path.dirname(os.path.abspath(__file__))
-    sas_api.sas().check_initialize(project_path)
-    sas_api.run_ui()
+    # project_path = os.path.dirname(os.path.abspath(__file__))
+    sas_api.main()
     print('Process Quit.')
 
 

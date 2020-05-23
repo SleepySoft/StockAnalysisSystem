@@ -1,11 +1,15 @@
+import sys
 from os import path
 
 from PyQt5.QtCore import QTimer, QDateTime
 from PyQt5.QtWidgets import QButtonGroup, QDateTimeEdit
 
-from .History.viewer_ex import *
-from .History.Utility.candlestick import *
-from .History.Utility.viewer_utility import *
+root_path = path.dirname(path.dirname(path.abspath(__file__)))
+sys.path.append(root_path)
+
+from History.viewer_ex import *
+from History.Utility.candlestick import *
+from History.Utility.viewer_utility import *
 from StockAnalysisSystem.core.Utiltity.ui_utility import *
 from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 
