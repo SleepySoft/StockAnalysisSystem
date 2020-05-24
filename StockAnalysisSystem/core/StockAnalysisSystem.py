@@ -8,8 +8,8 @@ author:YuQiu
 @function:
 @modify:
 """
-
 import os
+import errno
 
 from .Utiltity.common import *
 from .Utiltity.task_queue import *
@@ -80,10 +80,22 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         if self.__inited:
             return True
 
-        print('Initializing Stock Analysis System with project path ' + project_path)
-
         if str_available(project_path):
             self.__project_path = project_path
+        else:
+            print('Warning: Project path is not available. Please provide a available path in program initialization.')
+        print('Initializing Stock Analysis System with project path : ' + project_path)
+
+        sqlite_data_path = os.path.join(self.get_project_path(), 'Data')
+        config_file_path = os.path.join(self.get_project_path(), 'config.json')
+
+        try:
+            os.makedirs(sqlite_data_path)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                print('Build sqlite data path: %s FAIL' % sqlite_data_path)
+        finally:
+            pass
 
         clock = Clock()
         self.__log_errors = []
@@ -93,7 +105,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         from .Database.DatabaseEntry import DatabaseEntry
         from .Utiltity.plugin_manager import PluginManager
 
-        if not self.__config.load_config(os.path.join(self.get_project_path(), 'config.json')):
+        if not self.__config.load_config(config_file_path):
             self.__log_errors.append('Load config fail.')
             return False
 
@@ -114,9 +126,10 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
 
         self.__database_entry = DatabaseEntry()
 
-        if not self.__database_entry.config_sql_db(os.path.join(self.get_project_path(), 'Data')):
-            self.__log_errors.append('Config SQL database fail.')
-            return False
+        if not self.__database_entry.config_sql_db(sqlite_data_path):
+            self.__log_errors.append('Config SQL database fail, maybe the sqlite data path not exits...Ignore')
+            # Just ignore it.
+            # return False
 
         if not self.__database_entry.config_nosql_db(self.__config.get('NOSQL_DB_HOST'),
                                                      self.__config.get('NOSQL_DB_PORT'),

@@ -52,7 +52,7 @@ class Config:
                 TS_TOKEN = self.get('TS_TOKEN')
             return True
         except Exception as e:
-            print('Load config fail.')
+            print('Load config from %s fail.' % config_file)
             print(e)
             # print(traceback.format_exc())
             return False
