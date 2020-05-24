@@ -16,6 +16,14 @@ if "X%1" == "X" (
 ) else if "%1" == "-u" (
 	echo upload library
 	goto upload_library
+	goto pack_library
+	
+) else if "%1" == "-i" (
+	echo install library
+	goto install_library
+) else if "%1" == "-r" (
+	echo uninstall library
+	goto uninstall_library
 	
 ) else if "%1" == "-e" (
 	echo setup_env
@@ -41,7 +49,9 @@ goto end
 	echo -c             : Clean Build
 	echo -p				: Pack library in dist/
 	echo -u				: Upload library in dist/ to pypi
-	echo -e             : Setup cuurent env
+	Rem echo -i				: Install library for current python enviroment
+	echo -r             : Remove  library from current python enviroment
+	echo -e             : Setup current env
 	echo -s             : Re-setup virtual enviroment
 	echo -d             : Delete virtual enviroment
 	goto end
@@ -117,6 +127,14 @@ goto end
 :upload_library
 	pip install --user twine
 	twine upload ./dist/*
+	goto end
+
+:install_library
+	pip install StockAnalysisSystem
+	goto end
+	
+:uninstall_library
+	pip uninstall StockAnalysisSystem
 	goto end
 	
 :build_in_virtual_env
