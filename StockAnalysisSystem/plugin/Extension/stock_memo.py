@@ -13,132 +13,133 @@ from PyQt5.QtWidgets import QButtonGroup, QDateTimeEdit, QApplication, QLabel, Q
 
 from StockAnalysisSystem.porting.vnpy_chart import *
 from StockAnalysisSystem.core.Utiltity.ui_utility import *
+from StockAnalysisSystem.core.Utiltity.time_utility import *
 from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 
 
-class StockMemoEditor(QDialog):
-    def __init__(self):
-        super(StockMemoEditor, self).__init__()
-
-        self.__source = ''
-        self.__current_record = None
-
-        self.__label_uuid = QLabel()
-        self.__label_source = QLabel()
-        self.__text_record = QTextEdit()
-        self.__datetime_time = QDateTimeEdit(QDateTime.currentDateTime())
-
-        self.__button_apply = QPushButton('保存')
-        self.__button_cancel = QPushButton('取消')
-
-        self.init_ui()
-        self.config_ui()
-
-    def init_ui(self):
-        root_layout = QVBoxLayout()
-        self.setLayout(root_layout)
-
-        group_box, group_layout = create_v_group_box('')
-        group_layout.addWidget(self.__label_uuid)
-        group_layout.addWidget(self.__label_source)
-        group_layout.addWidget(self.__datetime_time)
-        # group_layout.addLayout(horizon_layout([QLabel('笔记ID'), self.__label_uuid]))
-        # group_layout.addLayout(horizon_layout([QLabel('笔记文件'), self.__label_source]))
-        # group_layout.addLayout(horizon_layout([QLabel('记录时间'), self.__datetime_time]))
-
-        root_layout.addWidget(group_box, 0)
-        root_layout.addWidget(self.__text_record, 10)
-
-        root_layout.addLayout(horizon_layout([self.__button_apply, self.__button_cancel]))
-
-        self.setMinimumSize(500, 600)
-
-    def config_ui(self):
-        self.__label_uuid.setEnabled(False)
-        self.__label_source.setEnabled(False)
-        self.setWindowTitle('笔记')
-        self.__datetime_time.setCalendarPopup(True)
-
-        self.__button_apply.clicked.connect(self.on_button_apply)
-        self.__button_cancel.clicked.connect(self.on_button_cancel)
-
-    def on_button_apply(self):
-        if self.__current_record is None:
-            self.__current_record = HistoricalRecord()
-        else:
-            self.__current_record.reset()
-
-        if not self.ui_to_record(self.__current_record):
-            QMessageBox.information(self,
-                                    QtCore.QCoreApplication.translate('History', '错误'),
-                                    QtCore.QCoreApplication.translate('History', '采集界面数据错误'),
-                                    QMessageBox.Ok, QMessageBox.Ok)
-            return
-        if self.__source is None or self.__source == '':
-            QMessageBox.information(self,
-                                    QtCore.QCoreApplication.translate('History', '错误'),
-                                    QtCore.QCoreApplication.translate('History', '没有指定数据源，无法保存'),
-                                    QMessageBox.Ok, QMessageBox.Ok)
-            return
-
-        self.__current_record.set_source(self.__source)
-        self.__history.update_records([self.__current_record])
-
-        records = self.__history.get_record_by_source(self.__source)
-        result = HistoricalRecordLoader.to_local_source(records, self.__source)
-
-        if not result:
-            QMessageBox.information(self,
-                                    QtCore.QCoreApplication.translate('History', '错误'),
-                                    QtCore.QCoreApplication.translate('History', '保存到数据源 [%s] 失败' % self.__source),
-                                    QMessageBox.Ok, QMessageBox.Ok)
-            return
-
-        self.close()
-
-    def on_button_cancel(self):
-        self.close()
-
-    # ---------------------------------------------------------------------------
-
-    def set_memo(self, memo: HistoricalRecord):
-        self.__current_record = memo
-        self.__source = memo.source()
-        self.record_to_ui(memo)
-
-    def set_source(self, source: str):
-        self.__source = source
-
-    def set_memo_datetime(self, date_time: datetime.datetime):
-        self.__datetime_time.setDateTime(date_time)
-
-    # -------------------------------- Operation --------------------------------
-
-    def clear_ui(self):
-        self.__label_uuid.setText('')
-        self.__label_source.setText('')
-        self.__text_record.clear()
-
-    def ui_to_record(self, record: HistoricalRecord) -> bool:
-        input_time = self.__datetime_time.dateTime()
-        input_memo = self.__text_record.toPlainText()
-        date_time = input_time.toPyDateTime()
-
-        record.set_label_tags('time', date_time.strftime('%Y-%m-%d %H:%M:%S'))
-        record.set_label_tags('event', input_memo)
-        record.set_focus_label('time')
-        return True
-
-    def record_to_ui(self, record: HistoricalRecord or str):
-        self.clear_ui()
-
-        self.__label_uuid.setText(LabelTagParser.tags_to_text(record.uuid()))
-        self.__label_source.setText(self.__source)
-        self.__text_record.setText(LabelTagParser.tags_to_text(record.event()))
-
-        since = record.since()
-        pytime = HistoryTime.tick_to_pytime(since)
-        self.__datetime_time.setDateTime(pytime)
+# class StockMemoEditor(QDialog):
+#     def __init__(self):
+#         super(StockMemoEditor, self).__init__()
+#
+#         self.__source = ''
+#         self.__current_record = None
+#
+#         self.__label_uuid = QLabel()
+#         self.__label_source = QLabel()
+#         self.__text_record = QTextEdit()
+#         self.__datetime_time = QDateTimeEdit(QDateTime.currentDateTime())
+#
+#         self.__button_apply = QPushButton('保存')
+#         self.__button_cancel = QPushButton('取消')
+#
+#         self.init_ui()
+#         self.config_ui()
+#
+#     def init_ui(self):
+#         root_layout = QVBoxLayout()
+#         self.setLayout(root_layout)
+#
+#         group_box, group_layout = create_v_group_box('')
+#         group_layout.addWidget(self.__label_uuid)
+#         group_layout.addWidget(self.__label_source)
+#         group_layout.addWidget(self.__datetime_time)
+#         # group_layout.addLayout(horizon_layout([QLabel('笔记ID'), self.__label_uuid]))
+#         # group_layout.addLayout(horizon_layout([QLabel('笔记文件'), self.__label_source]))
+#         # group_layout.addLayout(horizon_layout([QLabel('记录时间'), self.__datetime_time]))
+#
+#         root_layout.addWidget(group_box, 0)
+#         root_layout.addWidget(self.__text_record, 10)
+#
+#         root_layout.addLayout(horizon_layout([self.__button_apply, self.__button_cancel]))
+#
+#         self.setMinimumSize(500, 600)
+#
+#     def config_ui(self):
+#         self.__label_uuid.setEnabled(False)
+#         self.__label_source.setEnabled(False)
+#         self.setWindowTitle('笔记')
+#         self.__datetime_time.setCalendarPopup(True)
+#
+#         self.__button_apply.clicked.connect(self.on_button_apply)
+#         self.__button_cancel.clicked.connect(self.on_button_cancel)
+#
+#     def on_button_apply(self):
+#         if self.__current_record is None:
+#             self.__current_record = HistoricalRecord()
+#         else:
+#             self.__current_record.reset()
+#
+#         if not self.ui_to_record(self.__current_record):
+#             QMessageBox.information(self,
+#                                     QtCore.QCoreApplication.translate('History', '错误'),
+#                                     QtCore.QCoreApplication.translate('History', '采集界面数据错误'),
+#                                     QMessageBox.Ok, QMessageBox.Ok)
+#             return
+#         if self.__source is None or self.__source == '':
+#             QMessageBox.information(self,
+#                                     QtCore.QCoreApplication.translate('History', '错误'),
+#                                     QtCore.QCoreApplication.translate('History', '没有指定数据源，无法保存'),
+#                                     QMessageBox.Ok, QMessageBox.Ok)
+#             return
+#
+#         self.__current_record.set_source(self.__source)
+#         self.__history.update_records([self.__current_record])
+#
+#         records = self.__history.get_record_by_source(self.__source)
+#         result = HistoricalRecordLoader.to_local_source(records, self.__source)
+#
+#         if not result:
+#             QMessageBox.information(self,
+#                                     QtCore.QCoreApplication.translate('History', '错误'),
+#                                     QtCore.QCoreApplication.translate('History', '保存到数据源 [%s] 失败' % self.__source),
+#                                     QMessageBox.Ok, QMessageBox.Ok)
+#             return
+#
+#         self.close()
+#
+#     def on_button_cancel(self):
+#         self.close()
+#
+#     # ---------------------------------------------------------------------------
+#
+#     def set_memo(self, memo: HistoricalRecord):
+#         self.__current_record = memo
+#         self.__source = memo.source()
+#         self.record_to_ui(memo)
+#
+#     def set_source(self, source: str):
+#         self.__source = source
+#
+#     def set_memo_datetime(self, date_time: datetime.datetime):
+#         self.__datetime_time.setDateTime(date_time)
+#
+#     # -------------------------------- Operation --------------------------------
+#
+#     def clear_ui(self):
+#         self.__label_uuid.setText('')
+#         self.__label_source.setText('')
+#         self.__text_record.clear()
+#
+#     def ui_to_record(self, record: HistoricalRecord) -> bool:
+#         input_time = self.__datetime_time.dateTime()
+#         input_memo = self.__text_record.toPlainText()
+#         date_time = input_time.toPyDateTime()
+#
+#         record.set_label_tags('time', date_time.strftime('%Y-%m-%d %H:%M:%S'))
+#         record.set_label_tags('event', input_memo)
+#         record.set_focus_label('time')
+#         return True
+#
+#     def record_to_ui(self, record: HistoricalRecord or str):
+#         self.clear_ui()
+#
+#         self.__label_uuid.setText(LabelTagParser.tags_to_text(record.uuid()))
+#         self.__label_source.setText(self.__source)
+#         self.__text_record.setText(LabelTagParser.tags_to_text(record.event()))
+#
+#         since = record.since()
+#         pytime = HistoryTime.tick_to_pytime(since)
+#         self.__datetime_time.setDateTime(pytime)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -155,7 +156,6 @@ class StockHistoryUi(QWidget):
         super(StockHistoryUi, self).__init__()
 
         self.__sas = sas
-        self.__memo_file = ''
         self.__paint_securities = ''
         self.__paint_trade_data = None
 
@@ -229,12 +229,6 @@ class StockHistoryUi(QWidget):
         self.__check_memo.clicked.connect(self.on_button_memo)
         self.__check_volume.clicked.connect(self.on_button_volume)
         self.__button_ensure.clicked.connect(self.on_button_ensure)
-
-        self.__thread_candlestick.set_thread_min_track_width(9999)
-        self.__thread_candlestick.set_thread_color(QColor(201, 211, 140))
-
-        self.__thread_memo.set_thread_min_track_width(9999)
-        self.__thread_memo.set_thread_color(QColor(130, 57, 53))
 
         self.setMinimumWidth(1280)
         self.setMinimumHeight(800)
@@ -331,15 +325,12 @@ class StockHistoryUi(QWidget):
                 uri = 'TradeData.Stock.Daily'
             trade_data = self.__sas.get_data_hub_entry().get_data_center().query(uri, securities)
 
-            base_path = path.dirname(path.abspath(__file__))
-            history_path = path.join(base_path, 'History')
-            depot_path = path.join(history_path, 'depot')
-            his_file = path.join(depot_path, securities + '.his')
+            # base_path = path.dirname(path.abspath(__file__))
+            # history_path = path.join(base_path, 'History')
+            # depot_path = path.join(history_path, 'depot')
+            # his_file = path.join(depot_path, securities + '.his')
 
-            records = self.__history.load_source(his_file)
-            self.__thread_memo.set_thread_event_indexes(records)
-
-            self.__memo_file = his_file
+            # self.__memo_file = his_file
             self.__paint_trade_data = trade_data
             self.__paint_securities = securities
 
@@ -368,19 +359,50 @@ class StockHistoryUi(QWidget):
             trade_data['high'] = np.log(self.__paint_trade_data['high'])
             trade_data['low'] = np.log(self.__paint_trade_data['low'])
 
-        candle_sticks = build_candle_stick(trade_data)
+        bars = self.df_to_bar_data(trade_data)
 
-        self.__thread_candlestick.clear()
-        for candle_stick in candle_sticks:
-            self.__thread_candlestick.add_axis_items(candle_stick)
-        self.__thread_candlestick.refresh()
+        self.__vnpy_chart.add_plot("candle", hide_x_axis=True)
+        self.__vnpy_chart.add_plot("volume", maximum_height=200)
+        self.__vnpy_chart.add_item(CandleItem, "candle", "candle")
+        self.__vnpy_chart.add_item(VolumeItem, "volume", "volume")
+        self.__vnpy_chart.add_cursor()
+
+        n = 1000
+        history = bars[:n]
+        new_data = bars[n:]
+
+        def update_bar():
+            bar = new_data.pop(0)
+            widget.update_bar(bar)
+
+        timer = QtCore.QTimer()
+        timer.timeout.connect(update_bar)
+        # timer.start(100)
+
+        self.__vnpy_chart.update_history(history)
 
         return True
 
     # TODO: Move it to common place
     @staticmethod
-    def df_to_bar_data() -> [BarData]:
-        pass
+    def df_to_bar_data(df: pd.DataFrame) -> [BarData]:
+        bars = []
+        for index, row in df.iterrows():
+            date_time = row['trade_date']
+            bar = BarData(datetime=date_time,
+                          exchange=Exchange.SSE,
+                          symbol='000001',
+                          gateway_name='ABC')
+
+            bar.interval = Interval.DAILY
+            bar.volume = row['amount'] * 10000
+            bar.open_interest = row['open']
+            bar.open_price = row['open']
+            bar.high_price = row['high']
+            bar.low_price = row['low']
+            bar.close_price = row['close']
+            bars.append(bar)
+        return bars
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -422,7 +444,7 @@ def init(sas: StockAnalysisSystem) -> bool:
 
 
 def widget(parent: QWidget) -> (QWidget, dict):
-    return StockHistoryUi(sasEntry), {'name': 'History', 'show': False}
+    return StockHistoryUi(sasEntry), {'name': '股票笔记', 'show': False}
 
 
 # ------------------------------------------------ File Entry : main() -------------------------------------------------
