@@ -17,20 +17,16 @@ https://github.com/SleepySoft/StockAnalysisSystem
 设计与框架：https://www.bilibili.com/video/BV1u64y1u7dy/  
   
 # 最近更新内容：
-### 增加因子支持  
-### 增加因子图表  
-### 优化载入股票列表的性能问题  
+* 重新组织程序文件结构，使其能够打包成库  
+> 现在本程序可以通过pip install StockAnalysisSystem获取  
+> 详情请见下方说明  
+  
+* 更新相应文档  
   
 # 更新计划：
-将因子整合进统一接口进行访问和管理  
-> 因子通过query统一获取  
-> 因子可以提前计算并缓存  
-> 对于未缓存的因子在请求时运行计算过程  
-> 将数据描述（Prob）从UniversalDataTable中提取出来，使数据加入，更新和检查更加自动化  
-> 以上内容都没想好怎么做，设计上遇到瓶颈，请各位架构大佬赐教OTZ  
   
-加入更多常用的因子  
-接入更多的数据（暂时还是从TS来）  
+* 加入更多常用的因子  
+* 接入更多的数据（暂时还是从TS来）  
   
 # 联系作者
 如果有任何意见及建议，或者对此项目感兴趣的，请联系我：  
@@ -59,36 +55,59 @@ QQ群：931499339，进群验证码：SleepySoft
   
 # 使用方法及软件依赖与配置
   
-## 懒人看这里 
-1. 对于打包好的程序，直接运行main.exe即可
-2. 程序现在提供了脚本帮助用户自动配置python环境，请直接运行“build.bat -e”，为当前的Python环境安装依赖库  
-3. 程序第一次启动时，会自动检查配置并弹出配置界面，请按照提示填写即可。同时这个界面提供mongodb数据的一键导入功能：  
-> 请将offline_data/StockAnalysisSystem.zip.1解压到当前文件夹，导入时选择解压出来的StockAnalysisSystem其文件夹即可  
-> 如果不导入数据，可以通过数据管理界面重新下载（需要正确配置Ts Token）  
-4. 如果是直接运行EXE的用户，导入数据的同时，sAsUtility.db需要手动拷贝到Data目录  
+### 不想运行，直接看结果  
+* 打开analysis_report.xlsx  
   
-## 环境及软件依赖
-1. 使用python3，推荐python3.7. IDE推荐pycharm（如果需要调试）：https://www.jetbrains.com/pycharm/download/#section=windows  
-2. 依赖pandas，推荐使用anaconda的环境：https://www.anaconda.com/distribution/  
-3. 需要安装sqlite：https://www.sqlite.org/index.html  
-4. 需要安装mongodb（免费的社区版即可）：https://www.mongodb.com/what-is-mongodb  
-5. 当前数据采集依赖于tushare的pro接口（未来会加入其它采集方式）  
+### 从网盘下载打包好的程序  
+* 需要安装MongoDB，但不需要安装额外的python库  
+* 解压后直接运行main.exe  
+* 程序第一次启动时，会自动检查配置并弹出配置界面，请按照提示填写即可；如果没有Ts Token，可以胡乱填写  
+* 配置界面提供mongodb数据的一键导入功能（数据同样在网盘下载），请分别导入StockAnalysisSystem及StockDaily数据  
+* 如果不导入数据，可以通过数据管理界面下载（耗时较长），这种情况下需要正确填写Ts Token）  
+  
+### 通过sas库运行程序  
+* 安装sas库  
+> pip install StockAnalysisSystem  
+
+* 导入库及运行  
+> import StockAnalysisSystem.api as sas_api  
+> sas_api.main(<your_project_path>)  
+
+* 关于<your_project_path>  
+> \# 需要指定一个目录用以存放程序所需的文件，默认为os.getcwd()  
+> <your_project_path>/config.json &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # 配置文件  
+> <your_project_path>/Data &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # 数据库目录  
+> <your_project_path>/plugin/Analyze &nbsp;&nbsp;&nbsp; # 插件目录 - Analyzer  
+> <your_project_path>/plugin/Collector &nbsp;&nbsp; # 插件目录 - Collector  
+> <your_project_path>/plugin/Extension &nbsp; # 插件目录 - Extension  
+> <your_project_path>/plugin/Factor &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # 插件目录 - Factor  
+  
+### 搭建环境并从源码运行  
+* 使用python3，推荐python3.7. IDE推荐pycharm：https://www.jetbrains.com/pycharm/download/#section=windows  
+* 依赖pandas，推荐使用anaconda的环境：https://www.anaconda.com/distribution/  
+* 需要安装mongodb（免费的社区版即可）：https://www.mongodb.com/what-is-mongodb  
+* 当前数据采集依赖于tushare的pro接口（未来会加入其它采集方式）  
 > 1.1 在当前运行的python环境中安装tushare：pip install tushare  
 > 1.2 注册一个tushare的账号：https://tushare.pro/register?reg=271027  
 > 1.3 想办法获取500以上的积分（如果没有，无法更新数据，但可以使用离线数据）：https://tushare.pro/document/1?doc_id=13  
 > 1.4 获取你的token并填入配置界面：https://tushare.pro/document/1?doc_id=39  
-6. 其它的依赖项请参照build.bat，或者在当前环境下直接运行build.bat -e  
+
+* 安装其它依赖库（二种选一）  
+> build.bat -e  
+> pip install -r requirements.txt  
+
+* 运行根目录下的main.py
   
-# 软件配置
-当前软件配置全部通过界面进行，请按照界面提示操作即可  
-  
- # 软件运行
-请直接运行main.py，如果有库缺失，请下载依赖库
-对于使用打包好的程序的用户，请直接运行main.exe
-如果不想运行，也可以直接打开analysis_report.xlsx查看分析结果。  
+----------------------------------------------------------------------------------------------------------------------
   
 # 报告格式说明
-报告为表格矩阵，以股票代码为列，以分析算法为行，相交格子为该算法对此股票的评分（0 - 100），默认50分以上为PASS  
+报告为表格矩阵，以股票代码为列，以分析算法为行，相交格子为该算法对此股票的评分（0 - 100）  
+> 0：VETO  
+> 1 -50：FAIL  
+> 51 - 75：FLAW  
+> 76 - 90：WELL  
+> 91 - 100：PASS  
+  
 结果分为两页，第一页为评分，第二页为分析算法输出的详细信息，以供人工核对及查阅  
 绿色为PASS，红色为FAIL，灰色为不适用，或因数据缺失导致无法分析  
 最后一列为总评分，在一行中，只要有一个评分为FAIL，则总评分为FAIL；如果不存在FAIL但存在灰色结果，则总评分为灰色的PASS  
@@ -105,15 +124,16 @@ QQ群：931499339，进群验证码：SleepySoft
 > 限售股解禁: https://tushare.pro/document/2?doc_id=160  
 > 回购数据  
 > 增减持数据（2000积分暂时没戏）: https://tushare.pro/document/2?doc_id=175  
+2.将因子整合进统一接口进行访问和管理  
+> 因子通过query统一获取  
+> 因子可以提前计算并缓存  
+> 对于未缓存的因子在请求时运行计算过程  
+> 以上内容都没想好怎么做，设计上遇到瓶颈，请各位架构大佬赐教OTZ  
 2. 接入股东数据  
 > 实际控制人数据（巨潮）: http://webapi.cninfo.com.cn/#/dataBrowse?id=266  
 3. 加入更多分析算法  
 > 无实际控制人  
 > 去年及未来一年有减持计划  
-  
-5.加入扩展（Extension）功能 -> 20200323：Done  
-> History -> Pending  
-> Chart Lab -> 20200331: Partly Done
 
 11. 整合测试入口，执行一个文件即可运行所有测试  
 21. 将数据迁移到MongoDB  
@@ -161,8 +181,15 @@ QQ群：931499339，进群验证码：SleepySoft
   
 ----------------------------------------------------------------------------------------------------------------------
 # 任务回收站  
- 
+   
+> 将数据描述（Prob）从UniversalDataTable中提取出来，使数据加入，更新和检查更加自动化  
+
 将分析过程用到的参数抽取为因子 -> 20200507: Done  
+  
+5.加入扩展（Extension）功能 -> 20200323：Done  
+> History -> 效果不佳，考虑使用vnpy的K线图库  
+> Chart Lab -> 20200331: Partly Done
+> 因子图表 -> Done  
   
 #### History:  
 > 入口：上方菜单 Extension -> History  
