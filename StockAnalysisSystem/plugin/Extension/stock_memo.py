@@ -6,7 +6,8 @@ import pandas as pd
 from os import path
 
 from PyQt5 import QtCore
-from PyQt5.QtCore import QTimer, QDateTime
+from PyQt5.QtCore import QTimer, QDateTime, QPoint
+from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QButtonGroup, QDateTimeEdit, QApplication, QLabel, QTextEdit, QPushButton, QVBoxLayout, \
     QMessageBox, QWidget, QComboBox, QCheckBox, QRadioButton
 
@@ -158,15 +159,8 @@ class StockHistoryUi(QWidget):
         self.__paint_securities = ''
         self.__paint_trade_data = None
 
-        # History
-        self.__history = History()
-        self.__time_axis = TimeAxis()
-        self.__time_axis.set_agent(self)
-        self.__time_axis.set_history_core(self.__history)
-        self.__time_axis.popup_editor_for_index = self.popup_editor_for_index
-
-        self.__thread_candlestick = TimeThreadBase()
-        self.__thread_memo = HistoryIndexTrack()
+        # vnpy chart
+        self.__vnpy_chart = ChartWidget()
 
         # Timer for update stock list
         self.__timer = QTimer()
@@ -213,7 +207,7 @@ class StockHistoryUi(QWidget):
 
         group_box, group_layout = create_v_group_box('Securities')
 
-        main_layout.addWidget(self.__time_axis, 99)
+        main_layout.addWidget(self.__vnpy_chart, 99)
         main_layout.addWidget(group_box)
 
         group_layout.addLayout(horizon_layout([
@@ -242,23 +236,13 @@ class StockHistoryUi(QWidget):
         self.__thread_memo.set_thread_min_track_width(9999)
         self.__thread_memo.set_thread_color(QColor(130, 57, 53))
 
-        self.__time_axis.set_axis_offset(0.20)
-        self.__time_axis.set_axis_layout(LAYOUT_HORIZON)
-        self.__time_axis.set_time_range(HistoryTime.years_to_seconds(2010), HistoryTime.years_to_seconds(2020))
-        self.__time_axis.set_axis_time_range_limit(HistoryTime.years_to_seconds(1990), HistoryTime.now_tick())
-        self.__time_axis.set_axis_scale_step(HistoryTime.TICK_LEAP_YEAR)
-        self.__time_axis.set_axis_scale_step_limit(HistoryTime.TICK_DAY, HistoryTime.TICK_LEAP_YEAR * 2)
-
-        self.__time_axis.add_history_thread(self.__thread_memo, ALIGN_LEFT)
-        self.__time_axis.add_history_thread(self.__thread_candlestick, ALIGN_RIGHT)
-
         self.setMinimumWidth(1280)
         self.setMinimumHeight(800)
 
         # ------------------ Right Button Menu ------------------
 
-        self.__time_axis.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.__time_axis.customContextMenuRequested.connect(self.on_custom_menu)
+        # self.__time_axis.setContextMenuPolicy(Qt.CustomContextMenu)
+        # self.__time_axis.customContextMenuRequested.connect(self.on_custom_menu)
 
     def on_timer(self):
         # Check stock list ready and update combobox
@@ -305,33 +289,34 @@ class StockHistoryUi(QWidget):
     # ------------------------------ Right Click Menu ------------------------------
 
     def on_custom_menu(self, pos: QPoint):
-        align = self.__time_axis.align_from_point(pos)
-        thread = self.__time_axis.thread_from_point(pos)
-
-        opt_add_memo = None
-
-        menu = QMenu()
-        if thread == self.__thread_memo:
-            opt_add_memo = menu.addAction("新增笔记")
-            action = menu.exec_(self.__time_axis.mapToGlobal(pos))
-
-            if action == opt_add_memo:
-                tick = self.__time_axis.tick_from_point(pos)
-                date_time = HistoryTime.tick_to_pytime(tick)
-                editor = StockMemoEditor(self.__history)
-                editor.set_memo_datetime(date_time)
-                editor.set_source(self.__memo_file)
-                editor.exec_()
+        pass
+        # align = self.__time_axis.align_from_point(pos)
+        # thread = self.__time_axis.thread_from_point(pos)
+        #
+        # opt_add_memo = None
+        #
+        # menu = QMenu()
+        # if thread == self.__thread_memo:
+        #     opt_add_memo = menu.addAction("新增笔记")
+        #     action = menu.exec_(self.__time_axis.mapToGlobal(pos))
+        #
+        #     if action == opt_add_memo:
+        #         tick = self.__time_axis.tick_from_point(pos)
+        #         date_time = HistoryTime.tick_to_pytime(tick)
+        #         editor = StockMemoEditor(self.__history)
+        #         editor.set_memo_datetime(date_time)
+        #         editor.set_source(self.__memo_file)
+        #         editor.exec_()
 
     # --------------------------------------------------------------
 
-    def popup_editor_for_index(self, index: HistoricalRecord):
-        if index is None:
-            print('None index.')
-            return
-        editor = StockMemoEditor(self.__history)
-        editor.set_memo(index)
-        editor.exec_()
+    # def popup_editor_for_index(self, index: HistoricalRecord):
+    #     if index is None:
+    #         print('None index.')
+    #         return
+    #     editor = StockMemoEditor(self.__history)
+    #     editor.set_memo(index)
+    #     editor.exec_()
 
     # ------------------------------------------------------------------------------
 
@@ -391,6 +376,11 @@ class StockHistoryUi(QWidget):
         self.__thread_candlestick.refresh()
 
         return True
+
+    # TODO: Move it to common place
+    @staticmethod
+    def df_to_bar_data() -> [BarData]:
+        pass
 
 
 # ----------------------------------------------------------------------------------------------------------------------
