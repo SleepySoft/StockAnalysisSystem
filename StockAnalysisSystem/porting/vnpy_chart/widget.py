@@ -221,9 +221,10 @@ class ChartWidget(pg.PlotWidget):
         """
         Reimplement this method of parent to update current max_ix value.
         """
-        view = self._first_plot.getViewBox()
-        view_range = view.viewRange()
-        self._right_ix = max(0, view_range[0][1])
+        if self._first_plot is not None:
+            view = self._first_plot.getViewBox()
+            view_range = view.viewRange()
+            self._right_ix = max(0, view_range[0][1])
 
         super().paintEvent(event)
 
