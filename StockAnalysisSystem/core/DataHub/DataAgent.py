@@ -438,6 +438,8 @@ class DataAgentSecurityDaily(DataAgent):
     def query(self, uri: str, identity: str or [str], time_serial: tuple,
               extra: dict, fields: list) -> pd.DataFrame or None:
         result = None
+        if not isinstance(identity, (list, tuple)):
+            identity = [identity]
         for _id in identity:
             df = super(DataAgentSecurityDaily, self).query(uri, _id, time_serial, extra, fields)
             if df is None or len(df) == 0:
