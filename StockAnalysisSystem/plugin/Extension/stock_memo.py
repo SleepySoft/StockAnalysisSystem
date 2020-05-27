@@ -238,6 +238,19 @@ class StockHistoryUi(QWidget):
         # self.__time_axis.setContextMenuPolicy(Qt.CustomContextMenu)
         # self.__time_axis.customContextMenuRequested.connect(self.on_custom_menu)
 
+        self.__vnpy_chart.add_plot("candle", hide_x_axis=True)
+        self.__vnpy_chart.add_plot("volume", maximum_height=200)
+        self.__vnpy_chart.add_item(CandleItem, "candle", "candle")
+        self.__vnpy_chart.add_item(VolumeItem, "volume", "volume")
+        self.__vnpy_chart.add_cursor()
+
+        self.__vnpy_chart.scene().sigMouseClicked.connect(self.on_chart_clicked)
+
+    def on_chart_clicked(self, event):
+        items = self.__vnpy_chart.scene().items(event.scenePos())
+        print(str(items))
+        # print("Plots:" + str([x for x in items if isinstance(x, pg.PlotItem)]))
+
     def on_timer(self):
         # Check stock list ready and update combobox
         data_utility = self.__sas.get_data_hub_entry().get_data_utility()
@@ -360,12 +373,6 @@ class StockHistoryUi(QWidget):
             trade_data['low'] = np.log(self.__paint_trade_data['low'])
 
         bars = self.df_to_bar_data(trade_data, securities)
-
-        self.__vnpy_chart.add_plot("candle", hide_x_axis=True)
-        self.__vnpy_chart.add_plot("volume", maximum_height=200)
-        self.__vnpy_chart.add_item(CandleItem, "candle", "candle")
-        self.__vnpy_chart.add_item(VolumeItem, "volume", "volume")
-        self.__vnpy_chart.add_cursor()
 
         n = 1000
         history = bars[:n]
