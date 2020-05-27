@@ -3,7 +3,7 @@ from typing import List, Dict, Type
 import pyqtgraph as pg
 
 from PyQt5 import QtGui, QtWidgets, QtCore
-from .bar_data import BarData
+from .data import BarData
 
 from .manager import BarManager
 from .base import (

@@ -21,6 +21,8 @@ class BarData:
     low_price: float = 0
     close_price: float = 0
 
+    extra: dict = None
+
     def __post_init__(self):
         """"""
         self.vt_symbol = f"{self.symbol}.{self.exchange.value}"

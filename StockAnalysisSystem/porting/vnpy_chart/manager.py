@@ -1,7 +1,7 @@
 from typing import Dict, List, Tuple
 from datetime import datetime
 
-from .bar_data import BarData
+from .data import BarData
 
 from .base import to_int
 

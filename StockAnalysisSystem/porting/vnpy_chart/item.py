@@ -4,9 +4,9 @@ from typing import List, Dict, Tuple
 import pyqtgraph as pg
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from .bar_data import BarData
+from .data import BarData
 
-from .base import UP_COLOR, DOWN_COLOR, PEN_WIDTH, BAR_WIDTH
+from .base import UP_COLOR, DOWN_COLOR, WHITE_COLOR, PEN_WIDTH, BAR_WIDTH
 from .manager import BarManager
 
 
@@ -19,8 +19,8 @@ class ChartItem(pg.GraphicsObject):
 
         self._manager: BarManager = manager
 
-        self._bar_picutures: Dict[int, QtGui.QPicture] = {}
-        self._item_picuture: QtGui.QPicture = None
+        self._bar_pictures: Dict[int, QtGui.QPicture] = {}
+        self._item_picture: QtGui.QPicture = None
 
         self._up_pen: QtGui.QPen = pg.mkPen(
             color=UP_COLOR, width=PEN_WIDTH
@@ -71,12 +71,12 @@ class ChartItem(pg.GraphicsObject):
         """
         Update a list of bar data.
         """
-        self._bar_picutures.clear()
+        self._bar_pictures.clear()
 
         bars = self._manager.get_all_bars()
         for ix, bar in enumerate(bars):
             bar_picture = self._draw_bar_picture(ix, bar)
-            self._bar_picutures[ix] = bar_picture
+            self._bar_pictures[ix] = bar_picture
 
         self.update()
 
@@ -87,7 +87,7 @@ class ChartItem(pg.GraphicsObject):
         ix = self._manager.get_index(bar.datetime)
 
         bar_picture = self._draw_bar_picture(ix, bar)
-        self._bar_picutures[ix] = bar_picture
+        self._bar_pictures[ix] = bar_picture
 
         self.update()
 
@@ -113,25 +113,26 @@ class ChartItem(pg.GraphicsObject):
 
         min_ix = int(rect.left())
         max_ix = int(rect.right())
-        max_ix = min(max_ix, len(self._bar_picutures))
+        max_ix = min(max_ix, len(self._bar_pictures))
 
         rect_area = (min_ix, max_ix)
-        if rect_area != self._rect_area or not self._item_picuture:
+        if rect_area != self._rect_area or not self._item_picture:
             self._rect_area = rect_area
             self._draw_item_picture(min_ix, max_ix)
 
-        self._item_picuture.play(painter)
+        self._item_picture.play(painter)
 
     def _draw_item_picture(self, min_ix: int, max_ix: int) -> None:
         """
         Draw the picture of item in specific range.
         """
-        self._item_picuture = QtGui.QPicture()
-        painter = QtGui.QPainter(self._item_picuture)
+        self._item_picture = QtGui.QPicture()
+        painter = QtGui.QPainter(self._item_picture)
 
         for n in range(min_ix, max_ix):
-            bar_picture = self._bar_picutures[n]
-            bar_picture.play(painter)
+            bar_picture = self._bar_pictures[n]
+            if bar_picture is not None:
+                bar_picture.play(painter)
 
         painter.end()
 
@@ -139,8 +140,8 @@ class ChartItem(pg.GraphicsObject):
         """
         Clear all data in the item.
         """
-        self._item_picuture = None
-        self._bar_picutures.clear()
+        self._item_picture = None
+        self._bar_pictures.clear()
         self.update()
 
 
@@ -196,7 +197,7 @@ class CandleItem(ChartItem):
         rect = QtCore.QRectF(
             0,
             min_price,
-            len(self._bar_picutures),
+            len(self._bar_pictures),
             max_price - min_price
         )
         return rect
@@ -283,7 +284,7 @@ class VolumeItem(ChartItem):
         rect = QtCore.QRectF(
             0,
             min_volume,
-            len(self._bar_picutures),
+            len(self._bar_pictures),
             max_volume - min_volume
         )
         return rect
@@ -309,3 +310,85 @@ class VolumeItem(ChartItem):
             text = ""
 
         return text
+
+
+class MemoItem(ChartItem):
+    """"""
+
+    TOP = 9.0
+    BOTTOM = 0.0
+
+    def __init__(self, manager: BarManager):
+        """"""
+        self._border_pen: QtGui.QPen = pg.mkPen(
+            color=WHITE_COLOR, width=PEN_WIDTH
+        )
+        self._background_brush: QtGui.QBrush = pg.mkBrush(color=UP_COLOR)
+        super().__init__(manager)
+
+    def _draw_bar_picture(self, ix: int, bar: BarData) -> QtGui.QPicture or None:
+        """"""
+        # if bar.extra is None or bar.extra.get('memo', None) is None:
+        #     return None
+
+        # Create objects
+        memo_picture = QtGui.QPicture()
+        painter = QtGui.QPainter(memo_picture)
+
+        # memo = bar.extra.get('memo', None)
+
+        painter.setPen(self._border_pen)
+        painter.setBrush(self._background_brush)
+
+        rect = QtCore.QRectF(
+            ix - BAR_WIDTH,
+            MemoItem.TOP,
+            BAR_WIDTH * 2,
+            MemoItem.BOTTOM
+        )
+
+        painter.drawText(rect, 'Success')
+        painter.drawRect(rect)
+
+        # Finish
+        painter.end()
+        return memo_picture
+
+    def boundingRect(self) -> QtCore.QRectF:
+        """"""
+        rect = QtCore.QRectF(
+            0,
+            MemoItem.BOTTOM,
+            len(self._bar_pictures),
+            MemoItem.TOP
+        )
+        return rect
+
+    def get_y_range(self, min_ix: int = None, max_ix: int = None) -> Tuple[float, float]:
+        return MemoItem.BOTTOM, MemoItem.TOP
+
+    def get_info_text(self, ix: int) -> str:
+        """
+        Get information text to show by cursor.
+        """
+        bar = self._manager.get_bar(ix)
+
+        # if bar and bar.extra is None or bar.extra.get('memo', None) is None:
+        #     memo = bar.extra.get('memo', None)
+        if bar:
+
+            words = [
+                "Date",
+                bar.datetime.strftime("%Y-%m-%d"),
+                "",
+                "Time",
+                bar.datetime.strftime("%H:%M"),
+                "",
+                'Yes',
+            ]
+            text = "\n".join(words)
+        else:
+            text = ""
+
+        return text
+

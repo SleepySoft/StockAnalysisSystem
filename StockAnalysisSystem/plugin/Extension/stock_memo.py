@@ -240,8 +240,12 @@ class StockHistoryUi(QWidget):
 
         self.__vnpy_chart.add_plot("candle", hide_x_axis=True)
         self.__vnpy_chart.add_plot("volume", maximum_height=200)
+        self.__vnpy_chart.add_plot("memo", maximum_height=200)
+
         self.__vnpy_chart.add_item(CandleItem, "candle", "candle")
         self.__vnpy_chart.add_item(VolumeItem, "volume", "volume")
+        self.__vnpy_chart.add_item(MemoItem, "memo", "memo")
+
         self.__vnpy_chart.add_cursor()
 
         self.__vnpy_chart.scene().sigMouseClicked.connect(self.on_chart_clicked)
@@ -374,19 +378,19 @@ class StockHistoryUi(QWidget):
 
         bars = self.df_to_bar_data(trade_data, securities)
 
-        n = 1000
-        history = bars[:n]
-        new_data = bars[n:]
+        # n = 1000
+        # history = bars[:n]
+        # new_data = bars[n:]
 
-        def update_bar():
-            bar = new_data.pop(0)
-            widget.update_bar(bar)
+        # def update_bar():
+        #     bar = new_data.pop(0)
+        #     widget.update_bar(bar)
 
-        timer = QtCore.QTimer()
-        timer.timeout.connect(update_bar)
+        # timer = QtCore.QTimer()
+        # timer.timeout.connect(update_bar)
         # timer.start(100)
 
-        self.__vnpy_chart.update_history(history)
+        self.__vnpy_chart.update_history(bars)
 
         return True
 
@@ -395,7 +399,7 @@ class StockHistoryUi(QWidget):
     def df_to_bar_data(df: pd.DataFrame, securities: str, exchange: str = '') -> [BarData]:
         # 98 ms
         bars = []
-        for trade_date, amount, open, close, high, low  in \
+        for trade_date, amount, open, close, high, low in \
                 zip(df['trade_date'], df['amount'], df['open'], df['close'], df['high'], df['low']):
             bar = BarData(datetime=trade_date,
                           exchange=Exchange.SSE,
