@@ -4,17 +4,7 @@ from .constant import *
 
 
 @dataclass
-class BaseData:
-    """
-    Any data object needs a gateway_name as source
-    and should inherit base data.
-    """
-
-    gateway_name: str
-
-
-@dataclass
-class BarData(BaseData):
+class BarData:
     """
     Candlestick bar data of a certain trading period.
     """
