@@ -359,7 +359,7 @@ class StockHistoryUi(QWidget):
             trade_data['high'] = np.log(self.__paint_trade_data['high'])
             trade_data['low'] = np.log(self.__paint_trade_data['low'])
 
-        bars = self.df_to_bar_data(trade_data)
+        bars = self.df_to_bar_data(trade_data, securities)
 
         self.__vnpy_chart.add_plot("candle", hide_x_axis=True)
         self.__vnpy_chart.add_plot("volume", maximum_height=200)
@@ -385,24 +385,44 @@ class StockHistoryUi(QWidget):
 
     # TODO: Move it to common place
     @staticmethod
-    def df_to_bar_data(df: pd.DataFrame) -> [BarData]:
+    def df_to_bar_data(df: pd.DataFrame, securities: str, exchange: str = '') -> [BarData]:
+        # 98 ms
         bars = []
-        for index, row in df.iterrows():
-            date_time = row['trade_date']
-            bar = BarData(datetime=date_time,
+        for trade_date, amount, open, close, high, low  in \
+                zip(df['trade_date'], df['amount'], df['open'], df['close'], df['high'], df['low']):
+            bar = BarData(datetime=trade_date,
                           exchange=Exchange.SSE,
-                          symbol='000001',
-                          gateway_name='ABC')
+                          symbol=securities)
 
             bar.interval = Interval.DAILY
-            bar.volume = row['amount'] * 10000
-            bar.open_interest = row['open']
-            bar.open_price = row['open']
-            bar.high_price = row['high']
-            bar.low_price = row['low']
-            bar.close_price = row['close']
+            bar.volume = amount * 10000
+            bar.open_interest = 0
+            bar.open_price = open
+            bar.high_price = high
+            bar.low_price = low
+            bar.close_price = close
             bars.append(bar)
         return bars
+
+    # @staticmethod
+    # def df_to_bar_data1(df: pd.DataFrame) -> [BarData]:
+    #     # 3488 ms
+    #     bars = []
+    #     for index, row in df.iterrows():
+    #         date_time = row['trade_date']
+    #         bar = BarData(datetime=date_time,
+    #                       exchange=Exchange.SSE,
+    #                       symbol='000001')
+    #
+    #         bar.interval = Interval.DAILY
+    #         bar.volume = row['amount'] * 10000
+    #         bar.open_interest = row['open']
+    #         bar.open_price = row['open']
+    #         bar.high_price = row['high']
+    #         bar.low_price = row['low']
+    #         bar.close_price = row['close']
+    #         bars.append(bar)
+    #     return bars
 
 
 # ----------------------------------------------------------------------------------------------------------------------
