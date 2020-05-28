@@ -4,6 +4,8 @@ from typing import List, Dict, Tuple
 import pyqtgraph as pg
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import QPointF, QRectF
+
 from .data import BarData
 
 from .base import UP_COLOR, DOWN_COLOR, WHITE_COLOR, PEN_WIDTH, BAR_WIDTH
@@ -190,6 +192,7 @@ class CandleItem(ChartItem):
         # Finish
         painter.end()
         return candle_picture
+        # return None
 
     def boundingRect(self) -> QtCore.QRectF:
         """"""
@@ -226,16 +229,16 @@ class CandleItem(ChartItem):
                 bar.datetime.strftime("%H:%M"),
                 "",
                 "Open",
-                str(bar.open_price),
+                ('%.2f' % bar.open_price),
                 "",
                 "High",
-                str(bar.high_price),
+                ('%.2f' % bar.high_price),
                 "",
                 "Low",
-                str(bar.low_price),
+                ('%.2f' % bar.low_price),
                 "",
                 "Close",
-                str(bar.close_price)
+                ('%.2f' % bar.close_price),
             ]
             text = "\n".join(words)
         else:
@@ -342,13 +345,11 @@ class MemoItem(ChartItem):
 
         rect = QtCore.QRectF(
             ix - BAR_WIDTH,
-            MemoItem.TOP,
-            BAR_WIDTH * 2,
-            MemoItem.BOTTOM
+            MemoItem.BOTTOM,
+            BAR_WIDTH,
+            MemoItem.TOP
         )
-
-        painter.drawText(rect, 'Success')
-        painter.drawRect(rect)
+        painter.drawEllipse(rect)
 
         # Finish
         painter.end()

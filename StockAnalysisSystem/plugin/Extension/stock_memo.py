@@ -240,11 +240,11 @@ class StockHistoryUi(QWidget):
 
         self.__vnpy_chart.add_plot("candle", hide_x_axis=True)
         self.__vnpy_chart.add_plot("volume", maximum_height=200)
-        self.__vnpy_chart.add_plot("memo", maximum_height=200)
+        # self.__vnpy_chart.add_plot("memo", maximum_height=50)
 
         self.__vnpy_chart.add_item(CandleItem, "candle", "candle")
         self.__vnpy_chart.add_item(VolumeItem, "volume", "volume")
-        self.__vnpy_chart.add_item(MemoItem, "memo", "memo")
+        # self.__vnpy_chart.add_item(MemoItem, "memo", "memo")
 
         self.__vnpy_chart.add_cursor()
 
@@ -360,21 +360,24 @@ class StockHistoryUi(QWidget):
             trade_data['close'] = self.__paint_trade_data['close'] * self.__paint_trade_data['adj_factor']
             trade_data['high'] = self.__paint_trade_data['high'] * self.__paint_trade_data['adj_factor']
             trade_data['low'] = self.__paint_trade_data['low'] * self.__paint_trade_data['adj_factor']
-            trade_data['trade_date'] = self.__paint_trade_data['trade_date']
         elif adjust_method == StockHistoryUi.ADJUST_HEAD and 'adj_factor' in self.__paint_trade_data.columns:
             trade_data['open'] = self.__paint_trade_data['open'] / self.__paint_trade_data['adj_factor']
             trade_data['close'] = self.__paint_trade_data['close'] / self.__paint_trade_data['adj_factor']
             trade_data['high'] = self.__paint_trade_data['high'] / self.__paint_trade_data['adj_factor']
             trade_data['low'] = self.__paint_trade_data['low'] / self.__paint_trade_data['adj_factor']
-            trade_data['trade_date'] = self.__paint_trade_data['trade_date']
         else:
-            trade_data = self.__paint_trade_data
+            trade_data['open'] = self.__paint_trade_data['open']
+            trade_data['close'] = self.__paint_trade_data['close']
+            trade_data['high'] = self.__paint_trade_data['high']
+            trade_data['low'] = self.__paint_trade_data['low']
+        trade_data['amount'] = self.__paint_trade_data['amount']
+        trade_data['trade_date'] = self.__paint_trade_data['trade_date']
 
         if return_style == StockHistoryUi.RETURN_LOG:
-            trade_data['open'] = np.log(self.__paint_trade_data['open'])
-            trade_data['close'] = np.log( self.__paint_trade_data['close'])
-            trade_data['high'] = np.log(self.__paint_trade_data['high'])
-            trade_data['low'] = np.log(self.__paint_trade_data['low'])
+            trade_data['open'] = np.log(trade_data['open'])
+            trade_data['close'] = np.log( trade_data['close'])
+            trade_data['high'] = np.log(trade_data['high'])
+            trade_data['low'] = np.log(trade_data['low'])
 
         bars = self.df_to_bar_data(trade_data, securities)
 

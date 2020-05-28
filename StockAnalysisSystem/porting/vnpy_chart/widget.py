@@ -302,6 +302,9 @@ class ChartWidget(pg.PlotWidget):
         self._update_x_range()
         self._cursor.update_info()
 
+    def mid_x(self) -> float:
+        return (self._right_ix - self._bar_count + self._right_ix) / 2
+
 
 class ChartCursor(QtCore.QObject):
     """"""
@@ -487,8 +490,15 @@ class ChartCursor(QtCore.QObject):
             info.show()
 
             view = self._views[plot_name]
-            top_left = view.mapSceneToView(view.sceneBoundingRect().topLeft())
-            info.setPos(top_left)
+
+            if self._x > self._widget.mid_x():
+                top_left = view.mapSceneToView(view.sceneBoundingRect().topLeft())
+                info.setPos(top_left)
+            else:
+                top_right = view.sceneBoundingRect().topRight()
+                top_right.setX(top_right.x() - 85)
+                top_right = view.mapSceneToView(top_right)
+                info.setPos(top_right)
 
     def move_right(self) -> None:
         """
