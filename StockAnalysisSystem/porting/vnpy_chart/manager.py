@@ -18,6 +18,8 @@ class BarManager:
         self._price_ranges: Dict[Tuple[int, int], Tuple[float, float]] = {}
         self._volume_ranges: Dict[Tuple[int, int], Tuple[float, float]] = {}
 
+        self._item_data_range: Dict[str, Tuple[float, float]] = {}
+
     def update_history(self, history: List[BarData]) -> None:
         """
         Update a list of bar data.
@@ -29,7 +31,7 @@ class BarManager:
         # Sort bars dict according to bar.datetime
         self._bars = dict(sorted(self._bars.items(), key=lambda tp: tp[0]))
 
-        # Update map relationiship
+        # Update map relationship
         ix_list = range(len(self._bars))
         dt_list = self._bars.keys()
 
@@ -77,6 +79,8 @@ class BarManager:
         """
         Get bar data with index.
         """
+        if ix is None:
+            return None
         ix = to_int(ix)
         dt = self._index_datetime_map.get(ix, None)
         if not dt:
@@ -168,3 +172,47 @@ class BarManager:
         self._index_datetime_map.clear()
 
         self._clear_cache()
+
+    # ------------------------------------------------------------------------------------------------------------------
+
+    def get_index_by_time(self, dt: datetime):
+        dt_list = list(self._bars.keys())
+        ix = self.binary_search_date(dt_list, dt)
+        return ix
+
+    @staticmethod
+    def binary_search_date(a, x, lo=0, hi=None):
+        if hi is None:
+            hi = len(a)
+        while lo < hi:
+            mid = (lo + hi) // 2
+            midval = a[mid]
+            if midval < x:
+                lo = mid + 1
+            elif midval > x:
+                hi = mid
+            else:
+                return mid
+        return -1
+
+    def set_item_data(self, ix: float or datetime, item_name: str, item_data: any):
+        if isinstance(ix, datetime):
+            ix = self.get_index_by_time(ix)
+        bar = self.get_bar(ix)
+        if bar is not None:
+            if bar.extra is not None:
+                bar.extra[item_name] = item_data
+            else:
+                bar.extra = {item_name: item_data}
+
+    def get_item_data(self, ix: float, item_name: str) -> any:
+        bar = self.get_bar(ix)
+        if bar is None or bar.extra is None:
+            return None
+        return bar.extra.get(item_name, None)
+
+    def set_item_data_range(self, item_name: str, data_max: float, data_min: float):
+        self._item_data_range[item_name] = (data_max, data_min)
+
+    def get_item_data_range(self, item_name: str, default: any = None) -> (float, float):
+        return self._item_data_range.get(item_name, default)
