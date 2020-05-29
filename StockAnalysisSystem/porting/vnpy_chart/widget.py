@@ -133,11 +133,14 @@ class ChartWidget(pg.PlotWidget):
         """
         return self._plots.get(plot_name, None)
 
+    def get_item(self, item_name: str) -> ChartItem or None:
+        return self._items.get(item_name, None)
+
     def get_all_plots(self) -> List[pg.PlotItem]:
         """
         Get all plot objects.
         """
-        return self._plots.values()
+        return list(self._plots.values())
 
     def clear_all(self) -> None:
         """
@@ -302,8 +305,13 @@ class ChartWidget(pg.PlotWidget):
         self._update_x_range()
         self._cursor.update_info()
 
+    # ------------------------------------------------------------------------------------------------------------------
+
     def mid_x(self) -> float:
         return (self._right_ix - self._bar_count + self._right_ix) / 2
+
+    def get_bar_manager(self) -> BarManager:
+        return self._manager
 
 
 class ChartCursor(QtCore.QObject):
@@ -493,11 +501,11 @@ class ChartCursor(QtCore.QObject):
 
             if self._x > self._widget.mid_x():
                 top_left = view.mapSceneToView(view.sceneBoundingRect().topLeft())
+                info.setAnchor((0, 0))
                 info.setPos(top_left)
             else:
-                top_right = view.sceneBoundingRect().topRight()
-                top_right.setX(top_right.x() - 85)
-                top_right = view.mapSceneToView(top_right)
+                top_right = view.mapSceneToView(view.sceneBoundingRect().topRight())
+                info.setAnchor((1, 0))
                 info.setPos(top_right)
 
     def move_right(self) -> None:

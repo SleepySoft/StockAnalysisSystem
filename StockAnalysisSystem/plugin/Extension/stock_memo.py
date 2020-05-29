@@ -239,12 +239,12 @@ class StockHistoryUi(QWidget):
         # self.__time_axis.customContextMenuRequested.connect(self.on_custom_menu)
 
         self.__vnpy_chart.add_plot("candle", hide_x_axis=True)
+        self.__vnpy_chart.add_plot("memo", maximum_height=50)
         self.__vnpy_chart.add_plot("volume", maximum_height=200)
-        # self.__vnpy_chart.add_plot("memo", maximum_height=50)
 
         self.__vnpy_chart.add_item(CandleItem, "candle", "candle")
+        self.__vnpy_chart.add_item(MemoItem, "memo", "memo")
         self.__vnpy_chart.add_item(VolumeItem, "volume", "volume")
-        # self.__vnpy_chart.add_item(MemoItem, "memo", "memo")
 
         self.__vnpy_chart.add_cursor()
 
@@ -371,7 +371,7 @@ class StockHistoryUi(QWidget):
             trade_data['high'] = self.__paint_trade_data['high']
             trade_data['low'] = self.__paint_trade_data['low']
         trade_data['amount'] = self.__paint_trade_data['amount']
-        trade_data['trade_date'] = self.__paint_trade_data['trade_date']
+        trade_data['trade_date'] = pd.to_datetime(self.__paint_trade_data['trade_date'])
 
         if return_style == StockHistoryUi.RETURN_LOG:
             trade_data['open'] = np.log(trade_data['open'])
@@ -395,17 +395,29 @@ class StockHistoryUi(QWidget):
 
         self.__vnpy_chart.update_history(bars)
 
+        bar_manager = self.__vnpy_chart.get_bar_manager()
+        bar_manager.set_item_data(datetime.datetime(2020, 1, 2, 0, 0, 0), 'memo', ['memo'] * 2)
+        bar_manager.set_item_data(datetime.datetime(2020, 1, 9, 0, 0, 0), 'memo', ['memo'] * 1)
+        bar_manager.set_item_data(datetime.datetime(2020, 1, 16, 0, 0, 0), 'memo', ['memo'] * 8)
+        bar_manager.set_item_data(datetime.datetime(2020, 1, 23, 0, 0, 0), 'memo', ['memo'] * 9)
+        bar_manager.set_item_data(datetime.datetime(2020, 1, 31, 0, 0, 0), 'memo', ['memo'] * 13)
+        bar_manager.set_item_data_range('memo', 0.0, 13.0)
+
+        memo_item = self.__vnpy_chart.get_item('memo')
+        if memo_item is not None:
+            memo_item.update_history(None)
+
         return True
 
     # TODO: Move it to common place
     @staticmethod
-    def df_to_bar_data(df: pd.DataFrame, securities: str, exchange: str = '') -> [BarData]:
+    def df_to_bar_data(df: pd.DataFrame, securities: str, exchange: Exchange = Exchange.SSE) -> [BarData]:
         # 98 ms
         bars = []
         for trade_date, amount, open, close, high, low in \
                 zip(df['trade_date'], df['amount'], df['open'], df['close'], df['high'], df['low']):
             bar = BarData(datetime=trade_date,
-                          exchange=Exchange.SSE,
+                          exchange=exchange,
                           symbol=securities)
 
             bar.interval = Interval.DAILY

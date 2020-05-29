@@ -2,13 +2,10 @@ from abc import abstractmethod
 from typing import List, Dict, Tuple
 
 import pyqtgraph as pg
-
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QPointF, QRectF
 
 from .data import BarData
-
-from .base import UP_COLOR, DOWN_COLOR, WHITE_COLOR, PEN_WIDTH, BAR_WIDTH
+from .base import UP_COLOR, DOWN_COLOR, MEMO_COLOR, PEN_WIDTH, BAR_WIDTH
 from .manager import BarManager
 
 
@@ -317,39 +314,34 @@ class VolumeItem(ChartItem):
 
 class MemoItem(ChartItem):
     """"""
-
-    TOP = 9.0
-    BOTTOM = 0.0
-
     def __init__(self, manager: BarManager):
         """"""
         self._border_pen: QtGui.QPen = pg.mkPen(
-            color=WHITE_COLOR, width=PEN_WIDTH
+            color=MEMO_COLOR, width=PEN_WIDTH
         )
         self._background_brush: QtGui.QBrush = pg.mkBrush(color=UP_COLOR)
         super().__init__(manager)
 
     def _draw_bar_picture(self, ix: int, bar: BarData) -> QtGui.QPicture or None:
         """"""
-        # if bar.extra is None or bar.extra.get('memo', None) is None:
-        #     return None
+        memo = self._manager.get_item_data(ix, 'memo')
+        if memo is None:
+            return None
 
         # Create objects
         memo_picture = QtGui.QPicture()
         painter = QtGui.QPainter(memo_picture)
-
-        # memo = bar.extra.get('memo', None)
 
         painter.setPen(self._border_pen)
         painter.setBrush(self._background_brush)
 
         rect = QtCore.QRectF(
             ix - BAR_WIDTH,
-            MemoItem.BOTTOM,
+            0,
             BAR_WIDTH,
-            MemoItem.TOP
+            len(memo)
         )
-        painter.drawEllipse(rect)
+        painter.drawRect(rect)
 
         # Finish
         painter.end()
@@ -357,39 +349,26 @@ class MemoItem(ChartItem):
 
     def boundingRect(self) -> QtCore.QRectF:
         """"""
+        min_data, max_data = self._manager.get_volume_range()
         rect = QtCore.QRectF(
             0,
-            MemoItem.BOTTOM,
+            min_data,
             len(self._bar_pictures),
-            MemoItem.TOP
+            max_data
         )
         return rect
 
     def get_y_range(self, min_ix: int = None, max_ix: int = None) -> Tuple[float, float]:
-        return MemoItem.BOTTOM, MemoItem.TOP
+        return self._manager.get_item_data_range('memo', (0, 10))
 
     def get_info_text(self, ix: int) -> str:
         """
         Get information text to show by cursor.
         """
-        bar = self._manager.get_bar(ix)
-
-        # if bar and bar.extra is None or bar.extra.get('memo', None) is None:
-        #     memo = bar.extra.get('memo', None)
-        if bar:
-
-            words = [
-                "Date",
-                bar.datetime.strftime("%Y-%m-%d"),
-                "",
-                "Time",
-                bar.datetime.strftime("%H:%M"),
-                "",
-                'Yes',
-            ]
-            text = "\n".join(words)
+        memo = self._manager.get_item_data(ix, 'memo')
+        if memo is not None:
+            text = "Memo: %s" % len(memo)
         else:
-            text = ""
-
+            text = "Memo: 0"
         return text
 
