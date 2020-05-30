@@ -4,6 +4,7 @@ import traceback
 import numpy as np
 import pandas as pd
 from os import path
+import pyqtgraph as pg
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import QTimer, QDateTime, QPoint
@@ -248,8 +249,15 @@ class StockHistoryUi(QWidget):
         self.__vnpy_chart.scene().sigMouseClicked.connect(self.on_chart_clicked)
 
     def on_chart_clicked(self, event):
-        items = self.__vnpy_chart.scene().items(event.scenePos())
-        print(str(items))
+        scene_pt = event.scenePos()
+        items = self.__vnpy_chart.scene().items(scene_pt)
+        for i in items:
+            if isinstance(i, pg.PlotItem):
+                view = i.getViewBox()
+                view_pt = view.mapSceneToView(scene_pt)
+                memo = self.__vnpy_chart.get_bar_manager().get_item_data(view_pt.x(), 'memo')
+                print(memo)
+
         # print("Plots:" + str([x for x in items if isinstance(x, pg.PlotItem)]))
 
     def on_timer(self):
