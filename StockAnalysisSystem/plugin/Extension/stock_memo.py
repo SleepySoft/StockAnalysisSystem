@@ -233,18 +233,15 @@ class StockHistoryUi(QWidget):
         self.setMinimumWidth(1280)
         self.setMinimumHeight(800)
 
-        # ------------------ Right Button Menu ------------------
-
-        # self.__time_axis.setContextMenuPolicy(Qt.CustomContextMenu)
-        # self.__time_axis.customContextMenuRequested.connect(self.on_custom_menu)
+        # ---------------------- Chart ----------------------
 
         self.__vnpy_chart.add_plot("candle", hide_x_axis=True)
-        self.__vnpy_chart.add_plot("memo", maximum_height=50)
         self.__vnpy_chart.add_plot("volume", maximum_height=200)
+        self.__vnpy_chart.add_plot("memo", maximum_height=50)
 
         self.__vnpy_chart.add_item(CandleItem, "candle", "candle")
-        self.__vnpy_chart.add_item(MemoItem, "memo", "memo")
         self.__vnpy_chart.add_item(VolumeItem, "volume", "volume")
+        self.__vnpy_chart.add_item(MemoItem, "memo", "memo")
 
         self.__vnpy_chart.add_cursor()
 
