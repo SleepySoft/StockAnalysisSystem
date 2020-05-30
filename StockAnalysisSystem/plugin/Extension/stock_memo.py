@@ -1,146 +1,258 @@
+import os
 import sys
 import datetime
 import traceback
 import numpy as np
 import pandas as pd
-from os import path
 import pyqtgraph as pg
 
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QTimer, QDateTime, QPoint
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QButtonGroup, QDateTimeEdit, QApplication, QLabel, QTextEdit, QPushButton, QVBoxLayout, \
-    QMessageBox, QWidget, QComboBox, QCheckBox, QRadioButton
+    QMessageBox, QWidget, QComboBox, QCheckBox, QRadioButton, QLineEdit, QAbstractItemView
 
 from StockAnalysisSystem.porting.vnpy_chart import *
 from StockAnalysisSystem.core.Utiltity.ui_utility import *
 from StockAnalysisSystem.core.Utiltity.time_utility import *
 from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
+from StockAnalysisSystem.core.Utiltity.securities_selector import SecuritiesSelector
 
 
-# class StockMemoEditor(QDialog):
-#     def __init__(self):
-#         super(StockMemoEditor, self).__init__()
-#
-#         self.__source = ''
-#         self.__current_record = None
-#
-#         self.__label_uuid = QLabel()
-#         self.__label_source = QLabel()
-#         self.__text_record = QTextEdit()
-#         self.__datetime_time = QDateTimeEdit(QDateTime.currentDateTime())
-#
-#         self.__button_apply = QPushButton('保存')
-#         self.__button_cancel = QPushButton('取消')
-#
-#         self.init_ui()
-#         self.config_ui()
-#
-#     def init_ui(self):
-#         root_layout = QVBoxLayout()
-#         self.setLayout(root_layout)
-#
-#         group_box, group_layout = create_v_group_box('')
-#         group_layout.addWidget(self.__label_uuid)
-#         group_layout.addWidget(self.__label_source)
-#         group_layout.addWidget(self.__datetime_time)
-#         # group_layout.addLayout(horizon_layout([QLabel('笔记ID'), self.__label_uuid]))
-#         # group_layout.addLayout(horizon_layout([QLabel('笔记文件'), self.__label_source]))
-#         # group_layout.addLayout(horizon_layout([QLabel('记录时间'), self.__datetime_time]))
-#
-#         root_layout.addWidget(group_box, 0)
-#         root_layout.addWidget(self.__text_record, 10)
-#
-#         root_layout.addLayout(horizon_layout([self.__button_apply, self.__button_cancel]))
-#
-#         self.setMinimumSize(500, 600)
-#
-#     def config_ui(self):
-#         self.__label_uuid.setEnabled(False)
-#         self.__label_source.setEnabled(False)
-#         self.setWindowTitle('笔记')
-#         self.__datetime_time.setCalendarPopup(True)
-#
-#         self.__button_apply.clicked.connect(self.on_button_apply)
-#         self.__button_cancel.clicked.connect(self.on_button_cancel)
-#
-#     def on_button_apply(self):
-#         if self.__current_record is None:
-#             self.__current_record = HistoricalRecord()
-#         else:
-#             self.__current_record.reset()
-#
-#         if not self.ui_to_record(self.__current_record):
-#             QMessageBox.information(self,
-#                                     QtCore.QCoreApplication.translate('History', '错误'),
-#                                     QtCore.QCoreApplication.translate('History', '采集界面数据错误'),
-#                                     QMessageBox.Ok, QMessageBox.Ok)
-#             return
-#         if self.__source is None or self.__source == '':
-#             QMessageBox.information(self,
-#                                     QtCore.QCoreApplication.translate('History', '错误'),
-#                                     QtCore.QCoreApplication.translate('History', '没有指定数据源，无法保存'),
-#                                     QMessageBox.Ok, QMessageBox.Ok)
-#             return
-#
-#         self.__current_record.set_source(self.__source)
-#         self.__history.update_records([self.__current_record])
-#
-#         records = self.__history.get_record_by_source(self.__source)
-#         result = HistoricalRecordLoader.to_local_source(records, self.__source)
-#
-#         if not result:
-#             QMessageBox.information(self,
-#                                     QtCore.QCoreApplication.translate('History', '错误'),
-#                                     QtCore.QCoreApplication.translate('History', '保存到数据源 [%s] 失败' % self.__source),
-#                                     QMessageBox.Ok, QMessageBox.Ok)
-#             return
-#
-#         self.close()
-#
-#     def on_button_cancel(self):
-#         self.close()
-#
-#     # ---------------------------------------------------------------------------
-#
-#     def set_memo(self, memo: HistoricalRecord):
-#         self.__current_record = memo
-#         self.__source = memo.source()
-#         self.record_to_ui(memo)
-#
-#     def set_source(self, source: str):
-#         self.__source = source
-#
-#     def set_memo_datetime(self, date_time: datetime.datetime):
-#         self.__datetime_time.setDateTime(date_time)
-#
-#     # -------------------------------- Operation --------------------------------
-#
-#     def clear_ui(self):
-#         self.__label_uuid.setText('')
-#         self.__label_source.setText('')
-#         self.__text_record.clear()
-#
-#     def ui_to_record(self, record: HistoricalRecord) -> bool:
-#         input_time = self.__datetime_time.dateTime()
-#         input_memo = self.__text_record.toPlainText()
-#         date_time = input_time.toPyDateTime()
-#
-#         record.set_label_tags('time', date_time.strftime('%Y-%m-%d %H:%M:%S'))
-#         record.set_label_tags('event', input_memo)
-#         record.set_focus_label('time')
-#         return True
-#
-#     def record_to_ui(self, record: HistoricalRecord or str):
-#         self.clear_ui()
-#
-#         self.__label_uuid.setText(LabelTagParser.tags_to_text(record.uuid()))
-#         self.__label_source.setText(self.__source)
-#         self.__text_record.setText(LabelTagParser.tags_to_text(record.event()))
-#
-#         since = record.since()
-#         pytime = HistoryTime.tick_to_pytime(since)
-#         self.__datetime_time.setDateTime(pytime)
+class Record:
+    RECORD_COLUMNS = ['time', 'brief', 'content']
+
+    def __init__(self, record_path: str):
+        self.__record_path = record_path
+        self.__record_sheet = pd.DataFrame(columns=Record.RECORD_COLUMNS)
+
+    def add_record(self, _time: datetime, brief: str, content: str, save: bool = True):
+        self.__record_sheet.append({
+            'time': _time,
+            'brief': brief,
+            'content': content,
+        })
+        if save:
+            self.save()
+
+    def get_records(self) -> pd.DataFrame:
+        return self.__record_sheet
+
+    def del_records(self, idx: int or [int]):
+        self.__record_sheet.drop(idx)
+
+    def load(self, record_path: str = '') -> bool:
+        if record_path != '':
+            if self.__load(record_path):
+                self.__record_path = record_path
+                return True
+            else:
+                return False
+        return self.__load(self.__record_path)
+
+    def save(self, record_path: str = ''):
+        if record_path != '':
+            if self.__save(record_path):
+                self.__record_path = record_path
+                return True
+            else:
+                return False
+        return self.__save(self.__record_path)
+
+    # ---------------------------------------------------
+
+    def __load(self, record_path: str) -> bool:
+        try:
+            self.__record_sheet = pd.read_csv(record_path)
+            self.__record_sheet.reindex()
+            return set(Record.RECORD_COLUMNS).issubset(self.__record_sheet.columns)
+        except Exchange as e:
+            return False
+        finally:
+            pass
+
+    def __save(self, record_path: str) -> bool:
+        try:
+            self.__record_sheet.to_csv(record_path)
+            return True
+        except Exchange as e:
+            return False
+        finally:
+            pass
+
+
+class RecordSet:
+    def __init__(self, record_root: str):
+        self.__record_root = record_root
+        self.__record_depot = {}
+
+    def set_record_root(self, memo_root: str):
+        self.__record_root = memo_root
+
+    def get_record_root(self) -> str:
+        return self.__record_root
+
+    def get_record(self, record_name: str):
+        record = self.__record_depot.get(record_name, None)
+        if record is None:
+            record = Record(self.__get_record_file_path(record_name))
+            self.__record_depot[record_name] = record
+        return record
+
+    def get_exists_record_name(self) -> []:
+        return self.__enumerate_record()
+
+    def __get_record_file_path(self, record_name: str) -> str:
+        return os.path.join(self.__record_root, record_name, '.csv')
+
+    def __enumerate_record(self) -> list:
+        records = []
+        for parent, dirnames, filenames in os.walk(self.__record_root):
+            for filename in filenames:
+                if filename.endswith('.csv'):
+                    records.append(filename[:-4])
+        return records
+
+
+class StockMemoEditor(QDialog):
+    def __init__(self, sas: StockAnalysisSystem, memo_record: Record):
+        super(StockMemoEditor, self).__init__()
+
+        self.__sas = sas
+        self.__memo = memo_record
+        self.__root_path = sas.get_project_path() if sas is not None else os.getcwd()
+        self.__record_set = RecordSet(self.__root_path)
+
+        data_utility = self.__sas.get_data_hub_entry().get_data_utility() if self.__sas is not None else None
+        self.__combo_stock = SecuritiesSelector(data_utility)
+        self.__table_time_entry = EasyQTableWidget()
+
+        self.__datetime_time = QDateTimeEdit(QDateTime().currentDateTime())
+        self.__line_brief = QLineEdit()
+        self.__text_record = QTextEdit()
+
+        self.__button_apply = QPushButton('保存')
+        self.__button_cancel = QPushButton('取消')
+
+        self.init_ui()
+        self.config_ui()
+
+    def init_ui(self):
+        root_layout = QHBoxLayout()
+        self.setLayout(root_layout)
+
+        group_box, group_layout = create_v_group_box('')
+        group_layout.addWidget(self.__combo_stock, 1)
+        group_layout.addWidget(self.__table_time_entry, 99)
+        root_layout.addWidget(group_box, 3)
+
+        group_box, group_layout = create_v_group_box('')
+        group_layout.addLayout(horizon_layout([QLabel('时间：'), self.__datetime_time], [1, 99]))
+        group_layout.addLayout(horizon_layout([QLabel('摘要：'), self.__line_brief], [1, 99]))
+        group_layout.addWidget(self.__text_record)
+        group_layout.addLayout(horizon_layout([self.__button_apply, self.__button_cancel]))
+        root_layout.addWidget(group_box, 7)
+
+        self.setMinimumSize(500, 600)
+
+    def config_ui(self):
+        self.setWindowTitle('笔记编辑器')
+        self.__datetime_time.setCalendarPopup(True)
+
+        self.__table_time_entry.insertColumn(0)
+        self.__table_time_entry.insertColumn(1)
+        self.__table_time_entry.setHorizontalHeaderLabels(['时间', '摘要'])
+        self.__table_time_entry.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.__table_time_entry.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.__table_time_entry.itemSelectionChanged.connect(self.on_table_selection_changed)
+        self.__table_time_entry.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+
+        self.__table_time_entry.AppendRow(['A', '1'])
+        self.__table_time_entry.AppendRow(['B', '2'])
+        self.__table_time_entry.AppendRow(['C', '3'])
+
+        self.__button_apply.clicked.connect(self.on_button_apply)
+        self.__button_cancel.clicked.connect(self.on_button_cancel)
+
+    def on_button_apply(self):
+        pass
+    #     if self.__current_record is None:
+    #         pass
+    #     else:
+    #         self.__current_record.reset()
+    #
+    #     if not self.ui_to_record(self.__current_record):
+    #         QMessageBox.information(self,
+    #                                 QtCore.QCoreApplication.translate('History', '错误'),
+    #                                 QtCore.QCoreApplication.translate('History', '采集界面数据错误'),
+    #                                 QMessageBox.Ok, QMessageBox.Ok)
+    #         return
+    #     if self.__source is None or self.__source == '':
+    #         QMessageBox.information(self,
+    #                                 QtCore.QCoreApplication.translate('History', '错误'),
+    #                                 QtCore.QCoreApplication.translate('History', '没有指定数据源，无法保存'),
+    #                                 QMessageBox.Ok, QMessageBox.Ok)
+    #         return
+    #
+    #     self.__current_record.set_source(self.__source)
+    #     self.__history.update_records([self.__current_record])
+    #
+    #     records = self.__history.get_record_by_source(self.__source)
+    #     result = HistoricalRecordLoader.to_local_source(records, self.__source)
+    #
+    #     if not result:
+    #         QMessageBox.information(self,
+    #                                 QtCore.QCoreApplication.translate('History', '错误'),
+    #                                 QtCore.QCoreApplication.translate('History', '保存到数据源 [%s] 失败' % self.__source),
+    #                                 QMessageBox.Ok, QMessageBox.Ok)
+    #         return
+    #
+    #     self.close()
+
+    def on_button_cancel(self):
+        pass
+
+    def on_table_selection_changed(self):
+        pass
+
+    # # ---------------------------------------------------------------------------
+    #
+    # # def set_memo(self, memo: HistoricalRecord):
+    # #     self.__current_record = memo
+    # #     self.__source = memo.source()
+    # #     self.record_to_ui(memo)
+    # #
+    # # def set_source(self, source: str):
+    # #     self.__source = source
+    # #
+    # # def set_memo_datetime(self, date_time: datetime.datetime):
+    # #     self.__datetime_time.setDateTime(date_time)
+    #
+    # -------------------------------- Operation --------------------------------
+
+    # def clear_ui(self):
+    #     self.__table_time_entry.clear()
+    #     self.__line_brief.setText('')
+    #     self.__text_record.setText('')
+
+    def update_time_entry(self):
+        self.__table_time_entry.clear()
+        if self.__memo is None:
+            return
+        records = self.__memo.get_records()
+        for index, row in records.iterrows():
+            self.__table_time_entry.AppendRow([row['time'], row['brief']], index)
+
+    # def record_to_ui(self, record: HistoricalRecord or str):
+    #     self.clear_ui()
+    #
+    #     self.__label_uuid.setText(LabelTagParser.tags_to_text(record.uuid()))
+    #     self.__label_source.setText(self.__source)
+    #     self.__text_record.setText(LabelTagParser.tags_to_text(record.event()))
+    #
+    #     since = record.since()
+    #     pytime = HistoryTime.tick_to_pytime(since)
+    #     self.__datetime_time.setDateTime(pytime)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -347,10 +459,10 @@ class StockHistoryUi(QWidget):
                 uri = 'TradeData.Stock.Daily'
             trade_data = self.__sas.get_data_hub_entry().get_data_center().query(uri, securities)
 
-            # base_path = path.dirname(path.abspath(__file__))
-            # history_path = path.join(base_path, 'History')
-            # depot_path = path.join(history_path, 'depot')
-            # his_file = path.join(depot_path, securities + '.his')
+            # base_path = os.path.dirname(os.path.abspath(__file__))
+            # history_path = os.path.join(base_path, 'History')
+            # depot_path = os.path.join(history_path, 'depot')
+            # his_file = os.path.join(depot_path, securities + '.his')
 
             # self.__memo_file = his_file
             self.__paint_trade_data = trade_data
@@ -501,8 +613,8 @@ def widget(parent: QWidget) -> (QWidget, dict):
 # ------------------------------------------------ File Entry : main() -------------------------------------------------
 
 def main():
-    # app = QApplication(sys.argv)
-    # StockMemoEditor(History()).exec()
+    app = QApplication(sys.argv)
+    StockMemoEditor(None, Record('')).exec()
     pass
 
 

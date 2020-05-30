@@ -390,11 +390,13 @@ class EasyQTableWidget(QTableWidget):
     def __init__(self, *__args):
         super(EasyQTableWidget, self).__init__(*__args)
 
-    def AppendRow(self, content: [str]):
+    def AppendRow(self, content: [str], data: any = None):
         row_count = self.rowCount()
         self.insertRow(row_count)
         for col in range(0, len(content)):
-            self.setItem(row_count, col, QTableWidgetItem(content[col]))
+            item = QTableWidgetItem(content[col])
+            item.setData(Qt.UserRole, data)
+            self.setItem(row_count, col, item)
 
     def GetCurrentRow(self) -> [str]:
         row_index = self.GetCurrentIndex()
