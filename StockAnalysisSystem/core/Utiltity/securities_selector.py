@@ -19,7 +19,8 @@ class SecuritiesSelector(QComboBox):
 
     def on_timer(self):
         # Check stock list ready and update combobox
-        if self.__data_utility.stock_cache_ready():
+        if self.__data_utility is not None and \
+                self.__data_utility.stock_cache_ready():
             stock_list = self.__data_utility.get_stock_list()
             for stock_identity, stock_name in stock_list:
                 self.addItem(stock_identity + ' | ' + stock_name, stock_identity)
