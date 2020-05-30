@@ -336,9 +336,9 @@ class MemoItem(ChartItem):
         painter.setBrush(self._background_brush)
 
         rect = QtCore.QRectF(
-            ix - BAR_WIDTH,
+            ix - BAR_WIDTH + 0.1,
             0,
-            BAR_WIDTH,
+            BAR_WIDTH * 2 - 0.1,
             len(memo)
         )
         painter.drawRect(rect)
@@ -349,7 +349,7 @@ class MemoItem(ChartItem):
 
     def boundingRect(self) -> QtCore.QRectF:
         """"""
-        min_data, max_data = self._manager.get_volume_range()
+        min_data, max_data = self._manager.get_item_data_range('memo', (0, 10))
         rect = QtCore.QRectF(
             0,
             min_data,
