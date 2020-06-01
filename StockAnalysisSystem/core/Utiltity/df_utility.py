@@ -56,7 +56,7 @@ def concat_dataframe_by_row(dfs: [pd.DataFrame], unique_column: str = None) -> p
     picked_lines = []
     if unique_column is not None and len(unique_column) > 0 and unique_column in df.columns:
         grouped = df.groupby(unique_column)
-        for _, g in df.groupby(unique_column):
+        for _, g in grouped:
             picked_line = None
             for row_index, row in g.iterrows():
                 if picked_line is None:
