@@ -154,6 +154,13 @@ class ChartWidget(pg.PlotWidget):
         if self._cursor:
             self._cursor.clear_all()
 
+    def refresh_history(self):
+        for item in self._items.values():
+            item.refresh_history()
+
+        self._update_plot_limits()
+        self.move_to_right()
+
     def update_history(self, history: List[BarData]) -> None:
         """
         Update a list of bar data.
@@ -164,7 +171,6 @@ class ChartWidget(pg.PlotWidget):
             item.update_history(history)
 
         self._update_plot_limits()
-
         self.move_to_right()
 
     def update_bar(self, bar: BarData) -> None:

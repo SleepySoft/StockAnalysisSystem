@@ -66,10 +66,7 @@ class ChartItem(pg.GraphicsObject):
         """
         pass
 
-    def update_history(self, history: List[BarData]) -> BarData:
-        """
-        Update a list of bar data.
-        """
+    def refresh_history(self):
         self._bar_pictures.clear()
 
         bars = self._manager.get_all_bars()
@@ -78,6 +75,12 @@ class ChartItem(pg.GraphicsObject):
             self._bar_pictures[ix] = bar_picture
 
         self.update()
+
+    def update_history(self, history: List[BarData]) -> BarData:
+        """
+        Update a list of bar data.
+        """
+        self.refresh_history()
 
     def update_bar(self, bar: BarData) -> BarData:
         """
