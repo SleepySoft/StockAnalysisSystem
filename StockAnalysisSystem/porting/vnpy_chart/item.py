@@ -160,34 +160,34 @@ class CandleItem(ChartItem):
         candle_picture = QtGui.QPicture()
         painter = QtGui.QPainter(candle_picture)
 
-        # # Set painter color
-        # if bar.close_price >= bar.open_price:
-        #     painter.setPen(self._up_pen)
-        #     painter.setBrush(self._up_brush)
-        # else:
-        #     painter.setPen(self._down_pen)
-        #     painter.setBrush(self._down_brush)
-        #
-        # # Draw candle shadow
-        # painter.drawLine(
-        #     QtCore.QPointF(ix, bar.high_price),
-        #     QtCore.QPointF(ix, bar.low_price)
-        # )
-        #
-        # # Draw candle body
-        # if bar.open_price == bar.close_price:
-        #     painter.drawLine(
-        #         QtCore.QPointF(ix - BAR_WIDTH, bar.open_price),
-        #         QtCore.QPointF(ix + BAR_WIDTH, bar.open_price),
-        #     )
-        # else:
-        #     rect = QtCore.QRectF(
-        #         ix - BAR_WIDTH,
-        #         bar.open_price,
-        #         BAR_WIDTH * 2,
-        #         bar.close_price - bar.open_price
-        #     )
-        #     painter.drawRect(rect)
+        # Set painter color
+        if bar.close_price >= bar.open_price:
+            painter.setPen(self._up_pen)
+            painter.setBrush(self._up_brush)
+        else:
+            painter.setPen(self._down_pen)
+            painter.setBrush(self._down_brush)
+
+        # Draw candle shadow
+        painter.drawLine(
+            QtCore.QPointF(ix, bar.high_price),
+            QtCore.QPointF(ix, bar.low_price)
+        )
+
+        # Draw candle body
+        if bar.open_price == bar.close_price:
+            painter.drawLine(
+                QtCore.QPointF(ix - BAR_WIDTH, bar.open_price),
+                QtCore.QPointF(ix + BAR_WIDTH, bar.open_price),
+            )
+        else:
+            rect = QtCore.QRectF(
+                ix - BAR_WIDTH,
+                bar.open_price,
+                BAR_WIDTH * 2,
+                bar.close_price - bar.open_price
+            )
+            painter.drawRect(rect)
 
         # Finish
         painter.end()
@@ -260,22 +260,22 @@ class VolumeItem(ChartItem):
         volume_picture = QtGui.QPicture()
         painter = QtGui.QPainter(volume_picture)
 
-        # # Set painter color
-        # if bar.close_price >= bar.open_price:
-        #     painter.setPen(self._up_pen)
-        #     painter.setBrush(self._up_brush)
-        # else:
-        #     painter.setPen(self._down_pen)
-        #     painter.setBrush(self._down_brush)
-        #
-        # # Draw volume body
-        # rect = QtCore.QRectF(
-        #     ix - BAR_WIDTH,
-        #     0,
-        #     BAR_WIDTH * 2,
-        #     bar.volume
-        # )
-        # painter.drawRect(rect)
+        # Set painter color
+        if bar.close_price >= bar.open_price:
+            painter.setPen(self._up_pen)
+            painter.setBrush(self._up_brush)
+        else:
+            painter.setPen(self._down_pen)
+            painter.setBrush(self._down_brush)
+
+        # Draw volume body
+        rect = QtCore.QRectF(
+            ix - BAR_WIDTH,
+            0,
+            BAR_WIDTH * 2,
+            bar.volume
+        )
+        painter.drawRect(rect)
 
         # Finish
         painter.end()

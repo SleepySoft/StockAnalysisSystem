@@ -34,7 +34,7 @@ def memo_path_from_project_path(project_path: str) -> str:
 
 
 class Record:
-    RECORD_COLUMNS = ['time', 'brief', 'content']
+    RECORD_COLUMNS = ['time', 'brief', 'content', 'classify']
 
     def __init__(self, record_path: str):
         self.__record_path = record_path
@@ -43,17 +43,17 @@ class Record:
     def is_empty(self) -> bool:
         return self.__record_sheet is None or len(self.__record_sheet) == 0
 
-    def add_record(self, _time: datetime, brief: str, content: str, save: bool = True) -> (bool, int):
+    def add_record(self, _time: datetime, brief: str, content: str, classify: str, _save: bool = True) -> (bool, int):
         if not self.__check_record_format(_time, brief, content):
             print('add_record() format error.')
             return False
         df = self.__record_sheet
         max_index = max(df.index) if len(df) > 0 else 0
         new_index = max_index + 1
-        df.loc[new_index, ['time', 'brief', 'content']] = ([_time, brief, content])
-        return (self.save() if save and self.save() else True), new_index
+        df.loc[new_index, ['time', 'brief', 'content', 'classify']] = ([_time, brief, content, classify])
+        return (self.save() if _save and self.save() else True), new_index
 
-    def update_record(self, index, _time: datetime.datetime, brief: str, content: str, save: bool = True) -> bool:
+    def update_record(self, index, _time: datetime.datetime, brief: str, content: str, _save: bool = True) -> bool:
         if not self.__check_record_format(_time, brief, content):
             print('update_record() format error.')
             return False
@@ -62,10 +62,12 @@ class Record:
             df.loc[index, ['time', 'brief', 'content']] = ([_time, brief, content])
         else:
             print('Warning: Index %s not in record.' % str(index))
-        return self.save() if save else True
+        return self.save() if _save else True
 
-    def get_records(self) -> pd.DataFrame:
-        return self.__record_sheet
+    def get_records(self, classify: str = '') -> pd.DataFrame:
+        if len(self.__record_sheet) == 0 or not str_available(classify):
+            return self.__record_sheet
+        return self.__record_sheet[self.__record_sheet['classify'] == classify]
 
     def del_records(self, idx: int or [int]):
         self.__record_sheet.drop(idx)
@@ -241,7 +243,7 @@ class StockMemoEditor(QDialog):
         if self.__current_index is not None:
             ret = self.__current_record.update_record(self.__current_index, _time, brief, content, True)
         else:
-            ret, index = self.__current_record.add_record(_time, brief, content, True)
+            ret, index = self.__current_record.add_record(_time, brief, content, 'memo', True)
             self.__current_index = index
         if ret:
             self.__reload_stock_memo()
@@ -276,7 +278,7 @@ class StockMemoEditor(QDialog):
             self.create_new_memo(_time)
             return
 
-        df = self.__current_record.get_records()
+        df = self.__current_record.get_records('memo')
         time_serial = df['time'].dt.normalize()
         select_df = df[time_serial == _time.replace(hour=0, minute=0, second=0, microsecond=0)]
 
@@ -324,7 +326,7 @@ class StockMemoEditor(QDialog):
             return
 
         self.__current_record = self.__memo_recordset.get_record(stock_identity)
-        df = self.__current_record.get_records()
+        df = self.__current_record.get_records('memo')
 
         select_index = None
         for index, row in df.iterrows():
@@ -343,7 +345,7 @@ class StockMemoEditor(QDialog):
         if self.__current_record is None:
             print('Warning: Current record is None, cannot reload.')
             return
-        df = self.__current_record.get_records()
+        df = self.__current_record.get_records('memo')
 
         select_index = self.__current_index
         for index, row in df.iterrows():
@@ -357,7 +359,7 @@ class StockMemoEditor(QDialog):
         if self.__current_record is None or index is None:
             return
 
-        df = self.__current_record.get_records()
+        df = self.__current_record.get_records('memo')
         s = df.loc[index]
         if len(s) == 0:
             return
@@ -370,7 +372,6 @@ class StockMemoEditor(QDialog):
         self.__datetime_time.setDateTime(to_py_datetime(_time))
         self.__line_brief.setText(brief)
         self.__text_record.setText(content)
-
 
 
 # ----------------------------------------------------------------------------------------------------------------------
