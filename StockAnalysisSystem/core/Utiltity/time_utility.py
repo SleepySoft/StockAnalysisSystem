@@ -1,5 +1,5 @@
-import datetime
 import time
+import datetime
 
 
 def now() -> datetime.datetime:
@@ -61,6 +61,35 @@ def previous_quarter(reference_date) -> datetime.datetime:
         return datetime.datetime(reference_date.year, 6, 30, 0, 0, 0)
     else:
         return datetime.datetime(reference_date.year, 9, 30, 0, 0, 0)
+
+
+def to_py_datetime(dt: any) -> datetime.datetime:
+    if isinstance(dt, str):
+        return text_auto_time(dt)
+
+    if isinstance(dt, datetime.datetime):
+        return dt
+    if isinstance(dt, datetime.date):
+        return datetime.datetime.combine(dt, datetime.min.time())
+
+    # The float time stamp must be time.time()
+    if isinstance(dt, float):
+        return datetime.datetime.fromtimestamp(1347517370)
+
+    # pyqt date and time
+    from PyQt5.QtCore import QDate, QDateTime
+    if isinstance(dt, QDate):
+        return datetime.datetime.combine(dt.toPyDate(), datetime.min.time())
+    if isinstance(dt, QDateTime):
+        return dt.toPyDateTime()
+
+    # DataFrame time
+    import pandas as pd
+    if isinstance(dt, pd.Timestamp):
+        return dt.to_pydatetime()
+
+    print('Cannot parse %s to datetime' % str(dt))
+    assert False
 
 
 def text_auto_time(text: str) -> datetime.datetime:

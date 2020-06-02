@@ -187,14 +187,14 @@ class StockMemoEditor(QDialog):
         group_box, group_layout = create_v_group_box('')
         group_layout.addWidget(self.__combo_stock, 1)
         group_layout.addWidget(self.__table_memo_index, 99)
-        root_layout.addWidget(group_box, 3)
+        root_layout.addWidget(group_box, 4)
 
         group_box, group_layout = create_v_group_box('')
         group_layout.addLayout(horizon_layout([QLabel('时间：'), self.__datetime_time, self.__button_new], [1, 99, 1]))
         group_layout.addLayout(horizon_layout([QLabel('摘要：'), self.__line_brief], [1, 99]))
         group_layout.addWidget(self.__text_record)
         group_layout.addLayout(horizon_layout([QLabel(''), self.__button_apply], [99, 1]))
-        root_layout.addWidget(group_box, 7)
+        root_layout.addWidget(group_box, 6)
 
         self.setMinimumSize(500, 600)
 
@@ -260,7 +260,7 @@ class StockMemoEditor(QDialog):
         if item is None:
             return
         df_index = sel_item.data(Qt.UserRole)
-        self.__select_memo_by_index(df_index)
+        self.__load_memo_by_index(df_index)
 
     def select_stock(self, stock_identity: str):
         index = self.__combo_stock.findData(stock_identity)
@@ -286,12 +286,17 @@ class StockMemoEditor(QDialog):
             break
 
         if select_index is not None:
-            self.__select_memo_by_index(select_index)
+            self.select_memo_by_index(select_index)
         else:
             self.create_new_memo(_time)
 
     def select_memo_by_index(self, index: int):
-        self.__select_memo_by_index(index)
+        for row in range(0, self.__table_memo_index.rowCount()):
+            table_item = self.__table_memo_index.item(row, 0)
+            row_index = table_item.data(Qt.UserRole)
+            if row_index == index:
+                self.__table_memo_index.selectRow(row)
+                break
 
     def create_new_memo(self, _time: datetime.datetime):
         self.__table_memo_index.clearSelection()
@@ -345,9 +350,9 @@ class StockMemoEditor(QDialog):
             if select_index is None:
                 select_index = index
             self.__table_memo_index.AppendRow([datetime2text(row['time']), row['brief']], index)
-        self.__select_memo_by_index(select_index)
+        self.select_memo_by_index(select_index)
 
-    def __select_memo_by_index(self, index: int):
+    def __load_memo_by_index(self, index: int):
         self.__table_memo_index.clearSelection()
         if self.__current_record is None or index is None:
             return
@@ -362,11 +367,10 @@ class StockMemoEditor(QDialog):
         brief = s['brief']
         content = s['content']
 
-        self.__datetime_time.setDateTime(_time.to_pydatetime())
+        self.__datetime_time.setDateTime(to_py_datetime(_time))
         self.__line_brief.setText(brief)
         self.__text_record.setText(content)
 
-        for i in range(self.__table_memo_index.item())
 
 
 # ----------------------------------------------------------------------------------------------------------------------
