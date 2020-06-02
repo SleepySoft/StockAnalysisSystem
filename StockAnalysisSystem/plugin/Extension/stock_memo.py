@@ -271,6 +271,7 @@ class StockMemoEditor(QDialog):
             self.__combo_stock.setCurrentIndex(index)
         else:
             print('No index in combox for %s' % stock_identity)
+            self.__combo_stock.setCurrentIndex(-1)
             self.__load_stock_memo(stock_identity)
 
     def select_memo_by_time(self, _time: datetime.datetime):
