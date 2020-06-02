@@ -155,7 +155,7 @@ class RecordSet:
         return records
 
 
-class StockMemoEditor(QWidget):
+class StockMemoEditor(QDialog):
     def __init__(self, sas: StockAnalysisSystem, memo_record: RecordSet, parent: QWidget = None):
         super(StockMemoEditor, self).__init__(parent)
 
@@ -216,13 +216,13 @@ class StockMemoEditor(QWidget):
         self.__button_new.clicked.connect(self.on_button_new)
         self.__button_apply.clicked.connect(self.on_button_apply)
 
-        self.setWindowFlags(
-            QtCore.Qt.Window |
-            QtCore.Qt.CustomizeWindowHint |
-            QtCore.Qt.WindowTitleHint |
-            QtCore.Qt.WindowCloseButtonHint |
-            QtCore.Qt.WindowStaysOnTopHint
-        )
+        # self.setWindowFlags(
+        #     QtCore.Qt.Window |
+        #     QtCore.Qt.CustomizeWindowHint |
+        #     QtCore.Qt.WindowTitleHint |
+        #     QtCore.Qt.WindowCloseButtonHint |
+        #     QtCore.Qt.WindowStaysOnTopHint
+        # )
 
     def on_button_new(self):
         if self.__current_stock is None:
@@ -294,6 +294,7 @@ class StockMemoEditor(QWidget):
         self.__select_memo_by_index(index)
 
     def create_new_memo(self, _time: datetime.datetime):
+        self.__table_memo_index.clearSelection()
         if _time is not None:
             self.__datetime_time.setDateTime(_time)
         self.__line_brief.setText('')
@@ -347,6 +348,7 @@ class StockMemoEditor(QWidget):
         self.__select_memo_by_index(select_index)
 
     def __select_memo_by_index(self, index: int):
+        self.__table_memo_index.clearSelection()
         if self.__current_record is None or index is None:
             return
 
@@ -363,6 +365,8 @@ class StockMemoEditor(QWidget):
         self.__datetime_time.setDateTime(_time.to_pydatetime())
         self.__line_brief.setText(brief)
         self.__text_record.setText(content)
+
+        for i in range(self.__table_memo_index.item())
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -552,7 +556,8 @@ class StockHistoryUi(QWidget):
 
     def popup_memo_editor_by_time(self, _time: datetime):
         self.__memo_editor.select_memo_by_time(_time)
-        self.__memo_editor.show()
+        # self.__memo_editor.show()
+        self.__memo_editor.exec()
 
     def load_security_data(self, securities: str, adjust_method: int, return_style: int) -> bool:
         data_utility = self.__sas.get_data_hub_entry().get_data_utility()
