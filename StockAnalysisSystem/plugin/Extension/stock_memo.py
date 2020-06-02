@@ -43,29 +43,26 @@ class Record:
     def is_empty(self) -> bool:
         return self.__record_sheet is None or len(self.__record_sheet) == 0
 
-    def add_record(self, _time: datetime, brief: str, content: str, save: bool = True) -> bool:
+    def add_record(self, _time: datetime, brief: str, content: str, save: bool = True) -> (bool, int):
         if not self.__check_record_format(_time, brief, content):
             print('add_record() format error.')
             return False
-        self.__record_sheet = self.__record_sheet.append({
-            'time': _time,
-            'brief': brief,
-            'content': content,
-        }, ignore_index=True)
-        return self.save() if save else True
+        df = self.__record_sheet
+        max_index = max(df.index) if len(df) > 0 else 0
+        new_index = max_index + 1
+        df.loc[new_index, ['time', 'brief', 'content']] = ([_time, brief, content])
+        return (self.save() if save and self.save() else True), new_index
 
-    def update_record(self, index, _time: datetime.datetime, brief: str, content: str, save: bool = True):
+    def update_record(self, index, _time: datetime.datetime, brief: str, content: str, save: bool = True) -> bool:
         if not self.__check_record_format(_time, brief, content):
             print('update_record() format error.')
             return False
-        if index in self.__record_sheet.index.values:
-            self.__record_sheet.iloc[index, 'time'] = _time
-            self.__record_sheet.iloc[index, 'brief'] = brief
-            self.__record_sheet.iloc[index, 'content'] = content
+        df = self.__record_sheet
+        if index in df.index.values:
+            df.loc[index, ['time', 'brief', 'content']] = ([_time, brief, content])
         else:
             print('Warning: Index %s not in record.' % str(index))
-        if save:
-            self.save()
+        return self.save() if save else True
 
     def get_records(self) -> pd.DataFrame:
         return self.__record_sheet
@@ -95,9 +92,10 @@ class Record:
 
     def __load(self, record_path: str) -> bool:
         try:
-            self.__record_sheet = pd.read_csv(record_path)
-            self.__record_sheet['time'] = self.__record_sheet['time'].apply(text_auto_time)
-            self.__record_sheet.reindex()
+            df = pd.read_csv(record_path)
+            df['time'] = pd.to_datetime(df['time'], infer_datetime_format=True)
+            df.reindex()
+            self.__record_sheet = df
             return set(Record.RECORD_COLUMNS).issubset(self.__record_sheet.columns)
         except Exception as e:
             return False
@@ -106,6 +104,7 @@ class Record:
 
     def __save(self, record_path: str) -> bool:
         try:
+            self.__record_sheet = self.__record_sheet[Record.RECORD_COLUMNS]
             self.__record_sheet.to_csv(record_path)
             return True
         except Exception as e:
@@ -206,7 +205,8 @@ class StockMemoEditor(QWidget):
         self.__combo_stock.setEditable(False)
         self.__combo_stock.currentIndexChanged.connect(self.on_combo_select_changed)
 
-        self.__table_memo_index.setColumnCount(2)
+        self.__table_memo_index.insertColumn(0)
+        self.__table_memo_index.insertColumn(0)
         self.__table_memo_index.setHorizontalHeaderLabels(['时间', '摘要'])
         self.__table_memo_index.setSelectionMode(QAbstractItemView.SingleSelection)
         self.__table_memo_index.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -216,10 +216,18 @@ class StockMemoEditor(QWidget):
         self.__button_new.clicked.connect(self.on_button_new)
         self.__button_apply.clicked.connect(self.on_button_apply)
 
+        self.setWindowFlags(
+            QtCore.Qt.Window |
+            QtCore.Qt.CustomizeWindowHint |
+            QtCore.Qt.WindowTitleHint |
+            QtCore.Qt.WindowCloseButtonHint |
+            QtCore.Qt.WindowStaysOnTopHint
+        )
+
     def on_button_new(self):
         if self.__current_stock is None:
             QMessageBox.information(self, '错误', '请选择需要做笔记的股票', QMessageBox.Ok, QMessageBox.Ok)
-        self.create_new_memo(now())
+        self.create_new_memo(None)
 
     def on_button_apply(self):
         _time = self.__datetime_time.dateTime().toPyDateTime()
@@ -233,25 +241,26 @@ class StockMemoEditor(QWidget):
         if self.__current_index is not None:
             ret = self.__current_record.update_record(self.__current_index, _time, brief, content, True)
         else:
-            ret = self.__current_record.add_record(_time, brief, content, True)
+            ret, index = self.__current_record.add_record(_time, brief, content, True)
+            self.__current_index = index
         if ret:
-            self.__load_stock_memo(self.__current_stock)
+            self.__reload_stock_memo()
 
     def on_combo_select_changed(self):
         input_securities = self.__combo_stock.get_input_securities()
         self.__load_stock_memo(input_securities)
 
     def on_table_selection_changed(self):
-        if self.__current_record is None or self.__current_index is None:
+        if self.__current_record is None:
             return
         sel_index = self.__table_memo_index.GetCurrentIndex()
         if sel_index < 0:
             return
-        sel_item = self.__table_memo_index.item(sel_index)
+        sel_item = self.__table_memo_index.item(sel_index, 0)
         if item is None:
             return
         df_index = sel_item.data(Qt.UserRole)
-        self.select_memo_by_index(df_index)
+        self.__select_memo_by_index(df_index)
 
     def select_stock(self, stock_identity: str):
         index = self.__combo_stock.findData(stock_identity)
@@ -275,13 +284,18 @@ class StockMemoEditor(QWidget):
         for index, row in select_df.iterrows():
             select_index = index
             break
-        self.__select_memo_by_index(select_index)
+
+        if select_index is not None:
+            self.__select_memo_by_index(select_index)
+        else:
+            self.create_new_memo(_time)
 
     def select_memo_by_index(self, index: int):
         self.__select_memo_by_index(index)
 
     def create_new_memo(self, _time: datetime.datetime):
-        self.__datetime_time.setDateTime(_time)
+        if _time is not None:
+            self.__datetime_time.setDateTime(_time)
         self.__line_brief.setText('')
         self.__text_record.setText('')
         self.__current_index = None
@@ -292,6 +306,9 @@ class StockMemoEditor(QWidget):
         print('Load stock memo for %s' % stock_identity)
 
         self.__table_memo_index.clear()
+        self.__table_memo_index.setRowCount(0)
+        self.__table_memo_index.setHorizontalHeaderLabels(['时间', '摘要'])
+
         self.__current_stock = stock_identity
         self.__current_record = None
         self.__current_index = None
@@ -310,24 +327,42 @@ class StockMemoEditor(QWidget):
             self.__table_memo_index.AppendRow([datetime2text(row['time']), row['brief']], index)
         self.select_memo_by_index(select_index)
 
+    def __reload_stock_memo(self):
+        self.__line_brief.setText('')
+        self.__text_record.setText('')
+        self.__table_memo_index.clear()
+        self.__table_memo_index.setRowCount(0)
+        self.__table_memo_index.setHorizontalHeaderLabels(['时间', '摘要'])
+
+        if self.__current_record is None:
+            print('Warning: Current record is None, cannot reload.')
+            return
+        df = self.__current_record.get_records()
+
+        select_index = self.__current_index
+        for index, row in df.iterrows():
+            if select_index is None:
+                select_index = index
+            self.__table_memo_index.AppendRow([datetime2text(row['time']), row['brief']], index)
+        self.__select_memo_by_index(select_index)
+
     def __select_memo_by_index(self, index: int):
         if self.__current_record is None or index is None:
             return
+
         df = self.__current_record.get_records()
-        slice_df = df.iloc[[index]]
-        if len(slice_df) == 0:
+        s = df.loc[index]
+        if len(s) == 0:
             return
         self.__current_index = index
-        for index, row in slice_df.iterrows():
-            _time = row['time']
-            brief = row['brief']
-            content = row['content']
 
-            self.__datetime_time.setDateTime(_time.to_pydatetime())
-            self.__line_brief.setText(brief)
-            self.__text_record.setText(content)
+        _time = s['time']
+        brief = s['brief']
+        content = s['content']
 
-            break
+        self.__datetime_time.setDateTime(_time.to_pydatetime())
+        self.__line_brief.setText(brief)
+        self.__text_record.setText(content)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -431,6 +466,10 @@ class StockHistoryUi(QWidget):
         self.setMinimumWidth(1280)
         self.setMinimumHeight(800)
 
+        # --------------------- Editor ----------------------
+
+        self.__memo_editor.closeEvent = self.on_editor_closed
+
         # ---------------------- Chart ----------------------
 
         self.__vnpy_chart.add_plot("candle", hide_x_axis=True)
@@ -442,7 +481,6 @@ class StockHistoryUi(QWidget):
         self.__vnpy_chart.add_item(MemoItem, "memo", "memo")
 
         self.__vnpy_chart.add_cursor()
-
         self.__vnpy_chart.scene().sigMouseClicked.connect(self.on_chart_clicked)
 
     @pyqtSlot(MouseClickEvent)
@@ -498,6 +536,11 @@ class StockHistoryUi(QWidget):
                                     QMessageBox.Ok, QMessageBox.Ok)
         else:
             self.load_security_memo()
+            self.__vnpy_chart.refresh_history()
+
+    def on_editor_closed(self, event):
+        self.load_security_memo()
+        self.__vnpy_chart.refresh_history()
 
     def popup_memo_editor(self, ix: float):
         bar_data = self.__vnpy_chart.get_bar_manager().get_bar(ix)
@@ -508,7 +551,6 @@ class StockHistoryUi(QWidget):
             self.popup_memo_editor_by_time(now())
 
     def popup_memo_editor_by_time(self, _time: datetime):
-        self.__memo_editor.select_stock(self.__paint_securities)
         self.__memo_editor.select_memo_by_time(_time)
         self.__memo_editor.show()
 
@@ -561,11 +603,13 @@ class StockHistoryUi(QWidget):
             trade_data['low'] = np.log(trade_data['low'])
 
         bars = self.df_to_bar_data(trade_data, securities)
-        self.__vnpy_chart.update_history(bars)
+        self.__vnpy_chart.get_bar_manager().update_history(bars)
 
         return True
 
     def load_security_memo(self) -> bool:
+        self.__memo_editor.select_stock(self.__paint_securities)
+
         memo_record = self.__memo_recordset.get_record(self.__paint_securities)
         bar_manager = self.__vnpy_chart.get_bar_manager()
 
@@ -588,9 +632,10 @@ class StockHistoryUi(QWidget):
             bar_manager.set_item_data(group_time, 'memo', group_df)
         bar_manager.set_item_data_range('memo', 0.0, max_memo_count)
 
-        memo_item = self.__vnpy_chart.get_item('memo')
-        if memo_item is not None:
-            memo_item.update_history(None)
+        # memo_item = self.__vnpy_chart.get_item('memo')
+        # if memo_item is not None:
+        #     memo_item.refresh_history()
+        # self.__vnpy_chart.update_history()
 
         return True
 
