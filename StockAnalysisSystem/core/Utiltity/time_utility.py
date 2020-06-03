@@ -74,7 +74,7 @@ def to_py_datetime(dt: any) -> datetime.datetime:
 
     # The float time stamp must be time.time()
     if isinstance(dt, float):
-        return datetime.datetime.fromtimestamp(1347517370)
+        return datetime.datetime.fromtimestamp(dt)
 
     # pyqt date and time
     from PyQt5.QtCore import QDate, QDateTime
