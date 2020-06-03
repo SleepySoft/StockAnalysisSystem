@@ -16,6 +16,7 @@ from pyqtgraph.GraphicsScene.mouseEvents import MouseClickEvent
 
 from StockAnalysisSystem.porting.vnpy_chart import *
 from StockAnalysisSystem.core.Utiltity.common import *
+from StockAnalysisSystem.core.Utiltity.df_utility import *
 from StockAnalysisSystem.core.Utiltity.ui_utility import *
 from StockAnalysisSystem.core.Utiltity.time_utility import *
 from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
@@ -98,7 +99,7 @@ class Record:
             df['time'] = pd.to_datetime(df['time'], infer_datetime_format=True)
             df.reindex()
             self.__record_sheet = df
-            return set(Record.RECORD_COLUMNS).issubset(self.__record_sheet.columns)
+            return column_includes(self.__record_sheet.columns, Record.RECORD_COLUMNS)
         except Exception as e:
             return False
         finally:

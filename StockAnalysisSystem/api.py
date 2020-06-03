@@ -3,6 +3,7 @@ import os
 from StockAnalysisSystem.ui.main_ui import MainWindow
 from StockAnalysisSystem.ui.config_ui import ConfigUi
 
+from StockAnalysisSystem.core.config import Config
 from StockAnalysisSystem.core.Utiltity.common import *
 from StockAnalysisSystem.core.Utiltity.ui_utility import *
 from StockAnalysisSystem.core.Utiltity.plugin_manager import PluginManager
@@ -25,8 +26,28 @@ from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 
 def main(project_path: str = None):
     sas_path = project_path if str_available(project_path) else os.getcwd()
-    sas().check_initialize(sas_path)
+    init(sas_path)
     run_ui()
+
+
+def init(project_path: str = None, not_load_config: bool = False) -> bool:
+    return sas().check_initialize(project_path, not_load_config)
+
+
+def error_log() -> [str]:
+    return sas().get_log_errors()
+
+
+def config_list() -> dict:
+    return Config.CONFIG_DICT
+
+
+def config_set(key: str, value: any):
+    sas().get_config().set(key, value)
+
+
+def config_get(key: str or None) -> dict or any:
+    return sas().get_config().get_all_config() if key is None else sas().get_config().get(key, '')
 
 
 def run_ui():
@@ -97,6 +118,10 @@ def query_data(uri: str, identity: str or [str] = None, time_serial: tuple = Non
 
 def update_data(uri: str, identity: str or [str] = None, time_serial: tuple = None, force: bool = False, **extra):
     return get_data_center().update_local_data(uri, identity, time_serial, force, **extra)
+
+
+def query_online(uri: str, identity: str or [str] = None, time_serial: tuple = None, **extra) -> pd.DataFrame or None:
+    return get_data_center().query_from_plugin(uri, identity, time_serial, **extra)
 
 
 # ----------------------------------- Development -----------------------------------

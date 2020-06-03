@@ -17,6 +17,10 @@ def get_dataframe_slice_item(df_slice, field: str, order: int = 0, default: any 
     return get_series_item(field_series, order, default)
 
 
+def column_includes(df: pd.DataFrame, fields: [str]) -> bool:
+    return set(fields).issubset(df)
+
+
 def check_date_continuity(df: pd.DataFrame, field: str) -> tuple:
     """
     Check the continuity of a date format column in a DataFrame
