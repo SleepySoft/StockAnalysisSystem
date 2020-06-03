@@ -193,6 +193,48 @@ def goodwill_is_too_high(securities: str, data_hub: DataHubEntry,
         AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, reason)
 
 
+def interest_too_high(securities: str, data_hub: DataHubEntry,
+                      database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+    nop(database)
+    nop(context)
+
+    df, result = query_readable_annual_report_pattern(data_hub, 'Finance.BalanceSheet',
+                                                      securities, (years_ago(5), now()),
+                                                      ['减:利息支出', '净利润(不含少数股东损益)'])
+    if result is not None:
+        return result
+
+    score = 100
+    reason = []
+    applied = False
+    for index, row in df.iterrows():
+        period = row['period']
+
+        if row['净利润(不含少数股东损益)'] <= 0:
+            if row['减:利息支出'] > 10000:
+                score = 0
+                reason.append('%s: 母公司净利润小于等于0，而存在利息支出 = %.2f%%' %
+                              (str(period), row['减:利息支出']))
+            else:
+                score = min(score, 50)
+                reason.append('%s: 母公司净利润小于等于0' % str(period))
+            continue
+        interest_income_ratio = row['减:利息支出'] / row['净利润(不含少数股东损益)']
+        if interest_income_ratio >= 0.3:
+            score = 0
+            reason.append('%s: 利息支出占母公司净利润比例 = %.2f%%' %
+                          (str(period), interest_income_ratio))
+        elif interest_income_ratio >= 0.1:
+            score = min(score, 50)
+            reason.append('%s: 利息支出占母公司净利润比例 = %.2f%%' %
+                          (str(period), interest_income_ratio))
+
+    if len(reason) == 0:
+        reason.append('正常')
+    return AnalysisResult(securities, score, reason) if applied else \
+        AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, reason)
+
+
 # ------------------------------------------------------ 06 - 10 -------------------------------------------------------
 
 
@@ -203,12 +245,15 @@ def goodwill_is_too_high(securities: str, data_hub: DataHubEntry,
 
 METHOD_LIST = [
     # 1 - 5
-    ('3b01999c-3837-11ea-b851-27d2aa2d4e7d', '财报非标',        '排除财报非标的公司',                  analysis_finance_report_sign),
+    ('3b01999c-3837-11ea-b851-27d2aa2d4e7d', '财报非标',        '排除财报非标的公司',                   analysis_finance_report_sign),
     ('b0e34011-c5bf-4ac3-b6a4-c15e5ea150a6', '连续亏损',        '排除营业利润或利润总额连续亏损的公司', analysis_consecutive_losses),
     # oth_b_income field missing for lots of securities. This analyzer may not work.
     ('d811ebd6-ee28-4d2f-b7e0-79ce0ecde7f7', '非主营业务过高',  '排除主营业务占比过低的公司',           analysis_profit_structure),
-    ('2c05bb4c-935e-4be7-9c04-ae12720cd757', '存贷双高',        '排除存贷双高的公司',                  analysis_cash_loan_both_high),
+    ('2c05bb4c-935e-4be7-9c04-ae12720cd757', '存贷双高',        '排除存贷双高的公司',                   analysis_cash_loan_both_high),
     # ('e6ab71a9-0c9f-4500-b2db-d682af567f70', '商誉过高',        '排除商誉过高的公司',                  goodwill_is_too_high),
+
+    # These data in tushare always 0
+    # ('a442023d-81e9-47c7-aeb6-7de478cdbc1b', '利息吞噬利润',    '排除利息占比净利润过高的公司',        interest_too_high),
 ]
 
 

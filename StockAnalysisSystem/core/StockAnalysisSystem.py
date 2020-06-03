@@ -76,7 +76,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
     def is_initialized(self) -> bool:
         return self.__inited
 
-    def check_initialize(self, project_path: str = '') -> bool:
+    def check_initialize(self, project_path: str = '', not_load_config: bool = False) -> bool:
         if self.__inited:
             return True
 
@@ -105,9 +105,10 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         from .Database.DatabaseEntry import DatabaseEntry
         from .Utiltity.plugin_manager import PluginManager
 
-        if not self.__config.load_config(config_file_path):
-            self.__log_errors.append('Load config fail.')
-            return False
+        if not not_load_config:
+            if not self.__config.load_config(config_file_path):
+                self.__log_errors.append('Load config fail.')
+                return False
 
         ok, reason = self.__config.check_config()
         if not ok:

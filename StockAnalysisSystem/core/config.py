@@ -10,6 +10,16 @@ TS_TOKEN = 'TODO: Place holder, for compatibility.'
 
 
 class Config:
+    CONFIG_DICT = {
+        'NOSQL_DB_HOST': 'The service ip or host name of mongodb service. Default "localhost"',
+        'NOSQL_DB_PORT': 'The service port of mongodb service. Default "27017"',
+        'NOSQL_DB_USER': 'The user name of mongodb service. Default empty',
+        'NOSQL_DB_PASS': 'The password of mongodb service. Default empty',
+        'TS_TOKEN': 'The tushare token which can get from https://tushare.pro/',
+        'PROXY_PROTOCOL': 'The proxy type which should be one of HTTP_PROXY and HTTPS_PROXY. Default empty',
+        'PROXY_HOST': 'The proxy host and port. Default empty',
+    }
+
     MUST_CONFIG = [('NOSQL_DB_HOST', '必须填写Mongodb服务器地址（NoSql Host），否则无法正常访问数据'),
                    ('NOSQL_DB_PORT', '必须填写Mongodb服务器端口（NoSql Port），否则无法正常访问数据'),
                    ('TS_TOKEN',      '必须填写Tushare Token，否则无法更新数据。\n'
@@ -24,6 +34,9 @@ class Config:
 
     def get(self, key: str, default_value: str = '') -> str:
         return self.__config_dict.get(key, default_value)
+
+    def get_all_config(self) -> dict:
+        return self.__config_dict
 
     def save_config(self, config_file: str = 'config.json') -> bool:
         try:
