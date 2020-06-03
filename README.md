@@ -14,12 +14,10 @@ https://github.com/SleepySoft/StockAnalysisSystem
   
 # 视频讲解
 安装配置：https://www.bilibili.com/video/BV14z411b7AE/  
-设计与框架：https://www.bilibili.com/video/BV1u64y1u7dy/  
+设计与框架：https://www.bilibili.com/video/BV1nK411p7uD/
   
 # 最近更新内容：
-* 重新组织程序文件结构，使其能够打包成库  
-> 现在本程序可以通过pip install StockAnalysisSystem获取  
-> 详情请见下方说明  
+* 从vnpy移植K线图表，重做Stock Memo功能  
   
 * 更新相应文档  
   
@@ -172,15 +170,19 @@ QQ群：931499339，进群验证码：SleepySoft
         新基建->数据中心->UPS, 电力设施  
     继而发现[产品]或[概念]相关的公司  
   
+----------------------------------------------------------------------------------------------------------------------
+# 任务回收站  
+  
 ### History（股市史）  
 1. 为History加入Horizon轴支持 -> Done  
 2. 增加显示折线图的Track -> Done  
 3. 集成到StockAnalysisSytem -> Done  
 4. 股票历史的录入
 5. Stock Memo在时间轴上的显示
-  
-----------------------------------------------------------------------------------------------------------------------
-# 任务回收站  
+
+* 重新组织程序文件结构，使其能够打包成库  
+> 现在本程序可以通过pip install StockAnalysisSystem获取  
+> 详情请见下方说明  
    
 > 将数据描述（Prob）从UniversalDataTable中提取出来，使数据加入，更新和检查更加自动化  
 
