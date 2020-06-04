@@ -2,6 +2,7 @@ import pandas as pd
 
 from StockAnalysisSystem.core.Utiltity.common import *
 from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.Utiltity.digit_utility import *
 from StockAnalysisSystem.core.Utiltity.AnalyzerUtility import *
 from StockAnalysisSystem.core.DataHubEntry import DataHubEntry
 from StockAnalysisSystem.core.Database.DatabaseEntry import DatabaseEntry
@@ -246,24 +247,86 @@ def analysis_current_and_quick_ratio(securities: str, data_hub: DataHubEntry,
         'Factor.Finance', securities, (years_ago(5), now()), fields=['流动比率', '速动比率'], readable=True)
     if df is None or len(df) == 0:
         return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '')
+
+    # Annual report
+    df = df[df['period'].dt.month == 12]
     
-    score = 100
+    score = 0
+    total = 0
     reason = []
     applied = False
     for index, row in df.iterrows():
         period = row['period']
 
         if row['流动比率'] < 2.0:
-            score = 0
+            score += 0
             reason.append('%s: 流动比率为%.2f < 2.0' % (str(period), row['流动比率']))
-        if row['速动比率'] < 1.0:
-            score = 0
-            reason.append('%s: 速动比率为%.2f < 1.0' % (str(period), row['速动比率']))
-        applied = True
+        else:
+            score += 100
 
-    if len(reason) == 0:
-        reason.append('正常')
-    return AnalysisResult(securities, score, reason) if applied else \
+        if row['速动比率'] < 1.0:
+            score += 0
+            reason.append('%s: 速动比率为%.2f < 1.0' % (str(period), row['速动比率']))
+        else:
+            score += 100
+
+        total += 200
+
+    if total > 0 and len(reason) == 0:
+        reason.append('正常 - 平均流动比率为%.2f，平均速动比率为%.2f' % (df['流动比率'].mean(), df['速动比率'].mean()))
+    return AnalysisResult(securities, score / total, reason) if total > 0 else \
+        AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '')
+
+
+def analysis_roe_roa(securities: str, data_hub: DataHubEntry,
+                     database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+    nop(database)
+    nop(context)
+
+    df = data_hub.get_data_center().query_from_factor(
+        'Factor.Finance', securities, (years_ago(5), now()), fields=['总资产收益率', '净资产收益率'], readable=True)
+    if df is None or len(df) == 0:
+        return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '')
+
+    # Annual report
+    df = df[df['period'].dt.month == 12]
+
+    score = 0
+    total = 0
+    reason = []
+    for index, row in df.iterrows():
+        period = row['period']
+
+        if row['总资产收益率'] < 0.05:
+            score += 50
+            reason.append('%s: 总资产收益率为%s%% - 过低' %
+                          (str(period), format_pct(row['总资产收益率'])))
+        elif row['总资产收益率'] > 0.15:
+            score += 50
+            reason.append('%s: 总资产收益率为%s%% - 偏高，需要引起注意' %
+                          (str(period), format_pct(row['总资产收益率'])))
+        else:
+            # Theory: 7.5% - 13%, but we use 5% - 15% for wider tolerance.
+            score += 100
+
+        if row['净资产收益率'] < 0.15:
+            score += 50
+            reason.append('%s: 净资产收益率为%s%% - 偏低' %
+                          (str(period), format_pct(row['净资产收益率'])))
+        elif row['净资产收益率'] > 0.40:
+            score += 0
+            reason.append('%s: 净资产收益率为%s%% - 过高，可能是造假或偶然因素' %
+                          (str(period), format_pct(row['净资产收益率'])))
+        else:
+            # Theory: 15% - 39%.
+            score += 100
+
+        total += 200
+
+    if total > 0 and len(reason) == 0:
+        reason.append('正常 - 平均总资产收益率为%.2f，平均净资产收益率为%.2f' %
+                      (df['总资产收益率'].mean(), df['净资产收益率'].mean()))
+    return AnalysisResult(securities, score / total, reason) if total > 0 else \
         AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '')
 
 
@@ -285,6 +348,7 @@ METHOD_LIST = [
     # ('a442023d-81e9-47c7-aeb6-7de478cdbc1b', '利息吞噬利润',    '排除利息占比净利润过高的公司',        interest_too_high),
     
     ('a460a24e-2261-4ed1-8c42-84025e495bed', '流动速动',        '排除流动比率和速动比率不达标的公司',    analysis_current_and_quick_ratio),
+    ('fb82909b-c7a3-427a-8bea-880c48c25027', '资产收益',        '分析资产收益率及净资产收益率',          analysis_roe_roa),
 ]
 
 
