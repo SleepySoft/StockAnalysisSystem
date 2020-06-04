@@ -12,3 +12,4 @@ pylab-sdk
 matplotlib
 requests_html
 PyExecJS
+twine

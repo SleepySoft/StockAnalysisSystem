@@ -16,7 +16,6 @@ if "X%1" == "X" (
 ) else if "%1" == "-u" (
 	echo upload library
 	goto upload_library
-	goto pack_library
 	
 ) else if "%1" == "-i" (
 	echo install library
@@ -69,20 +68,21 @@ goto end
 
 :setup_venv
 	Rem Use 5.12.0 to match another lib's dependency. But it does not have to.
-	pip install pyqt5==5.12.0
-	pip install pyqtwebengine==5.12.0
-	pip install bs4
-	pip install lxml
-	pip install requests
-	pip install pandas
-	pip install pymongo
-	pip install openpyxl
-	pip install tushare
-	pip install pylab-sdk
-	pip install matplotlib
-	Rem pip install mpl_finance
-	pip install requests_html
-	pip install PyExecJS
+	Rem pip install pyqt5==5.12.0
+	Rem pip install pyqtwebengine==5.12.0
+	Rem pip install bs4
+	Rem pip install lxml
+	Rem pip install requests
+	Rem pip install pandas
+	Rem pip install pymongo
+	Rem pip install openpyxl
+	Rem pip install tushare
+	Rem pip install pylab-sdk
+	Rem pip install matplotlib
+	Rem pip install requests_html
+	Rem pip install PyExecJS
+	
+	pip install -r requirements.txt
 
 	pip uninstall pyinstaller
 	pip install https://github.com/pyinstaller/pyinstaller/archive/develop.zip
@@ -90,26 +90,10 @@ goto end
 	goto end
 
 :setup_env
-	Rem Use 5.12.0 to match another lib's dependency. But it does not have to.
-	pip install --user pyqt5==5.12.0
-	pip install --user pyqtwebengine==5.12.0
-	pip install --user bs4
-	pip install --user lxml
-	pip install --user requests
-	pip install --user pandas
-	pip install --user pymongo
-	pip install --user openpyxl
-	pip install --user tushare
-	pip install --user matplotlib
-	Rem pip install --user mpl_finance
-	pip install --user requests_html
-	pip install --user PyExecJS
-	
-	Rem Note that mpl_finance will be deprecated and the new lib named mplfinance whose api is way different from mpl_finance
-	Rem pip install --user --upgrade mplfinance --proxy=
+	pip install -r requirements.txt
 
 	pip uninstall pyinstaller
-	pip install https://github.com/pyinstaller/pyinstaller/archive/develop.zip
+	pip install --user https://github.com/pyinstaller/pyinstaller/archive/develop.zip
 	
 	goto end
 
