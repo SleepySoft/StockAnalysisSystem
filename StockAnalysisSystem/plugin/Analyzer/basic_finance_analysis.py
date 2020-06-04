@@ -255,17 +255,16 @@ def analysis_current_and_quick_ratio(securities: str, data_hub: DataHubEntry,
 
         if row['流动比率'] < 2.0:
             score = 0
-            reason.append('%s: 流动比率为%.2f%% < 2.0' % (str(period), row['流动比率']))
+            reason.append('%s: 流动比率为%.2f < 2.0' % (str(period), row['流动比率']))
         if row['速动比率'] < 1.0:
             score = 0
-            reason.append('%s: 速动比率为%.2f%% < 1.0' % (str(period), row['速动比率']))
+            reason.append('%s: 速动比率为%.2f < 1.0' % (str(period), row['速动比率']))
         applied = True
 
     if len(reason) == 0:
         reason.append('正常')
     return AnalysisResult(securities, score, reason) if applied else \
         AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '')
-
 
 
 # ------------------------------------------------------ 11 - 15 -------------------------------------------------------
