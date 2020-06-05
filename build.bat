@@ -46,9 +46,8 @@ goto end
 :help
 	echo -b or no param : Build
 	echo -c             : Clean Build
-	echo -p				: Pack library in dist/
-	echo -u				: Upload library in dist/ to pypi
-	Rem echo -i				: Install library for current python enviroment
+	echo -p             : Pack library in dist/
+	echo -u             : Upload library in dist/ to pypi
 	echo -r             : Remove  library from current python enviroment
 	echo -e             : Setup current env
 	echo -s             : Re-setup virtual enviroment
@@ -62,8 +61,9 @@ goto end
 
 :setup_virtual_env
 	pipenv install
-	pipenv run %0 -ve
-	
+	Rem pipenv run %0 -ve
+	pipenv install -r requirements.txt
+	pipenv install -e git+https://github.com/pyinstaller/pyinstaller.git@develop#egg=PyInstaller
 	goto end
 
 :setup_venv
@@ -99,7 +99,35 @@ goto end
 
 
 :build
-	pipenv run %0 -build_in_virtual_env
+	Rem pipenv run %0 -build_in_virtual_env
+	Rem pyi-makespec -w --hidden-import pandas --hidden-import pyqtgraph --icon="res/logo.ico" main.py
+	
+	del main.spec
+	rmdir /s /q dist
+	rmdir /s /q build
+	
+	pyi-makespec --icon="res/logo.ico" main.py
+	pipenv run pyinstaller  main.spec
+	
+	rmdir /s/q "StockAnalysisSystem/plugin/Analyzer/__pycache__"
+	rmdir /s/q "StockAnalysisSystem/plugin/Collector/__pycache__"
+	rmdir /s/q "StockAnalysisSystem/plugin/Extension/__pycache__"
+
+	Rem Copy plug-in
+	xcopy "StockAnalysisSystem/plugin" "dist/main/plugin" /e /i /h /s
+	
+	xcopy "README.md" "dist\main\"
+	xcopy "Data\sAsUtility.db" "dist\main\Data\"
+	
+	Rem Avoid exception on old platform
+	del "dist\main\Qt5Bluetooth.dll"
+	
+	ren dist\main StockAnalysisSystem
+	
+	goto end
+	
+	
+	
 	goto end
 	
 :pack_library:
@@ -126,38 +154,27 @@ goto end
 	rmdir /s /q dist
 	rmdir /s /q build
 	
-	pyi-makespec --hidden-import pandas --icon="res/logo.ico" main.py
-	Rem pyi-makespec -w --hidden-import pandas --icon="res/logo.ico" main.py
+	pyi-makespec --hidden-import pandas --hidden-import pyqtgraph --icon="res/logo.ico" main.py
+	Rem pyi-makespec -w --hidden-import pandas --hidden-import pyqtgraph --icon="res/logo.ico" main.py
 
 	pyinstaller main.spec
 	
-	rmdir /s/q "Analyzer/__pycache__"
-	rmdir /s/q "Collector/__pycache__"
-	rmdir /s/q "Extension/__pycache__"
+	rmdir /s/q "StockAnalysisSystem/plugin/Analyzer/__pycache__"
+	rmdir /s/q "StockAnalysisSystem/plugin/Collector/__pycache__"
+	rmdir /s/q "StockAnalysisSystem/plugin/Extension/__pycache__"
 
 	Rem Copy plug-in
-	xcopy "Analyzer" "dist/main/Analyzer" /e /i /h /s
-	xcopy "Collector" "dist/main/Collector" /e /i /h /s
-	xcopy "Extension" "dist/main/Extension" /e /i /h /s
-	xcopy "Factor" "dist/main/Factor" /e /i /h /s
+	xcopy "StockAnalysisSystem/plugin" "dist/main/plugin" /e /i /h /s
 	
 	xcopy "README.md" "dist\main\"
+	xcopy "Data\sAsUtility.db" "dist\main\Data\"
 	
 	Rem Avoid exception on old platform
 	del "dist\main\Qt5Bluetooth.dll"
-
-	Rem Copy empty sqlite db to data path
-	Rem xcopy "res\sAsUtility.db.empty" "dist\main\Data\"
-	Rem ren "dist\main\Data\sAsUtility.db.empty" "sAsUtility.db"
-	
-	Rem Copy export mongodb and sqlite db to offline_data path
-	xcopy "Data\sAsUtility.db" "dist\main\Data\"
-	Rem xcopy "res\StockAnalysisSystem.zip.*" "dist\offline_data\"
 	
 	ren dist\main StockAnalysisSystem
 	
 	goto end
-
 
 :clean
 	del main.spec
