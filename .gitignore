@@ -105,5 +105,5 @@ venv.bak/
 
 # customize
 .idea/
-Data/
+Data/sAsUtility.db
 config.json
