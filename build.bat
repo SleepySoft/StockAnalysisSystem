@@ -60,9 +60,8 @@ goto end
 
 
 :setup_virtual_env
-	pipenv install
 	Rem pipenv run %0 -ve
-	pipenv install -r requirements.txt
+	pipenv install -r requirements.txt --skip-lock
 	pipenv install -e git+https://github.com/pyinstaller/pyinstaller.git@develop#egg=PyInstaller
 	goto end
 
@@ -102,12 +101,13 @@ goto end
 	Rem pipenv run %0 -build_in_virtual_env
 	Rem pyi-makespec -w --hidden-import pandas --hidden-import pyqtgraph --icon="res/logo.ico" main.py
 	
-	del main.spec
+	Rem del main.spec
 	rmdir /s /q dist
 	rmdir /s /q build
 	
-	pyi-makespec --icon="res/logo.ico" main.py
-	pipenv run pyinstaller  main.spec
+	Rem pyi-makespec --icon="res/logo.ico" main.py
+	Rem pipenv run pyinstaller main.spec
+	pyinstaller --hidden-import pyqtgraph --icon="res/logo.ico" main.py
 	
 	rmdir /s/q "StockAnalysisSystem/plugin/Analyzer/__pycache__"
 	rmdir /s/q "StockAnalysisSystem/plugin/Collector/__pycache__"

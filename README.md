@@ -18,6 +18,7 @@ https://github.com/SleepySoft/StockAnalysisSystem
   
 # 最近更新内容：
 * 从vnpy移植K线图表，重做Stock Memo功能  
+* 由于图表引入了pyqtgraph，导致pyinstaller打包出现问题，并且尝试py2exe也不成功，故暂停以EXE形式发布Release  
   
 * 更新相应文档  
   
