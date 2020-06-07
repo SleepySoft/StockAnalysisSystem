@@ -14,3 +14,4 @@ requests_html
 PyExecJS
 twine
 tornado
+py2exe
