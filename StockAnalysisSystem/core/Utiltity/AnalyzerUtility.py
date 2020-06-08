@@ -1,3 +1,4 @@
+import json
 import openpyxl
 import pandas as pd
 
@@ -73,6 +74,30 @@ class AnalysisResult:
             self.reason = reason
 
         self.weight = weight
+
+    def pack(self) -> dict:
+        return {
+            'method': self.method,
+            'securities': self.securities,
+            
+            'score': self.score,
+            'reason': self.reason,
+            'weight': self.weight,
+        }
+
+    def unpack(self, data: dict):
+        self.method = data.get('method', '')
+        self.securities = data.get('securities', '')
+
+        self.score = data.get('data', AnalysisResult.SCORE_NOT_APPLIED)
+        self.reason = data.get('reason', [])
+        self.weight = data.get('weight', AnalysisResult.WEIGHT_NORMAL)
+
+    def serialize(self) -> str:
+        return json.dumps(self.pack())
+    
+    def deserialize(self, json_text: str):
+        self.unpack(json.loads(json_text))
 
 
 # ----------------------------------------------------------------------------------------------------------------------

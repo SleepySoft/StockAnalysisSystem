@@ -338,6 +338,7 @@ class DataAgent:
         identity_field, datetime_field = table.identity_field(), table.datetime_field()
 
         table.set_connection_threshold(1)
+        # TODO: Use zip
         for index, row in df.iterrows():
             identity_value = None
             if str_available(identity_field):
@@ -357,6 +358,42 @@ class DataAgent:
                 print('Warning: datetime field "' + datetime_field + '" of <' + uri + '> missing.')
                 continue
             table.bulk_upsert(identity_value, datetime_value, row.dropna().to_dict())
+        table.bulk_flush()
+
+    def merge2(self, uri: str, identity: str, _data: pd.DataFrame or dict or [dict]):
+        if isinstance(_data, pd.DataFrame):
+            data_dict = _data.T.apply(lambda x: x.dropna().to_dict()).tolist()
+            # data_dict = _data.T.to_dict().values()
+        elif isinstance(_data, dict):
+            data_dict = [_data]
+        elif isinstance(_data, (list, tuple)):
+            data_dict = _data
+        else:
+            return
+        
+        table = self.data_table(uri, identity, (None, None), {}, [])
+        if table is None:
+            return
+        identity_field, datetime_field = table.identity_field(), table.datetime_field()
+
+        table.set_connection_threshold(1)
+        for ddict in data_dict:
+            identity_value = None
+            if str_available(identity_field):
+                identity_value = ddict.get(identity_field, None)
+            if str_available(identity_field) and identity_value is None:
+                print('Warning: identity field "' + identity_field + '" of <' + uri + '> missing.')
+                continue
+
+            datetime_value = None
+            if str_available(datetime_field):
+                datetime_value = ddict.get(datetime_field, None)
+                if str_available(datetime_value):
+                    datetime_value = text_auto_time(datetime_value)
+            if str_available(datetime_field) and datetime_value is None:
+                print('Warning: datetime field "' + datetime_field + '" of <' + uri + '> missing.')
+                continue
+            table.bulk_upsert(identity_value, datetime_value, ddict)
         table.bulk_flush()
 
 
@@ -478,6 +515,107 @@ class DataAgentFactorQuarter(DataAgent):
         nop(self)
         return DataAgentUtility.a_stock_list()
 
+#
+# # ------------------------- CSV Database -------------------------
+#
+# class DataAgentResult:
+#     def __init__(self,
+#                  uri: str, name: str,
+#                  identity_field: str or None = 'Identity',
+#                  datetime_field: str or None = 'DateTime',
+#                  **kwargs):
+#         super(DataAgentRecord, self).__init__(uri, None, name, '', identity_field, datetime_field, **kwargs)
+#
+#     # ---------------------------------- Constant ----------------------------------
+#
+#     def data_table(self, uri: str, identity: str or [str],
+#                    time_serial: tuple, extra: dict, fields: list) -> ItkvTable:
+#         table_name = self.table_name(uri, identity, time_serial, extra, fields)
+#         return self.__database_entry.query_nosql_table(self.__depot_name, table_name,
+#                                                        self.__identity_field, self.__datetime_field)
+#
+#     def get_field_checker(self) -> ParameterChecker:
+#         return self.__checker
+#
+#     def config_field_checker(self, query_declare: dict, result_declare: dict):
+#         if query_declare is not None or result_declare is not None:
+#             self.__checker = ParameterChecker(result_declare, query_declare)
+#
+#     # ------------------------------- Overrideable -------------------------------
+#
+#     def adapt(self, uri: str) -> bool:
+#         return self.__uri.lower() == uri.lower()
+#
+#     def data_duration(self) -> int:
+#         nop(self)
+#         return self.extra_param('duration', DATA_DURATION_AUTO)
+#
+#     def ref_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
+#         nop(self, uri, identity)
+#         return None, None
+#
+#     def data_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
+#         table = self.data_table(uri, identity, (None, None), {}, [])
+#         return (table.min_of(self.datetime_field(), identity), table.max_of(self.datetime_field(), identity)) \
+#             if str_available(self.datetime_field()) else (None, None)
+#
+#     def update_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
+#         local_since, local_until = self.data_range(uri, identity)
+#         ref_since, ref_until = self.ref_range(uri, identity)
+#         return local_until, ref_until
+#
+#     def merge_on(self) -> list:
+#         on_column = []
+#         if str_available(self.__identity_field):
+#             on_column.append(self.__identity_field)
+#         if str_available(self.__datetime_field):
+#             on_column.append(self.__datetime_field)
+#         on_column += self.extra_param('extra_key', [])
+#         return on_column
+#
+#     def table_name(self, uri: str, identity: str or [str], time_serial: tuple, extra: dict, fields: list) -> str:
+#         nop(self, identity, time_serial, extra, fields)
+#         return self.table_prefix() + uri.replace('.', '_')
+#
+#     def update_list(self) -> [str]:
+#         nop(self)
+#         return []
+#
+#     # ------------------------------ Overrideable but -------------------------------------
+#
+#     def query(self, uri: str, identity: str or [str], time_serial: tuple,
+#               extra: dict, fields: list) -> pd.DataFrame or None:
+#         table = self.data_table(uri, identity, time_serial, extra, fields)
+#         since, until = normalize_time_serial(time_serial)
+#         result = table.query(identity, since, until, extra, fields)
+#         df = pd.DataFrame(result)
+#         return df
+#
+#     def merge(self, uri: str, identity: str, df: pd.DataFrame):
+#         table = self.data_table(uri, identity, (None, None), {}, [])
+#         identity_field, datetime_field = table.identity_field(), table.datetime_field()
+#
+#         table.set_connection_threshold(1)
+#         for index, row in df.iterrows():
+#             identity_value = None
+#             if str_available(identity_field):
+#                 if identity_field in list(row.index):
+#                     identity_value = row[identity_field]
+#             if str_available(identity_field) and identity_value is None:
+#                 print('Warning: identity field "' + identity_field + '" of <' + uri + '> missing.')
+#                 continue
+#
+#             datetime_value = None
+#             if str_available(datetime_field):
+#                 if datetime_field in list(row.index):
+#                     datetime_value = row[datetime_field]
+#                     if isinstance(datetime_value, str):
+#                         datetime_value = text_auto_time(datetime_value)
+#             if str_available(datetime_field) and datetime_value is None:
+#                 print('Warning: datetime field "' + datetime_field + '" of <' + uri + '> missing.')
+#                 continue
+#             table.bulk_upsert(identity_value, datetime_value, row.dropna().to_dict())
+#         table.bulk_flush()
 
 # ----------------------------------------------------------------------------------------------------------------------
 

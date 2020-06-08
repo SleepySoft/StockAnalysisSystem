@@ -343,6 +343,12 @@ def build_data_agent(database_entry: DatabaseEntry):
                 'trade_date':     (['datetime'], [],    True, ''),
             },
         ),
+
+        DataAgentStockQuarter(
+            uri='Result.Finance',
+
+            **PARAMETER_FINANCE_DATA
+        ),
     ]
 
 
