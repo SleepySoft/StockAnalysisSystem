@@ -41,6 +41,16 @@ class StrategyEntry:
             result_table[hash_id] = results
         return result_table
 
+    def cache_analysis_result(self, uri: str, result_table: dict):
+        for method_uuid, result_list in result_table.items():
+            for result in result_list:
+                self.__data_hub.get_data_center().update_local_data(uri, result.securities, {
+                    method_uuid: result.serialize()
+                })
+
+    def result_from_cache(self):
+        pass
+
     def strategy_name_dict(self) -> dict:
         name_dict = {}
         probs = self.strategy_prob()

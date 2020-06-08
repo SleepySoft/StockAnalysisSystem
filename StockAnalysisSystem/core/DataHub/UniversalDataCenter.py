@@ -138,6 +138,15 @@ class UniversalDataCenter:
 
     # -----------------------------------------------------------------------------------------
 
+    def update_local_data(self, uri: str, identity: str, data: pd.DataFrame) -> bool:
+        agent = self.get_data_agent(uri)
+        if agent is None:
+            return False
+        clock = Clock()
+        agent.merge(uri, identity, data)
+        print('%s: [%s] - Persistence finished, time spending: %sms' % (uri, str(identity), clock.elapsed_ms()))
+        return True
+
     def update_local_data(self, uri: str, identity: str or [str] = None,
                           time_serial: tuple = None, force: bool = False, **extra) -> bool:
         return self.apply_local_data_patch(
