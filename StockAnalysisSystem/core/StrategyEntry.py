@@ -2,6 +2,7 @@ import traceback
 from os import sys, path
 
 from .Utiltity.common import *
+from .Utiltity.time_utility import *
 from .DataHubEntry import DataHubEntry
 from .Database.DatabaseEntry import DatabaseEntry
 from .Utiltity.plugin_manager import PluginManager
@@ -22,14 +23,16 @@ class StrategyEntry:
         return self.get_plugin_manager().execute_module_function(
             self.get_plugin_manager().all_modules(), 'plugin_prob', {}, False)
 
-    def run_strategy(self, securities: [str], methods: [str], **extra) -> dict:
+    def run_strategy(self, securities: [str], methods: [str],
+                     time_serial: tuple = (years_ago(5), now()), **kwargs) -> dict:
         result = self.get_plugin_manager().execute_module_function(
             self.get_plugin_manager().all_modules(), 'analysis', {
-                'securities': securities,
                 'methods': methods,
+                'securities': securities,
+                'time_serial': time_serial,
                 'data_hub': self.__data_hub,
                 'database': self.__database,
-                'extra': extra,
+                **kwargs,
             }, False)
 
         # Flatten the nest result list
@@ -44,8 +47,10 @@ class StrategyEntry:
     def cache_analysis_result(self, uri: str, result_table: dict):
         for method_uuid, result_list in result_table.items():
             for result in result_list:
-                self.__data_hub.get_data_center().update_local_data(uri, result.securities, {
-                    method_uuid: result.serialize()
+                self.__data_hub.get_data_center().merge_local_data(uri, result.securities, {
+                    'period': method_uuid,
+                    'analyzer': method_uuid,
+                    'xxxxxxx': method_uuid,
                 })
 
     def result_from_cache(self):

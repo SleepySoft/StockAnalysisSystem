@@ -53,8 +53,10 @@ class AnalysisResult:
     WEIGHT_NORMAL = 1
     WEIGHT_ONE_VOTE_VETO = 999999
 
-    def __init__(self, securities: str, score: int or bool, reason: str or [str] = '', weight: int = WEIGHT_NORMAL):
+    def __init__(self, securities: str, period: datetime.datetime or None,
+                 score: int or bool, reason: str or [str] = '', weight: int = WEIGHT_NORMAL):
         self.method = ''
+        self.period = period
         self.securities = securities
 
         if isinstance(score, bool):
@@ -78,6 +80,7 @@ class AnalysisResult:
     def pack(self) -> dict:
         return {
             'method': self.method,
+            'period': self.period,
             'securities': self.securities,
             
             'score': self.score,
@@ -87,6 +90,7 @@ class AnalysisResult:
 
     def unpack(self, data: dict):
         self.method = data.get('method', '')
+        self.period = data.get('period', '')
         self.securities = data.get('securities', '')
 
         self.score = data.get('data', AnalysisResult.SCORE_NOT_APPLIED)
@@ -112,10 +116,12 @@ class AnalysisContext:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def function_entry_example(securities: str, data_hub, database, context: AnalysisContext) -> AnalysisResult:
+def function_entry_example(securities: str, time_serial: tuple, data_hub: DataHubEntry,
+                           database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
     """
     The example of analyzer function entry.
     :param securities: A single securities code, should be a str.
+    :param time_serial: The analysis period
     :param data_hub:  DataHubEntry type
     :param database: DatabaseEntry type
     :param context: AnalysisContext type, which can hold cache data for multiple analysis
@@ -129,8 +135,10 @@ method_list_example = [
 ]
 
 
-def standard_dispatch_analysis(securities: [str], methods: [str], data_hub, database,
-                               extra: dict, method_list: list) -> [(str, [])] or None:
+# ----------------------------------------------------------------------------------------------------------------------
+
+def standard_dispatch_analysis(methods: [str], securities: [str], time_serial: tuple,
+                               data_hub, database, extra: dict, method_list: list) -> [(str, [])] or None:
     context = AnalysisContext()
     if isinstance(extra, dict):
         context.extra = extra
@@ -150,23 +158,25 @@ def standard_dispatch_analysis(securities: [str], methods: [str], data_hub, data
             context.progress.set_progress(hash_id, 0, len(securities))
             for s in securities:
                 try:
-                    result = function_entry(s, data_hub, database, context)
+                    result = function_entry(s, time_serial, data_hub, database, context, **extra)
                 except Exception as e:
                     error_info = 'Execute analyzer [' + hash_id + '] for [' + s + '] got exception.'
                     print(error_info)
                     print(e)
                     print(traceback.format_exc())
-                    result = AnalysisResult(s, AnalysisResult.SCORE_NOT_APPLIED, error_info)
+                    result = AnalysisResult(s, None, AnalysisResult.SCORE_NOT_APPLIED, error_info)
                 finally:
                     context.progress.increase_progress(hash_id)
                     print('Analyzer %s progress: %.2f%%' % (hash_id, context.progress.get_progress_rate(hash_id) * 100))
                 if result is None:
-                    result = AnalysisResult(s, AnalysisResult.SCORE_NOT_APPLIED, 'NONE')
-                sub_list.append(result)
+                    result = AnalysisResult(s, None, AnalysisResult.SCORE_NOT_APPLIED, 'NONE')
+                if not isinstance(result, (list, tuple)):
+                    result = [result]
+                sub_list.append((s, result))
 
             # Fill result list for alignment
             while len(sub_list) < len(securities):
-                sub_list.append(AnalysisResult(securities[len(sub_list)], AnalysisResult.SCORE_NOT_APPLIED, 'NONE'))
+                sub_list.append([AnalysisResult(securities[len(sub_list)], AnalysisResult.SCORE_NOT_APPLIED, 'NONE')])
             result_list.append((query_method, sub_list))
             context.progress.set_progress(hash_id, len(securities), len(securities))
             break
@@ -373,6 +383,30 @@ def __score_to_fill_text(score: int or None):
         return 'PASS'
 
 
+def __aggregate_single_security_results(results: [AnalysisResult]) -> (int, int, str):
+    veto = False
+    score = []
+    reason = []
+    weight = AnalysisResult.WEIGHT_NORMAL
+    for r in results:
+        if r.score is not None:
+            if r.weight == AnalysisResult.WEIGHT_ONE_VOTE_VETO and r.score == AnalysisResult.SCORE_FAIL:
+                veto = True
+            score.append(r.score)
+        if str_available(r.reason):
+            reason.append(r.reason)
+        if r.weight is not None:
+            weight = max(weight, r.weight)
+    if veto:
+        score = AnalysisResult.SCORE_FAIL
+    elif len(score) == 0:
+        score = None
+    else:
+        score = int(sum(score) / len(score))
+    reason = '\n'.join(reason)
+    return score, weight, reason
+
+
 def __calc_avg_score_with_weight(scores: list, weights: list) -> int or None:
     sum_score = 0
     sum_weight = 0
@@ -417,9 +451,9 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
 
             row = 2
             col = index_to_excel_column_name(column)
-            for r in analysis_result:
-                securities_name = stock_name_dict.get(r.securities, '')
-                display_text = (r.securities + ' | ' + securities_name) if securities_name != '' else r.securities
+            for security, results in analysis_result:
+                securities_name = stock_name_dict.get(security, '')
+                display_text = (security + ' | ' + securities_name) if securities_name != '' else security
                 ws_score[col + str(row)] = display_text
                 ws_comments[col + str(row)] = display_text
                 row += 1
@@ -434,14 +468,16 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
 
         # Write scores
         row = ROW_OFFSET
-        for r in analysis_result:
-            ws_score[col + str(row)] = r.score if r.score is not None else '-'
-            ws_comments[col + str(row)] = r.reason
+        for security, results in analysis_result:
+            score, weight, reason = __aggregate_single_security_results(results)
 
-            if r.score is not None:
-                all_score[row - ROW_OFFSET].append(r.score)
-                all_weight[row - ROW_OFFSET].append(r.weight)
-            fill_style = __score_to_fill_style(r.score)
+            ws_score[col + str(row)] = score
+            ws_comments[col + str(row)] = reason
+
+            if score is not None:
+                all_score[row - ROW_OFFSET].append(score)
+                all_weight[row - ROW_OFFSET].append(weight)
+            fill_style = __score_to_fill_style(score)
 
             ws_score[col + str(row)].fill = fill_style
             ws_comments[col + str(row)].fill = fill_style

@@ -346,7 +346,7 @@ def build_data_agent(database_entry: DatabaseEntry):
 
         DataAgentStockQuarter(
             uri='Result.Finance',
-
+            candidate_fields=['analyzer'],
             **PARAMETER_FINANCE_DATA
         ),
     ]
