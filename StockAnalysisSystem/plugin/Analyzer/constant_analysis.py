@@ -11,7 +11,7 @@ from StockAnalysisSystem.core.Database.DatabaseEntry import DatabaseEntry
 # ------------------------------------------------------ 01 - 05 -------------------------------------------------------
 
 def analysis_black_list(securities: str, time_serial: tuple, data_hub: DataHubEntry,
-                        database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
+                        database: DatabaseEntry, context: AnalysisContext, **kwargs) -> [AnalysisResult]:
     nop(kwargs)
     nop(data_hub)
     nop(time_serial)
@@ -27,7 +27,7 @@ def analysis_black_list(securities: str, time_serial: tuple, data_hub: DataHubEn
 
 
 def analysis_less_than_3_years(securities: str, time_serial: tuple, data_hub: DataHubEntry,
-                               database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
+                               database: DatabaseEntry, context: AnalysisContext, **kwargs) -> [AnalysisResult]:
     nop(kwargs)
     nop(database)
     nop(time_serial)
@@ -44,7 +44,7 @@ def analysis_less_than_3_years(securities: str, time_serial: tuple, data_hub: Da
 
 
 def analysis_location_limitation(securities: str, time_serial: tuple, data_hub: DataHubEntry,
-                                 database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
+                                 database: DatabaseEntry, context: AnalysisContext, **kwargs) -> [AnalysisResult]:
     nop(kwargs)
     nop(database)
     nop(time_serial)
@@ -61,7 +61,7 @@ def analysis_location_limitation(securities: str, time_serial: tuple, data_hub: 
 
 
 def analysis_exclude_industries(securities: str, time_serial: tuple, data_hub: DataHubEntry,
-                                database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
+                                database: DatabaseEntry, context: AnalysisContext, **kwargs) -> [AnalysisResult]:
     nop(kwargs)
     nop(database)
     nop(time_serial)

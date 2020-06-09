@@ -38,20 +38,21 @@ portrait_comments_table = {
 }
 
 
-def analyzer_stock_portrait(securities: str, data_hub: DataHubEntry,
-                            database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+def analyzer_stock_portrait(securities: str, time_serial: tuple, data_hub: DataHubEntry,
+                            database: DatabaseEntry, context: AnalysisContext, **kwargs) -> [AnalysisResult]:
+    nop(kwargs)
 
     if check_industry_in(securities, ['银行', '保险', '房地产', '全国地产', '区域地产'], data_hub, database, context):
         return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业')
 
     df_balance, result = query_readable_annual_report_pattern(data_hub, 'Finance.BalanceSheet',
-                                                              securities, (years_ago(5), now()),
+                                                              securities, time_serial,
                                                               ['资产总计', '负债合计'])
     if result is not None:
         return result
 
     df_cash, result = query_readable_annual_report_pattern(data_hub, 'Finance.CashFlowStatement',
-                                                           securities, (years_ago(5), now()),
+                                                           securities, time_serial,
                                                            ['经营活动产生的现金流量净额',
                                                             '投资活动产生的现金流量净额',
                                                             '筹资活动产生的现金流量净额'])
@@ -60,8 +61,7 @@ def analyzer_stock_portrait(securities: str, data_hub: DataHubEntry,
 
     df = pd.merge(df_balance, df_cash, how='left', on=['stock_identity', 'period'])
 
-    reason = []
-    portraits = {}
+    results = []
     for index, row in df.iterrows():
         period = row['period']
 
@@ -74,35 +74,34 @@ def analyzer_stock_portrait(securities: str, data_hub: DataHubEntry,
             ('-' if can_ignore_or_negative(row['经营活动产生的现金流量净额'], net_assets, 0.1) else '+') + \
             ('-' if can_ignore_or_negative(row['投资活动产生的现金流量净额'], net_assets, 0.1) else '+') + \
             ('-' if can_ignore_or_negative(row['筹资活动产生的现金流量净额'], net_assets, 0.1) else '+')
-        if portrait in portraits.keys():
-            portraits[portrait] += 1
-        else:
-            portraits[portrait] = 1
-        reason.append('%s : %s' % (period.year, portrait))
+        results.append(AnalysisResult(securities, period, portrait_score_table.get(portrait, 0),
+                                      '%s : %s' % (portrait, portrait_comments_table.get(portrait, ''))))
+    return results
 
-    portrait_counts = len(portraits)
-    if portrait_counts > 0:
-        most_portrait = max(portraits, key=lambda key: portraits[key])
-        most_portrait_count = portraits[most_portrait]
-        if float(most_portrait_count) / portrait_counts >= 0.7:
-            return AnalysisResult(securities,
-                                  portrait_score_table.get(most_portrait, 0),
-                                  portrait_comments_table.get(most_portrait, ''))
-        else:
-            reason.insert(0, '不稳定的经营，投资及筹资表现')
-            return AnalysisResult(securities,
-                                  AnalysisResult.SCORE_NOT_APPLIED,
-                                  portrait_comments_table.get(most_portrait, ''))
-    else:
-        return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '无足够数据')
+    # portrait_counts = len(portraits)
+    # if portrait_counts > 0:
+    #     most_portrait = max(portraits, key=lambda key: portraits[key])
+    #     most_portrait_count = portraits[most_portrait]
+    #     if float(most_portrait_count) / portrait_counts >= 0.7:
+    #         return AnalysisResult(securities,
+    #                               portrait_score_table.get(most_portrait, 0),
+    #                               portrait_comments_table.get(most_portrait, ''))
+    #     else:
+    #         reason.insert(0, '不稳定的经营，投资及筹资表现')
+    #         return AnalysisResult(securities,
+    #                               AnalysisResult.SCORE_NOT_APPLIED,
+    #                               portrait_comments_table.get(most_portrait, ''))
+    # else:
+    #     return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '无足够数据')
 
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ---------------------------------------------------- 货币资金分析 ----------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------------------
 
-def analyzer_check_monetary_fund(securities: str, data_hub: DataHubEntry,
-                                 database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+def analyzer_check_monetary_fund(securities: str, time_serial: tuple, data_hub: DataHubEntry,
+                                 database: DatabaseEntry, context: AnalysisContext, **kwargs) -> [AnalysisResult]:
+    nop(kwargs)
 
     if check_industry_in(securities, ['银行', '保险', '房地产', '全国地产', '区域地产'], data_hub, database, context):
         return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业')
@@ -113,7 +112,7 @@ def analyzer_check_monetary_fund(securities: str, data_hub: DataHubEntry,
                             '应收票据', '流动负债合计',
                             '交易性金融资产', '可供出售金融资产']
     df_balance_sheet, result = query_readable_annual_report_pattern(
-        data_hub, 'Finance.BalanceSheet', securities, (years_ago(5), now()), fields_balance_sheet)
+        data_hub, 'Finance.BalanceSheet', securities, time_serial, fields_balance_sheet)
     if result is not None:
         return result
 
@@ -129,9 +128,10 @@ def analyzer_check_monetary_fund(securities: str, data_hub: DataHubEntry,
     df['有息负债/资产总计'] = df['有息负债'] / df['资产总计']
     df['货币资金+金融资产'] = df['货币资金'] + df['金融资产']
 
-    score = []
-    reason = []
+    results = []
     for index, row in df.iterrows():
+        score = []
+        reason = []
         period = row['period']
 
         if np.isinf(row['货币资金/有息负债']) or row['货币资金/有息负债'] >= 3.0:
@@ -161,19 +161,24 @@ def analyzer_check_monetary_fund(securities: str, data_hub: DataHubEntry,
                           (period.year, format_w(row['货币资金+金融资产']), format_w(row['有息负债'])))
         else:
             score.append(100)
+        results.append(AnalysisResult(securities, period, int(float(sum(score)) / float(len(score))), reason))
 
-    if len(score) > 0:
-        return AnalysisResult(securities, int(float(sum(score)) / float(len(score))), reason)
-    else:
-        return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '无数据')
+    return results
+
+    # if len(score) > 0:
+    #     return AnalysisResult(securities, int(float(sum(score)) / float(len(score))), reason)
+    # else:
+    #     return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '无数据')
 
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ---------------------------------------------------- 应收预付分析 ----------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------------------
 
-def analyzer_check_receivable_and_prepaid(securities: str, data_hub: DataHubEntry,
-                                          database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+def analyzer_check_receivable_and_prepaid(
+        securities: str, time_serial: tuple, data_hub: DataHubEntry,
+        database: DatabaseEntry, context: AnalysisContext, **kwargs) -> [AnalysisResult]:
+    nop(kwargs)
 
     if check_industry_in(securities, ['银行', '保险', '房地产', '全国地产', '区域地产'], data_hub, database, context):
         return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业')
@@ -182,7 +187,7 @@ def analyzer_check_receivable_and_prepaid(securities: str, data_hub: DataHubEntr
     fields_income_statement = ['营业收入', '营业总收入', '减:营业成本']
 
     df, result = batch_query_readable_annual_report_pattern(
-        data_hub, securities, (years_ago(5), now()), fields_balance_sheet, fields_income_statement)
+        data_hub, securities, time_serial, fields_balance_sheet, fields_income_statement)
     if result is not None:
         return result
 
@@ -202,10 +207,11 @@ def analyzer_check_receivable_and_prepaid(securities: str, data_hub: DataHubEntr
     df['预付款项同比增长'] = df['预付款项'].pct_change()
     df['预付增长/营业成本增长'] = df['预付款项同比增长'] / df['营业成本同比增长']
 
-    score = []
-    reason = []
+    results = []
     previous = None
     for index, row in df.iterrows():
+        score = []
+        reason = []
         period = row['period']
 
         # ----------------------------------------------------------------------------
@@ -261,27 +267,29 @@ def analyzer_check_receivable_and_prepaid(securities: str, data_hub: DataHubEntr
         else:
             score.append(100)
         previous = row
+        results.append(AnalysisResult(securities, period, int(float(sum(score)) / float(len(score))), reason))
 
-    if len(score) > 0:
-        return AnalysisResult(securities, int(float(sum(score)) / float(len(score))), reason)
-    else:
-        return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '无数据')
+    return results
+
+    # if len(score) > 0:
+    #     return AnalysisResult(securities, int(float(sum(score)) / float(len(score))), reason)
+    # else:
+    #     return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '无数据')
 
 
 # ----------------------------------------------------------------------------------------------------------------------
 # ---------------------------------------------------- 资产构成分析 ----------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------------------
 
-def analyzer_asset_composition(securities: str, data_hub: DataHubEntry,
-                               database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
-
-    nop(database, context)
+def analyzer_asset_composition(securities: str, time_serial: tuple, data_hub: DataHubEntry,
+                               database: DatabaseEntry, context: AnalysisContext, **kwargs) -> [AnalysisResult]:
+    nop(database, context, kwargs)
 
     fields_balance_sheet = ['商誉', '在建工程', '固定资产', '资产总计', '负债合计']
     # fields_income_statement = ['息税前利润']
 
     df, result = batch_query_readable_annual_report_pattern(
-        data_hub, securities, (years_ago(5), now()), fields_balance_sheet)
+        data_hub, securities, time_serial, fields_balance_sheet)
     if result is not None:
         return result
 
@@ -292,9 +300,10 @@ def analyzer_asset_composition(securities: str, data_hub: DataHubEntry,
     df['固定资产/总资产'] = df['固定资产'] / df['资产总计']
     # df['税前利润/固定资产'] = df['息税前利润'] / df['固定资产']
 
-    score = []
-    reason = []
+    results = []
     for index, row in df.iterrows():
+        score = []
+        reason = []
         period = row['period']
 
         # ----------------------------------------------------------------------------
@@ -334,17 +343,21 @@ def analyzer_asset_composition(securities: str, data_hub: DataHubEntry,
         #     reason.append('%s : 税前利润/固定资产 = %s - 小于平均社会平均资本回报率' %
         #                   (period.year, format_pct(row['税前利润/固定资产'])))
 
-    if len(reason) == 0:
-        reason.append('正常')
+        results.append(AnalysisResult(securities, period, int(float(sum(score)) / float(len(score))), reason))
 
-    if len(score) > 0:
-        return AnalysisResult(securities, int(float(sum(score)) / float(len(score))), reason)
-    else:
-        return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '无数据')
+    return results
+
+    # if len(reason) == 0:
+    #     reason.append('正常')
+    #
+    # if len(score) > 0:
+    #     return AnalysisResult(securities, int(float(sum(score)) / float(len(score))), reason)
+    # else:
+    #     return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '无数据')
 
 
-def analyzer_income_statement(securities: str, data_hub: DataHubEntry,
-                              database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+def analyzer_income_statement(securities: str, time_serial: tuple, data_hub: DataHubEntry,
+                              database: DatabaseEntry, context: AnalysisContext, **kwargs) -> [AnalysisResult]:
 
     if check_industry_in(securities, ['银行', '保险', '房地产', '全国地产', '区域地产'], data_hub, database, context):
         return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业')
@@ -357,7 +370,7 @@ def analyzer_income_statement(securities: str, data_hub: DataHubEntry,
     fields_cash_flow_statement = ['经营活动产生的现金流量净额']
 
     df, result = batch_query_readable_annual_report_pattern(
-        data_hub, securities, (years_ago(5), now()),
+        data_hub, securities, time_serial,
         fields_balance_sheet, fields_income_statement, fields_cash_flow_statement)
     if result is not None:
         return result
@@ -382,11 +395,12 @@ def analyzer_income_statement(securities: str, data_hub: DataHubEntry,
     df['销售费用/营业收入同比'] = df['销售费用/营业收入'].pct_change()
     df['管理费用/营业收入同比'] = df['管理费用/营业收入'].pct_change()
 
-    score = []
-    reason = []
+    results = []
     previous = None
-    aset_lost = 0
+    # aset_lost = 0
     for index, row in df.iterrows():
+        score = []
+        reason = []
         period = row['period']
 
         # ----------------------------------------------------------------------------
@@ -432,7 +446,7 @@ def analyzer_income_statement(securities: str, data_hub: DataHubEntry,
                           (period.year, format_pct(row['营业外收入/营业总收入'])))
 
         if abs(row['资产减值损失/营业总收入']) > 0.2:
-            aset_lost += 1
+            # aset_lost += 1
             reason.append('%s : 资产减值损失/营业总收入 = %s，超过20%%' %
                           (period.year, format_pct(abs(row['资产减值损失/营业总收入']))))
 
@@ -465,18 +479,21 @@ def analyzer_income_statement(securities: str, data_hub: DataHubEntry,
         # ----------------------------------------------------------------------------
 
         previous = row
+        results.append(AnalysisResult(securities, period, int(float(sum(score)) / float(len(score))), reason))
 
-    if aset_lost >= 2:
-        score.append(0)
-        reason.append('注意：有 %s 次较大资产减值损失（超过营业总收入20%%）' % aset_lost)
+    return results
 
-    if len(reason) == 0:
-        reason.append('正常')
-
-    if len(score) > 0:
-        return AnalysisResult(securities, int(float(sum(score)) / float(len(score))), reason)
-    else:
-        return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '无数据')
+    # if aset_lost >= 2:
+    #     score.append(0)
+    #     reason.append('注意：有 %s 次较大资产减值损失（超过营业总收入20%%）' % aset_lost)
+    #
+    # if len(reason) == 0:
+    #     reason.append('正常')
+    #
+    # if len(score) > 0:
+    #     return AnalysisResult(securities, int(float(sum(score)) / float(len(score))), reason)
+    # else:
+    #     return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '无数据')
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -496,18 +513,18 @@ METHOD_LIST = [
 ]
 
 
-# def plugin_prob() -> dict:
-#     return {
-#         'plugin_id': '0da12555-d18a-4f0c-9bfe-b3903d927aa6',
-#         'plugin_name': 'analyzer_tang',
-#         'plugin_version': '0.0.0.1',
-#         'tags': ['tang', 'analyzer'],
-#         'methods': METHOD_LIST,
-#     }
-#
-#
-# def plugin_adapt(method: str) -> bool:
-#     return method in methods_from_prob(plugin_prob())
+def plugin_prob() -> dict:
+    return {
+        'plugin_id': '0da12555-d18a-4f0c-9bfe-b3903d927aa6',
+        'plugin_name': 'analyzer_tang',
+        'plugin_version': '0.0.0.1',
+        'tags': ['tang', 'analyzer'],
+        'methods': METHOD_LIST,
+    }
+
+
+def plugin_adapt(method: str) -> bool:
+    return method in methods_from_prob(plugin_prob())
 
 
 def plugin_capacities() -> list:
