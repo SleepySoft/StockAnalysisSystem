@@ -10,26 +10,27 @@ from StockAnalysisSystem.core.Database.DatabaseEntry import DatabaseEntry
 
 # ------------------------------------------------------ 01 - 05 -------------------------------------------------------
 
-def analysis_black_list(securities: str, data_hub: DataHubEntry,
-                        database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+def analysis_black_list(securities: str, time_serial: tuple, data_hub: DataHubEntry,
+                        database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
+    nop(kwargs)
     nop(data_hub)
+    nop(time_serial)
 
     if context.cache.get('black_table', None) is None:
         context.cache['black_table'] = database.get_black_table().get_name_table()
     black_table = context.cache.get('black_table', None)
 
     df_slice = black_table[black_table['name'] == securities]
-    exclude = len(df_slice) > 0
-    if exclude:
-        reason = get_dataframe_slice_item(df_slice, 'reason', 0, '')
-    else:
-        reason = '不在黑名单中'
-    return AnalysisResult(securities, not exclude, reason)
+    in_black_list = len(df_slice) > 0
+    reason = get_dataframe_slice_item(df_slice, 'reason', 0, '') if in_black_list else '不在黑名单中'
+    return AnalysisResult(securities, None, not in_black_list, reason)
 
 
-def analysis_less_than_3_years(securities: str, data_hub: DataHubEntry,
-                               database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+def analysis_less_than_3_years(securities: str, time_serial: tuple, data_hub: DataHubEntry,
+                               database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
+    nop(kwargs)
     nop(database)
+    nop(time_serial)
 
     if context.cache.get('securities_info', None) is None:
         context.cache['securities_info'] = data_hub.get_data_center().query('Market.SecuritiesInfo')
@@ -37,14 +38,16 @@ def analysis_less_than_3_years(securities: str, data_hub: DataHubEntry,
 
     df_slice = df[df['stock_identity'] == securities]
     listing_date = get_dataframe_slice_item(df_slice, 'listing_date', 0, now())
-    exclude = now().year - listing_date.year < 3
-    reason = '上市日期' + str(listing_date) + ('小于三年' if exclude else '大于三年')
-    return AnalysisResult(securities, not exclude, reason)
+    less_than_3_years = now().year - listing_date.year < 3
+    reason = '上市日期 %s (%s)' % (str(listing_date), ('小于三年' if less_than_3_years else '大于三年'))
+    return AnalysisResult(securities, None, not less_than_3_years, reason)
 
 
-def analysis_location_limitation(securities: str, data_hub: DataHubEntry,
-                                 database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+def analysis_location_limitation(securities: str, time_serial: tuple, data_hub: DataHubEntry,
+                                 database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
+    nop(kwargs)
     nop(database)
+    nop(time_serial)
 
     if context.cache.get('securities_info', None) is None:
         context.cache['securities_info'] = data_hub.get_data_center().query('Market.SecuritiesInfo')
@@ -54,12 +57,14 @@ def analysis_location_limitation(securities: str, data_hub: DataHubEntry,
     area = get_dataframe_slice_item(df_slice, 'area', 0, '')
     exclude = area in ['黑龙江', '辽宁', '吉林']
     reason = securities + '地域为' + str(area)
-    return AnalysisResult(securities, not exclude, reason)
+    return AnalysisResult(securities, None, not exclude, reason)
 
 
-def analysis_exclude_industries(securities: str, data_hub: DataHubEntry,
-                                database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+def analysis_exclude_industries(securities: str, time_serial: tuple, data_hub: DataHubEntry,
+                                database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
+    nop(kwargs)
     nop(database)
+    nop(time_serial)
 
     if context.cache.get('securities_info', None) is None:
         context.cache['securities_info'] = data_hub.get_data_center().query('Market.SecuritiesInfo')
@@ -112,9 +117,9 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def analysis(securities: [str], methods: [str], data_hub: DataHubEntry,
-             database: DatabaseEntry, extra: dict) -> [AnalysisResult]:
-    return standard_dispatch_analysis(securities, methods, data_hub, database, extra, METHOD_LIST)
+def analysis(methods: [str], securities: [str], time_serial: tuple,
+             data_hub: DataHubEntry, database: DatabaseEntry, **kwargs) -> [AnalysisResult]:
+    return standard_dispatch_analysis(methods, securities, time_serial, data_hub, database, kwargs, METHOD_LIST)
 
 
 

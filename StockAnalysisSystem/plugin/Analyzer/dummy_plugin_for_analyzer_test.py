@@ -8,8 +8,9 @@ from StockAnalysisSystem.core.Database.DatabaseEntry import DatabaseEntry
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def score_1(securities: str, data_hub: DataHubEntry,
-            database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+def score_1(securities: str, time_serial: tuple,
+            data_hub: DataHubEntry, database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+    nop(time_serial)
     nop(data_hub)
     nop(database)
     nop(context)
@@ -18,8 +19,9 @@ def score_1(securities: str, data_hub: DataHubEntry,
     return AnalysisResult(securities, score, end_char + ' * 10 = ' + str(score))
 
 
-def score_2(securities: str, data_hub: DataHubEntry,
-            database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+def score_2(securities: str, time_serial: tuple,
+            data_hub: DataHubEntry, database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+    nop(time_serial)
     nop(data_hub)
     nop(database)
     nop(context)
@@ -28,8 +30,9 @@ def score_2(securities: str, data_hub: DataHubEntry,
     return AnalysisResult(securities, score, '(10 - ' + end_char + ') * 10 = ' + str(score))
 
 
-def include_1(securities: str, data_hub: DataHubEntry,
-              database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+def include_1(securities: str, time_serial: tuple,
+              data_hub: DataHubEntry, database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+    nop(time_serial)
     nop(data_hub)
     nop(database)
     nop(context)
@@ -38,8 +41,9 @@ def include_1(securities: str, data_hub: DataHubEntry,
     return AnalysisResult(securities, passed, '代码末位为' + end_char + '通过测试' if passed else '未通过测试')
 
 
-def include_2(securities: str, data_hub: DataHubEntry,
-              database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+def include_2(securities: str, time_serial: tuple,
+              data_hub: DataHubEntry, database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+    nop(time_serial)
     nop(data_hub)
     nop(database)
     nop(context)
@@ -48,8 +52,9 @@ def include_2(securities: str, data_hub: DataHubEntry,
     return AnalysisResult(securities, passed, '代码末位为' + end_char + '通过测试' if passed else '未通过测试')
 
 
-def exclude_1(securities: str, data_hub: DataHubEntry,
-              database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+def exclude_1(securities: str, time_serial: tuple,
+              data_hub: DataHubEntry, database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+    nop(time_serial)
     nop(data_hub)
     nop(database)
     nop(context)
@@ -57,8 +62,9 @@ def exclude_1(securities: str, data_hub: DataHubEntry,
     return AnalysisResult(securities, passed, '代码第一位为' + securities[0] + '通过测试' if passed else '未通过测试')
 
 
-def exclude_2(securities: str, data_hub: DataHubEntry,
-              database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+def exclude_2(securities: str, time_serial: tuple,
+              data_hub: DataHubEntry, database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
+    nop(time_serial)
     nop(data_hub)
     nop(database)
     nop(context)
@@ -78,18 +84,18 @@ METHOD_LIST = [
 ]
 
 
-def plugin_prob() -> dict:
-    return {
-        'plugin_id': '2806f676-2aad-11ea-8c57-87a2a5d9cf76',
-        'plugin_name': 'dummy_plugin_for_test',
-        'plugin_version': '0.0.0.1',
-        'tags': ['test', 'dummy', 'analyzer'],
-        'methods': METHOD_LIST,
-    }
-
-
-def plugin_adapt(method: str) -> bool:
-    return method in methods_from_prob(plugin_prob())
+# def plugin_prob() -> dict:
+#     return {
+#         'plugin_id': '2806f676-2aad-11ea-8c57-87a2a5d9cf76',
+#         'plugin_name': 'dummy_plugin_for_test',
+#         'plugin_version': '0.0.0.1',
+#         'tags': ['test', 'dummy', 'analyzer'],
+#         'methods': METHOD_LIST,
+#     }
+#
+#
+# def plugin_adapt(method: str) -> bool:
+#     return method in methods_from_prob(plugin_prob())
 
 
 def plugin_capacities() -> list:
@@ -102,9 +108,9 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def analysis(securities: [str], methods: [str], data_hub: DataHubEntry,
-             database: DatabaseEntry, extra: dict) -> [AnalysisResult]:
-    return standard_dispatch_analysis(securities, methods, data_hub, database, extra, METHOD_LIST)
+def analysis(methods: [str], securities: [str], time_serial: tuple,
+             data_hub: DataHubEntry, database: DatabaseEntry, **kwargs) -> [AnalysisResult]:
+    return standard_dispatch_analysis(methods, securities, time_serial, data_hub, database, kwargs, METHOD_LIST)
 
 
 

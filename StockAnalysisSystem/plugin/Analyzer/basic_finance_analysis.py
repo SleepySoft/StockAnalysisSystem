@@ -352,18 +352,18 @@ METHOD_LIST = [
 ]
 
 
-def plugin_prob() -> dict:
-    return {
-        'plugin_id': '7b59e0e4-5572-4cd8-8982-baa94f8af3d9',
-        'plugin_name': 'basic_finance_analysis',
-        'plugin_version': '0.0.0.1',
-        'tags': ['finance', 'analyzer'],
-        'methods': METHOD_LIST,
-    }
-
-
-def plugin_adapt(method: str) -> bool:
-    return method in methods_from_prob(plugin_prob())
+# def plugin_prob() -> dict:
+#     return {
+#         'plugin_id': '7b59e0e4-5572-4cd8-8982-baa94f8af3d9',
+#         'plugin_name': 'basic_finance_analysis',
+#         'plugin_version': '0.0.0.1',
+#         'tags': ['finance', 'analyzer'],
+#         'methods': METHOD_LIST,
+#     }
+#
+#
+# def plugin_adapt(method: str) -> bool:
+#     return method in methods_from_prob(plugin_prob())
 
 
 def plugin_capacities() -> list:
@@ -374,9 +374,9 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def analysis(securities: [str], methods: [str], data_hub: DataHubEntry,
-             database: DatabaseEntry, extra: dict) -> [AnalysisResult]:
-    return standard_dispatch_analysis(securities, methods, data_hub, database, extra, METHOD_LIST)
+def analysis(methods: [str], securities: [str], time_serial: tuple,
+             data_hub: DataHubEntry, database: DatabaseEntry, **kwargs) -> [AnalysisResult]:
+    return standard_dispatch_analysis(methods, securities, time_serial, data_hub, database, kwargs, METHOD_LIST)
 
 
 

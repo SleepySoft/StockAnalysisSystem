@@ -225,6 +225,7 @@ class DataAgent:
                  depot_name: str, table_prefix: str = '',
                  identity_field: str or None = 'Identity',
                  datetime_field: str or None = 'DateTime',
+                 candidate_fields: tuple or None = None,
                  **kwargs):
         """
         If you specify both identity_field and datetime_field, the combination will be the primary key. Which means
@@ -242,6 +243,7 @@ class DataAgent:
         self.__table_prefix = table_prefix
         self.__identity_field = identity_field
         self.__datetime_field = datetime_field
+        self.__candidate_fields = candidate_fields
         self.__checker = None
         self.__extra = kwargs
 
@@ -378,22 +380,31 @@ class DataAgent:
 
         table.set_connection_threshold(1)
         for ddict in data_dict:
-            identity_value = None
-            if str_available(identity_field):
-                identity_value = ddict.get(identity_field, None)
+            identity_value = ddict.pop(identity_field, None) if str_available(identity_field) else None
             if str_available(identity_field) and identity_value is None:
                 print('Warning: identity field "' + identity_field + '" of <' + uri + '> missing.')
                 continue
 
-            datetime_value = None
-            if str_available(datetime_field):
-                datetime_value = ddict.get(datetime_field, None)
-                if str_available(datetime_value):
-                    datetime_value = text_auto_time(datetime_value)
+            datetime_value = ddict.pop(datetime_field, None) if str_available(datetime_field) else None
             if str_available(datetime_field) and datetime_value is None:
                 print('Warning: datetime field "' + datetime_field + '" of <' + uri + '> missing.')
                 continue
-            table.bulk_upsert(identity_value, datetime_value, ddict)
+
+            if str_available(datetime_value):
+                datetime_value = text_auto_time(datetime_value)
+
+            extra_spec = {}
+            if isinstance(self.__candidate_fields, (tuple, list)):
+                for candidate_field in self.__candidate_fields:
+                    candidate_value = ddict.pop(candidate_field, None)
+                    if candidate_value is not None:
+                        extra_spec[candidate_field] = candidate_value
+                    else:
+                        print('Warning: candidate field "' + candidate_field + '" of <' + uri + '> missing.')
+                if None in extra_spec.values():
+                    continue
+
+            table.bulk_upsert(identity_value, datetime_value, ddict, extra_spec)
         table.bulk_flush()
 
 
@@ -515,7 +526,7 @@ class DataAgentFactorQuarter(DataAgent):
         nop(self)
         return DataAgentUtility.a_stock_list()
 
-#
+
 # # ------------------------- CSV Database -------------------------
 #
 # class DataAgentResult:

@@ -74,12 +74,12 @@ class PluginManager:
         functions_list = [o for o in getmembers(module) if isfunction(o[1])]
         return functions_list
 
-    def execute_module_function(self, modules: object or [object], function: str, parameters: dict,
+    def execute_module_function(self, modules: object or [object], _function: str, parameters: dict,
                                 end_if_success: bool = True) -> object or [object]:
         """
         Execute function of Module
         :param modules: The module that you want to execute its function. Can be an object or a list of object
-        :param function: The function you want to invoke
+        :param _function: The function you want to invoke
         :param parameters: The parameter of the invoking function
         :param end_if_success: If True, this function will return at the first successful invoking.
         :return: The object that the invoking function returns, it will be a list if the modules param is a list.
@@ -89,7 +89,7 @@ class PluginManager:
             modules = [modules]
         result_list = []
         for module in modules:
-            result_obj = self.__safe_execute(module, function, *(), **parameters)
+            result_obj = self.__safe_execute(module, _function, *(), **parameters)
             if result_obj is not None:
                 result_list.append(result_obj)
                 if end_if_success:
