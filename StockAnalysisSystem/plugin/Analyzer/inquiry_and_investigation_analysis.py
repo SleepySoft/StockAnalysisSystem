@@ -13,7 +13,7 @@ def analysis_inquiry(securities: str, data_hub: DataHubEntry,
 
     df = data_hub.get_data_center().query('Market.Enquiries', securities)
     if df is None or len(df) == 0:
-        return AnalysisResult(securities, AnalysisResult.SCORE_PASS, '四年内无问询记录（也可能是数据缺失）')
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_PASS, '四年内无问询记录（也可能是数据缺失）')
 
     error_report = check_gen_report_when_data_missing(df, securities, 'Market.Enquiries',
                                                       ['stock_identity', 'enquiry_date', 'enquiry_topic'])
@@ -37,7 +37,7 @@ def analysis_inquiry(securities: str, data_hub: DataHubEntry,
     if len(reason) == 0:
         reason.append('近四年无敏感问询')
 
-    return AnalysisResult(securities, score, reason)
+    return AnalysisResult(securities, None, score, reason)
 
 
 def analysis_investigation(securities: str, data_hub: DataHubEntry,

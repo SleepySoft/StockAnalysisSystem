@@ -176,7 +176,7 @@ def standard_dispatch_analysis(methods: [str], securities: [str], time_serial: t
 
             # Fill result list for alignment
             while len(sub_list) < len(securities):
-                sub_list.append([AnalysisResult(securities[len(sub_list)], AnalysisResult.SCORE_NOT_APPLIED, 'NONE')])
+                sub_list.append([AnalysisResult(securities[len(sub_list)], None, AnalysisResult.SCORE_NOT_APPLIED, 'NONE')])
             result_list.append((query_method, sub_list))
             context.progress.set_progress(hash_id, len(securities), len(securities))
             break
@@ -208,14 +208,14 @@ def check_gen_report_when_data_missing(df: pd.DataFrame, securities: str,
     if df is None or len(df) == 0:
         error_info = uri + ': Cannot find data for securities : ' + securities
         log_error(error_info)
-        return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, error_info)
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, error_info)
     if not isinstance(fields, (list, tuple)):
         fields = [fields]
     for field in fields:
         if field not in df.columns:
             error_info = uri + ': Field ' + field + ' missing for securities : ' + securities
             log_error(error_info)
-            return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, error_info)
+            return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, error_info)
     return None
 
 
@@ -224,7 +224,7 @@ def gen_report_when_analyzing_error(securities: str, exception: Exception):
     error_info += str(exception)
     log_error(error_info)
     print(traceback.format_exc())
-    return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, error_info)
+    return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, error_info)
 
 
 def batch_query_readable_annual_report_pattern(
@@ -275,19 +275,19 @@ def query_readable_annual_report_pattern(data_hub, uri: str, securities: str, ti
     :return: (Query Result if successful, else None, Analysis Result if fail else None)
     """
     if not data_hub.get_data_center().check_readable_name(fields):
-        return None, AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, 'Unknown readable name detect.')
+        return None, AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, 'Unknown readable name detect.')
 
     fields_stripped = list(set(fields + ['stock_identity', 'period']))
     df = data_hub.get_data_center().query(uri, securities, time_serial, fields=fields_stripped, readable=True)
     if df is None or len(df) == 0:
-        return None, AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED,
+        return None, AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED,
                                     'No data, skipped' + str(time_serial))
 
     # Only analysis annual report
     df = df[df['period'].dt.month == 12]
 
     if len(df) == 0:
-        return None, AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED,
+        return None, AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED,
                                     'No data in this period' + str(time_serial))
     df.fillna(0.0, inplace=True)
     df = df.sort_values('period', ascending=False)

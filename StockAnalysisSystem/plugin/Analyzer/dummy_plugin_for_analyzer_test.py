@@ -16,7 +16,7 @@ def score_1(securities: str, time_serial: tuple,
     nop(context)
     end_char = securities.split('.')[0][-1:]
     score = int(end_char) * 10
-    return AnalysisResult(securities, score, end_char + ' * 10 = ' + str(score))
+    return AnalysisResult(securities, None, score, end_char + ' * 10 = ' + str(score))
 
 
 def score_2(securities: str, time_serial: tuple,
@@ -27,7 +27,7 @@ def score_2(securities: str, time_serial: tuple,
     nop(context)
     end_char = securities.split('.')[0][-1:]
     score = (10 - int(end_char)) * 10
-    return AnalysisResult(securities, score, '(10 - ' + end_char + ') * 10 = ' + str(score))
+    return AnalysisResult(securities, None, score, '(10 - ' + end_char + ') * 10 = ' + str(score))
 
 
 def include_1(securities: str, time_serial: tuple,
@@ -38,7 +38,7 @@ def include_1(securities: str, time_serial: tuple,
     nop(context)
     end_char = securities.split('.')[0][-1:]
     passed = end_char in ['1', '2', '3', '4', '5']
-    return AnalysisResult(securities, passed, '代码末位为' + end_char + '通过测试' if passed else '未通过测试')
+    return AnalysisResult(securities, None, passed, '代码末位为' + end_char + '通过测试' if passed else '未通过测试')
 
 
 def include_2(securities: str, time_serial: tuple,
@@ -49,7 +49,7 @@ def include_2(securities: str, time_serial: tuple,
     nop(context)
     end_char = securities.split('.')[0][-1:]
     passed = end_char in ['5', '6', '7', '8', '9']
-    return AnalysisResult(securities, passed, '代码末位为' + end_char + '通过测试' if passed else '未通过测试')
+    return AnalysisResult(securities, None, passed, '代码末位为' + end_char + '通过测试' if passed else '未通过测试')
 
 
 def exclude_1(securities: str, time_serial: tuple,
@@ -59,7 +59,7 @@ def exclude_1(securities: str, time_serial: tuple,
     nop(database)
     nop(context)
     passed = securities[0] not in ['1', '2', '3', '4', '5']
-    return AnalysisResult(securities, passed, '代码第一位为' + securities[0] + '通过测试' if passed else '未通过测试')
+    return AnalysisResult(securities, None, passed, '代码第一位为' + securities[0] + '通过测试' if passed else '未通过测试')
 
 
 def exclude_2(securities: str, time_serial: tuple,
@@ -69,7 +69,7 @@ def exclude_2(securities: str, time_serial: tuple,
     nop(database)
     nop(context)
     passed = securities[0] not in ['5', '6', '7', '8', '9']
-    return AnalysisResult(securities, passed, '代码第一位为' + securities[0] + '通过测试' if passed else '未通过测试')
+    return AnalysisResult(securities, None, passed, '代码第一位为' + securities[0] + '通过测试' if passed else '未通过测试')
 
 
 # ----------------------------------------------------------------------------------------------------------------------
