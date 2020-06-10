@@ -14,7 +14,7 @@ def analysis_finance_report_sign(securities: str, time_serial: tuple, data_hub: 
                                  database: DatabaseEntry, context: AnalysisContext, **kwargs) -> [AnalysisResult]:
     nop(database, kwargs)
     if context.cache.get('finance_audit', None) is None:
-        context.cache['finance_audit'] = data_hub.get_data_center().query('Finance.Audit', time_serial)
+        context.cache['finance_audit'] = data_hub.get_data_center().query('Finance.Audit', None, time_serial)
     df = context.cache.get('finance_audit', None)
 
     error_report = check_gen_report_when_data_missing(df, securities, 'Finance.Audit',
@@ -63,10 +63,10 @@ def analysis_consecutive_losses(securities: str, time_serial: tuple, data_hub: D
 
         if row['利润总额'] < 0:
             score -= 50
-            reason.append(date2text(period) + '：利润总额 - ' + str(row['利润总额']))
+            reason.append(date2text(period) + '：利润总额 ' + format_w(row['利润总额']))
         if row['营业利润'] < 0:
             score -= 50
-            reason.append(date2text(period) + '：营业利润 - ' + str(row['营业利润']))
+            reason.append(date2text(period) + '：营业利润 ' + format_w(row['营业利润']))
         results.append(AnalysisResult(securities, period, score, reason))
 
     return results
@@ -254,7 +254,7 @@ def analysis_current_and_quick_ratio(securities: str, time_serial: tuple, data_h
     df = data_hub.get_data_center().query_from_factor(
         'Factor.Finance', securities, time_serial, fields=['流动比率', '速动比率'], readable=True)
     if df is None or len(df) == 0:
-        return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '')
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '')
 
     # Annual report
     df = df[df['period'].dt.month == 12]
@@ -293,7 +293,7 @@ def analysis_roe_roa(securities: str, time_serial: tuple, data_hub: DataHubEntry
     df = data_hub.get_data_center().query_from_factor(
         'Factor.Finance', securities, time_serial, fields=['总资产收益率', '净资产收益率'], readable=True)
     if df is None or len(df) == 0:
-        return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '')
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '')
 
     # Annual report
     df = df[df['period'].dt.month == 12]
@@ -363,18 +363,18 @@ METHOD_LIST = [
 ]
 
 
-# def plugin_prob() -> dict:
-#     return {
-#         'plugin_id': '7b59e0e4-5572-4cd8-8982-baa94f8af3d9',
-#         'plugin_name': 'basic_finance_analysis',
-#         'plugin_version': '0.0.0.1',
-#         'tags': ['finance', 'analyzer'],
-#         'methods': METHOD_LIST,
-#     }
-#
-#
-# def plugin_adapt(method: str) -> bool:
-#     return method in methods_from_prob(plugin_prob())
+def plugin_prob() -> dict:
+    return {
+        'plugin_id': '7b59e0e4-5572-4cd8-8982-baa94f8af3d9',
+        'plugin_name': 'basic_finance_analysis',
+        'plugin_version': '0.0.0.1',
+        'tags': ['finance', 'analyzer'],
+        'methods': METHOD_LIST,
+    }
+
+
+def plugin_adapt(method: str) -> bool:
+    return method in methods_from_prob(plugin_prob())
 
 
 def plugin_capacities() -> list:

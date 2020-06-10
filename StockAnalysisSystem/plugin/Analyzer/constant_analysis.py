@@ -75,7 +75,7 @@ def analysis_exclude_industries(securities: str, time_serial: tuple, data_hub: D
     industry = get_dataframe_slice_item(df_slice, 'industry', 0, '')
     exclude = industry in ['种植业', '渔业', '林业', '畜禽养殖', '农业综合']
     reason = '所在行业[' + str(industry) + (']属于农林牧渔' if exclude else ']不属于农林牧渔')
-    return AnalysisResult(securities, not exclude, reason)
+    return AnalysisResult(securities, None, not exclude, reason)
 
 
 # ------------------------------------------------------ 05 - 10 -------------------------------------------------------

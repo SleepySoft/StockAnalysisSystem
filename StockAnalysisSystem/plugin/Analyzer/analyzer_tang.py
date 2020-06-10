@@ -360,7 +360,7 @@ def analyzer_income_statement(securities: str, time_serial: tuple, data_hub: Dat
                               database: DatabaseEntry, context: AnalysisContext, **kwargs) -> [AnalysisResult]:
 
     if check_industry_in(securities, ['银行', '保险', '房地产', '全国地产', '区域地产'], data_hub, database, context):
-        return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业')
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业')
 
     fields_balance_sheet = ['商誉', '在建工程', '固定资产', '资产总计', '负债合计']
     fields_income_statement = ['营业利润', '营业收入', '营业总收入', '净利润(含少数股东损益)',
