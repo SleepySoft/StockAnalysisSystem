@@ -279,6 +279,16 @@ class StrategyUi(QWidget):
         clock = Clock()
         result = self.__strategy_entry.run_strategy(stock_list, analyzer_list, progress=self.__progress_rate)
         print('Analysis time spending: ' + str(clock.elapsed_s()) + ' s')
+        
+        # TODO: Debug and Del
+        json_text = analysis_result_to_json(result)
+        with open('analysis_result.json', 'wt') as f:
+            f.write(json_text)
+
+        self.__strategy_entry.cache_analysis_result('Result.Analyzer', result)
+        result2 = self.__strategy_entry.result_from_cache('Result.Analyzer')
+
+        print(result2)
 
         # ----------- Generate report ------------
         clock.reset()

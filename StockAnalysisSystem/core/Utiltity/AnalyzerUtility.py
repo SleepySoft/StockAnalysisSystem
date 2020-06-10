@@ -79,7 +79,7 @@ class AnalysisResult:
 
     def pack(self) -> dict:
         return {
-            # Make the dict keys 'happens to' the fields of Result.Finance
+            # Make the dict keys 'happens to' the fields of Result.Analyzer
             'stock_identity': self.securities,
             'period': self.period,
             'analyzer': self.method,
@@ -103,6 +103,18 @@ class AnalysisResult:
     
     def deserialize(self, json_text: str):
         self.unpack(json.loads(json_text))
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def analysis_result_list_to_table(result_list: [AnalysisResult]) -> dict:
+    result_table = {}
+    for analysis_result in result_list:
+        analyzer_uuid = analysis_result.method
+        stock_identity = analysis_result.securities
+        if analyzer_uuid not in result_table.keys():
+            result_table[analyzer_uuid] = [(stock_identity, [])]
+    return result_table
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -173,14 +185,15 @@ def standard_dispatch_analysis(methods: [str], securities: [str], time_serial: t
                     result = AnalysisResult(s, None, AnalysisResult.SCORE_NOT_APPLIED, 'NONE')
                 if not isinstance(result, (list, tuple)):
                     result = [result]
-                sub_list.append((s, result))
+                sub_list.extend(result)
 
-            # Fill result list for alignment
-            while len(sub_list) < len(securities):
-                sub_list.append([AnalysisResult(securities[len(sub_list)], None, AnalysisResult.SCORE_NOT_APPLIED, 'NONE')])
-            result_list.append((query_method, sub_list))
+            # # Fill result list for alignment
+            # while len(sub_list) < len(securities):
+            #     sub_list.append([AnalysisResult(securities[len(sub_list)],
+            #     None, AnalysisResult.SCORE_NOT_APPLIED, 'NONE')])
+
+            result_list.extend(sub_list)
             context.progress.set_progress(hash_id, len(securities), len(securities))
-            break
     return result_list if len(result_list) > 0 else None
 
 
