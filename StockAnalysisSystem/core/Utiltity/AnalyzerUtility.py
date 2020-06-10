@@ -79,9 +79,10 @@ class AnalysisResult:
 
     def pack(self) -> dict:
         return {
-            'method': self.method,
+            # Make the dict keys 'happens to' the fields of Result.Finance
+            'stock_identity': self.securities,
             'period': self.period,
-            'securities': self.securities,
+            'analyzer': self.method,
             
             'score': self.score,
             'reason': self.reason,
@@ -89,9 +90,9 @@ class AnalysisResult:
         }
 
     def unpack(self, data: dict):
-        self.method = data.get('method', '')
+        self.securities = data.get('stock_identity', '')
         self.period = data.get('period', '')
-        self.securities = data.get('securities', '')
+        self.method = data.get('analyzer', '')
 
         self.score = data.get('data', AnalysisResult.SCORE_NOT_APPLIED)
         self.reason = data.get('reason', [])
