@@ -34,15 +34,16 @@ class StrategyEntry:
                 'database': self.__database,
                 **kwargs,
             }, False)
+        return result
 
-        # Flatten the nest result list
-        flat_list = [item for sublist in result for item in sublist]
-
-        # Convert list to dict
-        result_table = {}
-        for hash_id, results in flat_list:
-            result_table[hash_id] = results
-        return result_table
+        # # Flatten the nest result list
+        # flat_list = [item for sublist in result for item in sublist]
+        #
+        # # Convert list to dict
+        # result_table = {}
+        # for hash_id, results in flat_list:
+        #     result_table[hash_id] = results
+        # return result_table
 
     def cache_analysis_result(self, uri: str, result_table: dict):
         for method_uuid, result_table in result_table.items():
@@ -57,8 +58,16 @@ class StrategyEntry:
                     **result_pack,
                 })
 
-    def result_from_cache(self):
-        pass
+    def result_from_cache(self, uri: str, analyzer: [str], identity: str or [str] = None,
+                          time_serial: tuple = None) -> dict:
+        if analyzer is None or len(analyzer) == 0:
+            df = self.__data_hub.get_data_center().query(uri, identity, time_serial)
+        else:
+            if isinstance(analyzer, str):
+                analyzer = [analyzer]
+            df = self.__data_hub.get_data_center().query(uri, identity, time_serial,
+                                                         extra={'analyzer': {'$in', analyzer}})
+        print(df)
 
     def strategy_name_dict(self) -> dict:
         name_dict = {}

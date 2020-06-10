@@ -345,9 +345,17 @@ def build_data_agent(database_entry: DatabaseEntry):
         ),
 
         DataAgentStockQuarter(
-            uri='Result.Finance',
+            uri='Result.Analyzer',
+            database_entry=database_entry,
+
+            depot_name='SasCache',
+            table_prefix='',
+
+            identity_field='stock_identity',
+            datetime_field='period',
             candidate_fields=['analyzer'],
-            **PARAMETER_FINANCE_DATA
+
+            data_duration=DATA_DURATION_QUARTER,
         ),
     ]
 
