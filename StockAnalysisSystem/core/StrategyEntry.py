@@ -45,12 +45,16 @@ class StrategyEntry:
         return result_table
 
     def cache_analysis_result(self, uri: str, result_table: dict):
-        for method_uuid, result_list in result_table.items():
+        for method_uuid, result_table in result_table.items():
+            stock_identity, result_list = result_table
             for result in result_list:
+                # Currently ignore the result without period
+                if result.period is None:
+                    continue
+                result_pack = result.pack()
                 self.__data_hub.get_data_center().merge_local_data(uri, result.securities, {
-                    'period': method_uuid,
-                    'analyzer': method_uuid,
-                    'xxxxxxx': method_uuid,
+                    # Note that the dict keys matches the db must fields
+                    **result_pack,
                 })
 
     def result_from_cache(self):
