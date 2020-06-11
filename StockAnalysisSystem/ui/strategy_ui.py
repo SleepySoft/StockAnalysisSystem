@@ -277,25 +277,36 @@ class StrategyUi(QWidget):
 
         # ------------- Run analyzer -------------
         clock = Clock()
-        result = self.__strategy_entry.run_strategy(stock_list, analyzer_list, progress=self.__progress_rate)
+        # result = self.__strategy_entry.run_strategy(stock_list, analyzer_list, progress=self.__progress_rate)
+
+        # result = None
+        # with open('analysis_result.json', 'rt') as f:
+        #     result = analysis_results_from_json(f)
+        # if result is None:
+        #     return
+
         print('Analysis time spending: ' + str(clock.elapsed_s()) + ' s')
         
         # TODO: Debug and Del
-        json_text = analysis_results_to_json(result)
-        with open('analysis_result.json', 'wt') as f:
-            f.write(json_text)
+        # json_text = analysis_results_to_json(result)
+        # with open('analysis_result.json', 'wt') as f:
+        #     f.write(json_text)
 
         # self.__strategy_entry.cache_analysis_result('Result.Analyzer', result)
-        # result2 = self.__strategy_entry.result_from_cache('Result.Analyzer')
-        #
-        # print(result2)
+        result = self.__strategy_entry.result_from_cache('Result.Analyzer')
+
+        print(result)
+
+        # ------------ Parse to Table ------------
+
+        result_table = analysis_result_list_to_table(result)
 
         # ----------- Generate report ------------
         clock.reset()
         stock_list = self.__data_hub_entry.get_data_utility().get_stock_list()
         stock_dict = {_id: _name for _id, _name in stock_list}
         name_dict = self.__strategy_entry.strategy_name_dict()
-        generate_analysis_report(result, output_path, name_dict, stock_dict)
+        generate_analysis_report(result_table, output_path, name_dict, stock_dict)
         print('Generate report time spending: ' + str(clock.elapsed_s()) + ' s')
 
         # ----------------- End ------------------

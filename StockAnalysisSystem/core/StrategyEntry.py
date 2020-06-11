@@ -46,20 +46,11 @@ class StrategyEntry:
         #     result_table[hash_id] = results
         # return result_table
 
-    def cache_analysis_result(self, uri: str, result_table: dict):
-        for method_uuid, result_table in result_table.items():
-            stock_identity, result_list = result_table
-            for result in result_list:
-                # Currently ignore the result without period
-                if result.period is None:
-                    continue
-                result_pack = result.pack()
-                self.__data_hub.get_data_center().merge_local_data(uri, result.securities, {
-                    # Note that the dict keys matches the db must fields
-                    **result_pack,
-                })
+    def cache_analysis_result(self, uri: str, result_list: list):
+        analysis_result_pack = [r.pack() for r in result_list if r.period is not None]
+        self.__data_hub.get_data_center().merge_local_data(uri, '', analysis_result_pack)
 
-    def result_from_cache(self, uri: str, analyzer: [str], identity: str or [str] = None,
+    def result_from_cache(self, uri: str, analyzer: [str] = None, identity: str or [str] = None,
                           time_serial: tuple = None) -> dict:
         if analyzer is None or len(analyzer) == 0:
             df = self.__data_hub.get_data_center().query(uri, identity, time_serial)
@@ -68,7 +59,7 @@ class StrategyEntry:
                 analyzer = [analyzer]
             df = self.__data_hub.get_data_center().query(uri, identity, time_serial,
                                                          extra={'analyzer': {'$in', analyzer}})
-        print(df)
+        return df
 
     def strategy_name_dict(self) -> dict:
         name_dict = {}

@@ -187,7 +187,7 @@ def ChainParse(root, chain, find_list: []):
 
 # -------------------------------------------- Type parse --------------------------------------------
 
-def str2int_safe(text: str, default=0, base=10) -> float:
+def str2int_safe(text: str, default=0, base=10) -> int:
     try:
         return int(text, base)
     except Exception as e:
