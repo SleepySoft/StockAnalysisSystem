@@ -378,6 +378,7 @@ class DataAgent:
             return
         identity_field, datetime_field = table.identity_field(), table.datetime_field()
 
+        bulk_count = 0
         table.set_connection_threshold(1)
         for ddict in data_dict:
             identity_value = ddict.pop(identity_field, None) if str_available(identity_field) else None
@@ -405,6 +406,12 @@ class DataAgent:
                     continue
 
             table.bulk_upsert(identity_value, datetime_value, ddict, extra_spec)
+            bulk_count += 1
+
+            if bulk_count > 5000:
+                table.bulk_flush()
+                bulk_count = 0
+
         table.bulk_flush()
 
 

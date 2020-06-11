@@ -57,7 +57,7 @@ class AnalysisResult:
     def __init__(self, securities: str, period: datetime.datetime or None,
                  score: int or bool, reason: str or [str] = '', weight: int = WEIGHT_NORMAL):
         self.method = ''
-        self.period = to_py_datetime(period)
+        self.period = to_py_datetime(period) if period is not None else None
         self.securities = securities
 
         if isinstance(score, bool):
@@ -78,11 +78,11 @@ class AnalysisResult:
 
         self.weight = weight
 
-    def pack(self) -> dict:
+    def pack(self, to_simple_obj: bool = True) -> dict:
         return {
             # Make the dict keys 'happens to' the fields of Result.Analyzer
             'stock_identity': self.securities,
-            'period': datetime2text(self.period),
+            'period': datetime2text(self.period) if to_simple_obj else self.period,
             'analyzer': self.method,
             
             'score': self.score,
@@ -95,9 +95,11 @@ class AnalysisResult:
         self.period = text_auto_time(data.get('period', ''))
         self.method = data.get('analyzer', '')
 
-        self.score = data.get('data', AnalysisResult.SCORE_NOT_APPLIED)
+        score = data.get('score', AnalysisResult.SCORE_NOT_APPLIED)
+        self.score = str2float_safe(score, AnalysisResult.SCORE_NOT_APPLIED)
+
         self.reason = data.get('reason', [])
-        self.weight = data.get('weight', AnalysisResult.WEIGHT_NORMAL)
+        self.weight = float(data.get('weight', AnalysisResult.WEIGHT_NORMAL))
 
     def serialize(self) -> str:
         return json.dumps(self.pack())
@@ -108,22 +110,26 @@ class AnalysisResult:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def analysis_results_to_json(result_list: [AnalysisResult]) -> str:
+def analysis_results_to_json(result_list: [AnalysisResult], fp=None) -> bool or str:
     def _analysis_result_json_hook(analysis_result: AnalysisResult) ->dict:
         if isinstance(analysis_result, AnalysisResult):
-            return analysis_result.pack()
+            return analysis_result.pack(True)
         else:
             print('Unknown class: ' + str(analysis_result))
             return {}
-    return json.dumps(result_list, default=_analysis_result_json_hook, sort_keys=True, indent=4)
+    return json.dump(result_list, fp, default=_analysis_result_json_hook, sort_keys=True, indent=4) \
+        if fp is not None else json.dumps(result_list, default=_analysis_result_json_hook, sort_keys=True, indent=4)
 
 
-def json_to_analysis_results(json_text: str) -> [AnalysisResult]:
+def analysis_results_from_json(fp) -> [AnalysisResult]:
     def _json_analysis_result_hook(_dict: dict) -> AnalysisResult:
         analysis_result = AnalysisResult('', None, False)
         analysis_result.unpack(_dict)
         return analysis_result
-    return json.loads(json_text, object_hook=_json_analysis_result_hook)
+    if isinstance(fp, str):
+        return json.loads(fp, object_hook=_json_analysis_result_hook)
+    else:
+        return json.load(fp, object_hook=_json_analysis_result_hook)
 
 
 def analysis_result_list_to_table(result_list: [AnalysisResult]) -> {str: {str: [AnalysisResult]}}:
@@ -489,7 +495,7 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
 
             row = 2
             col = index_to_excel_column_name(column)
-            for security, results in analysis_result:
+            for security, results in analysis_result.items():
                 securities_name = stock_name_dict.get(security, '')
                 display_text = (security + ' | ' + securities_name) if securities_name != '' else security
                 ws_score[col + str(row)] = display_text
@@ -506,7 +512,7 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
 
         # Write scores
         row = ROW_OFFSET
-        for security, results in analysis_result:
+        for security, results in analysis_result.items():
             score, weight, reason = __aggregate_single_security_results(results)
 
             ws_score[col + str(row)] = score
