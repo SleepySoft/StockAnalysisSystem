@@ -4,6 +4,7 @@ import pandas as pd
 
 from .common import *
 from .df_utility import *
+from .time_utility import *
 from ..DataHubEntry import DataHubEntry
 from ..Database.DatabaseEntry import DatabaseEntry
 
@@ -56,7 +57,7 @@ class AnalysisResult:
     def __init__(self, securities: str, period: datetime.datetime or None,
                  score: int or bool, reason: str or [str] = '', weight: int = WEIGHT_NORMAL):
         self.method = ''
-        self.period = period
+        self.period = to_py_datetime(period)
         self.securities = securities
 
         if isinstance(score, bool):
@@ -81,7 +82,7 @@ class AnalysisResult:
         return {
             # Make the dict keys 'happens to' the fields of Result.Analyzer
             'stock_identity': self.securities,
-            'period': self.period,
+            'period': datetime2text(self.period),
             'analyzer': self.method,
             
             'score': self.score,
@@ -91,7 +92,7 @@ class AnalysisResult:
 
     def unpack(self, data: dict):
         self.securities = data.get('stock_identity', '')
-        self.period = data.get('period', '')
+        self.period = text_auto_time(data.get('period', ''))
         self.method = data.get('analyzer', '')
 
         self.score = data.get('data', AnalysisResult.SCORE_NOT_APPLIED)
@@ -107,13 +108,34 @@ class AnalysisResult:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def analysis_result_list_to_table(result_list: [AnalysisResult]) -> dict:
+def analysis_results_to_json(result_list: [AnalysisResult]) -> str:
+    def _analysis_result_json_hook(analysis_result: AnalysisResult) ->dict:
+        if isinstance(analysis_result, AnalysisResult):
+            return analysis_result.pack()
+        else:
+            print('Unknown class: ' + str(analysis_result))
+            return {}
+    return json.dumps(result_list, default=_analysis_result_json_hook, sort_keys=True, indent=4)
+
+
+def json_to_analysis_results(json_text: str) -> [AnalysisResult]:
+    def _json_analysis_result_hook(_dict: dict) -> AnalysisResult:
+        analysis_result = AnalysisResult('', None, False)
+        analysis_result.unpack(_dict)
+        return analysis_result
+    return json.loads(json_text, object_hook=_json_analysis_result_hook)
+
+
+def analysis_result_list_to_table(result_list: [AnalysisResult]) -> {str: {str: [AnalysisResult]}}:
     result_table = {}
     for analysis_result in result_list:
         analyzer_uuid = analysis_result.method
         stock_identity = analysis_result.securities
         if analyzer_uuid not in result_table.keys():
-            result_table[analyzer_uuid] = [(stock_identity, [])]
+            result_table[analyzer_uuid] = {}
+        if stock_identity not in result_table[analyzer_uuid].keys():
+            result_table[analyzer_uuid][stock_identity] = []
+        result_table[analyzer_uuid][stock_identity].append(analysis_result)
     return result_table
 
 
@@ -162,29 +184,31 @@ def standard_dispatch_analysis(methods: [str], securities: [str], time_serial: t
     for query_method in methods:
         sub_list = []
         context.cache.clear()
-        for hash_id, _, _, function_entry in method_list:
-            if hash_id != query_method:
+        for _uuid, _, _, function_entry in method_list:
+            if _uuid != query_method:
                 continue
             if function_entry is None:
-                print('Method ' + hash_id + ' not implemented yet.')
+                print('Method ' + _uuid + ' not implemented yet.')
                 break
-            context.progress.set_progress(hash_id, 0, len(securities))
+            context.progress.set_progress(_uuid, 0, len(securities))
             for s in securities:
                 try:
                     result = function_entry(s, time_serial, data_hub, database, context, **extra)
                 except Exception as e:
-                    error_info = 'Execute analyzer [' + hash_id + '] for [' + s + '] got exception.'
+                    error_info = 'Execute analyzer [' + _uuid + '] for [' + s + '] got exception.'
                     print(error_info)
                     print(e)
                     print(traceback.format_exc())
                     result = AnalysisResult(s, None, AnalysisResult.SCORE_NOT_APPLIED, error_info)
                 finally:
-                    context.progress.increase_progress(hash_id)
-                    print('Analyzer %s progress: %.2f%%' % (hash_id, context.progress.get_progress_rate(hash_id) * 100))
+                    context.progress.increase_progress(_uuid)
+                    print('Analyzer %s progress: %.2f%%' % (_uuid, context.progress.get_progress_rate(_uuid) * 100))
                 if result is None:
                     result = AnalysisResult(s, None, AnalysisResult.SCORE_NOT_APPLIED, 'NONE')
                 if not isinstance(result, (list, tuple)):
                     result = [result]
+                for r in result:
+                    r.method = _uuid
                 sub_list.extend(result)
 
             # # Fill result list for alignment
@@ -193,7 +217,7 @@ def standard_dispatch_analysis(methods: [str], securities: [str], time_serial: t
             #     None, AnalysisResult.SCORE_NOT_APPLIED, 'NONE')])
 
             result_list.extend(sub_list)
-            context.progress.set_progress(hash_id, len(securities), len(securities))
+            context.progress.set_progress(_uuid, len(securities), len(securities))
     return result_list if len(result_list) > 0 else None
 
 

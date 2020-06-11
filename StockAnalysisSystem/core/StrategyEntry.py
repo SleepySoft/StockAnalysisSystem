@@ -34,11 +34,12 @@ class StrategyEntry:
                 'database': self.__database,
                 **kwargs,
             }, False)
-        return result
 
-        # # Flatten the nest result list
-        # flat_list = [item for sublist in result for item in sublist]
-        #
+        # Flatten the nest result list
+        flat_list = [item for sublist in result for item in sublist]
+
+        return flat_list
+
         # # Convert list to dict
         # result_table = {}
         # for hash_id, results in flat_list:
