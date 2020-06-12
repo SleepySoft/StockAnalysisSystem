@@ -16,11 +16,98 @@ from PyQt5.QtCore import QTimer, pyqtSignal
 from PyQt5.QtWidgets import QHeaderView, QLineEdit, QFileDialog
 
 from ..core.StrategyEntry import *
+from ..core.Utiltity.task_queue import *
 from ..core.Utiltity.ui_utility import *
 from ..core.Utiltity.TableViewEx import *
 from ..core.Utiltity.time_utility import *
 from ..core.Utiltity.AnalyzerUtility import *
 from ..core.StockAnalysisSystem import StockAnalysisSystem
+
+
+# ------------------------- Analysis Task -------------------------
+
+class AnalysisTask(TaskQueue.Task):
+    def __init__(self, ui, data_hub:DataHubEntry,
+                 selector_list: [str], analyzer_list: [str],
+                 report_path: str):
+        super(AnalysisTask, self).__init__('AnalysisTask')
+        self.__ui = ui
+        self.__data_hub = data_hub
+        self.__selector_list = selector_list
+        self.__analyzer_list = analyzer_list
+        self.__report_path = report_path
+
+    def run(self):
+        print('Analysis task start.')
+
+        # self.__lock.acquire()
+        # selector_list = self.__selector_list
+        # analyzer_list = self.__analyzer_list
+        # output_path = self.__result_output
+        # self.__lock.release()
+
+        data_utility = self.__data_hub.get_data_utility()
+        stock_list = data_utility.get_stock_identities()
+
+        self.__progress_rate.reset()
+
+        # ------------- Run analyzer -------------
+        clock = Clock()
+
+        # result = self.__strategy_entry.run_strategy(stock_list, analyzer_list, progress=self.__progress_rate)
+
+        total_result = []
+        uncached_analyzer = []
+
+        for analyzer in analyzer_list:
+            result = self.__strategy_entry.result_from_cache('Result.Analyzer', analyzer=analyzer)
+            if result is None or len(result) == 0:
+                uncached_analyzer.append(analyzer)
+                result = self.__strategy_entry.run_strategy(stock_list, [analyzer], progress=self.__progress_rate)
+            else:
+                self.__progress_rate.finish_progress(analyzer)
+            if result is not None and len(result) > 0:
+                total_result.extend(result)
+
+        # DEBUG: Load result from json file
+        # result = None
+        # with open('analysis_result.json', 'rt') as f:
+        #     result = analysis_results_from_json(f)
+        # if result is None:
+        #     return
+
+        print('Analysis time spending: ' + str(clock.elapsed_s()) + ' s')
+
+        # # DEBUG: Dump result to json file
+        # with open('analysis_result.json', 'wt') as f:
+        #     analysis_results_to_json(result, f)
+
+        # self.__strategy_entry.cache_analysis_result('Result.Analyzer', result)
+        result2 = self.__strategy_entry.result_from_cache('Result.Analyzer')
+        print(result2)
+
+        result = analysis_dataframe_to_list(result2)
+        print(result)
+
+        # ------------ Parse to Table ------------
+
+        result_table = analysis_result_list_to_table(result)
+
+        # ----------- Generate report ------------
+        clock.reset()
+        stock_list = self.__data_hub_entry.get_data_utility().get_stock_list()
+        stock_dict = {_id: _name for _id, _name in stock_list}
+        name_dict = self.__strategy_entry.strategy_name_dict()
+        generate_analysis_report(result_table, output_path, name_dict, stock_dict)
+        print('Generate report time spending: ' + str(clock.elapsed_s()) + ' s')
+
+        # ----------------- End ------------------
+        self.task_finish_signal.emit()
+
+        print('Analysis task finished.')
+
+    def identity(self) -> str:
+        return 'AnalysisTask'
 
 
 # ---------------------------------------------------- StrategyUi ----------------------------------------------------
@@ -277,7 +364,21 @@ class StrategyUi(QWidget):
 
         # ------------- Run analyzer -------------
         clock = Clock()
+
         # result = self.__strategy_entry.run_strategy(stock_list, analyzer_list, progress=self.__progress_rate)
+
+        total_result = []
+        uncached_analyzer = []
+
+        for analyzer in analyzer_list:
+            result = self.__strategy_entry.result_from_cache('Result.Analyzer', analyzer=analyzer)
+            if result is None or len(result) == 0:
+                uncached_analyzer.append(analyzer)
+                result = self.__strategy_entry.run_strategy(stock_list, [analyzer], progress=self.__progress_rate)
+            else:
+                self.__progress_rate.finish_progress(analyzer)
+            if result is not None and len(result) > 0:
+                total_result.extend(result)
 
         # DEBUG: Load result from json file
         # result = None
@@ -287,7 +388,7 @@ class StrategyUi(QWidget):
         #     return
 
         print('Analysis time spending: ' + str(clock.elapsed_s()) + ' s')
-        
+
         # # DEBUG: Dump result to json file
         # with open('analysis_result.json', 'wt') as f:
         #     analysis_results_to_json(result, f)

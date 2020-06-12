@@ -88,6 +88,12 @@ class ProgressRate:
             if current is not None:
                 self.__progress_table[key][ProgressRate.INDEX_CURRENT_PROGRESS] = current + inc
 
+    def finish_progress(self, identity: str or [str]):
+        key = self.normalize_identity(identity)
+        if key in self.__progress_table.keys():
+            self.__progress_table[key][ProgressRate.INDEX_CURRENT_PROGRESS] = \
+                self.__progress_table[key][ProgressRate.INDEX_TOTAL_PROGRESS]
+
     def set_progress(self, identity: str or [str], current: int or None, total: int or None):
         key = self.normalize_identity(identity)
         if key not in self.__progress_table.keys():
