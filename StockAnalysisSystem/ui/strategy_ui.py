@@ -279,6 +279,7 @@ class StrategyUi(QWidget):
         clock = Clock()
         # result = self.__strategy_entry.run_strategy(stock_list, analyzer_list, progress=self.__progress_rate)
 
+        # DEBUG: Load result from json file
         # result = None
         # with open('analysis_result.json', 'rt') as f:
         #     result = analysis_results_from_json(f)
@@ -287,14 +288,15 @@ class StrategyUi(QWidget):
 
         print('Analysis time spending: ' + str(clock.elapsed_s()) + ' s')
         
-        # TODO: Debug and Del
-        # json_text = analysis_results_to_json(result)
+        # # DEBUG: Dump result to json file
         # with open('analysis_result.json', 'wt') as f:
-        #     f.write(json_text)
+        #     analysis_results_to_json(result, f)
 
         # self.__strategy_entry.cache_analysis_result('Result.Analyzer', result)
-        result = self.__strategy_entry.result_from_cache('Result.Analyzer')
+        result2 = self.__strategy_entry.result_from_cache('Result.Analyzer')
+        print(result2)
 
+        result = analysis_dataframe_to_list(result2)
         print(result)
 
         # ------------ Parse to Table ------------

@@ -24,7 +24,7 @@ class StrategyEntry:
             self.get_plugin_manager().all_modules(), 'plugin_prob', {}, False)
 
     def run_strategy(self, securities: [str], methods: [str],
-                     time_serial: tuple = (years_ago(5), now()), **kwargs) -> dict:
+                     time_serial: tuple = (years_ago(5), now()), **kwargs) -> list:
         result = self.get_plugin_manager().execute_module_function(
             self.get_plugin_manager().all_modules(), 'analysis', {
                 'methods': methods,

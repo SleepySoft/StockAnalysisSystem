@@ -54,8 +54,8 @@ class AnalysisResult:
     WEIGHT_NORMAL = 1
     WEIGHT_ONE_VOTE_VETO = 999999
 
-    def __init__(self, securities: str, period: datetime.datetime or None,
-                 score: int or bool, reason: str or [str] = '', weight: int = WEIGHT_NORMAL):
+    def __init__(self, securities: str = '', period: datetime.datetime or None = None,
+                 score: int or bool = False, reason: str or [str] = '', weight: int = WEIGHT_NORMAL):
         self.method = ''
         self.period = to_py_datetime(period) if period is not None else None
         self.securities = securities
@@ -78,22 +78,24 @@ class AnalysisResult:
 
         self.weight = weight
 
-    def pack(self, to_simple_obj: bool = True) -> dict:
+    def pack(self, to_str: bool = True) -> dict:
         return {
             # Make the dict keys 'happens to' the fields of Result.Analyzer
-            'stock_identity': self.securities,
-            'period': datetime2text(self.period) if to_simple_obj else self.period,
-            'analyzer': self.method,
+            'period': str(self.period) if to_str else self.period,
+            'analyzer': str(self.method) if to_str else self.method,
+            'stock_identity': str(self.securities) if to_str else self.securities,
             
-            'score': self.score,
-            'reason': self.reason,
-            'weight': self.weight,
+            'score': str(self.score) if to_str else self.score,
+            'reason': str(self.reason) if to_str else self.reason,
+            'weight': str(self.weight) if to_str else self.weight,
         }
 
     def unpack(self, data: dict):
-        self.securities = data.get('stock_identity', '')
-        self.period = text_auto_time(data.get('period', ''))
+        period = data.get('period', 'None')
+        self.period = None if period == 'None' else text_auto_time(period)
+
         self.method = data.get('analyzer', '')
+        self.securities = data.get('stock_identity', '')
 
         score = data.get('score', AnalysisResult.SCORE_NOT_APPLIED)
         self.score = str2float_safe(score, AnalysisResult.SCORE_NOT_APPLIED)
@@ -108,7 +110,7 @@ class AnalysisResult:
         self.unpack(json.loads(json_text))
 
 
-# ----------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------- Analysis Result Convertion ---------------------------------------------
 
 def analysis_results_to_json(result_list: [AnalysisResult], fp=None) -> bool or str:
     def _analysis_result_json_hook(analysis_result: AnalysisResult) ->dict:
@@ -123,7 +125,7 @@ def analysis_results_to_json(result_list: [AnalysisResult], fp=None) -> bool or 
 
 def analysis_results_from_json(fp) -> [AnalysisResult]:
     def _json_analysis_result_hook(_dict: dict) -> AnalysisResult:
-        analysis_result = AnalysisResult('', None, False)
+        analysis_result = AnalysisResult()
         analysis_result.unpack(_dict)
         return analysis_result
     if isinstance(fp, str):
@@ -143,6 +145,25 @@ def analysis_result_list_to_table(result_list: [AnalysisResult]) -> {str: {str: 
             result_table[analyzer_uuid][stock_identity] = []
         result_table[analyzer_uuid][stock_identity].append(analysis_result)
     return result_table
+
+
+def analysis_dataframe_to_list(df: pd.DataFrame) -> [AnalysisResult]:
+    result_list = []
+    # data_dict = df.T.apply(lambda x: x.dropna().to_dict()).tolist()
+    for period, analyzer, stock_identity, score, reason, weight in \
+            zip(df['period'], df['analyzer'], df['stock_identity'], df['score'], df['reason'], df['weight']):
+        analysis_result = AnalysisResult()
+
+        analysis_result.period = to_py_datetime(period)
+        analysis_result.method = analyzer
+        analysis_result.securities = stock_identity
+
+        analysis_result.score = float(score)
+        analysis_result.reason = reason
+        analysis_result.weight = float(weight)
+
+        result_list.append(analysis_result)
+    return result_list
 
 
 # ----------------------------------------------------------------------------------------------------------------------
