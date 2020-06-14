@@ -165,15 +165,16 @@ def analysis_dataframe_to_list(df: pd.DataFrame) -> [AnalysisResult]:
             zip(df['period'], df['analyzer'], df['stock_identity'], df['score'], df['reason'], df['weight']):
         analysis_result = AnalysisResult()
 
-        analysis_result.period = to_py_datetime(period)
+        analysis_result.period = to_py_datetime(period) if period is not None else None
         analysis_result.method = analyzer
         analysis_result.securities = stock_identity
 
-        analysis_result.score = float(score)
+        analysis_result.score = float(score) if score is not None else None
         analysis_result.reason = reason
-        analysis_result.weight = float(weight)
+        analysis_result.weight = float(weight) if weight is not None else None
 
-        result_list.append(analysis_result)
+        if str_available(analyzer):
+            result_list.append(analysis_result)
     return result_list
 
 
