@@ -148,6 +148,9 @@ def analysis_result_list_to_table(result_list: [AnalysisResult]) -> {str: {str: 
 
 
 def analysis_dataframe_to_list(df: pd.DataFrame) -> [AnalysisResult]:
+    if df is None or df.empty:
+        return []
+
     result_list = []
     # data_dict = df.T.apply(lambda x: x.dropna().to_dict()).tolist()
     for period, analyzer, stock_identity, score, reason, weight in \

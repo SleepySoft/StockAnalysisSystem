@@ -64,7 +64,7 @@ class UniversalDataCenter:
 
     def query(self, uri: str, identity: str or [str] = None,
               time_serial: tuple = None, **extra) -> pd.DataFrame or None:
-        result = self.query_from_local(uri, identity, time_serial, extra)
+        result = self.query_from_local(uri, identity, time_serial, **extra)
         # TODO: It's not a good way. Some problem need to be resolved.
         # 1.The field not exists at all
         # 2.Query multiple fields, some of them not persist on local
@@ -73,8 +73,8 @@ class UniversalDataCenter:
         return result
 
     def query_from_local(self, uri: str, identity: str or [str] = None,
-                         time_serial: tuple = None, extra: dict = None) -> pd.DataFrame or None:
-        extra_param = extra.copy()
+                         time_serial: tuple = None, **extra) -> pd.DataFrame or None:
+        extra_param = extra.copy() if extra is not None else {}
         agent = self.get_data_agent(uri)
         
         if agent is None:

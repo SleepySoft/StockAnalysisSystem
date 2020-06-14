@@ -50,15 +50,14 @@ class StrategyEntry:
         analysis_result_pack = [r.pack() for r in result_list if r.period is not None]
         self.__data_hub.get_data_center().merge_local_data(uri, '', analysis_result_pack)
 
-    def result_from_cache(self, uri: str, analyzer: [str] = None, identity: str or [str] = None,
-                          time_serial: tuple = None) -> dict:
+    def result_from_cache(self, uri: str, analyzer: str or [str] = None, identity: str or [str] = None,
+                          time_serial: tuple = None) -> pd.DataFrame:
         if analyzer is None or len(analyzer) == 0:
             df = self.__data_hub.get_data_center().query(uri, identity, time_serial)
         else:
             if isinstance(analyzer, str):
                 analyzer = [analyzer]
-            df = self.__data_hub.get_data_center().query(uri, identity, time_serial,
-                                                         extra={'analyzer': {'$in', analyzer}})
+            df = self.__data_hub.get_data_center().query(uri, identity, time_serial, analyzer={'$in': analyzer})
         return df
 
     def strategy_name_dict(self) -> dict:
