@@ -52,7 +52,7 @@ class StrategyEntry:
             if r.period is None:
                 # Storage with the latest quarter
                 r.period = previous_quarter(now())
-            analysis_result_packs.append(r)
+            analysis_result_packs.append(r.pack())
         # analysis_result_packs = [r.pack() for r in result_list if r.period is not None]
         self.__data_hub.get_data_center().merge_local_data(uri, '', analysis_result_packs)
 
