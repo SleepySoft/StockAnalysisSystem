@@ -522,13 +522,22 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
         #   The first row of each column is the name of analyzer
         # So we need to record the score for each cell, then we can calculate the total score by row at the end
 
+        if len(all_score) < len(analysis_result):
+            print('%s : Result buffer increased: %d -> %d' % (analyzer_uuid, len(all_score), len(analysis_result)))
+            while len(all_score) < len(analysis_result):
+                all_score.append([])
+                all_weight.append([])
+
         # Write securities column
         if column == 1:
             # The first run. Init the total score list here.
             # Flaw: The first column of result should be the full one. Otherwise the index may out of range.
-            # Wired: Why the length of all_score not equals to the length of analysis_result, so we have to add 1.
-            all_score = [[] for _ in range(0, len(analysis_result) + 1)]
-            all_weight = [[] for _ in range(0, len(analysis_result) + 1)]
+            # all_score = [[] for _ in range(0, len(analysis_result))]
+            # all_weight = [[] for _ in range(0, len(analysis_result))]
+            #
+            # if len(all_score) != len(analysis_result) or len(all_weight) != len(analysis_result):
+            #     print('Error: list length not as expect.')
+            #     assert False
 
             row = 2
             col = index_to_excel_column_name(column)
