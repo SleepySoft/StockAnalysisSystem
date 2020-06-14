@@ -8,12 +8,13 @@ author:Sleepy
 @function:
 @modify:
 """
+import os
 import copy
 import traceback
 import threading
 
 from PyQt5.QtCore import QTimer, pyqtSignal
-from PyQt5.QtWidgets import QHeaderView, QLineEdit, QFileDialog
+from PyQt5.QtWidgets import QHeaderView, QLineEdit, QFileDialog, QCheckBox, QDateTimeEdit, QGridLayout
 
 from ..core.StrategyEntry import *
 from ..core.Utiltity.task_queue import *
@@ -27,87 +28,124 @@ from ..core.StockAnalysisSystem import StockAnalysisSystem
 # ------------------------- Analysis Task -------------------------
 
 class AnalysisTask(TaskQueue.Task):
-    def __init__(self, ui, data_hub:DataHubEntry,
-                 selector_list: [str], analyzer_list: [str],
-                 report_path: str):
+    OPTION_CALC = 1
+    OPTION_FROM_CACHE = 2
+    OPTION_UPDATE_CACHE = 16
+    OPTION_AUTO = OPTION_CALC | OPTION_FROM_CACHE | OPTION_UPDATE_CACHE
+
+    OPTION_FROM_JSON = 1024
+    OPTION_DUMP_JSON = 2048
+
+    def __init__(self, ui, strategy_entry: StrategyEntry, data_hub: DataHubEntry,
+                 selector_list: [str], analyzer_list: [str], time_serial: tuple,
+                 options: int, report_path: str, progress_rate: ProgressRate):
         super(AnalysisTask, self).__init__('AnalysisTask')
         self.__ui = ui
+        self.__options = options
         self.__data_hub = data_hub
+        self.__strategy = strategy_entry
         self.__selector_list = selector_list
         self.__analyzer_list = analyzer_list
+        self.__time_serial = time_serial
         self.__report_path = report_path
+        self.__progress_rate = progress_rate
 
     def run(self):
         print('Analysis task start.')
 
-        # self.__lock.acquire()
-        # selector_list = self.__selector_list
-        # analyzer_list = self.__analyzer_list
-        # output_path = self.__result_output
-        # self.__lock.release()
-
-        data_utility = self.__data_hub.get_data_utility()
-        stock_list = data_utility.get_stock_identities()
-
-        self.__progress_rate.reset()
-
-        # ------------- Run analyzer -------------
         clock = Clock()
+        stock_list = self.select()
+        result_list = self.analysis(stock_list)
+        self.gen_report(result_list)
 
-        # result = self.__strategy_entry.run_strategy(stock_list, analyzer_list, progress=self.__progress_rate)
+        print('Analysis task finished, time spending: ' + str(clock.elapsed_s()) + ' s')
 
-        total_result = []
-        uncached_analyzer = []
-
-        for analyzer in analyzer_list:
-            result = self.__strategy_entry.result_from_cache('Result.Analyzer', analyzer=analyzer)
-            if result is None or len(result) == 0:
-                uncached_analyzer.append(analyzer)
-                result = self.__strategy_entry.run_strategy(stock_list, [analyzer], progress=self.__progress_rate)
-            else:
-                self.__progress_rate.finish_progress(analyzer)
-            if result is not None and len(result) > 0:
-                total_result.extend(result)
-
-        # DEBUG: Load result from json file
-        # result = None
-        # with open('analysis_result.json', 'rt') as f:
-        #     result = analysis_results_from_json(f)
-        # if result is None:
-        #     return
-
-        print('Analysis time spending: ' + str(clock.elapsed_s()) + ' s')
-
-        # # DEBUG: Dump result to json file
-        # with open('analysis_result.json', 'wt') as f:
-        #     analysis_results_to_json(result, f)
-
-        # self.__strategy_entry.cache_analysis_result('Result.Analyzer', result)
-        result2 = self.__strategy_entry.result_from_cache('Result.Analyzer')
-        print(result2)
-
-        result = analysis_dataframe_to_list(result2)
-        print(result)
-
-        # ------------ Parse to Table ------------
-
-        result_table = analysis_result_list_to_table(result)
-
-        # ----------- Generate report ------------
-        clock.reset()
-        stock_list = self.__data_hub_entry.get_data_utility().get_stock_list()
-        stock_dict = {_id: _name for _id, _name in stock_list}
-        name_dict = self.__strategy_entry.strategy_name_dict()
-        generate_analysis_report(result_table, output_path, name_dict, stock_dict)
-        print('Generate report time spending: ' + str(clock.elapsed_s()) + ' s')
-
-        # ----------------- End ------------------
-        self.task_finish_signal.emit()
-
-        print('Analysis task finished.')
+        self.__ui.notify_task_done()
 
     def identity(self) -> str:
         return 'AnalysisTask'
+
+    # -----------------------------------------------------------------------------
+
+    def select(self) -> [str]:
+        data_utility = self.__data_hub.get_data_utility()
+        stock_list = data_utility.get_stock_identities()
+        return stock_list
+
+    def analysis(self, securities_list: [str]) -> [AnalysisResult]:
+        clock = Clock()
+        clock_all = Clock()
+        total_result = []
+        self.__progress_rate.reset()
+
+        for analyzer in self.__analyzer_list:
+            result = None
+            uncached = False
+
+            if self.__options & AnalysisTask.OPTION_FROM_JSON:
+                # DEBUG: Load result from json file
+                clock.reset()
+                with open(self.__json_path(analyzer), 'rt') as f:
+                    result = analysis_results_from_json(f)
+                print('Analyzer %s : Load json finished, time spending: %s' % (analyzer, clock.elapsed_s()))
+            else:
+                if self.__options & AnalysisTask.OPTION_FROM_CACHE:
+                    clock.reset()
+                    df = self.__strategy.result_from_cache('Result.Analyzer',
+                                                           analyzer=analyzer, time_serial=self.__time_serial)
+                    result = analysis_dataframe_to_list(df)
+
+                    if result is None or len(result) == 0:
+                        result = None
+                        uncached = True
+                        print('Analyzer %s : No cache data' % analyzer)
+                    else:
+                        self.__progress_rate.finish_progress(analyzer)
+                        print('Analyzer %s : Load cache finished, time spending: %s' % (analyzer, clock.elapsed_s()))
+
+                if result is None and self.__options & AnalysisTask.OPTION_CALC:
+                    clock.reset()
+                    result = self.__strategy.run_strategy(securities_list, [analyzer],
+                                                          time_serial=self.__time_serial, progress=self.__progress_rate)
+                    print('Analyzer %s : Execute analysis, time spending: %s' % (analyzer, clock.elapsed_s()))
+
+            if result is not None and len(result) > 0:
+                total_result.extend(result)
+
+                if self.__options & AnalysisTask.OPTION_DUMP_JSON:
+                    # DEBUG: Dump result to json file
+                    clock.reset()
+                    with open(self.__json_path(analyzer), 'wt') as f:
+                        analysis_results_to_json(result, f)
+                    print('Analyzer %s : Dump json, time spending: %s' % (analyzer, clock.elapsed_s()))
+
+                if uncached and self.__options & AnalysisTask.OPTION_UPDATE_CACHE:
+                    clock.reset()
+                    self.__strategy.cache_analysis_result('Result.Analyzer', result)
+                    print('Analyzer %s : Cache result, time spending: %s' % (analyzer, clock.elapsed_s()))
+
+        print('All analysis finished, time spending: %s' % clock_all.elapsed_s())
+        return total_result
+
+    def gen_report(self, result_list: [AnalysisResult]):
+        clock = Clock()
+
+        # ------------ Parse to Table ------------
+        result_table = analysis_result_list_to_table(result_list)
+
+        # ------------- Collect Info -------------
+        stock_list = self.__data_hub.get_data_utility().get_stock_list()
+        stock_dict = {_id: _name for _id, _name in stock_list}
+        name_dict = self.__strategy.strategy_name_dict()
+
+        # ----------- Generate report ------------
+        generate_analysis_report(result_table, self.__report_path, name_dict, stock_dict)
+
+        print('Generate report time spending: ' + str(clock.elapsed_s()) + ' s')
+
+    @staticmethod
+    def __json_path(analyzer: str) -> str:
+        return os.path.join(StockAnalysisSystem().get_project_path(), 'TestData', analyzer + '.json')
 
 
 # ---------------------------------------------------- StrategyUi ----------------------------------------------------
@@ -150,12 +188,25 @@ class StrategyUi(QWidget):
         self.__group_analyzer = group
         self.__layout_analyzer = layout
 
+        group, layout = create_v_group_box('Option')
+        self.__group_option = group
+        self.__layout_option = layout
+
         group, layout = create_h_group_box('Result')
         self.__group_result = group
         self.__layout_result = layout
 
         self.__table_selector = TableViewEx()
         self.__table_analyzer = TableViewEx()
+
+        self.__check_force_calc = QCheckBox('Force Calc')
+        self.__check_auto_cache = QCheckBox('Cache Result')
+
+        self.__check_from_json = QCheckBox('From Json')
+        self.__check_dump_json = QCheckBox('Dump Json')
+
+        self.__datetime_time_since = QDateTimeEdit(years_ago(5))
+        self.__datetime_time_until = QDateTimeEdit(now())
 
         self.__edit_path = QLineEdit('analysis_report.xlsx')
         self.__button_browse = QPushButton('Browse')
@@ -190,6 +241,23 @@ class StrategyUi(QWidget):
         self.__layout_result.addWidget(self.__button_browse)
         main_layout.addWidget(self.__group_result)
 
+        grid_layout = QGridLayout()
+        grid_layout.addWidget(self.__check_force_calc, 0, 0)
+        grid_layout.addWidget(self.__check_auto_cache, 1, 0)
+        grid_layout.addWidget(self.__check_from_json, 0, 1)
+        grid_layout.addWidget(self.__check_dump_json, 1, 1)
+
+        grid_layout.addWidget(QLabel(' '), 0, 2)
+        grid_layout.addWidget(QLabel(' '), 0, 2)
+
+        grid_layout.addWidget(QLabel('Since'), 0, 3)
+        grid_layout.addWidget(QLabel('Until'), 1, 3)
+        grid_layout.addWidget(self.__datetime_time_since, 0, 4)
+        grid_layout.addWidget(self.__datetime_time_until, 1, 4)
+        self.__layout_option.addLayout(grid_layout)
+
+        main_layout.addWidget(self.__group_option)
+
         bottom_control_area = QHBoxLayout()
         main_layout.addLayout(bottom_control_area)
 
@@ -211,8 +279,13 @@ class StrategyUi(QWidget):
         self.__table_analyzer.SetColumn(StrategyUi.TABLE_HEADER_ANALYZER)
         self.__table_analyzer.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
+        self.__check_auto_cache.setChecked(True)
+        self.__datetime_time_since.setCalendarPopup(True)
+        self.__datetime_time_until.setCalendarPopup(True)
+
         self.__layout_selector.setSpacing(0)
         self.__layout_analyzer.setSpacing(0)
+        self.__layout_option.setSpacing(0)
         self.__layout_result.setSpacing(0)
         self.__layout_selector.setContentsMargins(0, 0, 0, 0)
         self.__layout_analyzer.setContentsMargins(0, 0, 0, 0)
@@ -336,87 +409,108 @@ class StrategyUi(QWidget):
     # --------------------------------- Thread ---------------------------------
 
     def execute_update_task(self):
-        if self.__task_thread is None:
-            self.__task_thread = threading.Thread(target=self.ui_task)
-            StockAnalysisSystem().lock_sys_quit()
-            self.__timing_clock.reset()
-            self.__task_thread.start()
+        if self.__check_force_calc.isChecked():
+            options = AnalysisTask.OPTION_CALC
         else:
-            print('Task already running...')
-            QMessageBox.information(self,
-                                    QtCore.QCoreApplication.translate('', '无法执行'),
-                                    QtCore.QCoreApplication.translate('', '已经有策略在运行中，无法同时运行多个策略'),
-                                    QMessageBox.Close, QMessageBox.Close)
+            options = AnalysisTask.OPTION_AUTO
 
-    def ui_task(self):
-        print('Strategy task start.')
+        if self.__check_from_json.isChecked():
+            options |= AnalysisTask.OPTION_FROM_JSON
+        if self.__check_dump_json.isChecked():
+            options |= AnalysisTask.OPTION_DUMP_JSON
 
-        self.__lock.acquire()
-        selector_list = self.__selector_list
-        analyzer_list = self.__analyzer_list
-        output_path = self.__result_output
-        self.__lock.release()
+        time_serial = (to_py_datetime(self.__datetime_time_since.dateTime()),
+                       to_py_datetime(self.__datetime_time_until.dateTime()))
 
-        data_utility = self.__data_hub_entry.get_data_utility()
-        stock_list = data_utility.get_stock_identities()
+        task = AnalysisTask(self, self.__strategy_entry, self.__data_hub_entry,
+                            self.__selector_list, self.__analyzer_list, time_serial,
+                            options, self.__result_output, self.__progress_rate)
+        StockAnalysisSystem().get_task_queue().append_task(task)
 
-        self.__progress_rate.reset()
+        # if self.__task_thread is None:
+        #     self.__task_thread = threading.Thread(target=self.ui_task)
+        #     StockAnalysisSystem().lock_sys_quit()
+        #     self.__timing_clock.reset()
+        #     self.__task_thread.start()
+        # else:
+        #     print('Task already running...')
+        #     QMessageBox.information(self,
+        #                             QtCore.QCoreApplication.translate('', '无法执行'),
+        #                             QtCore.QCoreApplication.translate('', '已经有策略在运行中，无法同时运行多个策略'),
+        #                             QMessageBox.Close, QMessageBox.Close)
 
-        # ------------- Run analyzer -------------
-        clock = Clock()
-
-        # result = self.__strategy_entry.run_strategy(stock_list, analyzer_list, progress=self.__progress_rate)
-
-        total_result = []
-        uncached_analyzer = []
-
-        for analyzer in analyzer_list:
-            result = self.__strategy_entry.result_from_cache('Result.Analyzer', analyzer=analyzer)
-            if result is None or len(result) == 0:
-                uncached_analyzer.append(analyzer)
-                result = self.__strategy_entry.run_strategy(stock_list, [analyzer], progress=self.__progress_rate)
-            else:
-                self.__progress_rate.finish_progress(analyzer)
-            if result is not None and len(result) > 0:
-                total_result.extend(result)
-
-        # DEBUG: Load result from json file
-        # result = None
-        # with open('analysis_result.json', 'rt') as f:
-        #     result = analysis_results_from_json(f)
-        # if result is None:
-        #     return
-
-        print('Analysis time spending: ' + str(clock.elapsed_s()) + ' s')
-
-        # # DEBUG: Dump result to json file
-        # with open('analysis_result.json', 'wt') as f:
-        #     analysis_results_to_json(result, f)
-
-        # self.__strategy_entry.cache_analysis_result('Result.Analyzer', result)
-        result2 = self.__strategy_entry.result_from_cache('Result.Analyzer')
-        print(result2)
-
-        result = analysis_dataframe_to_list(result2)
-        print(result)
-
-        # ------------ Parse to Table ------------
-
-        result_table = analysis_result_list_to_table(result)
-
-        # ----------- Generate report ------------
-        clock.reset()
-        stock_list = self.__data_hub_entry.get_data_utility().get_stock_list()
-        stock_dict = {_id: _name for _id, _name in stock_list}
-        name_dict = self.__strategy_entry.strategy_name_dict()
-        generate_analysis_report(result_table, output_path, name_dict, stock_dict)
-        print('Generate report time spending: ' + str(clock.elapsed_s()) + ' s')
-
-        # ----------------- End ------------------
-        self.task_finish_signal.emit()
-        print('Update task finished.')
+    # def ui_task(self):
+    #     print('Strategy task start.')
+    #
+    #     self.__lock.acquire()
+    #     selector_list = self.__selector_list
+    #     analyzer_list = self.__analyzer_list
+    #     output_path = self.__result_output
+    #     self.__lock.release()
+    #
+    #     data_utility = self.__data_hub_entry.get_data_utility()
+    #     stock_list = data_utility.get_stock_identities()
+    #
+    #     self.__progress_rate.reset()
+    #
+    #     # ------------- Run analyzer -------------
+    #     clock = Clock()
+    #
+    #     # result = self.__strategy_entry.run_strategy(stock_list, analyzer_list, progress=self.__progress_rate)
+    #
+    #     total_result = []
+    #     uncached_analyzer = []
+    #
+    #     for analyzer in analyzer_list:
+    #         result = self.__strategy_entry.result_from_cache('Result.Analyzer', analyzer=analyzer)
+    #         if result is None or len(result) == 0:
+    #             uncached_analyzer.append(analyzer)
+    #             result = self.__strategy_entry.run_strategy(stock_list, [analyzer], progress=self.__progress_rate)
+    #         else:
+    #             self.__progress_rate.finish_progress(analyzer)
+    #         if result is not None and len(result) > 0:
+    #             total_result.extend(result)
+    #
+    #     # DEBUG: Load result from json file
+    #     # result = None
+    #     # with open('analysis_result.json', 'rt') as f:
+    #     #     result = analysis_results_from_json(f)
+    #     # if result is None:
+    #     #     return
+    #
+    #     print('Analysis time spending: ' + str(clock.elapsed_s()) + ' s')
+    #
+    #     # # DEBUG: Dump result to json file
+    #     # with open('analysis_result.json', 'wt') as f:
+    #     #     analysis_results_to_json(result, f)
+    #
+    #     # self.__strategy_entry.cache_analysis_result('Result.Analyzer', result)
+    #     result2 = self.__strategy_entry.result_from_cache('Result.Analyzer')
+    #     print(result2)
+    #
+    #     result = analysis_dataframe_to_list(result2)
+    #     print(result)
+    #
+    #     # ------------ Parse to Table ------------
+    #
+    #     result_table = analysis_result_list_to_table(result)
+    #
+    #     # ----------- Generate report ------------
+    #     clock.reset()
+    #     stock_list = self.__data_hub_entry.get_data_utility().get_stock_list()
+    #     stock_dict = {_id: _name for _id, _name in stock_list}
+    #     name_dict = self.__strategy_entry.strategy_name_dict()
+    #     generate_analysis_report(result_table, output_path, name_dict, stock_dict)
+    #     print('Generate report time spending: ' + str(clock.elapsed_s()) + ' s')
+    #
+    #     # ----------------- End ------------------
+    #     self.task_finish_signal.emit()
+    #     print('Update task finished.')
 
     # ---------------------------------------------------------------------------------
+
+    def notify_task_done(self):
+        self.task_finish_signal.emit()
 
     def __on_task_done(self):
         self.__task_thread = None
