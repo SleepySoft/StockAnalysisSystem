@@ -80,7 +80,7 @@ class AnalysisTask(TaskQueue.Task):
 
         for analyzer in self.__analyzer_list:
             result = None
-            uncached = False
+            uncached = True
 
             if self.__options & AnalysisTask.OPTION_FROM_JSON:
                 # DEBUG: Load result from json file
@@ -97,9 +97,9 @@ class AnalysisTask(TaskQueue.Task):
 
                     if result is None or len(result) == 0:
                         result = None
-                        uncached = True
                         print('Analyzer %s : No cache data' % analyzer)
                     else:
+                        uncached = False
                         self.__progress_rate.finish_progress(analyzer)
                         print('Analyzer %s : Load cache finished, time spending: %s' % (analyzer, clock.elapsed_s()))
 

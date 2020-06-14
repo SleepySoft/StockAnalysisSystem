@@ -460,7 +460,10 @@ def __aggregate_single_security_results(results: [AnalysisResult]) -> (int, int,
         if r.score is not None:
             if r.weight == AnalysisResult.WEIGHT_ONE_VOTE_VETO and r.score == AnalysisResult.SCORE_FAIL:
                 veto = True
-            score.append(r.score)
+            if isinstance(r.score, (int, float)):
+                score.append(r.score)
+            else:
+                print('Error score.')
         if str_available(r.reason):
             reason.append(r.reason)
         if r.weight is not None:
