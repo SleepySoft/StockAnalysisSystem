@@ -43,7 +43,7 @@ def analyzer_stock_portrait(securities: str, time_serial: tuple, data_hub: DataH
     nop(kwargs)
 
     if check_industry_in(securities, ['银行', '保险', '房地产', '全国地产', '区域地产'], data_hub, database, context):
-        return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业')
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业')
 
     df_balance, result = query_readable_annual_report_pattern(data_hub, 'Finance.BalanceSheet',
                                                               securities, time_serial,
@@ -104,7 +104,7 @@ def analyzer_check_monetary_fund(securities: str, time_serial: tuple, data_hub: 
     nop(kwargs)
 
     if check_industry_in(securities, ['银行', '保险', '房地产', '全国地产', '区域地产'], data_hub, database, context):
-        return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业')
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业')
 
     fields_balance_sheet = ['货币资金', '资产总计', '负债合计',
                             '短期借款', '一年内到期的非流动负债', '其他流动负债',
@@ -181,7 +181,7 @@ def analyzer_check_receivable_and_prepaid(
     nop(kwargs)
 
     if check_industry_in(securities, ['银行', '保险', '房地产', '全国地产', '区域地产'], data_hub, database, context):
-        return AnalysisResult(securities, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业')
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业')
 
     fields_balance_sheet = ['应收账款', '应收票据', '其他应收款', '长期应收款', '应收款项', '预付款项']
     fields_income_statement = ['营业收入', '营业总收入', '减:营业成本']
