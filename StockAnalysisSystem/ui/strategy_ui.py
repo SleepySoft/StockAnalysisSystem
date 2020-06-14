@@ -409,10 +409,13 @@ class StrategyUi(QWidget):
     # --------------------------------- Thread ---------------------------------
 
     def execute_update_task(self):
-        if self.__check_force_calc.isChecked():
-            options = AnalysisTask.OPTION_CALC
-        else:
-            options = AnalysisTask.OPTION_AUTO
+        options = AnalysisTask.OPTION_CALC
+
+        if not self.__check_force_calc.isChecked():
+            options |= AnalysisTask.OPTION_FROM_CACHE
+
+        if self.__check_auto_cache.isChecked():
+            options |= AnalysisTask.OPTION_UPDATE_CACHE
 
         if self.__check_from_json.isChecked():
             options |= AnalysisTask.OPTION_FROM_JSON
