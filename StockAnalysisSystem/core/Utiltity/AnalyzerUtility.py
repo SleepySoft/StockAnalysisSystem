@@ -554,13 +554,21 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
             ws_score[col + str(row)] = score
             ws_comments[col + str(row)] = reason
 
-            if score is not None:
-                all_score[row - ROW_OFFSET].append(score)
-                all_weight[row - ROW_OFFSET].append(weight)
-            fill_style = __score_to_fill_style(score)
+            # DEBUG: Catch issue
+            try:
+                if score is not None:
+                    all_score[row - ROW_OFFSET].append(score)
+                    all_weight[row - ROW_OFFSET].append(weight)
+                fill_style = __score_to_fill_style(score)
 
-            ws_score[col + str(row)].fill = fill_style
-            ws_comments[col + str(row)].fill = fill_style
+                ws_score[col + str(row)].fill = fill_style
+                ws_comments[col + str(row)].fill = fill_style
+            except Exception as e:
+                print(e)
+                print('Catch')
+            finally:
+                pass
+            
             row += 1
         column += 1
 
