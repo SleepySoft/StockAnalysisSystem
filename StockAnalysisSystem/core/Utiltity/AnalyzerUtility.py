@@ -169,9 +169,9 @@ def analysis_dataframe_to_list(df: pd.DataFrame) -> [AnalysisResult]:
         analysis_result.method = analyzer
         analysis_result.securities = stock_identity
 
-        analysis_result.score = float(score) if score is not None else None
+        analysis_result.score = str2float_safe(score, None)
         analysis_result.reason = reason
-        analysis_result.weight = float(weight) if weight is not None else None
+        analysis_result.weight = str2float_safe(weight, None)
 
         if str_available(analyzer):
             result_list.append(analysis_result)
