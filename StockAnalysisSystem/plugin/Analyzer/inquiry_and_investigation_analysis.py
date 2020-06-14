@@ -7,7 +7,7 @@ from StockAnalysisSystem.core.DataHubEntry import DataHubEntry
 from StockAnalysisSystem.core.Database.DatabaseEntry import DatabaseEntry
 
 
-def analysis_inquiry(securities: str, data_hub: DataHubEntry,
+def analysis_inquiry(securities: str, time_serial: tuple, data_hub: DataHubEntry,
                      database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
     nop(database)
 
@@ -40,7 +40,7 @@ def analysis_inquiry(securities: str, data_hub: DataHubEntry,
     return AnalysisResult(securities, None, score, reason)
 
 
-def analysis_investigation(securities: str, data_hub: DataHubEntry,
+def analysis_investigation(securities: str, time_serial: tuple, data_hub: DataHubEntry,
                            database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
     nop(database)
 
