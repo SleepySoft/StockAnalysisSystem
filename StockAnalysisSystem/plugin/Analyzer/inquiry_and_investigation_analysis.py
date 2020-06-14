@@ -8,8 +8,8 @@ from StockAnalysisSystem.core.Database.DatabaseEntry import DatabaseEntry
 
 
 def analysis_inquiry(securities: str, time_serial: tuple, data_hub: DataHubEntry,
-                     database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
-    nop(database)
+                     database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
+    nop(time_serial, database, )
 
     df = data_hub.get_data_center().query('Market.Enquiries', securities)
     if df is None or len(df) == 0:
@@ -41,8 +41,8 @@ def analysis_inquiry(securities: str, time_serial: tuple, data_hub: DataHubEntry
 
 
 def analysis_investigation(securities: str, time_serial: tuple, data_hub: DataHubEntry,
-                           database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
-    nop(database)
+                           database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
+    nop(time_serial, database, )
 
     if context.cache.get('investigation', None) is None:
         context.cache['investigation'] = data_hub.get_data_center().query('Market.Investigation')
