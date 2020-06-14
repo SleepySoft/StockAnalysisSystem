@@ -9,7 +9,7 @@ from StockAnalysisSystem.core.Database.DatabaseEntry import DatabaseEntry
 
 # ------------------------------------------------------ 01 - 05 -------------------------------------------------------
 
-def equity_interest_pledge_too_high(securities: str, data_hub: DataHubEntry,
+def equity_interest_pledge_too_high(securities: str, time_serial: tuple, data_hub: DataHubEntry,
                                     database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
     nop(database, context, kwargs)
 
@@ -44,7 +44,7 @@ def equity_interest_pledge_too_high(securities: str, data_hub: DataHubEntry,
     return AnalysisResult(securities, None, score, reason)
 
 
-def analysis_dispersed_ownership(securities: str, data_hub: DataHubEntry,
+def analysis_dispersed_ownership(securities: str, time_serial: tuple, data_hub: DataHubEntry,
                                  database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
     nop(database, context, kwargs)
     df = data_hub.get_data_center().query('Stockholder.Statistics', securities, (years_ago(3), now()),)
