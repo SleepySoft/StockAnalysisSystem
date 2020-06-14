@@ -10,9 +10,8 @@ from StockAnalysisSystem.core.Database.DatabaseEntry import DatabaseEntry
 # ------------------------------------------------------ 01 - 05 -------------------------------------------------------
 
 def equity_interest_pledge_too_high(securities: str, data_hub: DataHubEntry,
-                                    database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
-    nop(database)
-    nop(context)
+                                    database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
+    nop(database, context, kwargs)
 
     query_fields = ['质押次数', '无限售股质押数量', '限售股份质押数量', '总股本', '质押比例']
     if not data_hub.get_data_center().check_readable_name(query_fields):
@@ -46,8 +45,8 @@ def equity_interest_pledge_too_high(securities: str, data_hub: DataHubEntry,
 
 
 def analysis_dispersed_ownership(securities: str, data_hub: DataHubEntry,
-                                 database: DatabaseEntry, context: AnalysisContext) -> AnalysisResult:
-    nop(database, context)
+                                 database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
+    nop(database, context, kwargs)
     df = data_hub.get_data_center().query('Stockholder.Statistics', securities, (years_ago(3), now()),)
     if df is None or len(df) == 0:
         return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '没有数据')

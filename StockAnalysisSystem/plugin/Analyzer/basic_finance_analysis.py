@@ -139,13 +139,24 @@ def analysis_cash_loan_both_high(securities: str, time_serial: tuple, data_hub: 
 
         cash = row['货币资金'] + row['其他流动资产']
         loan = row['短期借款'] + row['长期借款'] + row['一年内到期的非流动负债'] + row['应付债券'] + row['其他流动负债']
-        loan_vs_totol_asset = loan / row['资产总计']
-        fin_fee_vs_benefit = row['减:财务费用'] / row['净利润(含少数股东损益)']
+
+        if row['资产总计'] < 1.0:
+            reason.append(str(period) + ': 资产总计为0，可能数据缺失')
+            results.append(AnalysisResult(securities, period, AnalysisResult.SCORE_NOT_APPLIED, reason))
+            continue
+
+        if row['净利润(含少数股东损益)'] < 1.0:
+            reason.append(str(period) + ': 净利润(含少数股东损益) = %.2f，不适用' % row['净利润(含少数股东损益)'])
+            results.append(AnalysisResult(securities, period, AnalysisResult.SCORE_NOT_APPLIED, reason))
+            continue
 
         if loan < 0.001:
             reason.append(str(period) + ': 流动负债合计为0，可能数据缺失')
             results.append(AnalysisResult(securities, period, AnalysisResult.SCORE_NOT_APPLIED, reason))
             continue
+
+        loan_vs_totol_asset = loan / row['资产总计']
+        fin_fee_vs_benefit = row['减:财务费用'] / row['净利润(含少数股东损益)']
 
         # 货币资金+其他流动资产 > 短期借款+长期借款+一年到期的非流动负债+应付债券
         # 贷款占资产总额的比例大于50%

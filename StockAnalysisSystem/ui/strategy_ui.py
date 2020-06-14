@@ -87,7 +87,7 @@ class AnalysisTask(TaskQueue.Task):
                 clock.reset()
                 with open(self.__json_path(analyzer), 'rt') as f:
                     result = analysis_results_from_json(f)
-                print('Analyzer %s : Load json finished, time spending: %s' % (analyzer, clock.elapsed_s()))
+                print('Analyzer %s : Load json finished, time spending: %ss' % (analyzer, clock.elapsed_s()))
             else:
                 if self.__options & AnalysisTask.OPTION_FROM_CACHE:
                     clock.reset()
@@ -102,13 +102,13 @@ class AnalysisTask(TaskQueue.Task):
                         uncached = False
                         self.__progress_rate.set_progress(analyzer, 1, 1)
                         self.__progress_rate.finish_progress(analyzer)
-                        print('Analyzer %s : Load cache finished, time spending: %s' % (analyzer, clock.elapsed_s()))
+                        print('Analyzer %s : Load cache finished, time spending: %ss' % (analyzer, clock.elapsed_s()))
 
                 if result is None and self.__options & AnalysisTask.OPTION_CALC:
                     clock.reset()
                     result = self.__strategy.run_strategy(securities_list, [analyzer],
                                                           time_serial=self.__time_serial, progress=self.__progress_rate)
-                    print('Analyzer %s : Execute analysis, time spending: %s' % (analyzer, clock.elapsed_s()))
+                    print('Analyzer %s : Execute analysis, time spending: %ss' % (analyzer, clock.elapsed_s()))
 
             if result is not None and len(result) > 0:
                 total_result.extend(result)
@@ -120,14 +120,14 @@ class AnalysisTask(TaskQueue.Task):
                     clock.reset()
                     with open(self.__json_path(analyzer), 'wt') as f:
                         analysis_results_to_json(result, f)
-                    print('Analyzer %s : Dump json, time spending: %s' % (analyzer, clock.elapsed_s()))
+                    print('Analyzer %s : Dump json, time spending: %ss' % (analyzer, clock.elapsed_s()))
 
                 if uncached and self.__options & AnalysisTask.OPTION_UPDATE_CACHE:
                     clock.reset()
                     self.__strategy.cache_analysis_result('Result.Analyzer', result)
-                    print('Analyzer %s : Cache result, time spending: %s' % (analyzer, clock.elapsed_s()))
+                    print('Analyzer %s : Cache result, time spending: %ss' % (analyzer, clock.elapsed_s()))
 
-        print('All analysis finished, time spending: %s' % clock_all.elapsed_s())
+        print('All analysis finished, time spending: %ss' % clock_all.elapsed_s())
         return total_result
 
     def gen_report(self, result_list: [AnalysisResult]):
@@ -144,7 +144,7 @@ class AnalysisTask(TaskQueue.Task):
         # ----------- Generate report ------------
         generate_analysis_report(result_table, self.__report_path, name_dict, stock_dict)
 
-        print('Generate report time spending: ' + str(clock.elapsed_s()) + ' s')
+        print('Generate report time spending: %ss' % str(clock.elapsed_s()))
 
     @staticmethod
     def __json_path(analyzer: str) -> str:
