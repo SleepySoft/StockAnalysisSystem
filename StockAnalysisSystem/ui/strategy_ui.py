@@ -100,6 +100,7 @@ class AnalysisTask(TaskQueue.Task):
                         print('Analyzer %s : No cache data' % analyzer)
                     else:
                         uncached = False
+                        self.__progress_rate.set_progress(analyzer, 1, 1)
                         self.__progress_rate.finish_progress(analyzer)
                         print('Analyzer %s : Load cache finished, time spending: %s' % (analyzer, clock.elapsed_s()))
 
@@ -111,6 +112,8 @@ class AnalysisTask(TaskQueue.Task):
 
             if result is not None and len(result) > 0:
                 total_result.extend(result)
+                byte_size = sys.getsizeof(total_result) + sum(r.rough_size() for r in total_result)
+                print('Total result size = %d' % byte_size)
 
                 if self.__options & AnalysisTask.OPTION_DUMP_JSON:
                     # DEBUG: Dump result to json file

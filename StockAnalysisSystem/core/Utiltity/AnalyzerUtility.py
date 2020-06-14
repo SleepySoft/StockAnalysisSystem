@@ -109,6 +109,14 @@ class AnalysisResult:
     def deserialize(self, json_text: str):
         self.unpack(json.loads(json_text))
 
+    def rough_size(self) -> int:
+        return sys.getsizeof(self.period) + \
+               sys.getsizeof(self.method) + \
+               sys.getsizeof(self.securities) + \
+               sys.getsizeof(self.score) +  \
+               sys.getsizeof(self.reason) +  \
+               sys.getsizeof(self.weight)
+
 
 # --------------------------------------------- Analysis Result Convertion ---------------------------------------------
 
@@ -232,7 +240,7 @@ def standard_dispatch_analysis(methods: [str], securities: [str], time_serial: t
                     result = AnalysisResult(s, None, AnalysisResult.SCORE_NOT_APPLIED, error_info)
                 finally:
                     context.progress.increase_progress(_uuid)
-                    print('Analyzer %s progress: %.2f%%' % (_uuid, context.progress.get_progress_rate(_uuid) * 100))
+                    # print('Analyzer %s progress: %.2f%%' % (_uuid, context.progress.get_progress_rate(_uuid) * 100))
                 if result is None:
                     result = AnalysisResult(s, None, AnalysisResult.SCORE_NOT_APPLIED, 'NONE')
                 if not isinstance(result, (list, tuple)):
