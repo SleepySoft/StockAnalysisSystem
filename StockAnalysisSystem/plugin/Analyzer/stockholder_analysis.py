@@ -113,18 +113,18 @@ METHOD_LIST = [
 ]
 
 
-# def plugin_prob() -> dict:
-#     return {
-#         'plugin_id': 'ad29184c-8a01-4f18-b2a9-60650b2df91a',
-#         'plugin_name': 'basic_finance_analysis',
-#         'plugin_version': '0.0.0.1',
-#         'tags': ['stockholder', 'analyzer'],
-#         'methods': METHOD_LIST,
-#     }
-#
-#
-# def plugin_adapt(method: str) -> bool:
-#     return method in methods_from_prob(plugin_prob())
+def plugin_prob() -> dict:
+    return {
+        'plugin_id': 'ad29184c-8a01-4f18-b2a9-60650b2df91a',
+        'plugin_name': 'basic_finance_analysis',
+        'plugin_version': '0.0.0.1',
+        'tags': ['stockholder', 'analyzer'],
+        'methods': METHOD_LIST,
+    }
+
+
+def plugin_adapt(method: str) -> bool:
+    return method in methods_from_prob(plugin_prob())
 
 
 def plugin_capacities() -> list:

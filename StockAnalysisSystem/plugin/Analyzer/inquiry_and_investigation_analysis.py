@@ -69,25 +69,25 @@ def analysis_investigation(securities: str, data_hub: DataHubEntry,
     if len(reason) == 0:
         reason.append('近四年无立案调查记录')
 
-    return AnalysisResult(securities, score, reason, AnalysisResult.WEIGHT_ONE_VOTE_VETO)
+    return AnalysisResult(securities, None, score, reason, AnalysisResult.WEIGHT_ONE_VOTE_VETO)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-# METHOD_LIST = [
-#     ('b60310bd-cbb4-438f-89c0-ac68b705348d', '交易所问询', '分析该公司近期是否被问询',       analysis_inquiry),
-#     ('f8f6b993-4cb0-4c93-84fd-8fd975b7977d', '证监会调查', '分析该公司近期是否被立案调查',   analysis_investigation),
-# ]
-#
-#
-# def plugin_prob() -> dict:
-#     return {
-#         'plugin_id': '85a052ba-d7ff-4390-a311-6fd486169ba6',
-#         'plugin_name': 'basic_finance_analysis',
-#         'plugin_version': '0.0.0.1',
-#         'tags': ['finance', 'analyzer'],
-#         'methods': METHOD_LIST,
-#     }
+METHOD_LIST = [
+    ('b60310bd-cbb4-438f-89c0-ac68b705348d', '交易所问询', '分析该公司近期是否被问询',       analysis_inquiry),
+    ('f8f6b993-4cb0-4c93-84fd-8fd975b7977d', '证监会调查', '分析该公司近期是否被立案调查',   analysis_investigation),
+]
+
+
+def plugin_prob() -> dict:
+    return {
+        'plugin_id': '85a052ba-d7ff-4390-a311-6fd486169ba6',
+        'plugin_name': 'basic_finance_analysis',
+        'plugin_version': '0.0.0.1',
+        'tags': ['finance', 'analyzer'],
+        'methods': METHOD_LIST,
+    }
 
 
 def plugin_adapt(method: str) -> bool:
