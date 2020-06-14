@@ -526,8 +526,9 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
         if column == 1:
             # The first run. Init the total score list here.
             # Flaw: The first column of result should be the full one. Otherwise the index may out of range.
-            all_score = [[] for _ in range(0, len(analysis_result))]
-            all_weight = [[] for _ in range(0, len(analysis_result))]
+            # Wired: Why the length of all_score not equals to the length of analysis_result, so we have to add 1.
+            all_score = [[] for _ in range(0, len(analysis_result) + 1)]
+            all_weight = [[] for _ in range(0, len(analysis_result) + 1)]
 
             row = 2
             col = index_to_excel_column_name(column)
@@ -568,7 +569,7 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
                 print('Catch')
             finally:
                 pass
-            
+
             row += 1
         column += 1
 
