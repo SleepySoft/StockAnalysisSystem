@@ -113,7 +113,7 @@ class AnalysisTask(TaskQueue.Task):
             if result is not None and len(result) > 0:
                 total_result.extend(result)
                 byte_size = sys.getsizeof(total_result) + sum(r.rough_size() for r in total_result)
-                print('Total result size = %d' % byte_size)
+                print('Total result size = %.2f MB' % (float(byte_size) / 1024 / 1024))
 
                 if self.__options & AnalysisTask.OPTION_DUMP_JSON:
                     # DEBUG: Dump result to json file
