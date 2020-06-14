@@ -47,8 +47,14 @@ class StrategyEntry:
         # return result_table
 
     def cache_analysis_result(self, uri: str, result_list: list):
-        analysis_result_pack = [r.pack() for r in result_list if r.period is not None]
-        self.__data_hub.get_data_center().merge_local_data(uri, '', analysis_result_pack)
+        analysis_result_packs = []
+        for r in result_list:
+            if r.period is None:
+                # Storage with the latest quarter
+                r.period = previous_quarter(now())
+            analysis_result_packs.append(r)
+        # analysis_result_packs = [r.pack() for r in result_list if r.period is not None]
+        self.__data_hub.get_data_center().merge_local_data(uri, '', analysis_result_packs)
 
     def result_from_cache(self, uri: str, analyzer: str or [str] = None, identity: str or [str] = None,
                           time_serial: tuple = None) -> pd.DataFrame:
