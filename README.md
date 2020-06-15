@@ -17,7 +17,9 @@ https://github.com/SleepySoft/StockAnalysisSystem
 设计与框架：https://www.bilibili.com/video/BV1nK411p7uD/
   
 # 最近更新内容：
-* 从vnpy移植K线图表，重做Stock Memo功能  
+* 加入分析结果缓存功能，同时analyzer的接口和AnalysisResult也进行了调整  
+> 新增数据库SasCache，用以保存计算结果（分析，因子等等）  
+> 通过读取缓存，更快得到分析结果  
 * 由于图表引入了pyqtgraph，导致pyinstaller打包出现问题，并且尝试py2exe也不成功，故暂停以EXE形式发布Release  
   
 * 更新相应文档  
@@ -30,10 +32,12 @@ https://github.com/SleepySoft/StockAnalysisSystem
 > 学习并尝试引入其它库，例如ta-lib  
   
 * 已有功能持续改进  
-> 缓存分析结果到数据库，避免重复计算浪费算力  
 > 缓存因子计算结果到数据库，加速因子访问  
 > 其它在使用中需要改进的地方  
-> 尝试一些量价算法，代码将放入example中  
+> 尝试一些量价算法  
+> 加入交易方法并提示交易（如网格等）  
+> 加入连续运行功能  
+> 加入盯盘功能  
   
 # 联系作者
 如果有任何意见及建议，或者对此项目感兴趣的，请联系我：  
@@ -182,6 +186,8 @@ QQ群：931499339，进群验证码：SleepySoft
 ----------------------------------------------------------------------------------------------------------------------
 # 任务回收站  
   
+* 从vnpy移植K线图表，重做Stock Memo功能  
+
 ### History（股市史）  
 1. 为History加入Horizon轴支持 -> Done  
 2. 增加显示折线图的Track -> Done  
