@@ -167,8 +167,6 @@ class StrategyUi(QWidget):
         self.__analyzer_info = self.load_analyzer_info()
 
         # Thread and task related
-        self.__lock = threading.Lock()
-        self.__task_thread = None
         self.__selector_list = []
         self.__analyzer_list = []
         self.__result_output = StockAnalysisSystem().get_project_path()
@@ -286,6 +284,11 @@ class StrategyUi(QWidget):
         self.__datetime_time_since.setCalendarPopup(True)
         self.__datetime_time_until.setCalendarPopup(True)
 
+        self.__check_force_calc.setToolTip('勾选此项后，程序将不会从缓存中读取分析结果，并强制进行实时计算。')
+        self.__check_auto_cache.setToolTip('勾选此项后，程序会自动缓存分析结果到SasCache数据库')
+        self.__check_from_json.setToolTip('仅供Debug：从JSON文件中载入分析结果')
+        self.__check_dump_json.setToolTip('仅供Debug：将分析结果写入JSON文件中')
+
         self.__layout_selector.setSpacing(0)
         self.__layout_analyzer.setSpacing(0)
         self.__layout_option.setSpacing(0)
@@ -330,11 +333,9 @@ class StrategyUi(QWidget):
                 uuid = self.__table_analyzer.GetItemText(i, 3)
                 analyzer_list.append(uuid)
 
-        self.__lock.acquire()
         self.__selector_list = selector_list
         self.__analyzer_list = analyzer_list
         self.__result_output = output_path
-        self.__lock.release()
 
         self.execute_update_task()
 
@@ -519,7 +520,6 @@ class StrategyUi(QWidget):
         self.task_finish_signal.emit()
 
     def __on_task_done(self):
-        self.__task_thread = None
         StockAnalysisSystem().release_sys_quit()
         QMessageBox.information(self,
                                 QtCore.QCoreApplication.translate('main', '远行完成'),
