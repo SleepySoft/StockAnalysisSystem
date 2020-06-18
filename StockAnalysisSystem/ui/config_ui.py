@@ -153,7 +153,7 @@ class ConfigUi(QWidget):
             return
 
         folder_name = path.basename(path.normpath(folder))
-        if folder_name not in ['StockAnalysisSystem', 'StockDaily']:
+        if folder_name not in ['StockAnalysisSystem', 'StockDaily', 'SasCache']:
             QMessageBox.information(self,
                                     QtCore.QCoreApplication.translate('main', '错误的数据'),
                                     QtCore.QCoreApplication.translate('main', '数据必须为StockAnalysisSystem或StockDaily之一'),
@@ -174,7 +174,7 @@ class ConfigUi(QWidget):
         mongodb_host = self.__line_nosql_db_host.text()
         mongodb_port = self.__line_nosql_db_port.text()
 
-        if sys.platform=='linux':
+        if sys.platform == 'linux':
             import_binary = path.join(mongodb_bin, 'mongorestore')
         else:
             import_binary = path.join(mongodb_bin, 'mongorestore.exe')
@@ -197,22 +197,24 @@ class ConfigUi(QWidget):
         mongodb_host = self.__line_nosql_db_host.text()
         mongodb_port = self.__line_nosql_db_port.text()
 
-        if sys.platform=='linux':
+        if sys.platform == 'linux':
             export_binary = path.join(mongodb_bin, 'mongodump')
         else:
             export_binary = path.join(mongodb_bin, 'mongodump.exe')
 
-        export_command_sd = '"' + export_binary + '"' + \
-                            ' -h ' + mongodb_host + ':' + mongodb_port + \
-                            ' -d ' + 'StockDaily' + \
-                            ' -o ' + folder
-        export_command_sas = '"' + export_binary + '"' + \
-                             ' -h ' + mongodb_host + ':' + mongodb_port + \
-                             ' -d ' + 'StockAnalysisSystem' + \
-                             ' -o ' + folder
-        # Workaround
-        self.__pending_command.append(export_command_sas)
-        self.execute_command(export_command_sd)
+        self.execute_commands([
+            self.__generate_export_command(export_binary, mongodb_host, mongodb_port, folder, 'SasCache'),
+            self.__generate_export_command(export_binary, mongodb_host, mongodb_port, folder, 'StockDaily'),
+            self.__generate_export_command(export_binary, mongodb_host, mongodb_port, folder, 'StockAnalysisSystem'),
+        ])
+
+    @staticmethod
+    def __generate_export_command(export_binary: str, mongodb_host: str,
+                                  mongodb_port: str, folder: str, db_name: str) -> str:
+        return '"' + export_binary + '"' + \
+               ' -h ' + mongodb_host + ':' + mongodb_port + \
+               ' -d ' + db_name + \
+               ' -o ' + folder
 
     # -----------------------------------------------------------------------------------
 
@@ -271,6 +273,21 @@ class ConfigUi(QWidget):
 
     # --------------------------------------------------------------------------
 
+    def execute_commands(self, commands: [str]):
+        if len(self.__pending_command) > 0:
+            self.__pending_command.extend(commands)
+        else:
+            self.__pending_command = commands
+            self.execute_pending_commands()
+
+    def execute_pending_commands(self) -> bool:
+        if len(self.__pending_command) > 0:
+            cmd = self.__pending_command.pop(0)
+            self.execute_command(cmd)
+            return True
+        else:
+            return False
+
     def execute_command(self, cmd: str):
         self.__process = QProcess()
         self.__process.setProcessChannelMode(QProcess.MergedChannels)
@@ -285,9 +302,7 @@ class ConfigUi(QWidget):
         print(tips)
 
     def on_command_finished(self):
-        if len(self.__pending_command) > 0:
-            cmd = self.__pending_command.pop(0)
-            self.execute_command(cmd)
+        if self.execute_pending_commands():
             return
         tips = 'Process finished...'
         print(tips)
