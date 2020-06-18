@@ -55,12 +55,13 @@ def main():
         exit(2)
     df.set_index('trade_date', drop=True, inplace=True)
     df['openinterest'] = 0
+    df['volume'] = df['vol']
 
     cerebro = bt.Cerebro()
 
     data = bt.feeds.PandasData(dataname=df,
-                               fromdate=datetime.datetime(2018, 1, 1),
-                               todate=datetime.datetime(2020, 1, 1)
+                               fromdate=period[0],
+                               todate=period[1]
                                )
     cerebro.adddata(data)
 
@@ -72,16 +73,6 @@ def main():
     print(results)
 
     cerebro.plot()
-
-
-
-
-
-
-
-
-
-
 
 
 # ----------------------------------------------------------------------------------------------------------------------
