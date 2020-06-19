@@ -10,7 +10,7 @@ from StockAnalysisSystem.core.Utiltity.plugin_manager import PluginManager
 
 from StockAnalysisSystem.core.FactorEntry import FactorCenter
 from StockAnalysisSystem.core.DataHubEntry import DataHubEntry
-from StockAnalysisSystem.core.StrategyEntry import StrategyEntry
+from StockAnalysisSystem.core.AnalyzerEntry import StrategyEntry
 from StockAnalysisSystem.core.ExtensionEntry import ExtensionManager
 
 from StockAnalysisSystem.core.DataHub.DataAgent import DataAgent

@@ -101,7 +101,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         self.__log_errors = []
 
         from .DataHubEntry import DataHubEntry
-        from .StrategyEntry import StrategyEntry
+        from .AnalyzerEntry import StrategyEntry
         from .Database.DatabaseEntry import DatabaseEntry
         from .Utiltity.plugin_manager import PluginManager
 
