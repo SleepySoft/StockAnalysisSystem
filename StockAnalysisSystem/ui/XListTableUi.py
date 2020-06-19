@@ -11,10 +11,10 @@ author:Sleepy
 from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QFileDialog, QComboBox
 
-from ..core.Utiltity.ui_utility import *
-from ..core.Database.XListTable import *
-from ..core.Database.DatabaseEntry import *
-from ..core.StockAnalysisSystem import StockAnalysisSystem
+from StockAnalysisSystem.core.Utiltity.ui_utility import *
+from StockAnalysisSystem.core.Database.XListTable import *
+from StockAnalysisSystem.core.Database.DatabaseEntry import *
+from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 
 
 class XListTableUi(QWidget):

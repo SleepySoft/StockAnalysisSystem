@@ -4,14 +4,14 @@
 from PyQt5 import Qt
 from PyQt5.QtWidgets import QMenu
 
-from .config_ui import *
-from .DataHubUi import *
-from .strategy_ui import *
-from .data_update_ui import *
-from .XListTableUi import *
-from .task_queue_ui import *
-from ..readme import VERSION
-from ..core.StockAnalysisSystem import StockAnalysisSystem
+from StockAnalysisSystem.readme import VERSION
+from StockAnalysisSystem.ui.config_ui import *
+from StockAnalysisSystem.ui.DataHubUi import *
+from StockAnalysisSystem.ui.strategy_ui import *
+from StockAnalysisSystem.ui.data_update_ui import *
+from StockAnalysisSystem.ui.XListTableUi import *
+from StockAnalysisSystem.ui.task_queue_ui import *
+from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 
 
 # =========================================== MainWindow ===========================================
