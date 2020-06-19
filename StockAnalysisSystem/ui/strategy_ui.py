@@ -16,13 +16,13 @@ import threading
 from PyQt5.QtCore import QTimer, pyqtSignal
 from PyQt5.QtWidgets import QHeaderView, QLineEdit, QFileDialog, QCheckBox, QDateTimeEdit, QGridLayout
 
-from ..core.StrategyEntry import *
-from ..core.Utiltity.task_queue import *
-from ..core.Utiltity.ui_utility import *
-from ..core.Utiltity.TableViewEx import *
-from ..core.Utiltity.time_utility import *
-from ..core.Utiltity.AnalyzerUtility import *
-from ..core.StockAnalysisSystem import StockAnalysisSystem
+from StockAnalysisSystem.core.StrategyEntry import *
+from StockAnalysisSystem.core.Utiltity.task_queue import *
+from StockAnalysisSystem.core.Utiltity.ui_utility import *
+from StockAnalysisSystem.core.Utiltity.TableViewEx import *
+from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.Utiltity.AnalyzerUtility import *
+from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 
 
 # ------------------------- Analysis Task -------------------------

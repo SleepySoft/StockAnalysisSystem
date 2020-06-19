@@ -4,11 +4,11 @@ import traceback
 from os import sys, path
 from PyQt5.QtWidgets import QLineEdit, QCheckBox, QWidget, QComboBox, QDateTimeEdit
 
-from ..core.Utiltity.common import *
-from ..core.Utiltity.ui_utility import *
-from ..core.Utiltity.time_utility import *
-from ..core.DataHub.UniversalDataCenter import UniversalDataCenter
-from ..core.StockAnalysisSystem import  StockAnalysisSystem
+from StockAnalysisSystem.core.Utiltity.common import *
+from StockAnalysisSystem.core.Utiltity.ui_utility import *
+from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.DataHub.UniversalDataCenter import UniversalDataCenter
+from StockAnalysisSystem.core.StockAnalysisSystem import  StockAnalysisSystem
 
 
 class DataHubUi(QWidget):
