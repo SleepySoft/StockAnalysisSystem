@@ -8,7 +8,7 @@ __all__ = [
     'data_update_ui',
     'DataHubUi',
     'main_ui',
-    'strategy_ui',
+    'analyzer_ui.py',
     'task_queue_ui',
     'XListTableUi',
 ]

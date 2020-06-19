@@ -16,7 +16,7 @@ import threading
 from PyQt5.QtCore import QTimer, pyqtSignal
 from PyQt5.QtWidgets import QHeaderView, QLineEdit, QFileDialog, QCheckBox, QDateTimeEdit, QGridLayout
 
-from StockAnalysisSystem.core.StrategyEntry import *
+from StockAnalysisSystem.core.AnalyzerEntry import *
 from StockAnalysisSystem.core.Utiltity.task_queue import *
 from StockAnalysisSystem.core.Utiltity.ui_utility import *
 from StockAnalysisSystem.core.Utiltity.TableViewEx import *
@@ -151,16 +151,16 @@ class AnalysisTask(TaskQueue.Task):
         return os.path.join(StockAnalysisSystem().get_project_path(), 'TestData', analyzer + '.json')
 
 
-# ---------------------------------------------------- StrategyUi ----------------------------------------------------
+# ---------------------------------------------------- AnalyzerUi ----------------------------------------------------
 
-class StrategyUi(QWidget):
+class AnalyzerUi(QWidget):
     task_finish_signal = pyqtSignal()
 
     TABLE_HEADER_SELECTOR = ['', 'Selector', 'Comments', 'UUID', 'Status']
     TABLE_HEADER_ANALYZER = ['', 'Strategy', 'Comments', 'UUID', 'Status']
 
     def __init__(self, data_hub_entry: DataHubEntry, strategy_entry: StrategyEntry):
-        super(StrategyUi, self).__init__()
+        super(AnalyzerUi, self).__init__()
         self.__data_hub_entry = data_hub_entry
         self.__strategy_entry = strategy_entry
 
@@ -273,11 +273,11 @@ class StrategyUi(QWidget):
 
     def __config_control(self):
         self.__table_selector.SetCheckableColumn(0)
-        self.__table_selector.SetColumn(StrategyUi.TABLE_HEADER_SELECTOR)
+        self.__table_selector.SetColumn(AnalyzerUi.TABLE_HEADER_SELECTOR)
         self.__table_selector.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
         self.__table_analyzer.SetCheckableColumn(0)
-        self.__table_analyzer.SetColumn(StrategyUi.TABLE_HEADER_ANALYZER)
+        self.__table_analyzer.SetColumn(AnalyzerUi.TABLE_HEADER_ANALYZER)
         self.__table_analyzer.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
         self.__check_auto_cache.setChecked(True)
@@ -363,7 +363,7 @@ class StrategyUi(QWidget):
     def update_selector(self):
         self.__table_selector.Clear()
         self.__table_selector.SetRowCount(0)
-        self.__table_selector.SetColumn(StrategyUi.TABLE_HEADER_SELECTOR)
+        self.__table_selector.SetColumn(AnalyzerUi.TABLE_HEADER_SELECTOR)
 
         self.__table_selector.AppendRow(['', '所有股票', '当前只支持所有股票，不选默认也是所有股票', '-'])
 
@@ -375,7 +375,7 @@ class StrategyUi(QWidget):
     def update_analyzer(self):
         self.__table_analyzer.Clear()
         self.__table_analyzer.SetRowCount(0)
-        self.__table_analyzer.SetColumn(StrategyUi.TABLE_HEADER_ANALYZER)
+        self.__table_analyzer.SetColumn(AnalyzerUi.TABLE_HEADER_ANALYZER)
 
         for method_uuid, method_name, method_detail in self.__analyzer_info:
             line = []
@@ -535,7 +535,7 @@ def main():
     app = QApplication(sys.argv)
     data_hub_entry = StockAnalysisSystem().get_data_hub_entry()
     strategy_entry = StockAnalysisSystem().get_strategy_entry()
-    dlg = WrapperQDialog(StrategyUi(data_hub_entry, strategy_entry))
+    dlg = WrapperQDialog(AnalyzerUi(data_hub_entry, strategy_entry))
     dlg.exec()
 
 

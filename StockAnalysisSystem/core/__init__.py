@@ -4,5 +4,5 @@ __all__ = [
     'ExtensionEntry',
     'FactorEntry',
     'StockAnalysisSystem',
-    'StrategyEntry',
+    'AnalyzerEntry.py',
 ]

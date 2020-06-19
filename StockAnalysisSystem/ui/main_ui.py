@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QMenu
 from StockAnalysisSystem.readme import VERSION
 from StockAnalysisSystem.ui.config_ui import *
 from StockAnalysisSystem.ui.DataHubUi import *
-from StockAnalysisSystem.ui.strategy_ui import *
+from StockAnalysisSystem.ui.analyzer_ui import *
 from StockAnalysisSystem.ui.data_update_ui import *
 from StockAnalysisSystem.ui.XListTableUi import *
 from StockAnalysisSystem.ui.task_queue_ui import *
@@ -35,7 +35,7 @@ class MainWindow(CommonMainWindow):
         update_table = database_entry.get_update_table()
 
         self.__data_hub_ui = DataHubUi(data_hub_entry.get_data_center())
-        self.__strategy_ui = StrategyUi(data_hub_entry, strategy_entry)
+        self.__strategy_ui = AnalyzerUi(data_hub_entry, strategy_entry)
         self.__data_update_ui = DataUpdateUi(data_hub_entry, update_table)
 
         self.__gray_list_ui = XListTableUi(database_entry.get_gray_table(), '灰名单')
