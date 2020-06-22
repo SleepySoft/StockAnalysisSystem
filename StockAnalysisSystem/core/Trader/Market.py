@@ -2,6 +2,8 @@ import datetime
 import threading
 import pandas as pd
 from .Interface import IMarket
+from ..Utiltity.df_utility import *
+from ..Utiltity.time_utility import *
 from ..DataHubEntry import DataHubEntry
 
 
@@ -31,17 +33,15 @@ class MarketBase(IMarket):
 
 
 class MarketBackTesting(MarketBase, threading.Thread):
-    def __init__(self, data_hub, since: datetime.datetime, until: datetime.datetime, datetime_field: str):
+    def __init__(self, data_hub, since: datetime.datetime, until: datetime.datetime):
         self.__data_hub = data_hub
 
-        self.__base_line_since = since
-        self.__base_line_until = until
-        self.__base_line_field = datetime_field
-        self.__base_line_testing = self.__base_line_since
+        self.__since = since
+        self.__until = until
 
-        self.__daily_cache = {}
-        self.__history_cache = {}
-        self.__watching_securities = []
+        self.__daily_data_cache = {}
+        self.__serial_data_cache = {}
+        self.__cached_securities = []
 
         # Current price
         self.__price_table = {}
@@ -54,18 +54,14 @@ class MarketBackTesting(MarketBase, threading.Thread):
     # ----------------------------- Interface of MarketBase -----------------------------
 
     def watch_security(self, security: str, observer: IMarket.Observer):
-        if security not in self.__watching_securities:
-            if not self.on_watch_security(security):
+        if security not in self.__cached_securities:
+            if not self.check_load_back_testing_data(security):
                 print('Watch security %s fail.', security)
                 return
         super(MarketBackTesting, self).watch_security(security, observer)
 
     def get_price(self, security: str) -> float:
         return self.__price_table.get(security, 0.0)
-
-    def get_history(self, security: str) -> pd.DataFrame:
-        history = self.__history_cache.get(security, None)
-        history = history[history[self.__base_line_field] < self.__base_line_testing]
 
     def get_day_limit(self, security: str) -> (float, float):
         pass
@@ -78,170 +74,121 @@ class MarketBackTesting(MarketBase, threading.Thread):
     # ----------------------------------------------------------------------------------
 
     def back_testing_entry(self):
-        pass
+        if len(self.__cached_securities):
+            # TODO: Auto start
+            print('No data for back testing.')
+            return
+        baseline = self.__cached_securities[0]
+        baseline_daily = self.__daily_data_cache.get(baseline)
 
-    def elapsed(self):
+        # TODO: What if None
+
+        for index in baseline_daily.index.values.tolist():
+            self.back_testing_daily(index)
+
+    def back_testing_daily(self, limit: any):
+        back_testing_daily_data = None
         for observer in sorted(self.__observers.keys(), key=lambda ob: ob.level()):
-            observer.on_before_trading()
-            observer.on_call_auction()
-            observer.on_trading()
-            observer.on_after_trading()
+            if back_testing_daily_data is not None:
+                observer.on_before_trading(back_testing_daily_data)
 
-    def load_security_data(self, security: str, base_line: bool = False):
-        pass
+        self.back_testing_serial(limit)
+        back_testing_daily_data = self.__build_daily_test_data(limit)
 
-    def add_back_testing_data(self, df: pd.DataFrame, base_line: bool = False):
-        pass
+        for observer in sorted(self.__observers.keys(), key=lambda ob: ob.level()):
+            observer.on_after_trading(back_testing_daily_data)
+
+    def back_testing_serial(self, limit: any):
+        if limit is None:
+            # If no limit specified, use the whole serial data for back testing
+            back_testing_serial_data = self.__serial_data_cache
+        else:
+            back_testing_serial_data = self.__build_serial_test_data(limit)
+
+        # TODO: observer.on_call_auction()
+        for observer in sorted(self.__observers.keys(), key=lambda ob: ob.level()):
+            observer.on_trading(back_testing_serial_data)
+
+    def __build_daily_test_data(self, limit: any) -> dict:
+        back_testing_data = {}
+        for security in self.__daily_data_cache:
+            df = self.__daily_data_cache[security]
+            back_testing_data[security] = df[:limit]
+        return back_testing_data
+
+    def __build_serial_test_data(self, limit: any) -> dict:
+        limit = to_py_datetime(limit)
+        if limit is None:
+            # Currently only supports datetime limit
+            return {}
+
+        lower = limit.replace(hour=0, minute=0, second=0)
+        upper = limit.replace(hour=23, minute=59, second=59)
+
+        back_testing_serial_data = {}
+        for security in self.__serial_data_cache:
+            df = self.__serial_data_cache[security]
+            df_sliced = df[lower:upper]
+            if not df_sliced.empty:
+                back_testing_serial_data[security] = df_sliced
+        return back_testing_serial_data
+
+    # def elapsed(self):
+    #     for observer in sorted(self.__observers.keys(), key=lambda ob: ob.level()):
+    #         observer.on_before_trading()
+    #         observer.on_call_auction()
+    #         observer.on_trading()
+    #         observer.on_after_trading()
+
+    # def set_baseline(self, security: str):
+    #     if security not in self.__cache_securities:
+    #         print('Base line not in cached data.')
+    #     else:
+    #         self.__cache_securities.remove(security)
+    #         self.__cache_securities.insert(0, security)
+
+    def load_back_testing_data(self, security: str, baseline: bool = False):
+        daily_data = self.__data_hub.get_data_center().query(
+            'TradeData.Stock.Daily', security, self.__since, self.__until)
+        if daily_data is not None and not daily_data.empty:
+            daily_data = daily_data.set_index('trade_date', drop=True)
+        else:
+            daily_data = None
+
+        # TODO: Serial Data
+        serial_data = None
+        if serial_data is None or serial_data.empty:
+            serial_data = None
+
+        return self.add_back_testing_data(security, daily_data, serial_data, baseline)
+
+    def add_back_testing_data(self, security: str, daily_data: pd.DataFrame or None,
+                              serial_data: pd.DataFrame or None, baseline=False) -> bool:
+        if daily_data is None and serial_data is None:
+            return False
+        if daily_data is not None and not column_includes(daily_data, ('open', 'close', 'high', 'low', 'volume')):
+            print('Daily data should include open, close, high, low, volume column.')
+            return False
+        if serial_data is not None and not column_includes(serial_data, ('price', 'volume')):
+            print('Serial data should include price, volume column.')
+            return False
+        if security in self.__cached_securities:
+            self.__cached_securities.remove(security)
+        if not baseline:
+            self.__cached_securities.append(security)
+        else:
+            self.__cached_securities.insert(0, security)
+        if security not in self.__daily_data_cache.keys():
+            self.__serial_data_cache[security] = daily_data
+        if security not in self.__serial_data_cache.keys():
+            self.__serial_data_cache[security] = serial_data
+        return True
 
     # -----------------------------------------------------------------------------
 
-    def on_watch_security(self, security: str) -> bool:
-        # TODO: minutes
-        if security not in self.__daily_cache.keys():
-            pass
-
-        if security not in self.__history_cache.keys():
-            df = self.__data_hub.get_data_center().query(
-                'TradeData.Stock.Daily', security, self.__data_since, self.__data_until)
-            if df is not None and not df.empty():
-                self.__history_cache[security] = df
-            else:
-                print('Warning: Cannot load daily data of %s for back testing.' % security)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-import pandas as pd
-
-
-class Order:
-    OPERATION_NONE = 0
-    OPERATION_BUY_LIMIT = 1
-    OPERATION_BUY_MARKET = 2
-    OPERATION_SELL_LIMIT = 3
-    OPERATION_STOP_LIMIT = 4
-    OPERATION_SELL_MARKET = 5
-
-    STATUS_CREATED = 100
-    STATUS_SUBMITTED = 101
-    STATUS_ACCEPTED = 102
-    STATUS_COMPLETED = 103
-    STATUS_PARTIAL = 104
-    STATUS_REJECTED = 105
-    STATUS_CANCELLED = 106
-    STATUS_EXPIRED = 107
-
-    def __init__(self, security: str = '', price: float = 0.0, amount: int = 0, operation: int = OPERATION_NONE):
-        self.price = price
-        self.amount = amount
-        self.security = security
-        self.operation = operation
-        self.order_status = Order.STATUS_CREATED
-
-
-class Exchange:
-    def __init__(self):
-        self.__commission_min = 5.0
-        self.__commission_pct = 0.0001
-
-        self.__sort_sell_enable = False
-
-        self.__pending_order = []
-        self.__finished_order = []
-
-    # ------------------------------------- Buy / Sell -------------------------------------
-
-    def buy_limit(self, security: str, price: float, amount: int) -> Order:
-        order = Order(security, price, amount, Order.OPERATION_BUY_LIMIT)
-        self.__pending_order.append(order)
-        return order
-
-    def buy_market(self, security: str, amount: int) -> Order:
-        order = Order(security, 0.0, amount, Order.OPERATION_BUY_MARKET)
-        self.__pending_order.append(order)
-        return order
-
-    def sell_limit(self, security: str, price: float, amount: int) -> Order:
-        order = Order(security, price, amount, Order.OPERATION_SELL_LIMIT)
-        self.__pending_order.append(order)
-        return order
-
-    def stop_limit(self, security: str, price: float, amount: int) -> Order:
-        order = Order(security, price, amount, Order.OPERATION_STOP_LIMIT)
-        self.__pending_order.append(order)
-        return order
-
-    def sell_market(self, security: str, amount: int) -> Order:
-        order = Order(security, 0.0, amount, Order.OPERATION_SELL_MARKET)
-        self.__pending_order.append(order)
-        return order
-
-    # ---------------------------------------- Order ---------------------------------------
-
-    def cancel_order(self, order: Order):
-        if order in self.__pending_order:
-            self.__pending_order.pop(order)
-            self.__finished_order.append(order)
-            order.order_status = Order.STATUS_CANCELLED
-
-    def get_pending_orders(self) -> [Order]:
-        pass
-
-    # ---------------------------------- Trade Data Access ----------------------------------
-
-    def subscribe_security(self):
-        pass
-
-    def unsubscribe_security(self):
-        pass
-
-    def get_price(self):
-        pass
-
-    def get_handicap(self):
-        pass
-
-    def get_position(self):
-        pass
-
-    # ----------------------------------- Exchange Setting -----------------------------------
-
-    # ------------------- commission -------------------
-
-    def set_commission(self, pct: float, minimum: float):
-        self.__commission_pct, self.__commission_min = pct, minimum
-
-    def get_commission(self) -> (float, float):
-        return self.__commission_pct, self.__commission_min
-
-    def calc_commission(self, transaction_amount) -> float:
-        return max(transaction_amount * self.__commission_pct, self.__commission_min)
-
-    # ------------------- Sort Sell -------------------
-
-    def set_sort_sell_enable(self, enable: bool):
-        self.__sort_sell_enable = enable
-
-    def get_sort_sell_enable(self) -> bool:
-        return self.__sort_sell_enable
-
-
-
-
-
+    def check_load_back_testing_data(self, security: str) -> bool:
+        if security not in self.__cached_securities:
+            return self.load_back_testing_data(security, False)
+        else:
+            return True
 
