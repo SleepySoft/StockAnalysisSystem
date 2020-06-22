@@ -63,7 +63,7 @@ def previous_quarter(reference_date) -> datetime.datetime:
         return datetime.datetime(reference_date.year, 9, 30, 0, 0, 0)
 
 
-def to_py_datetime(dt: any) -> datetime.datetime:
+def to_py_datetime(dt: any) -> datetime.datetime or None:
     if isinstance(dt, str):
         return text_auto_time(dt)
 
@@ -88,8 +88,7 @@ def to_py_datetime(dt: any) -> datetime.datetime:
     if isinstance(dt, pd.Timestamp):
         return dt.to_pydatetime()
 
-    print('Cannot parse %s to datetime' % str(dt))
-    assert False
+    return None
 
 
 def text_auto_time(text: str) -> datetime.datetime:
