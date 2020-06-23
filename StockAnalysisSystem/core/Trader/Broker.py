@@ -40,13 +40,26 @@ class Position:
 
     def security_amount(self, security: str) -> int:
         return self.__securities.get(security, 0)
+    
+    def buy(self, security: str, price: float, amount: int) -> bool:
+        total_price = price * amount
+        if amount == 0 or self.__cash < total_price:
+            return False
+        self.trade(security, amount, -total_price)
+        return True
 
-    def trade(self, security: str, amount: int, price: float):
+    def sell(self, security: str, price: float, amount: int) -> bool:
+        if self.security_amount(security) < amount:
+            return False
+        self.trade(security, amount, price * amount)
+        return True
+
+    def trade(self, security: str, amount: int, total_price: float):
         if security in self.__securities.keys():
             self.__securities[security] += amount
             if self.__securities[security] == 0:
                 del self.__securities[security]
-        self.__cash += price
+        self.__cash += total_price
 
 
 class Broker(IMarket.Observer):
@@ -55,6 +68,9 @@ class Broker(IMarket.Observer):
         self.__commission_pct = 0.0001
 
         self.__sort_sell_enable = False
+
+        # Temporary storage un-trade order
+        self.__left_order = []
 
         self.__pending_order = []
         self.__finished_order = []
@@ -144,49 +160,23 @@ class Broker(IMarket.Observer):
         return 1
 
     def on_before_trading(self, price_history: dict, *args, **kwargs):
+        # TODO: TBD
         pass
 
     def on_call_auction(self, price_table: pd.DataFrame, *args, **kwargs):
+        # TODO: TBD
         pass
 
     def on_trading(self, price_board: dict, *args, **kwargs):
-        left_order = []
+        self.__left_order = []
         for order in self.__pending_order:
             price = price_board.get(order.security, None)
             if price is None:
                 continue
-
-            # TODO: Check daily price limit
-            if order.operation == Order.OPERATION_BUY_MARKET:
-                total_price = order.amount * price
-                if self.__position.cash() >= total_price:
-                    self.__position.trade(order.security, order.amount, -total_price)
-                    order.status = Order.STATUS_COMPLETED
-            elif order.operation == Order.OPERATION_SELL_MARKET:
-                if self.__position.security_amount(order.security) > order.amount:
-                    total_price = order.amount * price
-                    self.__position.trade(order.security, -order.amount, total_price)
-            elif order.operation == Order.OPERATION_BUY_LIMIT:
-                total_price = order.amount * price
-                if price <= order.price and self.__position.cash() >= total_price:
-                    self.__position.trade(order.security, order.amount, -total_price)
-                    order.status = Order.STATUS_COMPLETED
-            elif order.operation == Order.OPERATION_SELL_LIMIT:
-                if price >= order.price and self.__position.security_amount(order.security) > order.amount:
-                    total_price = order.amount * price
-                    self.__position.trade(order.security, -order.amount, total_price)
-                    order.status = Order.STATUS_COMPLETED
-            elif order.operation == Order.OPERATION_STOP_LIMIT:
-                if price <= order.price and self.__position.security_amount(order.security) > order.amount:
-                    total_price = order.amount * price
-                    self.__position.trade(order.security, -order.amount, total_price)
-                    order.status = Order.STATUS_COMPLETED
-
-            if order.status == Order.STATUS_COMPLETED:
-                self.__finished_order.append(order)
-            else:
-                left_order.append(order)
-        self.__pending_order = left_order
+            if self.__order_matchable_in_trading(order, price):
+                self.__execute_order_trade(order, price)
+        self.__pending_order = self.__left_order
+        self.__left_order = []
 
     def on_after_trading(self, price_history: dict, *args, **kwargs):
         price_brief = {}
@@ -197,20 +187,56 @@ class Broker(IMarket.Observer):
             latest_row = df.iloc[0]
             price_brief[security] = latest_row
 
+        self.__left_order = []
         for order in self.__pending_order:
-            if order.operation == Order.OPERATION_BUY_MARKET:
-                latest_row['open']
-            elif order.operation == Order.OPERATION_SELL_MARKET:
-                latest_row['open']
-            elif order.operation == Order.OPERATION_BUY_LIMIT:
-                if order.price >= latest_row['low']:
-                    pass
-            elif order.operation == Order.OPERATION_SELL_LIMIT:
-                if order.price <= latest_row['high']:
-                    pass
-            elif order.operation == Order.OPERATION_STOP_LIMIT:
-                if latest_row['low'] < order.price:
-                    pass
+            day_price = price_brief.get(order.security, None)
+            if day_price is None:
+                continue
+            matchable, at_price = self.__match_order_in_whole_day(order, day_price)
+            if matchable:
+                self.__execute_order_trade(order, at_price)
+        self.__pending_order = self.__left_order
+        self.__left_order = []
+
+    def __execute_order_trade(self, order: Order, price: float) -> bool:
+        result = False
+        if order.operation in [order.OPERATION_BUY_LIMIT, order.OPERATION_BUY_MARKET]:
+            result = self.__position.buy(order.security, price, order.amount)
+        elif order.operation in [order.OPERATION_SELL_LIMIT, order.OPERATION_SELL_MARKET,
+                                 order.OPERATION_STOP_LIMIT]:
+            result = self.__position.sell(order.security, price, order.amount)
+        if result:
+            commission = self.calc_commission(price * order.amount)
+            self.__position.trade('commission', 1, -commission)
+
+            order.status = Order.STATUS_COMPLETED
+            self.__finished_order.append(order)
+        else:
+            self.__left_order.append(order)
+        return result
+
+    def __order_matchable_in_trading(self, order: Order, price: float) -> bool:
+        # TODO: Daily limit
+        if order.operation in [Order.OPERATION_BUY_MARKET, Order.OPERATION_SELL_MARKET]:
+            return True
+        if order.operation == Order.OPERATION_BUY_LIMIT:
+            return order.price >= price
+        if order.operation == Order.OPERATION_SELL_MARKET:
+            return price >= order.price
+        if order.operation == Order.OPERATION_STOP_LIMIT:
+            return price <= order.price
+        return False
+
+    def __match_order_in_whole_day(self, order: Order, day_price: dict) -> (bool, float):
+        if order.operation in [Order.OPERATION_BUY_MARKET, Order.OPERATION_SELL_MARKET]:
+            return True, day_price['open']
+        elif order.operation == Order.OPERATION_BUY_LIMIT:
+            return order.price >= day_price['low'], order.price
+        elif order.operation == Order.OPERATION_SELL_LIMIT:
+            return order.price <= day_price['high'], order.price
+        elif order.operation == Order.OPERATION_STOP_LIMIT:
+            return day_price['low'] < order.price, order.price
+        return False, 0.0
 
 
 
