@@ -31,6 +31,24 @@ class MarketBase(IMarket):
             if security in self.__observers[observer]:
                 self.__observers[observer].remove(security)
 
+    # ---------------------------------------------------------------------------
+
+    def trigger_before_trading(self, price_history: dict, *args, **kwargs):
+        for observer in sorted(self.__observers.keys(), key=lambda ob: ob.level()):
+            if isinstance(price_history, dict) and len(price_history) >= 0:
+                observer.on_before_trading(price_history, *args, **kwargs)
+
+    def trigger_call_auction(self, price_table: pd.DataFrame, *args, **kwargs):
+        pass
+
+    def trigger_trading(self, price_board: dict, *args, **kwargs):
+        pass
+
+    def trigger_after_trading(self, price_history: dict, *args, **kwargs):
+        for observer in sorted(self.__observers.keys(), key=lambda ob: ob.level()):
+            if isinstance(price_history, dict) and len(price_history) >= 0:
+                observer.on_after_trading(price_history, *args, **kwargs)
+
 
 class MarketBackTesting(MarketBase, threading.Thread):
     def __init__(self, data_hub, since: datetime.datetime, until: datetime.datetime):
@@ -53,6 +71,9 @@ class MarketBackTesting(MarketBase, threading.Thread):
 
     # ----------------------------- Interface of MarketBase -----------------------------
 
+    def add_observer(self, observer: IMarket.Observer):
+        pass
+
     def watch_security(self, security: str, observer: IMarket.Observer):
         if security not in self.__cached_securities:
             if not self.check_load_back_testing_data(security):
@@ -74,7 +95,7 @@ class MarketBackTesting(MarketBase, threading.Thread):
     # ----------------------------------------------------------------------------------
 
     def back_testing_entry(self):
-        if len(self.__cached_securities):
+        if len(self.__cached_securities) == 0:
             # TODO: Auto start
             print('No data for back testing.')
             return
@@ -88,15 +109,12 @@ class MarketBackTesting(MarketBase, threading.Thread):
 
     def back_testing_daily(self, limit: any):
         back_testing_daily_data = None
-        for observer in sorted(self.__observers.keys(), key=lambda ob: ob.level()):
-            if back_testing_daily_data is not None:
-                observer.on_before_trading(back_testing_daily_data)
+        self.trigger_before_trading(back_testing_daily_data)
 
         self.back_testing_serial(limit)
         back_testing_daily_data = self.__build_daily_test_data(limit)
 
-        for observer in sorted(self.__observers.keys(), key=lambda ob: ob.level()):
-            observer.on_after_trading(back_testing_daily_data)
+        self.trigger_after_trading(back_testing_daily_data)
 
     def back_testing_serial(self, limit: any):
         if limit is None:
@@ -149,9 +167,12 @@ class MarketBackTesting(MarketBase, threading.Thread):
 
     def load_back_testing_data(self, security: str, baseline: bool = False):
         daily_data = self.__data_hub.get_data_center().query(
-            'TradeData.Stock.Daily', security, self.__since, self.__until)
+            'TradeData.Stock.Daily', security, (self.__since, self.__until),
+            fields=['trade_date', 'open', 'close', 'high', 'low', 'vol'])
         if daily_data is not None and not daily_data.empty:
             daily_data = daily_data.set_index('trade_date', drop=True)
+            daily_data['volume'] = daily_data['vol']
+            del daily_data['vol']
         else:
             daily_data = None
 
@@ -179,7 +200,7 @@ class MarketBackTesting(MarketBase, threading.Thread):
         else:
             self.__cached_securities.insert(0, security)
         if security not in self.__daily_data_cache.keys():
-            self.__serial_data_cache[security] = daily_data
+            self.__daily_data_cache[security] = daily_data
         if security not in self.__serial_data_cache.keys():
             self.__serial_data_cache[security] = serial_data
         return True
