@@ -7,6 +7,8 @@ from ..Utiltity.time_utility import *
 from ..DataHubEntry import DataHubEntry
 
 
+# -------------------------------------------------- class MarketBase --------------------------------------------------
+
 class MarketBase(IMarket):
     def __init__(self):
         self.__observers = {}
@@ -33,22 +35,32 @@ class MarketBase(IMarket):
 
     # ---------------------------------------------------------------------------
 
+    def trigger_prepare_trading(self, securities: [], *args, **kwargs):
+        for observer in sorted(self.__observers.keys(), key=lambda ob: ob.level()):
+                observer.on_prepare_trading(securities, *args, **kwargs)
+
     def trigger_before_trading(self, price_history: dict, *args, **kwargs):
         for observer in sorted(self.__observers.keys(), key=lambda ob: ob.level()):
             if isinstance(price_history, dict) and len(price_history) >= 0:
                 observer.on_before_trading(price_history, *args, **kwargs)
 
     def trigger_call_auction(self, price_table: pd.DataFrame, *args, **kwargs):
-        pass
+        for observer in sorted(self.__observers.keys(), key=lambda ob: ob.level()):
+            if isinstance(price_table, pd.DataFrame) and len(price_table) >= 0:
+                observer.on_call_auction(price_table, *args, **kwargs)
 
     def trigger_trading(self, price_board: dict, *args, **kwargs):
-        pass
+        for observer in sorted(self.__observers.keys(), key=lambda ob: ob.level()):
+            if isinstance(price_board, dict) and len(price_board) >= 0:
+                observer.on_trading(price_board, *args, **kwargs)
 
     def trigger_after_trading(self, price_history: dict, *args, **kwargs):
         for observer in sorted(self.__observers.keys(), key=lambda ob: ob.level()):
             if isinstance(price_history, dict) and len(price_history) >= 0:
                 observer.on_after_trading(price_history, *args, **kwargs)
 
+
+# ---------------------------------------------- class MarketBackTesting -----------------------------------------------
 
 class MarketBackTesting(MarketBase, threading.Thread):
     def __init__(self, data_hub, since: datetime.datetime, until: datetime.datetime):
@@ -65,7 +77,6 @@ class MarketBackTesting(MarketBase, threading.Thread):
         self.__price_table = {}
         # The daily
         self.__daily_table = {}
-        self.__history_table = {}
 
         super(MarketBackTesting, self).__init__()
 
@@ -95,26 +106,25 @@ class MarketBackTesting(MarketBase, threading.Thread):
     # ----------------------------------------------------------------------------------
 
     def back_testing_entry(self):
+        self.trigger_prepare_trading(self.__cached_securities)
+
         if len(self.__cached_securities) == 0:
-            # TODO: Auto start
             print('No data for back testing.')
             return
         baseline = self.__cached_securities[0]
         baseline_daily = self.__daily_data_cache.get(baseline)
 
-        # TODO: What if None
-
+        self.__daily_table.clear()
         for index in baseline_daily.index.values.tolist():
             self.back_testing_daily(index)
 
     def back_testing_daily(self, limit: any):
-        back_testing_daily_data = None
-        self.trigger_before_trading(back_testing_daily_data)
+        self.trigger_before_trading(self.__daily_table)
 
         self.back_testing_serial(limit)
-        back_testing_daily_data = self.__build_daily_test_data(limit)
+        self.__daily_table = self.__build_daily_test_data(limit)
 
-        self.trigger_after_trading(back_testing_daily_data)
+        self.trigger_after_trading(self.__daily_table)
 
     def back_testing_serial(self, limit: any):
         if limit is None:
@@ -124,8 +134,7 @@ class MarketBackTesting(MarketBase, threading.Thread):
             back_testing_serial_data = self.__build_serial_test_data(limit)
 
         # TODO: observer.on_call_auction()
-        for observer in sorted(self.__observers.keys(), key=lambda ob: ob.level()):
-            observer.on_trading(back_testing_serial_data)
+        self.trigger_trading(back_testing_serial_data)
 
     def __build_daily_test_data(self, limit: any) -> dict:
         back_testing_data = {}
