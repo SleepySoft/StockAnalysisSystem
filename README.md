@@ -9,8 +9,8 @@ https://github.com/SleepySoft/StockAnalysisSystem
   
 # 网盘下载：
 应网友要求，对于网络访问受限的用户，提供网盘下载（离线数据同样在此下载）：  
-链接：https://pan.baidu.com/s/1H-viluqOoKrKRNJJmU17jg  
-提取码：4r3u  
+链接: https://pan.baidu.com/s/1Xv3hq09-0-zAgJEk8dd4Gg  
+提取码: r11g  
   
 # 视频讲解
 安装配置：https://www.bilibili.com/video/BV14z411b7AE/  
