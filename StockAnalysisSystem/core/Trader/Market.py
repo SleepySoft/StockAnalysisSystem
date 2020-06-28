@@ -115,7 +115,7 @@ class MarketBackTesting(MarketBase, threading.Thread):
         baseline_daily = self.__daily_data_cache.get(baseline)
 
         self.__daily_table.clear()
-        for index in baseline_daily.index.values.tolist():
+        for index in list(baseline_daily.index):        # baseline_daily.index.values.tolist():
             self.back_testing_daily(index)
 
     def back_testing_daily(self, limit: any):
@@ -133,14 +133,15 @@ class MarketBackTesting(MarketBase, threading.Thread):
         else:
             back_testing_serial_data = self.__build_serial_test_data(limit)
 
-        # TODO: observer.on_call_auction()
-        self.trigger_trading(back_testing_serial_data)
+        # # TODO: observer.on_call_auction()
+        # if len(back_testing_serial_data) > 0:
+        #     self.trigger_trading(back_testing_serial_data)
 
     def __build_daily_test_data(self, limit: any) -> dict:
         back_testing_data = {}
         for security in self.__daily_data_cache:
             df = self.__daily_data_cache[security]
-            back_testing_data[security] = df[:limit]
+            back_testing_data[security] = df[df.index <= limit]
         return back_testing_data
 
     def __build_serial_test_data(self, limit: any) -> dict:
@@ -155,7 +156,9 @@ class MarketBackTesting(MarketBase, threading.Thread):
         back_testing_serial_data = {}
         for security in self.__serial_data_cache:
             df = self.__serial_data_cache[security]
-            df_sliced = df[lower:upper]
+            if df is None:
+                continue
+            df_sliced = df[lower <= df.index <= upper]
             if not df_sliced.empty:
                 back_testing_serial_data[security] = df_sliced
         return back_testing_serial_data

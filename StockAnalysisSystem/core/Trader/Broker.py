@@ -141,8 +141,8 @@ class Broker(IBroker, IMarket.Observer):
         return 1
 
     def on_prepare_trading(self, securities: [], *args, **kwargs):
-        # TODO: TBD
-        pass
+        for security in securities:
+            self.get_market().watch_security(security, self)
 
     def on_before_trading(self, price_history: dict, *args, **kwargs):
         # TODO: TBD
