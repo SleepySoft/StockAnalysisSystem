@@ -148,7 +148,7 @@ class Broker(IBroker, IMarket.Observer):
         # TODO: TBD
         pass
 
-    def on_call_auction(self, price_table: pd.DataFrame, *args, **kwargs):
+    def on_call_auction(self, price_board: dict, *args, **kwargs):
         # TODO: TBD
         pass
 
@@ -200,29 +200,44 @@ class Broker(IBroker, IMarket.Observer):
             self.__complete_order.append(order)
         return result
 
-    @staticmethod
-    def __order_matchable_in_trading(order: Order, price: float) -> bool:
-        # TODO: Daily limit
-        if order.operation in [Order.OPERATION_BUY_MARKET, Order.OPERATION_SELL_MARKET]:
-            return True
-        if order.operation == Order.OPERATION_BUY_LIMIT:
-            return order.price >= price
+    def __order_matchable_in_trading(self, order: Order, price: float) -> bool:
+        lower_limit, upper_limit = self.get_market().get_day_limit(order.security)
+        reach_lower_limit = (abs(price - lower_limit) < 0.01)
+        reach_upper_limit = (abs(price - upper_limit) < 0.01)
+        if order.operation == Order.OPERATION_BUY_MARKET:
+            return not reach_upper_limit
         if order.operation == Order.OPERATION_SELL_MARKET:
-            return price >= order.price
+            return not reach_lower_limit
+        if order.operation == Order.OPERATION_BUY_LIMIT:
+            return order.price >= price and not reach_upper_limit
+        if order.operation == Order.OPERATION_SELL_LIMIT:
+            return price >= order.price and not reach_lower_limit
         if order.operation == Order.OPERATION_STOP_LIMIT:
-            return price <= order.price
+            return price <= order.price and not reach_lower_limit
         return False
 
-    @staticmethod
-    def __match_order_in_whole_day(order: Order, day_price: dict) -> (bool, float):
-        if order.operation in [Order.OPERATION_BUY_MARKET, Order.OPERATION_SELL_MARKET]:
-            return True, day_price['open']
+    def __match_order_in_whole_day(self, order: Order, day_price: dict) -> (bool, float):
+        stay_in_limit = day_price['open'] == day_price['close'] and \
+                        day_price['high'] == day_price['low'] and \
+                        day_price['low'] == day_price['close']
+        if stay_in_limit:
+            lower_limit, upper_limit = self.get_market().get_day_limit(order.security)
+            stay_in_lower_limit = day_price['low'] == lower_limit
+            stay_in_upper_limit = day_price['high'] == upper_limit
+        else:
+            stay_in_lower_limit = False
+            stay_in_upper_limit = False
+
+        if order.operation == Order.OPERATION_BUY_MARKET:
+            return not stay_in_upper_limit, day_price['open']
+        if order.operation == Order.OPERATION_SELL_MARKET:
+            return not stay_in_lower_limit, day_price['open']
         elif order.operation == Order.OPERATION_BUY_LIMIT:
-            return order.price >= day_price['low'], order.price
+            return not stay_in_upper_limit and order.price >= day_price['low'], order.price
         elif order.operation == Order.OPERATION_SELL_LIMIT:
-            return order.price <= day_price['high'], order.price
+            return not stay_in_lower_limit and order.price <= day_price['high'], order.price
         elif order.operation == Order.OPERATION_STOP_LIMIT:
-            return day_price['low'] < order.price, order.price
+            return not stay_in_lower_limit and day_price['low'] < order.price, order.price
         return False, 0.0
 
 

@@ -29,9 +29,9 @@ class Trader(IMarket.Observer):
         print('---------------------------------------- on_before_trading ----------------------------------------')
         print(price_history)
 
-    def on_call_auction(self, price_table: pd.DataFrame, *args, **kwargs):
+    def on_call_auction(self, price_board: dict, *args, **kwargs):
         print('==========> on_call_auction')
-        print(price_table)
+        print(price_board)
 
     def on_trading(self, price_board: dict, *args, **kwargs):
         print('----------> on_trading')

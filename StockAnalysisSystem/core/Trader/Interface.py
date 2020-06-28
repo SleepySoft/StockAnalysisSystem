@@ -19,7 +19,7 @@ class IMarket:
         def on_before_trading(self, price_history: dict, *args, **kwargs):
             pass
 
-        def on_call_auction(self, price_table: pd.DataFrame, *args, **kwargs):
+        def on_call_auction(self, price_board: dict, *args, **kwargs):
             pass
 
         def on_trading(self, price_board: dict, *args, **kwargs):
@@ -31,12 +31,6 @@ class IMarket:
     def __init__(self):
         pass
 
-    def watch_security(self, security: str, observer: Observer):
-        pass
-
-    def unwatch_security(self, security: str, observer: Observer):
-        pass
-
     def get_price(self, security: str) -> float:
         pass
 
@@ -44,6 +38,15 @@ class IMarket:
         pass
 
     def get_day_limit(self, security: str) -> (float, float):
+        pass
+
+    def add_participants(self, observer: Observer):
+        pass
+
+    def watch_security(self, security: str, observer: Observer):
+        pass
+
+    def unwatch_security(self, security: str, observer: Observer):
         pass
 
 
