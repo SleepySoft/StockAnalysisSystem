@@ -1,15 +1,29 @@
 import pandas as pd
-from .Interface import IMarket
+from .Interface import IMarket, IBroker
 
 
 class Trader(IMarket.Observer):
-    def __init__(self):
+    def __init__(self, market: IMarket, broker: IBroker):
+        self.__market = market
+        self.__broker = broker
         super(Trader, self).__init__()
+
+    # -------------------------------------------------------------------------------------------
+
+    def market(self) -> IMarket:
+        return self.__market
+
+    def broker(self) -> IBroker:
+        return self.__broker
 
     # ------------------------------ Interface of IMarket.Observer ------------------------------
 
     def level(self) -> int:
         return 5
+
+    def on_prepare_trading(self, securities: [], *args, **kwargs):
+        for security in securities:
+            self.market().watch_security(security, self)
 
     def on_before_trading(self, price_history: dict, *args, **kwargs):
         print('---------------------------------------- on_before_trading ----------------------------------------')

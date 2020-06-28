@@ -1,30 +1,5 @@
 import pandas as pd
-from .Interface import *
-
-
-class Order:
-    OPERATION_NONE = 0
-    OPERATION_BUY_LIMIT = 1
-    OPERATION_BUY_MARKET = 2
-    OPERATION_SELL_LIMIT = 3
-    OPERATION_STOP_LIMIT = 4
-    OPERATION_SELL_MARKET = 5
-
-    STATUS_CREATED = 100
-    STATUS_SUBMITTED = 101
-    STATUS_ACCEPTED = 102
-    STATUS_COMPLETED = 103
-    STATUS_PARTIAL = 104
-    STATUS_REJECTED = 105
-    STATUS_CANCELLED = 106
-    STATUS_EXPIRED = 107
-
-    def __init__(self, security: str = '', price: float = 0.0, amount: int = 0, operation: int = OPERATION_NONE):
-        self.price = price
-        self.amount = amount
-        self.security = security
-        self.operation = operation
-        self.order_status = Order.STATUS_CREATED
+from .Interface import IMarket, IBroker, Order
 
 
 class Position:
@@ -62,15 +37,17 @@ class Position:
         self.__cash += total_price
 
 
-class Broker(IMarket.Observer):
-    def __init__(self):
+class Broker(IBroker, IMarket.Observer):
+    def __init__(self, market: IMarket):
+        self.__market = market
+
         self.__commission_min = 5.0
         self.__commission_pct = 0.0001
 
         self.__sort_sell_enable = False
 
-        # Temporary storage un-trade order
-        self.__left_order = []
+        # Temporary storage complete order
+        self.__complete_order = []
 
         self.__pending_order = []
         self.__finished_order = []
@@ -78,60 +55,64 @@ class Broker(IMarket.Observer):
 
         super(Broker, self).__init__()
 
+    def get_market(self) -> IMarket:
+        return self.__market
+
     # ------------------------------------- Buy / Sell -------------------------------------
 
     def buy_limit(self, security: str, price: float, amount: int) -> Order:
         order = Order(security, price, amount, Order.OPERATION_BUY_LIMIT)
-        self.__pending_order.append(order)
-        return order
+        self.check_add_order(order)
 
     def buy_market(self, security: str, amount: int) -> Order:
         order = Order(security, 0.0, amount, Order.OPERATION_BUY_MARKET)
-        self.__pending_order.append(order)
-        return order
+        self.check_add_order(order)
 
     def sell_limit(self, security: str, price: float, amount: int) -> Order:
         order = Order(security, price, amount, Order.OPERATION_SELL_LIMIT)
-        self.__pending_order.append(order)
-        return order
+        self.check_add_order(order)
 
     def stop_limit(self, security: str, price: float, amount: int) -> Order:
         order = Order(security, price, amount, Order.OPERATION_STOP_LIMIT)
-        self.__pending_order.append(order)
-        return order
+        self.check_add_order(order)
 
     def sell_market(self, security: str, amount: int) -> Order:
         order = Order(security, 0.0, amount, Order.OPERATION_SELL_MARKET)
-        self.__pending_order.append(order)
-        return order
-
-    # ---------------------------------------- Order ---------------------------------------
+        self.check_add_order(order)
 
     def cancel_order(self, order: Order):
         if order in self.__pending_order:
-            self.__pending_order.pop(order)
+            self.__pending_order.remove(order)
             self.__finished_order.append(order)
             order.order_status = Order.STATUS_CANCELLED
 
+    # ---------------------------------------- Order ---------------------------------------
+
+    def order_valid(self, order: Order) -> bool:
+        if order.price < 0 or order.amount <= 0:
+            return False
+        if order.operation == Order.OPERATION_BUY_LIMIT:
+            return order.amount * order.price <= self.__position.cash()
+        elif order.operation in [Order.OPERATION_SELL_MARKET, Order.OPERATION_SELL_LIMIT, Order. OPERATION_STOP_LIMIT]:
+            return order.amount < self.__position.security_amount(order.security)
+        return True
+
+    def check_add_order(self, order: Order):
+        if self.order_valid(order):
+            order.order_status = Order.STATUS_ACCEPTED
+            self.__pending_order.append(order)
+        else:
+            order.order_status = Order.STATUS_REJECTED
+            self.__finished_order.append(order)
+
+    def process_complete_order(self):
+        for order in self.__complete_order:
+            self.__pending_order.remove(order)
+        self.__finished_order.extend(self.__complete_order)
+        self.__complete_order.clear()
+
     def get_pending_orders(self) -> [Order]:
-        pass
-
-    # ---------------------------------- Trade Data Access ----------------------------------
-
-    def subscribe_security(self):
-        pass
-
-    def unsubscribe_security(self):
-        pass
-
-    def get_price(self):
-        pass
-
-    def get_handicap(self):
-        pass
-
-    def get_position(self):
-        pass
+        return self.__pending_order
 
     # ----------------------------------- Exchange Setting -----------------------------------
 
@@ -159,6 +140,10 @@ class Broker(IMarket.Observer):
     def level(self) -> int:
         return 1
 
+    def on_prepare_trading(self, securities: [], *args, **kwargs):
+        # TODO: TBD
+        pass
+
     def on_before_trading(self, price_history: dict, *args, **kwargs):
         # TODO: TBD
         pass
@@ -168,26 +153,23 @@ class Broker(IMarket.Observer):
         pass
 
     def on_trading(self, price_board: dict, *args, **kwargs):
-        self.__left_order = []
         for order in self.__pending_order:
             price = price_board.get(order.security, None)
             if price is None:
                 continue
             if self.__order_matchable_in_trading(order, price):
                 self.__execute_order_trade(order, price)
-        self.__pending_order = self.__left_order
-        self.__left_order = []
+        self.process_complete_order()
 
     def on_after_trading(self, price_history: dict, *args, **kwargs):
         price_brief = {}
         for security in price_history.keys():
             df = price_history.get(security, None)
-            if df is None or df.empty():
+            if df is None or df.empty:
                 continue
             latest_row = df.iloc[0]
             price_brief[security] = latest_row
 
-        self.__left_order = []
         for order in self.__pending_order:
             day_price = price_brief.get(order.security, None)
             if day_price is None:
@@ -195,8 +177,13 @@ class Broker(IMarket.Observer):
             matchable, at_price = self.__match_order_in_whole_day(order, day_price)
             if matchable:
                 self.__execute_order_trade(order, at_price)
-        self.__pending_order = self.__left_order
-        self.__left_order = []
+            else:
+                order.order_status = Order.STATUS_EXPIRED
+                self.__complete_order.append(order)
+        self.process_complete_order()
+
+        # Clear all orders after the end of a day
+        assert len(self.__pending_order) == 0
 
     def __execute_order_trade(self, order: Order, price: float) -> bool:
         result = False
@@ -210,12 +197,11 @@ class Broker(IMarket.Observer):
             self.__position.trade('commission', 1, -commission)
 
             order.status = Order.STATUS_COMPLETED
-            self.__finished_order.append(order)
-        else:
-            self.__left_order.append(order)
+            self.__complete_order.append(order)
         return result
 
-    def __order_matchable_in_trading(self, order: Order, price: float) -> bool:
+    @staticmethod
+    def __order_matchable_in_trading(order: Order, price: float) -> bool:
         # TODO: Daily limit
         if order.operation in [Order.OPERATION_BUY_MARKET, Order.OPERATION_SELL_MARKET]:
             return True
@@ -227,7 +213,8 @@ class Broker(IMarket.Observer):
             return price <= order.price
         return False
 
-    def __match_order_in_whole_day(self, order: Order, day_price: dict) -> (bool, float):
+    @staticmethod
+    def __match_order_in_whole_day(order: Order, day_price: dict) -> (bool, float):
         if order.operation in [Order.OPERATION_BUY_MARKET, Order.OPERATION_SELL_MARKET]:
             return True, day_price['open']
         elif order.operation == Order.OPERATION_BUY_LIMIT:
