@@ -24,6 +24,8 @@ broker = Broker(market)
 trader = Trader(market, broker)
 
 market.load_back_testing_data('000001.SZSE', True)
+market.watch_security('000001.SZSE', broker)
+market.watch_security('000001.SZSE', trader)
 market.run()
 
 
