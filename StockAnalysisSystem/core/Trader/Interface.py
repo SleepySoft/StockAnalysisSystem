@@ -1,3 +1,5 @@
+import math
+
 import pandas as pd
 
 
@@ -102,27 +104,61 @@ class Order:
     STATUS_CANCELLED = 106
     STATUS_EXPIRED = 107
 
+    class Observer:
+        def __init__(self):
+            pass
+
+        def on_order_status_updated(self, order, prev_status: int):
+            pass
+
     def __init__(self, security: str = '', price: float = 0.0, amount: int = 0, operation: int = OPERATION_NONE):
         self.price = price
         self.amount = amount
         self.security = security
         self.operation = operation
-        self.order_status = Order.STATUS_CREATED
+
+        self.__status = Order.STATUS_CREATED
+        self.__observer: Order.Observer = None
+
+    def watch(self, observer: Observer):
+        self.__observer = observer
+
+    def status(self) -> int:
+        return self.__status
+
+    def update_status(self, status: int):
+        if status != self.__status:
+            prev_status = self.__status
+            self.__status = status
+            if self.__observer is not None:
+                self.__observer.on_order_status_updated(self, prev_status)
 
 
 class ISizer:
-    def __init__(self, security: str):
-        self.__security = security
+    MINIMAL_SHARE = 100
 
-    def security(self) -> str:
-        return self.__security
+    ROUND_CLOSE = round
+    ROUND_NO_MORE = math.floor
+    ROUND_NO_LESS = math.ceil
 
-    def amount(self, market: IMarket, position: Position) -> int:
+    def __init__(self, rounding=ROUND_CLOSE):
+        self.__rounding = rounding
+
+    def amount(self, security: str, price: float, broker) -> int:
         pass
+
+    def rounding(self, x: any) -> any:
+        return self.__rounding(x)
 
 
 class IBroker:
     def __init__(self):
+        pass
+
+    def market(self) -> IMarket:
+        pass
+
+    def position(self) -> Position:
         pass
 
     def buy_limit(self, security: str, price: float, size: ISizer) -> Order:
