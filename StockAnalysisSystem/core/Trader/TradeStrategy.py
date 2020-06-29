@@ -26,16 +26,19 @@ class Trader(IMarket.Observer):
             self.market().watch_security(security, self)
 
     def on_before_trading(self, price_history: dict, *args, **kwargs):
-        print('---------------------------------------- on_before_trading ----------------------------------------')
-        print(price_history)
+        # print('---------------------------------------- on_before_trading ----------------------------------------')
+        # print(price_history)
+        pass
 
     def on_call_auction(self, price_board: dict, *args, **kwargs):
-        print('==========> on_call_auction')
-        print(price_board)
+        # print('==========> on_call_auction')
+        # print(price_board)
+        pass
 
     def on_trading(self, price_board: dict, *args, **kwargs):
-        print('----------> on_trading')
-        print(price_board)
+        # print('----------> on_trading')
+        # print(price_board)
+        pass
 
     def on_after_trading(self, price_history: dict, *args, **kwargs):
         print('---------------------------------------- on_after_trading ----------------------------------------')
