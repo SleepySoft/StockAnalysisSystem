@@ -1,40 +1,5 @@
 import pandas as pd
-from .Interface import IMarket, IBroker, Order
-
-
-class Position:
-    def __init__(self):
-        self.__cash = 10000.0
-        self.__securities = {}      # Security: Amount
-
-    def cash(self) -> float:
-        return self.__cash
-
-    def securities(self) -> dict:
-        return self.__securities
-
-    def security_amount(self, security: str) -> int:
-        return self.__securities.get(security, 0)
-    
-    def buy(self, security: str, price: float, amount: int) -> bool:
-        total_price = price * amount
-        if amount == 0 or self.__cash < total_price:
-            return False
-        self.trade(security, amount, -total_price)
-        return True
-
-    def sell(self, security: str, price: float, amount: int) -> bool:
-        if self.security_amount(security) < amount:
-            return False
-        self.trade(security, amount, price * amount)
-        return True
-
-    def trade(self, security: str, amount: int, total_price: float):
-        if security in self.__securities.keys():
-            self.__securities[security] += amount
-            if self.__securities[security] == 0:
-                del self.__securities[security]
-        self.__cash += total_price
+from .Interface import IMarket, IBroker, Position, Order, ISizer
 
 
 class Broker(IBroker, IMarket.Observer):
@@ -58,27 +23,40 @@ class Broker(IBroker, IMarket.Observer):
     def get_market(self) -> IMarket:
         return self.__market
 
+    def get_position(self) -> Position:
+        return self.__position
+
     # ------------------------------------- Buy / Sell -------------------------------------
 
-    def buy_limit(self, security: str, price: float, amount: int) -> Order:
+    def buy_limit(self, security: str, price: float, size: ISizer) -> Order:
+        amount = size.amount(self.get_market(), self.get_position()) if isinstance(size, ISizer) else size
         order = Order(security, price, amount, Order.OPERATION_BUY_LIMIT)
         self.check_add_order(order)
+        return order
 
-    def buy_market(self, security: str, amount: int) -> Order:
+    def buy_market(self, security: str, size: ISizer) -> Order:
+        amount = size.amount(self.get_market(), self.get_position()) if isinstance(size, ISizer) else size
         order = Order(security, 0.0, amount, Order.OPERATION_BUY_MARKET)
         self.check_add_order(order)
+        return order
 
-    def sell_limit(self, security: str, price: float, amount: int) -> Order:
+    def sell_limit(self, security: str, price: float, size: ISizer) -> Order:
+        amount = size.amount(self.get_market(), self.get_position()) if isinstance(size, ISizer) else size
         order = Order(security, price, amount, Order.OPERATION_SELL_LIMIT)
         self.check_add_order(order)
+        return order
 
-    def stop_limit(self, security: str, price: float, amount: int) -> Order:
+    def stop_limit(self, security: str, price: float, size: ISizer) -> Order:
+        amount = size.amount(self.get_market(), self.get_position()) if isinstance(size, ISizer) else size
         order = Order(security, price, amount, Order.OPERATION_STOP_LIMIT)
         self.check_add_order(order)
+        return order
 
-    def sell_market(self, security: str, amount: int) -> Order:
+    def sell_market(self, security: str, size: ISizer) -> Order:
+        amount = size.amount(self.get_market(), self.get_position()) if isinstance(size, ISizer) else size
         order = Order(security, 0.0, amount, Order.OPERATION_SELL_MARKET)
         self.check_add_order(order)
+        return order
 
     def cancel_order(self, order: Order):
         if order in self.__pending_order:

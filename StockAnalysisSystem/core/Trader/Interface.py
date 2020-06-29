@@ -50,6 +50,41 @@ class IMarket:
         pass
 
 
+class Position:
+    def __init__(self):
+        self.__cash = 10000.0
+        self.__securities = {}  # Security: Amount
+
+    def cash(self) -> float:
+        return self.__cash
+
+    def securities(self) -> dict:
+        return self.__securities
+
+    def security_amount(self, security: str) -> int:
+        return self.__securities.get(security, 0)
+
+    def buy(self, security: str, price: float, amount: int) -> bool:
+        total_price = price * amount
+        if amount == 0 or self.__cash < total_price:
+            return False
+        self.trade(security, amount, -total_price)
+        return True
+
+    def sell(self, security: str, price: float, amount: int) -> bool:
+        if self.security_amount(security) < amount:
+            return False
+        self.trade(security, amount, price * amount)
+        return True
+
+    def trade(self, security: str, amount: int, total_price: float):
+        if security in self.__securities.keys():
+            self.__securities[security] += amount
+            if self.__securities[security] == 0:
+                del self.__securities[security]
+        self.__cash += total_price
+
+
 class Order:
     OPERATION_NONE = 0
     OPERATION_BUY_LIMIT = 1
@@ -75,23 +110,34 @@ class Order:
         self.order_status = Order.STATUS_CREATED
 
 
+class ISizer:
+    def __init__(self, security: str):
+        self.__security = security
+
+    def security(self) -> str:
+        return self.__security
+
+    def amount(self, market: IMarket, position: Position) -> int:
+        pass
+
+
 class IBroker:
     def __init__(self):
         pass
 
-    def buy_limit(self, security: str, price: float, amount: int) -> Order:
+    def buy_limit(self, security: str, price: float, size: ISizer) -> Order:
         pass
 
-    def buy_market(self, security: str, amount: int) -> Order:
+    def buy_market(self, security: str, size: ISizer) -> Order:
         pass
 
-    def sell_limit(self, security: str, price: float, amount: int) -> Order:
+    def sell_limit(self, security: str, price: float, size: ISizer) -> Order:
         pass
 
-    def stop_limit(self, security: str, price: float, amount: int) -> Order:
+    def stop_limit(self, security: str, price: float, size: ISizer) -> Order:
         pass
 
-    def sell_market(self, security: str, amount: int) -> Order:
+    def sell_market(self, security: str, size: ISizer) -> Order:
         pass
 
     def cancel_order(self, order: Order):
