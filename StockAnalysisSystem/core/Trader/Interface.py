@@ -36,6 +36,9 @@ class IMarket:
     def get_price(self, security: str) -> float:
         pass
 
+    def get_daily(self, security: str, offset: int = -1) -> dict:
+        pass
+
     def get_handicap(self, security: str) -> pd.DataFrame:
         pass
 
@@ -85,6 +88,14 @@ class Position:
             if self.__securities[security] == 0:
                 del self.__securities[security]
         self.__cash += total_price
+
+    def total_position(self, market: IMarket) -> float:
+        position_sum = self.__cash
+        for security in self.__securities.keys():
+            price = market.get_price(security)
+            position_sum += price * self.__securities.get(security, 0.0)
+        return position_sum
+
 
 
 class Order:

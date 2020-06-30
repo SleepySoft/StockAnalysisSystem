@@ -140,22 +140,21 @@ class Broker(IBroker, IMarket.Observer):
         self.process_complete_order()
 
     def on_after_trading(self, price_history: dict, *args, **kwargs):
-        price_brief = {}
-        for security in price_history.keys():
-            df = price_history.get(security, None)
-            if df is None or df.empty:
-                continue
-            latest_row = df.iloc[0]
-            price_brief[security] = latest_row
+        # price_brief = {}
+        # for security in price_history.keys():
+        #     df = price_history.get(security, None)
+        #     if df is None or df.empty:
+        #         continue
+        #     latest_row = df.iloc[0]
+        #     price_brief[security] = latest_row
 
         for order in self.__pending_order:
-            day_price = price_brief.get(order.security, None)
-            if day_price is None:
-                continue
+            result = False
+            day_price = self.market().get_daily(order.security)
             matchable, at_price = self.__match_order_in_whole_day(order, day_price)
             if matchable:
-                self.__execute_order_trade(order, at_price)
-            else:
+                result = self.__execute_order_trade(order, at_price)
+            if not result:
                 order.update_status(Order.STATUS_EXPIRED)
                 self.__complete_order.append(order)
         self.process_complete_order()
@@ -195,6 +194,9 @@ class Broker(IBroker, IMarket.Observer):
         return False
 
     def __match_order_in_whole_day(self, order: Order, day_price: dict) -> (bool, float):
+        if len(day_price) == 0:
+            return False, 0.0
+
         stay_in_limit = day_price['open'] == day_price['close'] and \
                         day_price['high'] == day_price['low'] and \
                         day_price['low'] == day_price['close']
