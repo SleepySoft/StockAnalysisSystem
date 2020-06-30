@@ -19,6 +19,9 @@ class MarketBase(IMarket):
     def get_price(self, security: str) -> float:
         pass
 
+    def get_daily(self, security: str, offset: int = -1) -> dict:
+        pass
+
     def get_handicap(self, security: str) -> pd.DataFrame:
         pass
 
@@ -104,6 +107,13 @@ class MarketBackTesting(MarketBase, threading.Thread):
     def get_price(self, security: str) -> float:
         return self.__price_table.get(security, 0.0)
 
+    def get_daily(self, security: str, offset: int = -1) -> dict:
+        daily_data = self.__daily_table.get(security, None)
+        if daily_data is None or daily_data.empty:
+            return {}
+        select_daily_data = daily_data.iloc[offset]
+        return select_daily_data.to_dict()
+
     def get_handicap(self, security: str) -> pd.DataFrame:
         return None
 
@@ -135,6 +145,9 @@ class MarketBackTesting(MarketBase, threading.Thread):
 
         self.__daily_table.clear()
         for index in list(baseline_daily.index):        # baseline_daily.index.values.tolist():
+            if len(self.__daily_table) == 0:
+                self.__daily_table = self.__build_daily_test_data(index)
+                continue
             self.back_testing_daily(index)
 
     def back_testing_daily(self, limit: any):
@@ -162,7 +175,10 @@ class MarketBackTesting(MarketBase, threading.Thread):
         back_testing_data = {}
         for security in self.__daily_data_cache:
             df = self.__daily_data_cache[security]
-            back_testing_data[security] = df[df.index <= limit]
+            df = df[df.index <= limit]
+            back_testing_data[security] = df
+            if not df.empty:
+                self.__price_table[security] = df.iloc[-1]['close']
         return back_testing_data
 
     def __build_serial_test_data(self, limit: any) -> dict:
@@ -183,20 +199,6 @@ class MarketBackTesting(MarketBase, threading.Thread):
             if not df_sliced.empty:
                 back_testing_serial_data[security] = df_sliced
         return back_testing_serial_data
-
-    # def elapsed(self):
-    #     for observer in sorted(self.__observers.keys(), key=lambda ob: ob.level()):
-    #         observer.on_before_trading()
-    #         observer.on_call_auction()
-    #         observer.on_trading()
-    #         observer.on_after_trading()
-
-    # def set_baseline(self, security: str):
-    #     if security not in self.__cache_securities:
-    #         print('Base line not in cached data.')
-    #     else:
-    #         self.__cache_securities.remove(security)
-    #         self.__cache_securities.insert(0, security)
 
     def load_back_testing_data(self, security: str, baseline: bool = False):
         daily_data = self.__data_hub.get_data_center().query(

@@ -26,8 +26,10 @@ trader = GridTrader(market, broker, '000001.SZSE', 7.0, 4.0, 5)
 market.load_back_testing_data('000001.SZSE', True)
 market.watch_security('000001.SZSE', broker)
 market.watch_security('000001.SZSE', trader)
-market.run()
+# market.run()
+market.back_testing_entry()
 
+print('Finally total position:' + str(broker.position().total_position(market)))
 
 
 
