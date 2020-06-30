@@ -77,9 +77,11 @@ class Broker(IBroker, IMarket.Observer):
 
     def check_add_order(self, order: Order):
         if self.order_valid(order):
+            self.__debug('Add order: ', str(order))
             order.update_status(Order.STATUS_ACCEPTED)
             self.__pending_order.append(order)
         else:
+            self.__debug('Drop order: ', str(order))
             order.update_status(Order.STATUS_REJECTED)
             self.__finished_order.append(order)
 
@@ -219,6 +221,12 @@ class Broker(IBroker, IMarket.Observer):
         elif order.operation == Order.OPERATION_STOP_LIMIT:
             return not stay_in_lower_limit and day_price['low'] < order.price, order.price
         return False, 0.0
+
+    # ---------------------------------------------------------------------------------
+
+    @staticmethod
+    def __debug(*args):
+        print(' '.join(args))
 
 
 

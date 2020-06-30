@@ -97,7 +97,6 @@ class Position:
         return position_sum
 
 
-
 class Order:
     OPERATION_NONE = 0
     OPERATION_BUY_LIMIT = 1
@@ -105,6 +104,15 @@ class Order:
     OPERATION_SELL_LIMIT = 3
     OPERATION_STOP_LIMIT = 4
     OPERATION_SELL_MARKET = 5
+
+    OPERATION_TEXT_TABLE = {
+        OPERATION_NONE:         'NONE',
+        OPERATION_BUY_LIMIT:    'Buy Limit',
+        OPERATION_BUY_MARKET:   'Buy Market',
+        OPERATION_SELL_LIMIT:   'Sell Limit',
+        OPERATION_STOP_LIMIT:   'Stop Limit',
+        OPERATION_SELL_MARKET:  'Sell Market',
+    }
 
     STATUS_CREATED = 100
     STATUS_SUBMITTED = 101
@@ -114,6 +122,17 @@ class Order:
     STATUS_REJECTED = 105
     STATUS_CANCELLED = 106
     STATUS_EXPIRED = 107
+
+    STATUS_TEXT_TABLE = {
+        STATUS_CREATED:     'Created',
+        STATUS_SUBMITTED:   'Submitted',
+        STATUS_ACCEPTED:    'Accepted',
+        STATUS_COMPLETED:   'Complete',
+        STATUS_PARTIAL:     'Partial',
+        STATUS_REJECTED:    'Rejected',
+        STATUS_CANCELLED:   'Cancelled',
+        STATUS_EXPIRED:     'Expired',
+    }
 
     class Observer:
         def __init__(self):
@@ -130,6 +149,14 @@ class Order:
 
         self.__status = Order.STATUS_CREATED
         self.__observer: Order.Observer = None
+
+    def __str__(self) -> str:
+        if self.operation in [Order.OPERATION_BUY_LIMIT, Order.OPERATION_SELL_LIMIT, Order.OPERATION_STOP_LIMIT, ]:
+            return 'Order [%s] - %s | Security: %s | Price: %.2f | Amount: %d' % \
+                   (hex(id(self)), self.OPERATION_TEXT_TABLE.get(self.operation, ''), self.security, self.price, self.amount)
+        else:
+            return 'Order [%s] - %s | Security: %s | Amount: %d' % \
+                   (hex(id(self)), self.OPERATION_TEXT_TABLE.get(self.operation, ''), self.security, self.amount)
 
     def watch(self, observer: Observer):
         self.__observer = observer
@@ -159,13 +186,11 @@ class Order:
 
     @staticmethod
     def status_valid(status: int) -> bool:
-        return status in [Order.STATUS_CREATED, Order.STATUS_SUBMITTED, Order.STATUS_ACCEPTED, Order.STATUS_COMPLETED,
-                          Order.STATUS_PARTIAL, Order.STATUS_REJECTED, Order.STATUS_CANCELLED, Order.STATUS_EXPIRED]
+        return status in Order.STATUS_TEXT_TABLE.keys()
 
     @staticmethod
     def operation_valid(operation: int) -> bool:
-        return operation in [Order.OPERATION_NONE, Order.OPERATION_BUY_LIMIT, Order.OPERATION_BUY_MARKET,
-                             Order.OPERATION_SELL_LIMIT, Order.OPERATION_STOP_LIMIT, Order.OPERATION_SELL_MARKET]
+        return operation in Order.OPERATION_TEXT_TABLE.keys()
 
 
 class ISizer:
