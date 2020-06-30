@@ -7,6 +7,8 @@ class BuyCashPercent(ISizer):
         super(BuyCashPercent, self).__init__()
 
     def amount(self, security: str, price: float, broker: IBroker) -> int:
+        if price < 0.01:
+            return 0
         position = broker.position()
         available_cash = position.cash()
         buy_cash = available_cash * self.__percent
@@ -21,6 +23,8 @@ class BuyPositionPercent(ISizer):
         super(BuyPositionPercent, self).__init__()
 
     def amount(self, security: str, price: float, broker: IBroker) -> int:
+        if price < 0.01:
+            return 0
         position = broker.position()
         available_cash = position.cash()
         security_cash = position.security_amount(security) * price
@@ -38,6 +42,8 @@ class SellCashReference(ISizer):
         super(SellCashReference, self).__init__()
 
     def amount(self, security: str, price: float, broker: IBroker) -> int:
+        if price < 0.01:
+            return 0
         position = broker.position()
         ref_amount = self.__ref_cash / price
         ref_amount = self.rounding(ref_amount / ISizer.MINIMAL_SHARE) * ISizer.MINIMAL_SHARE
@@ -46,11 +52,13 @@ class SellCashReference(ISizer):
 
 
 class SellPositionPercent(ISizer):
-    def __init__(self, security: str, percent: float):
+    def __init__(self, percent: float):
         self.__percent = percent
-        super(SellPositionPercent, self).__init__(security)
+        super(SellPositionPercent, self).__init__()
 
     def amount(self, security: str, price: float, broker: IBroker) -> int:
+        if price < 0.01:
+            return 0
         position = broker.position()
         available_cash = position.cash()
         security_cash = position.security_amount(security) * price

@@ -126,12 +126,35 @@ class Order:
     def status(self) -> int:
         return self.__status
 
+    def finished(self) -> bool:
+        return self.__status in [Order.STATUS_COMPLETED, Order.STATUS_REJECTED,
+                                 Order.STATUS_CANCELLED, Order.STATUS_EXPIRED]
+
+    def is_buy_order(self) -> bool:
+        return self.operation in [Order.OPERATION_BUY_LIMIT, Order.OPERATION_BUY_MARKET]
+
+    def is_sell_order(self) -> bool:
+        return self.operation in [Order.OPERATION_SELL_LIMIT, Order.OPERATION_STOP_LIMIT, Order.OPERATION_SELL_LIMIT]
+
     def update_status(self, status: int):
+        if not self.status_valid(status):
+            # TODO: Error handling
+            assert False
         if status != self.__status:
             prev_status = self.__status
             self.__status = status
             if self.__observer is not None:
                 self.__observer.on_order_status_updated(self, prev_status)
+
+    @staticmethod
+    def status_valid(status: int) -> bool:
+        return status in [Order.STATUS_CREATED, Order.STATUS_SUBMITTED, Order.STATUS_ACCEPTED, Order.STATUS_COMPLETED,
+                          Order.STATUS_PARTIAL, Order.STATUS_REJECTED, Order.STATUS_CANCELLED, Order.STATUS_EXPIRED]
+
+    @staticmethod
+    def operation_valid(operation: int) -> bool:
+        return operation in [Order.OPERATION_NONE, Order.OPERATION_BUY_LIMIT, Order.OPERATION_BUY_MARKET,
+                             Order.OPERATION_SELL_LIMIT, Order.OPERATION_STOP_LIMIT, Order.OPERATION_SELL_MARKET]
 
 
 class ISizer:

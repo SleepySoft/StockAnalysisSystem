@@ -20,40 +20,40 @@ class Broker(IBroker, IMarket.Observer):
 
         super(Broker, self).__init__()
 
-    def get_market(self) -> IMarket:
+    def market(self) -> IMarket:
         return self.__market
 
-    def get_position(self) -> Position:
+    def position(self) -> Position:
         return self.__position
 
     # ------------------------------------- Buy / Sell -------------------------------------
 
     def buy_limit(self, security: str, price: float, size: ISizer) -> Order:
-        amount = size.amount(self.get_market(), self.get_position()) if isinstance(size, ISizer) else size
+        amount = size.amount(security, price, self) if isinstance(size, ISizer) else size
         order = Order(security, price, amount, Order.OPERATION_BUY_LIMIT)
         self.check_add_order(order)
         return order
 
     def buy_market(self, security: str, size: ISizer) -> Order:
-        amount = size.amount(self.get_market(), self.get_position()) if isinstance(size, ISizer) else size
+        amount = size.amount(security, self.market().get_price(security), self) if isinstance(size, ISizer) else size
         order = Order(security, 0.0, amount, Order.OPERATION_BUY_MARKET)
         self.check_add_order(order)
         return order
 
     def sell_limit(self, security: str, price: float, size: ISizer) -> Order:
-        amount = size.amount(self.get_market(), self.get_position()) if isinstance(size, ISizer) else size
+        amount = size.amount(security, price, self) if isinstance(size, ISizer) else size
         order = Order(security, price, amount, Order.OPERATION_SELL_LIMIT)
         self.check_add_order(order)
         return order
 
     def stop_limit(self, security: str, price: float, size: ISizer) -> Order:
-        amount = size.amount(self.get_market(), self.get_position()) if isinstance(size, ISizer) else size
+        amount = size.amount(security, price, self) if isinstance(size, ISizer) else size
         order = Order(security, price, amount, Order.OPERATION_STOP_LIMIT)
         self.check_add_order(order)
         return order
 
     def sell_market(self, security: str, size: ISizer) -> Order:
-        amount = size.amount(self.get_market(), self.get_position()) if isinstance(size, ISizer) else size
+        amount = size.amount(security, self.market().get_price(security), self) if isinstance(size, ISizer) else size
         order = Order(security, 0.0, amount, Order.OPERATION_SELL_MARKET)
         self.check_add_order(order)
         return order
@@ -62,7 +62,7 @@ class Broker(IBroker, IMarket.Observer):
         if order in self.__pending_order:
             self.__pending_order.remove(order)
             self.__finished_order.append(order)
-            order.order_status = Order.STATUS_CANCELLED
+            order.update_status(Order.STATUS_CANCELLED)
 
     # ---------------------------------------- Order ---------------------------------------
 
@@ -77,10 +77,10 @@ class Broker(IBroker, IMarket.Observer):
 
     def check_add_order(self, order: Order):
         if self.order_valid(order):
-            order.order_status = Order.STATUS_ACCEPTED
+            order.update_status(Order.STATUS_ACCEPTED)
             self.__pending_order.append(order)
         else:
-            order.order_status = Order.STATUS_REJECTED
+            order.update_status(Order.STATUS_REJECTED)
             self.__finished_order.append(order)
 
     def process_complete_order(self):
@@ -120,7 +120,7 @@ class Broker(IBroker, IMarket.Observer):
 
     def on_prepare_trading(self, securities: [], *args, **kwargs):
         for security in securities:
-            self.get_market().watch_security(security, self)
+            self.market().watch_security(security, self)
 
     def on_before_trading(self, price_history: dict, *args, **kwargs):
         # TODO: TBD
@@ -156,7 +156,7 @@ class Broker(IBroker, IMarket.Observer):
             if matchable:
                 self.__execute_order_trade(order, at_price)
             else:
-                order.order_status = Order.STATUS_EXPIRED
+                order.update_status(Order.STATUS_EXPIRED)
                 self.__complete_order.append(order)
         self.process_complete_order()
 
@@ -179,7 +179,7 @@ class Broker(IBroker, IMarket.Observer):
         return result
 
     def __order_matchable_in_trading(self, order: Order, price: float) -> bool:
-        lower_limit, upper_limit = self.get_market().get_day_limit(order.security)
+        lower_limit, upper_limit = self.market().get_day_limit(order.security)
         reach_lower_limit = (abs(price - lower_limit) < 0.01)
         reach_upper_limit = (abs(price - upper_limit) < 0.01)
         if order.operation == Order.OPERATION_BUY_MARKET:
@@ -199,7 +199,7 @@ class Broker(IBroker, IMarket.Observer):
                         day_price['high'] == day_price['low'] and \
                         day_price['low'] == day_price['close']
         if stay_in_limit:
-            lower_limit, upper_limit = self.get_market().get_day_limit(order.security)
+            lower_limit, upper_limit = self.market().get_day_limit(order.security)
             stay_in_lower_limit = day_price['low'] == lower_limit
             stay_in_upper_limit = day_price['high'] == upper_limit
         else:
