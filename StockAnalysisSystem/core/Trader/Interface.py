@@ -57,8 +57,11 @@ class IMarket:
 
 class Position:
     def __init__(self):
-        self.__cash = 10000.0
+        self.__cash = 0
         self.__securities = {}  # Security: Amount
+        self.__capital_flow = []
+        self.__capital_flow_info = []
+        self.cash_init(100000.0)
 
     def cash(self) -> float:
         return self.__cash
@@ -79,7 +82,7 @@ class Position:
     def sell(self, security: str, price: float, amount: int) -> bool:
         if self.security_amount(security) < amount:
             return False
-        self.trade(security, amount, price * amount)
+        self.trade(security, -amount, price * amount)
         return True
 
     def trade(self, security: str, amount: int, total_price: float):
@@ -87,7 +90,35 @@ class Position:
             self.__securities[security] += amount
             if self.__securities[security] == 0:
                 del self.__securities[security]
+        else:
+            self.__securities[security] = amount
         self.__cash += total_price
+
+    def cash_in(self, cash: float, reason: str):
+        self.__cash += cash
+        self.__record_capital_flow(cash, reason=reason)
+
+    def cash_out(self, cash: float, reason: str):
+        self.__cash -= cash
+        self.__record_capital_flow(-cash, reason=reason)
+
+    def cash_init(self, cash: float):
+        self.__cash = cash
+        self.__reset_capital_flow()
+        self.__record_capital_flow(cash, reason='Cash init')
+
+    def statistics(self, market: IMarket) -> str:
+        sum_value = self.__cash
+        text = ['Position: ',
+                '  cash: %0.f' % self.__cash]
+        for security in sorted(self.__securities.keys()):
+            price = market.get_price(security)
+            amount = self.__securities.get(security)
+            value = price * amount
+            sum_value += value
+            text.append('  %s: %.2f * %d = %f' % (security, price, amount, value))
+        text.append('Total value: %.2f' % sum_value)
+        return '\n'.join(text)
 
     def total_position(self, market: IMarket) -> float:
         position_sum = self.__cash
@@ -95,6 +126,16 @@ class Position:
             price = market.get_price(security)
             position_sum += price * self.__securities.get(security, 0.0)
         return position_sum
+
+    # --------------------------------------------------------------------
+
+    def __reset_capital_flow(self):
+        self.__capital_flow.clear()
+        self.__capital_flow_info.clear()
+
+    def __record_capital_flow(self, cash: float, **kwargs):
+        self.__capital_flow.append(cash)
+        self.__capital_flow_info.append(kwargs)
 
 
 class Order:
@@ -106,11 +147,11 @@ class Order:
     OPERATION_SELL_MARKET = 5
 
     OPERATION_TEXT_TABLE = {
-        OPERATION_NONE:         'NONE',
-        OPERATION_BUY_LIMIT:    'Buy Limit',
-        OPERATION_BUY_MARKET:   'Buy Market',
-        OPERATION_SELL_LIMIT:   'Sell Limit',
-        OPERATION_STOP_LIMIT:   'Stop Limit',
+        OPERATION_NONE:         'NONE       ',
+        OPERATION_BUY_LIMIT:    'Buy  Limit ',
+        OPERATION_BUY_MARKET:   'Buy Market ',
+        OPERATION_SELL_LIMIT:   'Sell Limit ',
+        OPERATION_STOP_LIMIT:   'Stop Limit ',
         OPERATION_SELL_MARKET:  'Sell Market',
     }
 
@@ -151,12 +192,13 @@ class Order:
         self.__observer: Order.Observer = None
 
     def __str__(self) -> str:
-        if self.operation in [Order.OPERATION_BUY_LIMIT, Order.OPERATION_SELL_LIMIT, Order.OPERATION_STOP_LIMIT, ]:
-            return 'Order [%s] - %s | Security: %s | Price: %.2f | Amount: %d' % \
-                   (hex(id(self)), self.OPERATION_TEXT_TABLE.get(self.operation, ''), self.security, self.price, self.amount)
-        else:
-            return 'Order [%s] - %s | Security: %s | Amount: %d' % \
-                   (hex(id(self)), self.OPERATION_TEXT_TABLE.get(self.operation, ''), self.security, self.amount)
+        seperator = '->' if self.is_buy_order() else (
+            '<-' if self.is_sell_order() else '--'
+        )
+        return 'Order [%s] %s %s | Security: %s | Amount: %d | Price: %.2f' % \
+               (hex(id(self)), seperator,
+                self.OPERATION_TEXT_TABLE.get(self.operation, ''),
+                self.security, self.amount, self.price)
 
     def watch(self, observer: Observer):
         self.__observer = observer

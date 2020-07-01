@@ -89,8 +89,8 @@ class GridTrader(Trader):
         self.market().watch_security(self.__security, self)
 
     def on_before_trading(self, price_history: dict, *args, **kwargs):
-        order = self.broker().buy_market(self.__security, BuyPositionPercent(100.0 / (self.__trade_step * 2 + 1)))
-        order.watch(self)
+        if self.__buy_order is None and self.__sell_order is None:
+            self.re_order()
 
     def on_call_auction(self, price_board: dict, *args, **kwargs):
         pass
@@ -109,14 +109,17 @@ class GridTrader(Trader):
                 self.build_trade_grid(order.price)
                 # It must be the middle of trade grid
                 self.__current_level = self.__trade_step
+                print('Base decided, price:%.2f, level: %d' % (order.price, self.__current_level))
 
             if self.__buy_order is not None and self.__buy_order == order:
-                self.__current_level -= 1
+                self.__current_level += 1
                 self.__buy_order = None
+                print('Buy  order deal, level increase to %d' % self.__current_level)
 
             if self.__sell_order is not None and self.__sell_order == order:
-                self.__current_level += 1
+                self.__current_level -= 1
                 self.__sell_order = None
+                print('Sell order deal, level increase to %d' % self.__current_level)
 
             self.re_order()
 
@@ -130,7 +133,10 @@ class GridTrader(Trader):
     # -----------------------------------------------------------------------------------------
 
     def re_order(self):
+        print('Re-order...')
+
         if self.__current_level is None:
+            print('No base position, create a market price buy order.')
             order = self.broker().buy_market(self.__security, BuyPositionPercent(10))
             order.watch(self)
             return
@@ -158,8 +164,8 @@ class GridTrader(Trader):
     def build_trade_grid(self, base: float):
         self.__trade_grid = [base]
         for i in range(self.__trade_step):
-            self.__trade_grid.insert(0, base * pow((100 + self.__upper_pct) / 100, i))
-            self.__trade_grid.append(base * pow((100 - self.__lower_pct) / 100, i))
+            self.__trade_grid.insert(0, base * pow((100 + self.__upper_pct) / 100, i + 1))
+            self.__trade_grid.append(base * pow((100 - self.__lower_pct) / 100, i + 1))
         print('--------------- Trade grid: ---------------')
         print(str(self.__trade_grid))
         print('-------------------------------------------')
