@@ -11,7 +11,7 @@ class BuyCashPercent(ISizer):
             return 0
         position = broker.position()
         available_cash = position.cash()
-        buy_cash = available_cash * self.__percent
+        buy_cash = available_cash * self.__percent / 100
         buy_amount = buy_cash / price
         buy_amount = self.rounding(buy_amount / ISizer.MINIMAL_SHARE) * ISizer.MINIMAL_SHARE
         return buy_amount
@@ -29,7 +29,7 @@ class BuyPositionPercent(ISizer):
         available_cash = position.cash()
         security_cash = position.security_amount(security) * price
         total_cash = available_cash + security_cash
-        buy_cash = total_cash * self.__percent
+        buy_cash = total_cash * self.__percent / 100
         buy_cash = min(buy_cash, available_cash)
         buy_amount = buy_cash / price
         buy_amount = self.rounding(buy_amount / ISizer.MINIMAL_SHARE) * ISizer.MINIMAL_SHARE
@@ -63,7 +63,7 @@ class SellPositionPercent(ISizer):
         available_cash = position.cash()
         security_cash = position.security_amount(security) * price
         total_cash = available_cash + security_cash
-        sell_cash = total_cash * self.__percent
+        sell_cash = total_cash * self.__percent / 100
         sizer = SellCashReference(sell_cash)
         return sizer.amount(security, price, broker)
 

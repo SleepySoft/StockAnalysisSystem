@@ -11,9 +11,6 @@ class Broker(IBroker, IMarket.Observer):
 
         self.__sort_sell_enable = False
 
-        # Temporary storage complete order
-        self.__complete_order = []
-
         self.__pending_order = []
         self.__finished_order = []
         self.__position = Position()
@@ -72,24 +69,18 @@ class Broker(IBroker, IMarket.Observer):
         if order.operation == Order.OPERATION_BUY_LIMIT:
             return order.amount * order.price <= self.__position.cash()
         elif order.operation in [Order.OPERATION_SELL_MARKET, Order.OPERATION_SELL_LIMIT, Order. OPERATION_STOP_LIMIT]:
-            return order.amount < self.__position.security_amount(order.security)
+            return order.amount <= self.__position.security_amount(order.security)
         return True
 
     def check_add_order(self, order: Order):
         if self.order_valid(order):
-            self.__debug('Add order: ', str(order))
+            self.__debug('Add :', str(order))
             order.update_status(Order.STATUS_ACCEPTED)
             self.__pending_order.append(order)
         else:
-            self.__debug('Drop order: ', str(order))
+            self.__debug('Drop:', str(order))
             order.update_status(Order.STATUS_REJECTED)
             self.__finished_order.append(order)
-
-    def process_complete_order(self):
-        for order in self.__complete_order:
-            self.__pending_order.remove(order)
-        self.__finished_order.extend(self.__complete_order)
-        self.__complete_order.clear()
 
     def get_pending_orders(self) -> [Order]:
         return self.__pending_order
@@ -133,13 +124,15 @@ class Broker(IBroker, IMarket.Observer):
         pass
 
     def on_trading(self, price_board: dict, *args, **kwargs):
-        for order in self.__pending_order:
+        pending_order = self.__pending_order.copy()
+        for order in pending_order:
             price = price_board.get(order.security, None)
             if price is None:
                 continue
             if self.__order_matchable_in_trading(order, price):
-                self.__execute_order_trade(order, price)
-        self.process_complete_order()
+                result = self.__execute_order_trade(order, price)
+                if result:
+                    self.__complete_order(order, Order.STATUS_COMPLETED)
 
     def on_after_trading(self, price_history: dict, *args, **kwargs):
         # price_brief = {}
@@ -150,22 +143,22 @@ class Broker(IBroker, IMarket.Observer):
         #     latest_row = df.iloc[0]
         #     price_brief[security] = latest_row
 
-        for order in self.__pending_order:
+        pending_order = self.__pending_order.copy()
+        for order in pending_order:
             result = False
             day_price = self.market().get_daily(order.security)
             matchable, at_price = self.__match_order_in_whole_day(order, day_price)
             if matchable:
                 result = self.__execute_order_trade(order, at_price)
-            if not result:
-                order.update_status(Order.STATUS_EXPIRED)
-                self.__complete_order.append(order)
-        self.process_complete_order()
+            self.__complete_order(order, Order.STATUS_COMPLETED if result else Order.STATUS_EXPIRED)
 
-        # Clear all orders after the end of a day
-        assert len(self.__pending_order) == 0
+        # # Clear all orders after the end of a day
+        # assert len(self.__pending_order) == 0
 
     def __execute_order_trade(self, order: Order, price: float) -> bool:
         result = False
+        if order.operation in [order.OPERATION_BUY_MARKET, order.OPERATION_SELL_MARKET]:
+            order.price = price
         if order.operation in [order.OPERATION_BUY_LIMIT, order.OPERATION_BUY_MARKET]:
             result = self.__position.buy(order.security, price, order.amount)
         elif order.operation in [order.OPERATION_SELL_LIMIT, order.OPERATION_SELL_MARKET,
@@ -173,11 +166,22 @@ class Broker(IBroker, IMarket.Observer):
             result = self.__position.sell(order.security, price, order.amount)
         if result:
             commission = self.calc_commission(price * order.amount)
-            self.__position.trade('commission', 1, -commission)
-
-            order.status = Order.STATUS_COMPLETED
-            self.__complete_order.append(order)
+            self.__position.cash_out(commission, 'commission')
+            self.__debug('Deal:', str(order))
+            print(self.__position.statistics(self.market()))
+            order.update_status(Order.STATUS_COMPLETED)
         return result
+
+    def __complete_order(self, order: Order, status: int):
+        if order in self.__pending_order:
+            self.__pending_order.remove(order)
+        self.__finished_order.append(order)
+        order.update_status(status)
+
+        # for order in self.__complete_order:
+        #     self.__pending_order.remove(order)
+        # self.__finished_order.extend(self.__complete_order)
+        # self.__complete_order.clear()
 
     def __order_matchable_in_trading(self, order: Order, price: float) -> bool:
         lower_limit, upper_limit = self.market().get_day_limit(order.security)

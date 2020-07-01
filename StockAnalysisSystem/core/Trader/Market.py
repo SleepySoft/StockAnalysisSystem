@@ -148,6 +148,7 @@ class MarketBackTesting(MarketBase, threading.Thread):
             if len(self.__daily_table) == 0:
                 self.__daily_table = self.__build_daily_test_data(index)
                 continue
+            print('| ' + str(index) + '------------------------------------------')
             self.back_testing_daily(index)
 
     def back_testing_daily(self, limit: any):
