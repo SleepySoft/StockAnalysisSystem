@@ -509,6 +509,13 @@ class DataAgentSecurityDaily(DataAgent):
             super(DataAgentSecurityDaily, self).merge(uri, sub_identity, sub_dataframe)
 
 
+# ------------------ Securities In Day Data ------------------
+
+class DataAgentSecurityInDay(DataAgentSecurityDaily):
+    def __init__(self, **kwargs):
+        super(DataAgentSecurityInDay, self).__init__(**kwargs)
+
+
 # ---------------------- Index Daily Data ----------------------
 
 class DataAgentIndexDaily(DataAgentSecurityDaily):
