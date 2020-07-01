@@ -158,7 +158,6 @@ class MarketBackTesting(MarketBase, threading.Thread):
                     select_daily_data = daily_data.iloc[-1]
                     print('%s: [%.2f, %.2f]' % (security, select_daily_data['low'], select_daily_data['high']))
 
-
     def back_testing_daily(self, limit: any):
         self.update_day_price_limit()
 

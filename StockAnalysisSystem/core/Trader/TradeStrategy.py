@@ -141,25 +141,25 @@ class GridTrader(Trader):
             order.watch(self)
             return
 
-        if self.__buy_order is not None:
-            self.broker().cancel_order(self.__buy_order)
-            self.__buy_order = None
-
         if self.__sell_order is not None:
             self.broker().cancel_order(self.__sell_order)
             self.__sell_order = None
 
-        if self.__current_level + 1 < len(self.__trade_grid):
-            buy_price = self.__trade_grid[self.__current_level + 1]
-            self.__buy_order = self.broker().buy_limit(self.__security, buy_price,
-                                                       BuyPositionPercent(100.0 / (self.__trade_step * 2 + 1)))
-            self.__buy_order.watch(self)
+        if self.__buy_order is not None:
+            self.broker().cancel_order(self.__buy_order)
+            self.__buy_order = None
 
         if self.__current_level - 1 >= 0:
             sell_price = self.__trade_grid[self.__current_level - 1]
             self.__sell_order = self.broker().sell_limit(self.__security, sell_price,
                                                          SellPositionPercent(100.0 / (self.__trade_step * 2 + 1)))
             self.__sell_order.watch(self)
+
+        if self.__current_level + 1 < len(self.__trade_grid):
+            buy_price = self.__trade_grid[self.__current_level + 1]
+            self.__buy_order = self.broker().buy_limit(self.__security, buy_price,
+                                                       BuyPositionPercent(100.0 / (self.__trade_step * 2 + 1)))
+            self.__buy_order.watch(self)
 
     def build_trade_grid(self, base: float):
         self.__trade_grid = [base]
