@@ -19,7 +19,7 @@ if not sas_api.init(project_path, True):
     print('\n'.join(sas_api.error_log()))
     quit(1)
 
-market = MarketBackTesting(sas_api.get_data_hub_entry(), text_auto_time('2019-01-01'), text_auto_time('2020-01-01'))
+market = MarketBackTesting(sas_api.get_data_hub_entry(), text_auto_time('2018-01-01'), text_auto_time('2020-01-01'))
 broker = Broker(market)
 trader = GridTrader(market, broker, '000001.SZSE', 7.0, 4.0, 5)
 
@@ -29,7 +29,7 @@ market.watch_security('000001.SZSE', trader)
 # market.run()
 market.back_testing_entry()
 
-print('Finally total position:' + str(broker.position().total_position(market)))
+print('Finally total position:\n' + str(broker.position().statistics(market)))
 
 
 

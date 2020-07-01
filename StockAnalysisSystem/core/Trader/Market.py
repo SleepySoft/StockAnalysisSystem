@@ -151,6 +151,14 @@ class MarketBackTesting(MarketBase, threading.Thread):
             print('| ' + str(index) + '------------------------------------------')
             self.back_testing_daily(index)
 
+            print('> Day end')
+            for security in self.__daily_table.keys():
+                daily_data = self.__daily_table.get(security)
+                if not daily_data.empty:
+                    select_daily_data = daily_data.iloc[-1]
+                    print('%s: [%.2f, %.2f]' % (security, select_daily_data['low'], select_daily_data['high']))
+
+
     def back_testing_daily(self, limit: any):
         self.update_day_price_limit()
 
