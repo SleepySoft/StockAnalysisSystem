@@ -366,8 +366,10 @@ class DataAgent:
 
     def merge2(self, uri: str, identity: str, _data: pd.DataFrame or dict or [dict]):
         if isinstance(_data, pd.DataFrame):
+            clock = Clock()
             data_dict = _data.T.apply(lambda x: x.dropna().to_dict()).tolist()
             # data_dict = _data.T.to_dict().values()
+            print('Convert DataFrame size(%d) time spending: %s' % (len(_data), clock.elapsed_s()))
         elif isinstance(_data, dict):
             data_dict = [_data]
         elif isinstance(_data, (list, tuple)):
@@ -508,7 +510,7 @@ class DataAgentSecurityDaily(DataAgent):
         grouped = df.groupby(df[self.identity_field()])
         for sub_identity in grouped.groups:
             sub_dataframe = grouped.get_group(sub_identity)
-            super(DataAgentSecurityDaily, self).merge(uri, sub_identity, sub_dataframe)
+            super(DataAgentSecurityDaily, self).merge2(uri, sub_identity, sub_dataframe)
 
 
 # ------------------ Securities In Day Data ------------------
