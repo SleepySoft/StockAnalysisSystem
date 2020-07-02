@@ -310,7 +310,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             uri='TradeData.Stock.5min',
             database_entry=database_entry,
 
-            depot_name='Stock5Min',
+            depot_name='StockInDay',
             table_prefix='',
 
             identity_field='stock_identity',
