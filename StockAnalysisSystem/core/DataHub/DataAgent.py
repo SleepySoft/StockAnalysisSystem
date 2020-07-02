@@ -339,27 +339,28 @@ class DataAgent:
         table = self.data_table(uri, identity, (None, None), {}, [])
         identity_field, datetime_field = table.identity_field(), table.datetime_field()
 
+        identity_field_available = str_available(identity_field)
+        datetime_field_available = str_available(datetime_field)
+
         table.set_connection_threshold(1)
-        # TODO: Use zip
-        for index, row in df.iterrows():
-            identity_value = None
-            if str_available(identity_field):
-                if identity_field in list(row.index):
-                    identity_value = row[identity_field]
-            if str_available(identity_field) and identity_value is None:
+
+        # for index, row in df.iterrows():
+        # for row in df.to_dict(orient='records'):
+        # https://stackoverflow.com/a/46098323/12929244
+        rows = [{k: v for k, v in m.items() if pd.notnull(v)} for m in df.to_dict(orient='rows')]
+        for row in rows:
+            identity_value = row.get(identity_field, None) if identity_field_available else None
+            if identity_field_available and identity_value is None:
                 print('Warning: identity field "' + identity_field + '" of <' + uri + '> missing.')
                 continue
 
-            datetime_value = None
-            if str_available(datetime_field):
-                if datetime_field in list(row.index):
-                    datetime_value = row[datetime_field]
-                    if isinstance(datetime_value, str):
-                        datetime_value = text_auto_time(datetime_value)
-            if str_available(datetime_field) and datetime_value is None:
+            datetime_value = row.get(datetime_field, None) if datetime_field_available else None
+            if isinstance(datetime_value, str):
+                datetime_value = text_auto_time(datetime_value)
+            if datetime_field_available and datetime_value is None:
                 print('Warning: datetime field "' + datetime_field + '" of <' + uri + '> missing.')
                 continue
-            table.bulk_upsert(identity_value, datetime_value, row.dropna().to_dict())
+            table.bulk_upsert(identity_value, datetime_value, row)          # row.dropna().to_dict())
         table.bulk_flush()
 
     def merge2(self, uri: str, identity: str, _data: pd.DataFrame or dict or [dict]):
