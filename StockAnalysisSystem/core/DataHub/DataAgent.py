@@ -347,7 +347,8 @@ class DataAgent:
         # for index, row in df.iterrows():
         # for row in df.to_dict(orient='records'):
         # https://stackoverflow.com/a/46098323/12929244
-        rows = [{k: v for k, v in m.items() if pd.notnull(v)} for m in df.to_dict(orient='rows')]
+        # rows = [{k: v for k, v in m.items() if pd.notnull(v)} for m in df.to_dict(orient='rows')]
+        rows = [{k: v for k, v in m.items() if v == v and v is not None} for m in df.to_dict(orient='r')]
         for row in rows:
             identity_value = row.get(identity_field, None) if identity_field_available else None
             if identity_field_available and identity_value is None:
