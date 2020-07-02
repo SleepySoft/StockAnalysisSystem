@@ -46,8 +46,9 @@ def __fetch_stock_5min_data(**kwargs) -> pd.DataFrame:
     if result is None:
         period = kwargs.get('trade_date')
         since, until = normalize_time_serial(period, default_since(), today())
-        # since_txt = date2text(since)
-        since_txt = '2020-05-01'
+        since = max(years_ago(5), since)
+
+        since_txt = date2text(since)
         until_txt = date2text(until)
 
         bao_code = pickup_bao_code(kwargs)
