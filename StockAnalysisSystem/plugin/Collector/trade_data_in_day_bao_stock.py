@@ -73,7 +73,7 @@ def __fetch_stock_5min_data(**kwargs) -> pd.DataFrame:
 
     if result is not None:
         result['stock_identity'] = result['code'].apply(bao_code_to_stock_identity)
-        result['trade_datetime'] = pd.to_datetime(result['time'], format="%Y%m%d%H%M%s%f")
+        result['trade_datetime'] = pd.to_datetime(result['time'], format="%Y%m%d%H%M%S%f")
         del result['code']
         del result['date']
         del result['time']
