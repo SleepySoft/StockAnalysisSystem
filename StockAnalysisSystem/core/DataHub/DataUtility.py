@@ -92,7 +92,7 @@ class IdentityNameInfoCache:
     def get_ids(self) -> [str]:
         return list(self.__identity_info_dict.keys())
 
-    def get_id_info(self, _id: str, keys: str or [str], default_value: any=None) -> any or [any]:
+    def get_id_info(self, _id: str, keys: str or [str], default_value: any = None) -> any or [any]:
         id_info = self.__identity_info_dict.get(self.__normalize_id_name(_id), {})
         if not isinstance(keys, (list, tuple)):
             return id_info.get(self.__normalize_id_name(keys), default_value)
