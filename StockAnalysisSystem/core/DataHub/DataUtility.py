@@ -78,10 +78,10 @@ class IdentityNameInfoCache:
 
     def name_to_id(self, names: str or [str]) -> str or [str]:
         if not isinstance(names, (list, tuple)):
-            return self.__identity_name_dict.get(self.__normalize_id_name(names),
+            return self.__name_identity_dict.get(self.__normalize_id_name(names),
                                                  self.__normalize_id_name(names))
         else:
-            return [self.__identity_name_dict.get(self.__normalize_id_name(name),
+            return [self.__name_identity_dict.get(self.__normalize_id_name(name),
                                                   self.__normalize_id_name(name))
                     for name in names]
 
