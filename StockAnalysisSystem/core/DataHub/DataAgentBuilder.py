@@ -306,24 +306,24 @@ def build_data_agent(database_entry: DatabaseEntry):
             },
         ),
 
-        DataAgentSecurityInDay(
-            uri='TradeData.Stock.5min',
-            database_entry=database_entry,
-
-            depot_name='StockInDay',
-            table_prefix='',
-
-            identity_field='stock_identity',
-            datetime_field='trade_datetime',
-
-            query_declare={
-                'stock_identity': ([str], [],           True,  ''),
-                'trade_datetime': ([tuple, None], [],   False, ''),
-            },
-            result_declare={
-                'trade_datetime': (['datetime'], [],    True, ''),
-            },
-        ),
+        # DataAgentSecurityInDay(
+        #     uri='TradeData.Stock.5min',
+        #     database_entry=database_entry,
+        #
+        #     depot_name='StockInDay',
+        #     table_prefix='',
+        #
+        #     identity_field='stock_identity',
+        #     datetime_field='trade_datetime',
+        #
+        #     query_declare={
+        #         'stock_identity': ([str], [],           True,  ''),
+        #         'trade_datetime': ([tuple, None], [],   False, ''),
+        #     },
+        #     result_declare={
+        #         'trade_datetime': (['datetime'], [],    True, ''),
+        #     },
+        # ),
 
         DataAgentIndexDaily(
             uri='TradeData.Index.Daily',
