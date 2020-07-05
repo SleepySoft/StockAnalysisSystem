@@ -99,6 +99,31 @@ class IdentityNameInfoCache:
         else:
             return [id_info.get(self.__normalize_id_name(key), default_value) for key in keys]
 
+    def guess_securities(self, text: str) -> [str]:
+        """
+        Guess securities by parts of text. Match in following orders:
+        1.Security name
+        2.Security code (only if the text len >= 3)
+        :param text:
+        :return:
+        """
+        match_result = self.__guess_text_in_list(list(self.__name_identity_dict.keys()), text)
+        result = [self.__name_identity_dict.get(k) for k in match_result]
+
+        if text.isdigit() and len(text) > 3:
+            match_result = self.__guess_text_in_list(list(self.__identity_name_dict.keys()), text)
+            result.extend(match_result)
+
+        return list(set(result))
+
+    @staticmethod
+    def __guess_text_in_list(text_list: list, text: str) -> [str]:
+        result = []
+        for t in text_list:
+            if t.inlcudes(text):
+                result.append(t)
+        return result
+
     # ---------------------------------------------------------------------------------------
 
     def __check_init_id_space(self, _id: str):
