@@ -734,6 +734,74 @@ class StockHistoryUi(QWidget):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
+NOTE = '''Stock Memo说明
+1.Stock Memo相关的数据作为个人数据默认保存到系统用户目录下，更新程序不会破坏数据
+2.如果用户自己指定保存目录，请手动复制已存在的文件到新目录下'''
+
+
+class StockMemo(QWidget):
+    def __init__(self, sas: StockAnalysisSystem):
+        super(StockMemo, self).__init__()
+
+        self.__sas = sas
+        self.__data_utility = self.__sas.get_data_hub_entry().get_data_utility() if self.__sas is not None else None
+
+        # ---------------- Path ----------------
+
+        user_path = os.path.expanduser('~')
+        project_path = self.__sas.get_project_path() if self.__sas is not None else os.getcwd()
+
+        self.__root_path = \
+            memo_path_from_project_path(project_path) if user_path == '' else \
+            memo_path_from_user_path(user_path)
+        self.__memo_record = Record(os.path.join(self.__root_path, 'stock_memo.csv'), STOCK_MEMO_COLUMNS)
+
+        # --------------- Widgets ---------------
+
+        self.__memo_table = EasyQTableWidget()
+        self.__stock_selector = \
+            SecuritiesSelector(self.__data_utility) if self.__data_utility is not None else QComboBox()
+        self.__line_path = QLineEdit(self.__root_path)
+        self.__text_note = QTextEdit(NOTE)
+        self.__button_add = QPushButton('Add')
+        self.__button_browse = QPushButton('Browse')
+        self.__button_black_list = QPushButton('Black List')
+
+        self.init_ui()
+        self.config_ui()
+
+    def init_ui(self):
+        main_layout = QVBoxLayout()
+        self.setLayout(main_layout)
+
+        group_box, group_layout = create_v_group_box('Stock Memo')
+        group_layout.addWidget(self.__memo_table)
+        main_layout.addWidget(group_box, 10)
+
+        group_box, group_layout = create_h_group_box('Edit')
+        right_area = QVBoxLayout()
+        group_layout.addWidget(self.__text_note, 5)
+        group_layout.addLayout(right_area, 5)
+
+        line = horizon_layout([QLabel('股票选择：'), self.__stock_selector, self.__button_add],
+                              [1, 10, 1])
+        right_area.addLayout(line)
+
+        line = horizon_layout([QLabel('保存路径：'), self.__line_path, self.__button_browse],
+                              [1, 10, 1])
+        right_area.addLayout(line)
+
+        line = horizon_layout([QLabel('其它功能：'), self.__button_black_list, QLabel('')],
+                              [1, 1, 10])
+        right_area.addLayout(line)
+
+        main_layout.addWidget(group_box, 1)
+
+    def config_ui(self):
+        self.__text_note.wrap
+        self.__text_note.setReadOnly(True)
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 def plugin_prob() -> dict:
@@ -780,7 +848,8 @@ def widget(parent: QWidget) -> (QWidget, dict):
 
 def main():
     app = QApplication(sys.argv)
-    dlg = WrapperQDialog(StockMemoEditor(None, None))
+    # dlg = WrapperQDialog(StockMemoEditor(None, None))
+    dlg = WrapperQDialog(StockMemo(None))
     dlg.exec()
     exit(app.exec_())
 
