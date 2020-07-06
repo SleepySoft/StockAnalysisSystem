@@ -23,6 +23,17 @@ from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 from StockAnalysisSystem.core.Utiltity.securities_selector import SecuritiesSelector
 
 
+def memo_path_from_user_path(user_path: str) -> str:
+    memo_path = os.path.join(user_path, 'StockAnalysisSystem')
+    try:
+        os.makedirs(memo_path)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            print('Build memo path: %s FAIL' % memo_path)
+    finally:
+        return memo_path
+
+
 def memo_path_from_project_path(project_path: str) -> str:
     memo_path = os.path.join(project_path, 'Data', 'StockMemo')
     try:
@@ -35,40 +46,46 @@ def memo_path_from_project_path(project_path: str) -> str:
 
 
 class Record:
-    RECORD_COLUMNS = ['time', 'brief', 'content', 'classify']
-
-    def __init__(self, record_path: str):
+    def __init__(self, record_path: str, record_columns: [str], must_columns: [str] or None = None):
         self.__record_path = record_path
-        self.__record_sheet = pd.DataFrame(columns=Record.RECORD_COLUMNS)
+        self.__record_columns = record_columns
+        self.__must_columns = must_columns
+        self.__record_sheet = pd.DataFrame(columns=self.__record_columns)
+
+    def columns(self) -> [str]:
+        return self.__record_columns
 
     def is_empty(self) -> bool:
-        return self.__record_sheet is None or len(self.__record_sheet) == 0
+        return self.__record_sheet is None or self.__record_sheet.empty
 
-    def add_record(self, _time: datetime, brief: str, content: str, classify: str, _save: bool = True) -> (bool, int):
-        if not self.__check_record_format(_time, brief, content):
-            print('add_record() format error.')
-            return False
+    def add_record(self, _data: dict, _save: bool = True) -> (bool, int):
+        if not self.__check_must_columns(_data, True, True):
+            return False, -1
         df = self.__record_sheet
         max_index = max(df.index) if len(df) > 0 else 0
         new_index = max_index + 1
-        df.loc[new_index, ['time', 'brief', 'content', 'classify']] = ([_time, brief, content, classify])
-        return (self.save() if _save and self.save() else True), new_index
+        row = [_data.get(k, '') for k in self.__record_columns]
+        df.loc[new_index, self.__record_columns] = (row, )
+        return (self.save() if _save else True), new_index
 
-    def update_record(self, index, _time: datetime.datetime, brief: str, content: str, _save: bool = True) -> bool:
-        if not self.__check_record_format(_time, brief, content):
-            print('update_record() format error.')
+    def update_record(self, index, _data: dict, _save: bool = True) -> bool:
+        if not self.__check_must_columns(_data, False, True):
             return False
+        fields = list(_data.keys())
+        values = [_data.get(field, '') for field in fields]
         df = self.__record_sheet
         if index in df.index.values:
-            df.loc[index, ['time', 'brief', 'content']] = ([_time, brief, content])
+            df.loc[index, fields] = (values, )
         else:
             print('Warning: Index %s not in record.' % str(index))
+            return False
         return self.save() if _save else True
 
-    def get_records(self, classify: str = '') -> pd.DataFrame:
-        if len(self.__record_sheet) == 0 or not str_available(classify):
+    def get_records(self, conditions: dict or None) -> pd.DataFrame:
+        if conditions is None or len(conditions) == 0:
             return self.__record_sheet
-        return self.__record_sheet[self.__record_sheet['classify'] == classify]
+        df = self.__record_sheet
+        return df[np.logical_and.reduce([df[k] == v for k, v in conditions.items()])]
 
     def del_records(self, idx: int or [int]):
         self.__record_sheet.drop(idx)
@@ -99,7 +116,7 @@ class Record:
             df['time'] = pd.to_datetime(df['time'], infer_datetime_format=True)
             df.reindex()
             self.__record_sheet = df
-            return column_includes(self.__record_sheet.columns, Record.RECORD_COLUMNS)
+            return column_includes(self.__record_sheet.columns, self.__record_columns)
         except Exception as e:
             return False
         finally:
@@ -107,7 +124,7 @@ class Record:
 
     def __save(self, record_path: str) -> bool:
         try:
-            self.__record_sheet = self.__record_sheet[Record.RECORD_COLUMNS]
+            self.__record_sheet = self.__record_sheet[self.__record_columns]
             self.__record_sheet.to_csv(record_path)
             return True
         except Exception as e:
@@ -117,57 +134,73 @@ class Record:
         finally:
             pass
 
+    def __check_must_columns(self, _data: dict, check_exists: bool, check_empty: bool) -> bool:
+        if self.__must_columns is None or len(self.__must_columns) == 0:
+            return True
+        for must_column in self.__must_columns:
+            if must_column not in _data.keys():
+                if check_exists:
+                    return False
+            else:
+                _value = _data.get(must_column)
+                if check_empty and (_value is None or _value == ''):
+                    return False
+        return True
+
     @staticmethod
     def __check_record_format(_time: datetime.datetime, brief: str, content: str):
         return isinstance(_time, datetime.datetime) and isinstance(brief, str) and isinstance(content, str)
 
 
-class RecordSet:
-    def __init__(self, record_root: str):
-        self.__record_root = record_root
-        self.__record_depot = {}
+# class RecordSet:
+#     def __init__(self, record_root: str):
+#         self.__record_root = record_root
+#         self.__record_depot = {}
+#
+#     def set_record_root(self, memo_root: str):
+#         self.__record_root = memo_root
+#
+#     def get_record_root(self) -> str:
+#         return self.__record_root
+#
+#     def get_record(self, record_name: str):
+#         record = self.__record_depot.get(record_name, None)
+#         if record is None:
+#             record = Record(self.__get_record_file_path(record_name))
+#             record.load()
+#             self.__record_depot[record_name] = record
+#         else:
+#             print('Get cached record for %s' % record_name)
+#         return record
+#
+#     def get_exists_record_name(self) -> []:
+#         return self.__enumerate_record()
+#
+#     def __get_record_file_path(self, record_name: str) -> str:
+#         return os.path.join(self.__record_root, record_name + '.csv')
+#
+#     def __enumerate_record(self) -> list:
+#         records = []
+#         for parent, dirnames, filenames in os.walk(self.__record_root):
+#             for filename in filenames:
+#                 if filename.endswith('.csv'):
+#                     records.append(filename[:-4])
+#         return records
 
-    def set_record_root(self, memo_root: str):
-        self.__record_root = memo_root
 
-    def get_record_root(self) -> str:
-        return self.__record_root
-
-    def get_record(self, record_name: str):
-        record = self.__record_depot.get(record_name, None)
-        if record is None:
-            record = Record(self.__get_record_file_path(record_name))
-            record.load()
-            self.__record_depot[record_name] = record
-        else:
-            print('Get cached record for %s' % record_name)
-        return record
-
-    def get_exists_record_name(self) -> []:
-        return self.__enumerate_record()
-
-    def __get_record_file_path(self, record_name: str) -> str:
-        return os.path.join(self.__record_root, record_name + '.csv')
-
-    def __enumerate_record(self) -> list:
-        records = []
-        for parent, dirnames, filenames in os.walk(self.__record_root):
-            for filename in filenames:
-                if filename.endswith('.csv'):
-                    records.append(filename[:-4])
-        return records
+STOCK_MEMO_COLUMNS = ['time', 'security', 'brief', 'content', 'classify']
 
 
 class StockMemoEditor(QDialog):
-    def __init__(self, sas: StockAnalysisSystem, memo_record: RecordSet, parent: QWidget = None):
+    def __init__(self, sas: StockAnalysisSystem, memo_record: Record, parent: QWidget = None):
         super(StockMemoEditor, self).__init__(parent)
 
         self.__sas = sas
-        self.__memo_recordset = memo_record
+        self.__memo_record = memo_record
 
         self.__current_stock = None
         self.__current_index = None
-        self.__current_record: Record = None
+        self.__current_select = None
 
         data_utility = self.__sas.get_data_hub_entry().get_data_utility() if self.__sas is not None else None
         self.__combo_stock = SecuritiesSelector(data_utility)
@@ -320,18 +353,19 @@ class StockMemoEditor(QDialog):
         self.__table_memo_index.setHorizontalHeaderLabels(['时间', '摘要'])
 
         self.__current_stock = stock_identity
-        self.__current_record = None
         self.__current_index = None
 
-        if self.__memo_recordset is None or \
-                self.__current_stock is None or self.__current_stock == '':
-            return
+        # if self.__memo_recordset is None or \
+        #         self.__current_stock is None or self.__current_stock == '':
+        #     return
+        #
+        # self.__current_record = self.__memo_recordset.get_record(stock_identity)
+        # df = self.__current_record.get_records('memo')
 
-        self.__current_record = self.__memo_recordset.get_record(stock_identity)
-        df = self.__current_record.get_records('memo')
+        self.__current_select = self.__memo_record.get_records({'security': stock_identity})
 
         select_index = None
-        for index, row in df.iterrows():
+        for index, row in self.__current_select.iterrows():
             if select_index is None:
                 select_index = index
             self.__table_memo_index.AppendRow([datetime2text(row['time']), row['brief']], index)
@@ -393,10 +427,14 @@ class StockHistoryUi(QWidget):
         self.__paint_securities = ''
         self.__paint_trade_data = None
 
-        # Record set
+        # Record
+        user_path = os.path.expanduser('~')
         project_path = sas.get_project_path() if sas is not None else os.getcwd()
-        self.__root_path = memo_path_from_project_path(project_path)
-        self.__memo_recordset = RecordSet(self.__root_path)
+
+        self.__root_path = \
+            memo_path_from_project_path(project_path) if user_path == '' else \
+            memo_path_from_user_path(user_path)
+        self.__memo_record = Record(os.path.join(self.__root_path, 'stock_memo.csv'), STOCK_MEMO_COLUMNS)
 
         # vnpy chart
         self.__vnpy_chart = ChartWidget()
@@ -691,6 +729,9 @@ class StockHistoryUi(QWidget):
     #         bar.close_price = row['close']
     #         bars.append(bar)
     #     return bars
+
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 # ----------------------------------------------------------------------------------------------------------------------
