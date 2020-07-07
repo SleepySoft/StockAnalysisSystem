@@ -18,6 +18,7 @@ from StockAnalysisSystem.porting.vnpy_chart import *
 from StockAnalysisSystem.core.Utiltity.common import *
 from StockAnalysisSystem.core.Utiltity.df_utility import *
 from StockAnalysisSystem.core.Utiltity.ui_utility import *
+from StockAnalysisSystem.core.Utiltity.TableViewEx import *
 from StockAnalysisSystem.core.Utiltity.time_utility import *
 from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 from StockAnalysisSystem.core.Utiltity.securities_selector import SecuritiesSelector
@@ -739,12 +740,57 @@ NOTE = '''Stock Memo说明
 2.如果用户自己指定保存目录，请手动复制已存在的文件到新目录下'''
 
 
+class MemoExtra:
+    def __init__(self):
+        pass
+
+    def enter_global(self):
+        pass
+
+    def enter_security(self, security: str):
+        pass
+
+    def title_text(self) -> str:
+        pass
+
+    def global_entry_text(self) -> str:
+        pass
+
+    def security_entry_text(self, security: str) -> str:
+        pass
+
+
+class DummyMemoExtra(MemoExtra):
+    def __init__(self, title_text: str):
+        self.__title_text = title_text
+        super(DummyMemoExtra, self).__init__()
+
+    def enter_global(self):
+        print('enter_global')
+
+    def enter_security(self, security: str):
+        print('enter_security')
+
+    def title_text(self) -> str:
+        return self.__title_text
+
+    def global_entry_text(self) -> str:
+        return 'DummyMemoExtra'
+
+    def security_entry_text(self, security: str) -> str:
+        return self.__title_text + ': ' + security
+
+
 class StockMemo(QWidget):
+    STATIC_HEADER = ['Security']
+
     def __init__(self, sas: StockAnalysisSystem):
         super(StockMemo, self).__init__()
 
         self.__sas = sas
         self.__data_utility = self.__sas.get_data_hub_entry().get_data_utility() if self.__sas is not None else None
+
+        self.__memo_extras = []
 
         # ---------------- Path ----------------
 
@@ -758,11 +804,11 @@ class StockMemo(QWidget):
 
         # --------------- Widgets ---------------
 
-        self.__memo_table = EasyQTableWidget()
+        self.__memo_table = TableViewEx()
         self.__stock_selector = \
             SecuritiesSelector(self.__data_utility) if self.__data_utility is not None else QComboBox()
         self.__line_path = QLineEdit(self.__root_path)
-        self.__text_note = QTextEdit(NOTE)
+        self.__info_panel = QLabel(NOTE)
         self.__button_add = QPushButton('Add')
         self.__button_browse = QPushButton('Browse')
         self.__button_black_list = QPushButton('Black List')
@@ -780,8 +826,8 @@ class StockMemo(QWidget):
 
         group_box, group_layout = create_h_group_box('Edit')
         right_area = QVBoxLayout()
-        group_layout.addWidget(self.__text_note, 5)
-        group_layout.addLayout(right_area, 5)
+        group_layout.addWidget(self.__info_panel, 3)
+        group_layout.addLayout(right_area, 7)
 
         line = horizon_layout([QLabel('股票选择：'), self.__stock_selector, self.__button_add],
                               [1, 10, 1])
@@ -798,8 +844,51 @@ class StockMemo(QWidget):
         main_layout.addWidget(group_box, 1)
 
     def config_ui(self):
-        self.__text_note.wrap
-        self.__text_note.setReadOnly(True)
+        self.setMinimumSize(800, 600)
+        self.__info_panel.setWordWrap(True)
+
+        self.__memo_table.SetColumn(self.__memo_table_columns())
+        self.__memo_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+
+    def add_memo_extra(self, extra: MemoExtra):
+        self.__memo_extras.append(extra)
+
+    def update_list(self):
+        self.__update_memo_securities_list(['000001', '000002', '000003', '000004'])
+
+    # ----------------------------------------------------------------------------
+
+    def __on_memo_item_clicked(self, _item: QStandardItem, security: str, memo_extra: MemoExtra):
+        print('Click on memo item: %s - %s' % (memo_extra.title_text(), security))
+
+    def __memo_table_columns(self) -> [str]:
+        return StockMemo.STATIC_HEADER + [memo_extra.title_text() for memo_extra in self.__memo_extras]
+
+    def __update_memo_securities_list(self, securities: [str]):
+        columns = self.__memo_table_columns()
+
+        self.__memo_table.Clear()
+        self.__memo_table.SetColumn(columns)
+        self.__memo_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+
+        for security in securities:
+            self.__memo_table.AppendRow(['' for _ in len(columns)])
+            row_count = self.__memo_table.rowCount()
+            row = row_count - 1
+            col = 0
+            
+            self.__memo_table.SetItemText(row, col, security)
+            self.__memo_table.SetItemData(row, col, security)
+
+            for memo_extra in self.__memo_extras:
+                col += 1
+                text = memo_extra.security_entry_text(security)
+            
+                self.__memo_table.SetItemText(row, col, text)
+                self.__memo_table.SetItemData(row, col, memo_extra)
+                
+                _item = self.__memo_table.GetItem(row, col)
+                _item.clicked.connect(partial(self.__on_memo_item_clicked, _item, security, memo_extra))
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -849,7 +938,16 @@ def widget(parent: QWidget) -> (QWidget, dict):
 def main():
     app = QApplication(sys.argv)
     # dlg = WrapperQDialog(StockMemoEditor(None, None))
-    dlg = WrapperQDialog(StockMemo(None))
+    
+    stock_memo = StockMemo(None)
+    stock_memo.add_memo_extra(DummyMemoExtra('Column1'))
+    stock_memo.add_memo_extra(DummyMemoExtra('Column2'))
+    stock_memo.add_memo_extra(DummyMemoExtra('Column3'))
+    stock_memo.add_memo_extra(DummyMemoExtra('Column4'))
+    stock_memo.add_memo_extra(DummyMemoExtra('Column5'))
+    stock_memo.update_list()
+    dlg = WrapperQDialog(stock_memo)
+    
     dlg.exec()
     exit(app.exec_())
 
