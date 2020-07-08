@@ -86,7 +86,7 @@ class Record:
             return False
         return self.save() if _save else True
 
-    def get_records(self, conditions: dict or None) -> pd.DataFrame:
+    def get_records(self, conditions: dict or None = None) -> pd.DataFrame:
         if conditions is None or len(conditions) == 0:
             return self.__record_sheet
         df = self.__record_sheet
@@ -159,18 +159,45 @@ class Record:
 
 # ------------------------------------------------ class StockMemoData -------------------------------------------------
 
+class StockMemoRecord(Record):
+    ALL_COLUMNS = ['time', 'security', 'brief', 'content', 'classify']
+    MUST_COLUMNS = ['time', 'security']
+    
+    def __init__(self, record_path: str):
+        super(StockMemoRecord, self).__init__(record_path, StockMemoRecord.ALL_COLUMNS, StockMemoRecord.MUST_COLUMNS)
+
+    def get_stock_memos(self, stock_identity: str):
+        df = self.get_records({'security': stock_identity})
+        return df
+
+    def get_all_security(self) -> [str]:
+        df = self.get_records()
+        return df['security'].unique()
+
+
+# ------------------------------------------------ class StockMemoData -------------------------------------------------
+
 class StockMemoData:
-    def __init__(self, sas:StockAnalysisSystem):
+    def __init__(self, sas: StockAnalysisSystem):
         self.__sas = sas
         self.__extra_data = {}
 
         user_path = os.path.expanduser('~')
         project_path = self.__sas.get_project_path() if self.__sas is not None else os.getcwd()
 
+        # TODO: Load root path config for config module
         self.__root_path = \
             memo_path_from_project_path(project_path) if user_path == '' else \
             memo_path_from_user_path(user_path)
-        self.__memo_record = Record(os.path.join(self.__root_path, 'stock_memo.csv'), STOCK_MEMO_COLUMNS)
+        self.__memo_record = StockMemoRecord(os.path.join(self.__root_path, 'stock_memo.csv'))
+        if not self.__memo_record.load():
+            print('Load stock memo fail, maybe no memo exists.')
+
+    def get_root_path(self) -> str:
+        return self.__root_path
+
+    def set_root_path(self, root_path):
+        self.__root_path = root_path
 
     def get_sas(self) -> StockAnalysisSystem:
         return self.__sas
@@ -222,9 +249,6 @@ class StockMemoData:
 
 
 # ----------------------------------------------- class StockMemoEditor ------------------------------------------------
-
-STOCK_MEMO_COLUMNS = ['time', 'security', 'brief', 'content', 'classify']
-
 
 class StockMemoEditor(QDialog):
     def __init__(self, memo_data: StockMemoData, parent: QWidget = None):
@@ -300,6 +324,8 @@ class StockMemoEditor(QDialog):
         if self.__current_stock is None:
             QMessageBox.information(self, '错误', '请选择需要做笔记的股票', QMessageBox.Ok, QMessageBox.Ok)
         self.create_new_memo(None)
+        
+    # ['time', 'security', 'brief', 'content', 'classify']
 
     def on_button_apply(self):
         _time = self.__datetime_time.dateTime().toPyDateTime()
@@ -311,9 +337,21 @@ class StockMemoEditor(QDialog):
             return
 
         if self.__current_index is not None:
-            ret = self.__current_record.update_record(self.__current_index, _time, brief, content, True)
+            ret = self.__memo_record.update_record({
+                'time': _time,
+                'security': self.__current_stock,
+                'brief': brief,
+                'content': content,
+                'classify': 'memo',
+            }, True)
         else:
-            ret, index = self.__current_record.add_record(_time, brief, content, 'memo', True)
+            ret, index = self.__memo_record.add_record({
+                'time': _time,
+                'security': self.__current_stock,
+                'brief': brief,
+                'content': content,
+                'classify': 'memo',
+            }, True)
             self.__current_index = index
         if ret:
             self.__reload_stock_memo()
@@ -323,8 +361,6 @@ class StockMemoEditor(QDialog):
         self.__load_stock_memo(input_securities)
 
     def on_table_selection_changed(self):
-        if self.__current_record is None:
-            return
         sel_index = self.__table_memo_index.GetCurrentIndex()
         if sel_index < 0:
             return
@@ -605,7 +641,6 @@ class StockHistoryUi(QWidget):
             input_securities = input_securities.split('|')[0].strip()
         self.show_security(input_securities)
 
-
     def on_editor_closed(self, event):
         self.load_security_memo()
         self.__vnpy_chart.refresh_history()
@@ -838,27 +873,18 @@ class StockMemo(QWidget):
         self.__memo_data = memo_data
 
         self.__sas = self.__memo_data.get_sas()
+        self.__memo_record: StockMemoRecord = self.__memo_data.get_memo_record()
         self.__memo_editor: StockMemoEditor = self.__memo_data.get_data('editor')
         self.__data_utility = self.__sas.get_data_hub_entry().get_data_utility() if self.__sas is not None else None
 
         self.__memo_extras = []
-
-        # ---------------- Path ----------------
-
-        user_path = os.path.expanduser('~')
-        project_path = self.__sas.get_project_path() if self.__sas is not None else os.getcwd()
-
-        self.__root_path = \
-            memo_path_from_project_path(project_path) if user_path == '' else \
-            memo_path_from_user_path(user_path)
-        self.__memo_record = Record(os.path.join(self.__root_path, 'stock_memo.csv'), STOCK_MEMO_COLUMNS)
 
         # --------------- Widgets ---------------
 
         self.__memo_table = TableViewEx()
         self.__stock_selector = \
             SecuritiesSelector(self.__data_utility) if self.__data_utility is not None else QComboBox()
-        self.__line_path = QLineEdit(self.__root_path)
+        self.__line_path = QLineEdit(self.__memo_data.get_root_path())
         self.__info_panel = QLabel(NOTE)
         self.__button_new = QPushButton('Add')
         self.__button_browse = QPushButton('Browse')
@@ -908,18 +934,21 @@ class StockMemo(QWidget):
         self.__memo_extras.append(extra)
 
     def update_list(self):
-        self.__update_memo_securities_list(['000001', '000002', '000003', '000004'])
+        securities = self.__memo_record.get_all_security()
+        self.__update_memo_securities_list(securities)
 
     # ----------------------------------------------------------------------------
 
     def __on_button_new_clicked(self):
-        pass
+        self.__memo_editor.create_new_memo(now())
+        self.__memo_editor.exec()
 
     def __on_memo_item_double_clicked(self, index: QModelIndex):
         item_data = index.data(Qt.UserRole)
         if item_data is not None and isinstance(item_data, tuple):
             memo_extra, security = item_data
-            print('Click on memo item: %s - %s' % (memo_extra.title_text(), security))
+            memo_extra.enter_security(security)
+            # print('Double Click on memo item: %s - %s' % (memo_extra.title_text(), security))
 
     def __update_memo_securities_list(self, securities: [str]):
         columns = self.__memo_table_columns()
@@ -1054,10 +1083,11 @@ def init(sas: StockAnalysisSystem) -> bool:
 
 def widget(parent: QWidget) -> (QWidget, dict):
     global memoData
-    memo_ui = StockMemo(memoData)
     memoData.set_data('editor', StockMemoEditor(memoData))
+    memo_ui = StockMemo(memoData)
     memo_ui.add_memo_extra(MemoExtra_MemoContent(memoData))
     memo_ui.add_memo_extra(MemoExtra_MemoHistory(memoData))
+    memo_ui.update_list()
     return memo_ui, {'name': '股票笔记', 'show': False}
 
 
