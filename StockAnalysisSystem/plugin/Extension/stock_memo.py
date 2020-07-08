@@ -482,7 +482,7 @@ class StockHistoryUi(QWidget):
         self.__vnpy_chart = ChartWidget()
 
         # Memo editor
-        self.__memo_editor = StockMemoEditor(self.__memo_data)
+        self.__memo_editor = self.__memo_data.get_data('editor')
 
         # Timer for workaround signal fired twice
         self.__accepted = False
@@ -838,6 +838,7 @@ class StockMemo(QWidget):
         self.__memo_data = memo_data
 
         self.__sas = self.__memo_data.get_sas()
+        self.__memo_editor: StockMemoEditor = self.__memo_data.get_data('editor')
         self.__data_utility = self.__sas.get_data_hub_entry().get_data_utility() if self.__sas is not None else None
 
         self.__memo_extras = []
@@ -859,7 +860,7 @@ class StockMemo(QWidget):
             SecuritiesSelector(self.__data_utility) if self.__data_utility is not None else QComboBox()
         self.__line_path = QLineEdit(self.__root_path)
         self.__info_panel = QLabel(NOTE)
-        self.__button_add = QPushButton('Add')
+        self.__button_new = QPushButton('Add')
         self.__button_browse = QPushButton('Browse')
         self.__button_black_list = QPushButton('Black List')
 
@@ -879,7 +880,7 @@ class StockMemo(QWidget):
         group_layout.addWidget(self.__info_panel, 3)
         group_layout.addLayout(right_area, 7)
 
-        line = horizon_layout([QLabel('股票选择：'), self.__stock_selector, self.__button_add],
+        line = horizon_layout([QLabel('股票选择：'), self.__stock_selector, self.__button_new],
                               [1, 10, 1])
         right_area.addLayout(line)
 
@@ -901,6 +902,8 @@ class StockMemo(QWidget):
         self.__memo_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.__memo_table.doubleClicked.connect(self.__on_memo_item_double_clicked)
 
+        self.__button_new.clicked.connect(self.__on_button_new_clicked)
+
     def add_memo_extra(self, extra: MemoExtra):
         self.__memo_extras.append(extra)
 
@@ -908,6 +911,9 @@ class StockMemo(QWidget):
         self.__update_memo_securities_list(['000001', '000002', '000003', '000004'])
 
     # ----------------------------------------------------------------------------
+
+    def __on_button_new_clicked(self):
+        pass
 
     def __on_memo_item_double_clicked(self, index: QModelIndex):
         item_data = index.data(Qt.UserRole)
@@ -952,7 +958,7 @@ class StockMemo(QWidget):
 class MemoExtra_MemoContent(MemoExtra):
     def __init__(self, memo_data: StockMemoData):
         self.__memo_data = memo_data
-        self.__memo_editor = StockMemoEditor(self.__memo_data)
+        self.__memo_editor = self.__memo_data.get_data('editor')
         self.__memo_record = self.__memo_data.get_memo_record() if self.__memo_data is not None else None
         super(MemoExtra_MemoContent, self).__init__()
 
@@ -1047,7 +1053,9 @@ def init(sas: StockAnalysisSystem) -> bool:
 
 
 def widget(parent: QWidget) -> (QWidget, dict):
+    global memoData
     memo_ui = StockMemo(memoData)
+    memoData.set_data('editor', StockMemoEditor(memoData))
     memo_ui.add_memo_extra(MemoExtra_MemoContent(memoData))
     memo_ui.add_memo_extra(MemoExtra_MemoHistory(memoData))
     return memo_ui, {'name': '股票笔记', 'show': False}
