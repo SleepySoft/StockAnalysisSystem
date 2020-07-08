@@ -849,6 +849,7 @@ class StockMemo(QWidget):
 
         self.__memo_table.SetColumn(self.__memo_table_columns())
         self.__memo_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.__memo_table.doubleClicked.connect(self.__on_memo_item_double_clicked)
 
     def add_memo_extra(self, extra: MemoExtra):
         self.__memo_extras.append(extra)
@@ -858,11 +859,11 @@ class StockMemo(QWidget):
 
     # ----------------------------------------------------------------------------
 
-    def __on_memo_item_clicked(self, _item: QStandardItem, security: str, memo_extra: MemoExtra):
-        print('Click on memo item: %s - %s' % (memo_extra.title_text(), security))
-
-    def __memo_table_columns(self) -> [str]:
-        return StockMemo.STATIC_HEADER + [memo_extra.title_text() for memo_extra in self.__memo_extras]
+    def __on_memo_item_double_clicked(self, index: QModelIndex):
+        item_data = index.data(Qt.UserRole)
+        if item_data is not None and isinstance(item_data, tuple):
+            memo_extra, security = item_data
+            print('Click on memo item: %s - %s' % (memo_extra.title_text(), security))
 
     def __update_memo_securities_list(self, securities: [str]):
         columns = self.__memo_table_columns()
@@ -872,8 +873,8 @@ class StockMemo(QWidget):
         self.__memo_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
         for security in securities:
-            self.__memo_table.AppendRow(['' for _ in len(columns)])
-            row_count = self.__memo_table.rowCount()
+            self.__memo_table.AppendRow([''] * len(columns))
+            row_count = self.__memo_table.RowCount()
             row = row_count - 1
             col = 0
             
@@ -885,10 +886,13 @@ class StockMemo(QWidget):
                 text = memo_extra.security_entry_text(security)
             
                 self.__memo_table.SetItemText(row, col, text)
-                self.__memo_table.SetItemData(row, col, memo_extra)
+                self.__memo_table.SetItemData(row, col, (memo_extra, security))
                 
-                _item = self.__memo_table.GetItem(row, col)
-                _item.clicked.connect(partial(self.__on_memo_item_clicked, _item, security, memo_extra))
+                # _item = self.__memo_table.GetItem(row, col)
+                # _item.clicked.connect(partial(self.__on_memo_item_clicked, _item, security, memo_extra))
+
+    def __memo_table_columns(self) -> [str]:
+        return StockMemo.STATIC_HEADER + [memo_extra.title_text() for memo_extra in self.__memo_extras]
 
 
 # ----------------------------------------------------------------------------------------------------------------------
