@@ -24,6 +24,8 @@ from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 from StockAnalysisSystem.core.Utiltity.securities_selector import SecuritiesSelector
 
 
+# -------------------------------------------------- Global Functions --------------------------------------------------
+
 def memo_path_from_user_path(user_path: str) -> str:
     memo_path = os.path.join(user_path, 'StockAnalysisSystem')
     try:
@@ -45,6 +47,8 @@ def memo_path_from_project_path(project_path: str) -> str:
     finally:
         return memo_path
 
+
+# ---------------------------------------------------- Class Record ----------------------------------------------------
 
 class Record:
     def __init__(self, record_path: str, record_columns: [str], must_columns: [str] or None = None):
@@ -153,6 +157,34 @@ class Record:
         return isinstance(_time, datetime.datetime) and isinstance(brief, str) and isinstance(content, str)
 
 
+# ------------------------------------------------ class StockMemoData -------------------------------------------------
+
+class StockMemoData:
+    def __init__(self, sas:StockAnalysisSystem):
+        self.__sas = sas
+        self.__extra_data = {}
+
+        user_path = os.path.expanduser('~')
+        project_path = self.__sas.get_project_path() if self.__sas is not None else os.getcwd()
+
+        self.__root_path = \
+            memo_path_from_project_path(project_path) if user_path == '' else \
+            memo_path_from_user_path(user_path)
+        self.__memo_record = Record(os.path.join(self.__root_path, 'stock_memo.csv'), STOCK_MEMO_COLUMNS)
+
+    def get_sas(self) -> StockAnalysisSystem:
+        return self.__sas
+
+    def get_memo_record(self) -> Record:
+        return self.__memo_record
+
+    def set_data(self, name: str, _data: any):
+        self.__extra_data[name] = _data
+
+    def get_data(self, name: str) -> any:
+        return self.__extra_data.get(name, None)
+
+
 # class RecordSet:
 #     def __init__(self, record_root: str):
 #         self.__record_root = record_root
@@ -189,19 +221,22 @@ class Record:
 #         return records
 
 
+# ----------------------------------------------- class StockMemoEditor ------------------------------------------------
+
 STOCK_MEMO_COLUMNS = ['time', 'security', 'brief', 'content', 'classify']
 
 
 class StockMemoEditor(QDialog):
-    def __init__(self, sas: StockAnalysisSystem, memo_record: Record, parent: QWidget = None):
+    def __init__(self, memo_data: StockMemoData, parent: QWidget = None):
+        self.__memo_data = memo_data
         super(StockMemoEditor, self).__init__(parent)
-
-        self.__sas = sas
-        self.__memo_record = memo_record
 
         self.__current_stock = None
         self.__current_index = None
         self.__current_select = None
+
+        self.__sas = self.__memo_data.get_sas() if self.__memo_data is not None else None
+        self.__memo_record = self.__memo_data.get_memo_record() if self.__memo_data is not None else None
 
         data_utility = self.__sas.get_data_hub_entry().get_data_utility() if self.__sas is not None else None
         self.__combo_stock = SecuritiesSelector(data_utility)
@@ -412,6 +447,9 @@ class StockMemoEditor(QDialog):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------ class StockHistoryUi ------------------------------------------------
+# ---------------------------------------------  The Candle Stick Interface --------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 class StockHistoryUi(QWidget):
     ADJUST_TAIL = 0
@@ -421,27 +459,30 @@ class StockHistoryUi(QWidget):
     RETURN_LOG = 3
     RETURN_SIMPLE = 4
 
-    def __init__(self, sas: StockAnalysisSystem):
+    def __init__(self, memo_data: StockMemoData):
+        self.__memo_data = memo_data
         super(StockHistoryUi, self).__init__()
 
-        self.__sas = sas
+        self.__sas = memo_data.get_sas()
+        self.__memo_record = memo_data.get_memo_record()
+
         self.__paint_securities = ''
         self.__paint_trade_data = None
 
-        # Record
-        user_path = os.path.expanduser('~')
-        project_path = sas.get_project_path() if sas is not None else os.getcwd()
-
-        self.__root_path = \
-            memo_path_from_project_path(project_path) if user_path == '' else \
-            memo_path_from_user_path(user_path)
-        self.__memo_record = Record(os.path.join(self.__root_path, 'stock_memo.csv'), STOCK_MEMO_COLUMNS)
+        # # Record
+        # user_path = os.path.expanduser('~')
+        # project_path = sas.get_project_path() if sas is not None else os.getcwd()
+        #
+        # self.__root_path = \
+        #     memo_path_from_project_path(project_path) if user_path == '' else \
+        #     memo_path_from_user_path(user_path)
+        # self.__memo_record = Record(os.path.join(self.__root_path, 'stock_memo.csv'), STOCK_MEMO_COLUMNS)
 
         # vnpy chart
         self.__vnpy_chart = ChartWidget()
 
         # Memo editor
-        self.__memo_editor = StockMemoEditor(self.__sas, self.__memo_recordset)
+        self.__memo_editor = StockMemoEditor(self.__memo_data)
 
         # Timer for workaround signal fired twice
         self.__accepted = False
@@ -562,7 +603,14 @@ class StockHistoryUi(QWidget):
         input_securities = self.__combo_name.currentText()
         if '|' in input_securities:
             input_securities = input_securities.split('|')[0].strip()
+        self.show_security(input_securities)
 
+
+    def on_editor_closed(self, event):
+        self.load_security_memo()
+        self.__vnpy_chart.refresh_history()
+
+    def show_security(self, security: str):
         if self.__radio_adj_tail.isChecked():
             adjust_method = StockHistoryUi.ADJUST_TAIL
         elif self.__radio_adj_head.isChecked():
@@ -579,7 +627,7 @@ class StockHistoryUi(QWidget):
         else:
             return_style = StockHistoryUi.RETURN_SIMPLE
 
-        if not self.load_security_data(input_securities, adjust_method, return_style):
+        if not self.load_security_data(security, adjust_method, return_style):
             QMessageBox.information(self,
                                     QtCore.QCoreApplication.translate('History', '没有数据'),
                                     QtCore.QCoreApplication.translate('History', '没有交易数据，请检查证券编码或更新本地数据'),
@@ -587,10 +635,6 @@ class StockHistoryUi(QWidget):
         else:
             self.load_security_memo()
             self.__vnpy_chart.refresh_history()
-
-    def on_editor_closed(self, event):
-        self.load_security_memo()
-        self.__vnpy_chart.refresh_history()
 
     def popup_memo_editor(self, ix: float):
         bar_data = self.__vnpy_chart.get_bar_manager().get_bar(ix)
@@ -733,12 +777,15 @@ class StockHistoryUi(QWidget):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-
+# ------------------------------------------------------ Main UI -------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 NOTE = '''Stock Memo说明
 1.Stock Memo相关的数据作为个人数据默认保存到系统用户目录下，更新程序不会破坏数据
 2.如果用户自己指定保存目录，请手动复制已存在的文件到新目录下'''
 
+
+# ------------------------------------------------ Memo Extra Interface ------------------------------------------------
 
 class MemoExtra:
     def __init__(self):
@@ -781,13 +828,16 @@ class DummyMemoExtra(MemoExtra):
         return self.__title_text + ': ' + security
 
 
+# -------------------------------------------------- class StockMemo ---------------------------------------------------
+
 class StockMemo(QWidget):
     STATIC_HEADER = ['Security']
 
-    def __init__(self, sas: StockAnalysisSystem):
+    def __init__(self, memo_data: StockMemoData):
         super(StockMemo, self).__init__()
+        self.__memo_data = memo_data
 
-        self.__sas = sas
+        self.__sas = self.__memo_data.get_sas()
         self.__data_utility = self.__sas.get_data_hub_entry().get_data_utility() if self.__sas is not None else None
 
         self.__memo_extras = []
@@ -895,6 +945,66 @@ class StockMemo(QWidget):
         return StockMemo.STATIC_HEADER + [memo_extra.title_text() for memo_extra in self.__memo_extras]
 
 
+# ---------------------------------------------------- Memo Extras -----------------------------------------------------
+
+# --------------------------------- Editor ---------------------------------
+
+class MemoExtra_MemoContent(MemoExtra):
+    def __init__(self, memo_data: StockMemoData):
+        self.__memo_data = memo_data
+        self.__memo_editor = StockMemoEditor(self.__memo_data)
+        self.__memo_record = self.__memo_data.get_memo_record() if self.__memo_data is not None else None
+        super(MemoExtra_MemoContent, self).__init__()
+
+    def enter_global(self):
+        pass
+
+    def enter_security(self, security: str):
+        self.__memo_editor.select_stock(security)
+        self.__memo_editor.exec()
+
+    def title_text(self) -> str:
+        return 'Memo'
+
+    def global_entry_text(self) -> str:
+        return ''
+
+    def security_entry_text(self, security: str) -> str:
+        if self.__memo_record is None:
+            return '-'
+        df = self.__memo_record.get_records({'security': security})
+        if df is not None and not df.empty:
+            df.sort_values('time')
+            text = df.iloc[-1]['content']
+            return text
+        return ''
+
+
+# --------------------------------- History ---------------------------------
+
+class MemoExtra_MemoHistory(MemoExtra):
+    def __init__(self, memo_data: StockMemoData):
+        self.__memo_data = memo_data
+        self.__memo_history = StockHistoryUi(self.__memo_data)
+        super(MemoExtra_MemoHistory, self).__init__()
+
+    def enter_global(self):
+        pass
+
+    def enter_security(self, security: str):
+        self.__memo_history.show_security(security)
+        self.__memo_history.setVisible(True)
+
+    def title_text(self) -> str:
+        return 'Memo'
+
+    def global_entry_text(self) -> str:
+        return ''
+
+    def security_entry_text(self, security: str) -> str:
+        return 'Chart'
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 def plugin_prob() -> dict:
@@ -919,12 +1029,15 @@ def plugin_capacities() -> list:
 # ----------------------------------------------------------------------------------------------------------------------
 
 sasEntry = None
+memoData = None
 
 
 def init(sas: StockAnalysisSystem) -> bool:
     try:
         global sasEntry
         sasEntry = sas
+        global memoData
+        memoData = StockMemoData(sasEntry)
     except Exception as e:
         print(e)
         return False
@@ -934,7 +1047,10 @@ def init(sas: StockAnalysisSystem) -> bool:
 
 
 def widget(parent: QWidget) -> (QWidget, dict):
-    return StockHistoryUi(sasEntry), {'name': '股票笔记', 'show': False}
+    memo_ui = StockMemo(memoData)
+    memo_ui.add_memo_extra(MemoExtra_MemoContent(memoData))
+    memo_ui.add_memo_extra(MemoExtra_MemoHistory(memoData))
+    return memo_ui, {'name': '股票笔记', 'show': False}
 
 
 # ------------------------------------------------ File Entry : main() -------------------------------------------------
