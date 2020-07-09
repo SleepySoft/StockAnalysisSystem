@@ -27,7 +27,9 @@ class SecuritiesSelector(QComboBox):
             self.__timer.stop()
 
     def select_security(self, security: str, linkage: bool):
-        pass
+        for index in range(self.count()):
+            # TODO:
+            assert False
 
     def get_input_securities(self) -> str:
         input_securities = self.currentText()
