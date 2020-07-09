@@ -26,6 +26,9 @@ class SecuritiesSelector(QComboBox):
                 self.addItem(stock_identity + ' | ' + stock_name, stock_identity)
             self.__timer.stop()
 
+    def select_security(self, security: str, linkage: bool):
+        pass
+
     def get_input_securities(self) -> str:
         input_securities = self.currentText()
         if '|' in input_securities:

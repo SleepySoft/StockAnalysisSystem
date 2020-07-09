@@ -255,9 +255,22 @@ class StockMemoEditor(QDialog):
         self.__memo_data = memo_data
         super(StockMemoEditor, self).__init__(parent)
 
+        # The filter of left list
+        # self.__filter_identity: str = ''
+        # self.__filter_datetime: datetime.datetime = None
+
+        # The stock that selected by combobox or outer setting
         self.__current_stock = None
+
+        # The current index of editing memo
+        # Not None: Update exists
+        # None: Create new
         self.__current_index = None
-        self.__current_select = None
+
+        # The memo list that displaying in the left list
+        self.__current_memos: pd.DataFrame = None
+
+        # self.__current_slice = None
 
         self.__sas = self.__memo_data.get_sas() if self.__memo_data is not None else None
         self.__memo_record = self.__memo_data.get_memo_record() if self.__memo_data is not None else None
@@ -321,7 +334,7 @@ class StockMemoEditor(QDialog):
         # )
 
     def on_button_new(self):
-        if self.__current_stock is None:
+        if not str_available(self.__current_stock):
             QMessageBox.information(self, '错误', '请选择需要做笔记的股票', QMessageBox.Ok, QMessageBox.Ok)
         self.create_new_memo(None)
         
@@ -339,26 +352,30 @@ class StockMemoEditor(QDialog):
         if self.__current_index is not None:
             ret = self.__memo_record.update_record({
                 'time': _time,
-                'security': self.__current_stock,
                 'brief': brief,
                 'content': content,
                 'classify': 'memo',
             }, True)
         else:
-            ret, index = self.__memo_record.add_record({
-                'time': _time,
-                'security': self.__current_stock,
-                'brief': brief,
-                'content': content,
-                'classify': 'memo',
-            }, True)
-            self.__current_index = index
+            if str_available(self.__current_stock):
+                ret, index = self.__memo_record.add_record({
+                    'time': _time,
+                    'security': self.__current_stock,
+                    'brief': brief,
+                    'content': content,
+                    'classify': 'memo',
+                }, True)
+                self.__current_index = index
+            else:
+                ret = False
+                QMessageBox.information(self, '错误', '没有选择做笔记的股票', QMessageBox.Ok, QMessageBox.Ok)
         if ret:
             self.__reload_stock_memo()
 
     def on_combo_select_changed(self):
         input_securities = self.__combo_stock.get_input_securities()
-        self.__load_stock_memo(input_securities)
+        if input_securities != self.__current_stock:
+            self.__load_stock_memo(input_securities)
 
     def on_table_selection_changed(self):
         sel_index = self.__table_memo_index.GetCurrentIndex()
@@ -370,15 +387,106 @@ class StockMemoEditor(QDialog):
         df_index = sel_item.data(Qt.UserRole)
         self.__load_memo_by_index(df_index)
 
-    def select_stock(self, stock_identity: str):
-        index = self.__combo_stock.findData(stock_identity)
-        if index != -1:
-            print('Select combox index: %s' % index)
-            self.__combo_stock.setCurrentIndex(index)
+    # ----------------------------------- Select and Load Logic -----------------------------------
+
+    def select_security(self, security: str):
+        pass
+
+    def select_memo_index(self, index: int):
+        pass
+
+    def on_select_security(self, security: str):
+        condition = {'classify': 'memo'}
+        if str_available(security):
+            condition['security'] = security
+        df = self.__memo_record.get_records({'classify': 'memo'})
+
+        self.__current_memos = df
+        self.__current_stock = security
+
+        self.update_memo_list()
+
+    def update_memo_list(self):
+        self.__table_memo_index.clear()
+        self.__table_memo_index.setRowCount(0)
+        self.__table_memo_index.setHorizontalHeaderLabels(['时间', '摘要'])
+
+        select_index = -1
+        for index, row in self.__current_memos:
+            row_index = self.__table_memo_index.rowCount()
+            self.__table_memo_index.AppendRow([datetime2text(row['time']), row['brief']], index)
+            self.__table_memo_index.item(row_index, 0).setData(Qt.UserRole, index)
+            if self.__current_index is None and index == self.__current_index:
+                select_index = row_index
+        self.select_memo_by_list_index(select_index)
+
+    def select_memo_by_memo_index(self, memo_index: int):
+        for row in range(0, self.__table_memo_index.rowCount()):
+            row_memo_index = self.__table_memo_index.item(row, 0).data(Qt.UserRole)
+            if row_memo_index == memo_index:
+                self.select_memo_by_list_index.selectRow(row)
+                break
+
+    def select_memo_by_list_index(self, list_index: int):
+        if list_index >= 0:
+            self.__table_memo_index.selectRow(list_index)
+            self.__table_memo_index.scrollToItem(self.__table_memo_index.item(list_index, 0))
         else:
-            print('No index in combox for %s' % stock_identity)
-            self.__combo_stock.setCurrentIndex(-1)
-            self.__load_stock_memo(stock_identity)
+            self.__table_memo_index.clearSelection()
+
+    # -------------------------------------------------------------------------
+
+    def create_new_memo(self, _time: datetime.datetime):
+        self.__table_memo_index.clearSelection()
+        if _time is not None:
+            self.__datetime_time.setDateTime(_time)
+        self.__line_brief.setText('')
+        self.__text_record.setText('')
+        self.__current_index = None
+
+    def load_edit_memo(self, index: int):
+        """
+        The index should exist in left memo list
+        :param index:
+        :return:
+        """
+        df = self.__current_memos
+        if df is None or df.empty:
+            self.create_new_memo()
+            return
+
+        s = df.loc[index]
+        if len(s) == 0:
+            self.create_new_memo()
+            return
+
+        self.__current_index = index
+
+        _time = s['time']
+        brief = s['brief']
+        content = s['content']
+
+        self.__datetime_time.setDateTime(to_py_datetime(_time))
+        self.__line_brief.setText(brief)
+        self.__text_record.setText(content)
+
+    # def update_memo_content(self, index: int):
+    #     for row in range(0, self.__table_memo_index.rowCount()):
+    #         table_item = self.__table_memo_index.item(row, 0)
+    #         row_index = table_item.data(Qt.UserRole)
+    #         if row_index == index:
+    #             self.__table_memo_index.selectRow(row)
+    #             break
+
+    # def select_stock(self, stock_identity: str):
+    #     index = self.__combo_stock.findData(stock_identity)
+    #     if index != -1:
+    #         print('Select combox index: %s' % index)
+    #         self.__combo_stock.setCurrentIndex(index)
+    #     else:
+    #         print('No index in combox for %s' % stock_identity)
+    #         self.__combo_stock.setCurrentIndex(-1)
+    #         self.__load_stock_memo(stock_identity)
 
     def select_memo_by_time(self, _time: datetime.datetime):
         if self.__current_record is None or self.__current_record.is_empty():
@@ -399,21 +507,13 @@ class StockMemoEditor(QDialog):
         else:
             self.create_new_memo(_time)
 
-    def select_memo_by_index(self, index: int):
-        for row in range(0, self.__table_memo_index.rowCount()):
-            table_item = self.__table_memo_index.item(row, 0)
-            row_index = table_item.data(Qt.UserRole)
-            if row_index == index:
-                self.__table_memo_index.selectRow(row)
-                break
-
-    def create_new_memo(self, _time: datetime.datetime):
-        self.__table_memo_index.clearSelection()
-        if _time is not None:
-            self.__datetime_time.setDateTime(_time)
-        self.__line_brief.setText('')
-        self.__text_record.setText('')
-        self.__current_index = None
+    # def select_memo_by_index(self, index: int):
+    #     for row in range(0, self.__table_memo_index.rowCount()):
+    #         table_item = self.__table_memo_index.item(row, 0)
+    #         row_index = table_item.data(Qt.UserRole)
+    #         if row_index == index:
+    #             self.__table_memo_index.selectRow(row)
+    #             break
 
     # -------------------------------------------------------------------
 
