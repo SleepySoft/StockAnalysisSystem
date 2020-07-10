@@ -254,6 +254,15 @@ class StockMemoData:
 # ----------------------------------------------- class StockMemoEditor ------------------------------------------------
 
 class StockMemoEditor(QDialog):
+    LIST_HEADER = ['Time', 'Content']
+
+    class Observer:
+        def __init__(self):
+            pass
+
+        def on_memo_updated(self):
+            pass
+
     def __init__(self, memo_data: StockMemoData, parent: QWidget = None):
         self.__memo_data = memo_data
         super(StockMemoEditor, self).__init__(parent)
@@ -273,7 +282,7 @@ class StockMemoEditor(QDialog):
         # The memo list that displaying in the left list
         self.__current_memos: pd.DataFrame = None
 
-        # self.__current_slice = None
+        self.__observers = []
 
         self.__sas = self.__memo_data.get_sas() if self.__memo_data is not None else None
         self.__memo_record = self.__memo_data.get_memo_record() if self.__memo_data is not None else None
@@ -286,8 +295,8 @@ class StockMemoEditor(QDialog):
         self.__line_brief = QLineEdit()
         self.__text_record = QTextEdit()
 
-        self.__button_new = QPushButton('新建')
-        self.__button_apply = QPushButton('保存')
+        self.__button_new = QPushButton('New')
+        self.__button_apply = QPushButton('Save')
 
         self.init_ui()
         self.config_ui()
@@ -302,8 +311,9 @@ class StockMemoEditor(QDialog):
         root_layout.addWidget(group_box, 4)
 
         group_box, group_layout = create_v_group_box('')
-        group_layout.addLayout(horizon_layout([QLabel('时间：'), self.__datetime_time, self.__button_new], [1, 99, 1]))
-        group_layout.addLayout(horizon_layout([QLabel('摘要：'), self.__line_brief], [1, 99]))
+        group_layout.addLayout(horizon_layout([QLabel('Time：'), self.__datetime_time, self.__button_new], [1, 99, 1]))
+        group_layout.addLayout(horizon_layout([QLabel('Brief：'), self.__line_brief], [1, 99]))
+        group_layout.addLayout(horizon_layout([QLabel('Content：'), QLabel('')], [1, 99]))
         group_layout.addWidget(self.__text_record)
         group_layout.addLayout(horizon_layout([QLabel(''), self.__button_apply], [99, 1]))
         root_layout.addWidget(group_box, 6)
@@ -319,7 +329,7 @@ class StockMemoEditor(QDialog):
 
         self.__table_memo_index.insertColumn(0)
         self.__table_memo_index.insertColumn(0)
-        self.__table_memo_index.setHorizontalHeaderLabels(['时间', '摘要'])
+        self.__table_memo_index.setHorizontalHeaderLabels(StockMemoEditor.LIST_HEADER)
         self.__table_memo_index.setSelectionMode(QAbstractItemView.SingleSelection)
         self.__table_memo_index.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.__table_memo_index.itemSelectionChanged.connect(self.on_table_selection_changed)
@@ -340,6 +350,7 @@ class StockMemoEditor(QDialog):
         if not str_available(self.__current_stock):
             QMessageBox.information(self, '错误', '请选择需要做笔记的股票', QMessageBox.Ok, QMessageBox.Ok)
         self.create_new_memo(None)
+        self.__trigger_memo_updated()
         
     # ['time', 'security', 'brief', 'content', 'classify']
 
@@ -379,6 +390,7 @@ class StockMemoEditor(QDialog):
                 self.select_memo_by_memo_index(self.__current_index)
             else:
                 self.select_memo_by_list_index(0)
+        self.__trigger_memo_updated()
 
     def on_combo_select_changed(self):
         input_securities = self.__combo_stock.get_input_securities()
@@ -394,6 +406,15 @@ class StockMemoEditor(QDialog):
             return
         df_index = sel_item.data(Qt.UserRole)
         self.load_edit_memo(df_index)
+
+    # --------------------------------------------------------------------------------------------
+
+    def add_observer(self, ob: Observer):
+        self.__observers.append(ob)
+        
+    def __trigger_memo_updated(self):
+        for ob in self.__observers:
+            ob.on_memo_updated()
 
     # ------------------------------------- Select Functions -------------------------------------
     #                     Will update UI control, which will trigger the linkage
@@ -451,11 +472,11 @@ class StockMemoEditor(QDialog):
     def update_memo_list(self):
         self.__table_memo_index.clear()
         self.__table_memo_index.setRowCount(0)
-        self.__table_memo_index.setHorizontalHeaderLabels(['时间', '摘要'])
+        self.__table_memo_index.setHorizontalHeaderLabels(StockMemoEditor.LIST_HEADER)
 
         for index, row in self.__current_memos.iterrows():
             row_index = self.__table_memo_index.rowCount()
-            self.__table_memo_index.AppendRow([datetime2text(row['time']), row['brief']], index)
+            self.__table_memo_index.AppendRow([datetime2text(row['time']), row['content']], index)
             self.__table_memo_index.item(row_index, 0).setData(Qt.UserRole, index)
 
     def create_new_memo(self, _time: datetime.datetime):
@@ -603,7 +624,7 @@ class StockHistoryUi(QWidget):
         super(StockHistoryUi, self).__init__()
 
         self.__sas = memo_data.get_sas()
-        self.__memo_record = memo_data.get_memo_record()
+        self.__memo_record: StockMemoRecord = memo_data.get_memo_record()
 
         self.__paint_securities = ''
         self.__paint_trade_data = None
@@ -622,6 +643,7 @@ class StockHistoryUi(QWidget):
 
         # Memo editor
         self.__memo_editor: StockMemoEditor = self.__memo_data.get_data('editor')
+        self.__memo_editor.add_observer(self)
 
         # Timer for workaround signal fired twice
         self.__accepted = False
@@ -744,10 +766,13 @@ class StockHistoryUi(QWidget):
             input_securities = input_securities.split('|')[0].strip()
         self.show_security(input_securities)
 
-    def on_editor_closed(self, event):
-        pass
-        # self.load_security_memo()
-        # self.__vnpy_chart.refresh_history()
+    # ------------------- Interface of StockMemoEditor.Observer ------------------
+
+    def on_memo_updated(self):
+        self.load_security_memo()
+        self.__vnpy_chart.refresh_history()
+
+    # ----------------------------------------------------------------------------
 
     def show_security(self, security: str):
         if self.__radio_adj_tail.isChecked():
@@ -843,16 +868,16 @@ class StockHistoryUi(QWidget):
         return True
 
     def load_security_memo(self) -> bool:
-        self.__combo_name.select_security(self.__paint_securities)
+        self.__combo_name.select_security(self.__paint_securities, True)
 
-        memo_record = self.__memo_recordset.get_record(self.__paint_securities)
+        memo_record = self.__memo_record.get_stock_memos(self.__paint_securities)
         bar_manager = self.__vnpy_chart.get_bar_manager()
 
         if memo_record is None or bar_manager is None:
             return False
 
         try:
-            memo_df = memo_record.get_records().copy()
+            memo_df = memo_record.copy()
             memo_df['normalised_time'] = memo_df['time'].dt.normalize()
             memo_df_grouped = memo_df.groupby('normalised_time')
         except Exception as e:
@@ -980,9 +1005,11 @@ class StockMemo(QWidget):
         self.__sas = self.__memo_data.get_sas()
         self.__memo_record: StockMemoRecord = self.__memo_data.get_memo_record()
         self.__memo_editor: StockMemoEditor = self.__memo_data.get_data('editor')
+        self.__memo_editor.add_observer(self)
         self.__data_utility = self.__sas.get_data_hub_entry().get_data_utility() if self.__sas is not None else None
 
         self.__memo_extras = []
+        self.__list_securities = self.__memo_record.get_all_security()
 
         # --------------- Widgets ---------------
 
@@ -992,6 +1019,7 @@ class StockMemo(QWidget):
         self.__line_path = QLineEdit(self.__memo_data.get_root_path())
         self.__info_panel = QLabel(NOTE)
         self.__button_new = QPushButton('New')
+        self.__button_filter = QPushButton('Filter')
         self.__button_browse = QPushButton('Browse')
         self.__button_black_list = QPushButton('Black List')
 
@@ -1011,8 +1039,8 @@ class StockMemo(QWidget):
         group_layout.addWidget(self.__info_panel, 3)
         group_layout.addLayout(right_area, 7)
 
-        line = horizon_layout([QLabel('股票选择：'), self.__stock_selector, self.__button_new],
-                              [1, 10, 1])
+        line = horizon_layout([QLabel('股票选择：'), self.__stock_selector, self.__button_new, self.__button_filter],
+                              [1, 10, 1, 1])
         right_area.addLayout(line)
 
         line = horizon_layout([QLabel('保存路径：'), self.__line_path, self.__button_browse],
@@ -1032,18 +1060,25 @@ class StockMemo(QWidget):
         self.__memo_table.SetColumn(self.__memo_table_columns())
         self.__memo_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.__memo_table.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.__memo_table.etEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.__memo_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.__memo_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.__memo_table.doubleClicked.connect(self.__on_memo_item_double_clicked)
 
         self.__button_new.clicked.connect(self.__on_button_new_clicked)
+        self.__button_filter.clicked.connect(self.__on_button_filter_clicked)
 
     def add_memo_extra(self, extra: MemoExtra):
         self.__memo_extras.append(extra)
 
     def update_list(self):
-        securities = self.__memo_record.get_all_security()
-        self.__update_memo_securities_list(securities)
+        list_securities = [self.__list_securities] \
+            if isinstance(self.__list_securities, str) else self.__list_securities
+        self.__update_memo_securities_list(list_securities)
+
+    # ------------------- Interface of StockMemoEditor.Observer ------------------
+
+    def on_memo_updated(self):
+        self.update_list()
 
     # ----------------------------------------------------------------------------
 
@@ -1052,6 +1087,10 @@ class StockMemo(QWidget):
         self.__memo_editor.select_security(security)
         self.__memo_editor.create_new_memo(now())
         self.__memo_editor.exec()
+
+    def __on_button_filter_clicked(self):
+        self.__list_securities = self.__stock_selector.get_input_securities()
+        self.update_list()
 
     def __on_memo_item_double_clicked(self, index: QModelIndex):
         item_data = index.data(Qt.UserRole)
@@ -1109,7 +1148,7 @@ class MemoExtra_MemoContent(MemoExtra):
     def enter_security(self, security: str):
         if self.__memo_editor is not None:
             self.__memo_editor.select_security(security)
-            self.__memo_editor.select_memo_by_memo_index(0)
+            self.__memo_editor.select_memo_by_list_index(0)
             self.__memo_editor.exec()
 
     def title_text(self) -> str:
@@ -1145,13 +1184,13 @@ class MemoExtra_MemoHistory(MemoExtra):
         self.__memo_history.setVisible(True)
 
     def title_text(self) -> str:
-        return 'Memo'
+        return 'Chart'
 
     def global_entry_text(self) -> str:
         return ''
 
     def security_entry_text(self, security: str) -> str:
-        return 'Chart'
+        return 'View'
 
 
 # ----------------------------------------------------------------------------------------------------------------------
