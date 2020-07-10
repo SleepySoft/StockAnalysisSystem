@@ -90,7 +90,10 @@ class Record:
         if conditions is None or len(conditions) == 0:
             return self.__record_sheet
         df = self.__record_sheet
-        return df[np.logical_and.reduce([df[k] == v for k, v in conditions.items()])]
+        # https://stackoverflow.com/a/40125748/12929244
+        mask = pd.concat([df[k].eq(v) for k, v in conditions.items()], axis=1).all(axis=1)
+        return df[mask]
+        # return df[np.logical_and.reduce([df[k] == v for k, v in conditions.items()])]
 
     def del_records(self, idx: int or [int]):
         self.__record_sheet.drop(idx)
@@ -618,7 +621,7 @@ class StockHistoryUi(QWidget):
         self.__vnpy_chart = ChartWidget()
 
         # Memo editor
-        self.__memo_editor = self.__memo_data.get_data('editor')
+        self.__memo_editor: StockMemoEditor = self.__memo_data.get_data('editor')
 
         # Timer for workaround signal fired twice
         self.__accepted = False
@@ -695,7 +698,7 @@ class StockHistoryUi(QWidget):
 
         # --------------------- Editor ----------------------
 
-        self.__memo_editor.closeEvent = self.on_editor_closed
+        # self.__memo_editor.closeEvent = self.on_editor_closed
 
         # ---------------------- Chart ----------------------
 
@@ -781,7 +784,8 @@ class StockHistoryUi(QWidget):
             self.popup_memo_editor_by_time(now())
 
     def popup_memo_editor_by_time(self, _time: datetime):
-        self.__memo_editor.select_memo_by_time(_time)
+        self.__memo_editor.select_security(self.__paint_securities)
+        self.__memo_editor.select_memo_by_day(_time)
         # self.__memo_editor.show()
         self.__memo_editor.exec()
 
@@ -839,7 +843,7 @@ class StockHistoryUi(QWidget):
         return True
 
     def load_security_memo(self) -> bool:
-        self.__memo_editor.select_stock(self.__paint_securities)
+        self.__combo_name.select_security(self.__paint_securities)
 
         memo_record = self.__memo_recordset.get_record(self.__paint_securities)
         bar_manager = self.__vnpy_chart.get_bar_manager()
@@ -1026,6 +1030,9 @@ class StockMemo(QWidget):
         self.__info_panel.setWordWrap(True)
 
         self.__memo_table.SetColumn(self.__memo_table_columns())
+        self.__memo_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.__memo_table.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.__memo_table.etEditTriggers(QAbstractItemView.NoEditTriggers)
         self.__memo_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.__memo_table.doubleClicked.connect(self.__on_memo_item_double_clicked)
 
@@ -1102,6 +1109,7 @@ class MemoExtra_MemoContent(MemoExtra):
     def enter_security(self, security: str):
         if self.__memo_editor is not None:
             self.__memo_editor.select_security(security)
+            self.__memo_editor.select_memo_by_memo_index(0)
             self.__memo_editor.exec()
 
     def title_text(self) -> str:
