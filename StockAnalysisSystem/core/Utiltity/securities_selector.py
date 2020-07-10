@@ -28,8 +28,10 @@ class SecuritiesSelector(QComboBox):
 
     def select_security(self, security: str, linkage: bool):
         for index in range(self.count()):
-            # TODO:
-            assert False
+            stock_identity = self.itemData(index)
+            if stock_identity == security:
+                self.setCurrentIndex(index)
+                break
 
     def get_input_securities(self) -> str:
         input_securities = self.currentText()
