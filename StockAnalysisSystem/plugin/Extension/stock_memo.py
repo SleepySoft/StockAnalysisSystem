@@ -17,6 +17,7 @@ from pyqtgraph.GraphicsScene.mouseEvents import MouseClickEvent
 from StockAnalysisSystem.core.config import *
 from StockAnalysisSystem.porting.vnpy_chart import *
 from StockAnalysisSystem.core.Utiltity.common import *
+from StockAnalysisSystem.core.Utiltity.TagsLib import *
 from StockAnalysisSystem.core.Utiltity.CsvRecord import *
 from StockAnalysisSystem.core.Utiltity.df_utility import *
 from StockAnalysisSystem.core.Utiltity.ui_utility import *
@@ -1098,6 +1099,44 @@ class MemoExtra_MemoHistory(MemoExtra):
         return 'View'
 
 
+# ---------------------------------- Tags ----------------------------------
+
+class MemoExtra_StockTags(MemoExtra):
+    def __init__(self, memo_data: StockMemoData):
+        self.__memo_data = memo_data
+        super(MemoExtra_StockTags, self).__init__()
+        self.__stock_tags: Tags = self.__memo_data.get_data('tags')
+        self.__stock_tags_ui: TagsUi = TagsUi(self.__stock_tags)
+        self.__stock_tags_ui.on_ensure(self.__on_tags_ui_ensure)
+        self.__current_stock = ''
+
+    def __on_tags_ui_ensure(self):
+        tags = self.__stock_tags_ui.get_selected_tags()
+        self.__stock_tags_ui.close()
+        self.__stock_tags.set_obj_tags(self.__current_stock, tags)
+        self.__stock_tags.save()
+
+    def enter_global(self):
+        pass
+
+    def enter_security(self, security: str):
+        tags = self.__stock_tags.tags_of_objs(security)
+        self.__stock_tags_ui.reload_tags()
+        self.__stock_tags_ui.select_tags(tags)
+        self.__stock_tags_ui.setVisible(True)
+        self.__current_stock = security
+
+    def title_text(self) -> str:
+        return 'Tags'
+
+    def global_entry_text(self) -> str:
+        return ''
+
+    def security_entry_text(self, security: str) -> str:
+        tags = self.__stock_tags.tags_of_objs(security)
+        return Tags.tags_to_str(tags)
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 def plugin_prob() -> dict:
@@ -1122,7 +1161,7 @@ def plugin_capacities() -> list:
 # ----------------------------------------------------------------------------------------------------------------------
 
 sasEntry = None
-memoData = None
+memoData: StockMemoData = None
 
 
 def init(sas: StockAnalysisSystem) -> bool:
@@ -1141,11 +1180,15 @@ def init(sas: StockAnalysisSystem) -> bool:
 
 def widget(parent: QWidget) -> (QWidget, dict):
     global memoData
+    memoData.set_data('tags', Tags(os.path.join(memoData.get_root_path(), 'tags.json')))
     memoData.set_data('editor', StockMemoEditor(memoData))
+
     memo_ui = StockMemo(memoData)
     memo_ui.add_memo_extra(MemoExtra_MemoContent(memoData))
     memo_ui.add_memo_extra(MemoExtra_MemoHistory(memoData))
+    memo_ui.add_memo_extra(MemoExtra_StockTags(memoData))
     memo_ui.update_list()
+
     return memo_ui, {'name': '股票笔记', 'show': False}
 
 
