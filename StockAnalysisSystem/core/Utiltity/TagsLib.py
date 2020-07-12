@@ -3,9 +3,10 @@ import sys
 import json
 import traceback
 
-
 root_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
+
+# ----------------------------------------------------- class Tags -----------------------------------------------------
 
 class Tags:
     def __init__(self, record_path: str):
@@ -118,11 +119,103 @@ class Tags:
 
     @staticmethod
     def tags_to_str(tags: str or [str]) -> str:
-        pass
+        return '; '.join(tags)
 
     @staticmethod
     def str_to_tags(text: str) -> [str]:
-        pass
+        return [tag.strip() for tag in text.split(';')]
+
+
+# ----------------------------------------------------- class Tags -----------------------------------------------------
+
+from PyQt5 import QtCore, QtGui
+from PyQt5.QtCore import QTimer, QDateTime, QPoint, pyqtSlot
+from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import QButtonGroup, QDateTimeEdit, QApplication, QLabel, QTextEdit, QPushButton, QVBoxLayout, \
+    QMessageBox, QWidget, QComboBox, QCheckBox, QRadioButton, QLineEdit, QAbstractItemView, QScrollArea
+
+from StockAnalysisSystem.core.Utiltity.ui_utility import *
+from StockAnalysisSystem.core.Utiltity.FlowLayout import FlowLayout
+
+
+class TagsUi(QScrollArea):
+    def __init__(self, tags: Tags):
+        self.__tags = tags
+        super(TagsUi, self).__init__()
+
+        self.__check_tags = []
+        self.__loaded_tags = []
+
+        self.__line_tags = QLineEdit()
+        self.__flow_layout = FlowLayout()
+        self.__button_ensure = QPushButton('OK')
+
+        self.init_ui()
+        self.reload_tags()
+
+    def init_ui(self):
+        container = QWidget()
+        container_layout = QVBoxLayout()
+        self.__flow_layout.heightChanged.connect(container.setMinimumHeight)
+
+        group_box = QGroupBox('Tags')
+        group_box.setLayout(self.__flow_layout)
+
+        container_layout.addWidget(group_box, 99)
+        container_layout.addLayout(horizon_layout([
+            QLabel("Other tags (separate by ';')"),
+            self.__line_tags, self.__button_ensure], [1, 99, 1]))
+
+        container_layout.addStretch()
+        container.setLayout(container_layout)
+
+        self.setWindowTitle('Tags')
+        self.setWidgetResizable(True)
+        self.setWidget(container)
+
+        self.setMinimumSize(650, 400)
+
+    def __create_check_box_for_tag(self, tag: str):
+        check_box = QCheckBox(tag)
+        # check_box.clicked.connect(self.__on_checkbox_clicked())
+        self.__flow_layout.addWidget(check_box)
+        self.__check_tags.append(check_box)
+
+    # Dynamic update is too complex
+    # def __on_checkbox_clicked(self):
+    #     input_tags = Tags.str_to_tags(self.__line_tags)
+    #     tags = Tags.str_to_tags(input_tags)
+
+    # ---------------------------------------------------------------------
+
+    def on_ensure(self, func):
+        self.__button_ensure.clicked.connect(func)
+
+    def empty_tags(self):
+        while self.__flow_layout.count() > 0:
+            self.__flow_layout.takeAt(0)
+        self.__check_tags.clear()
+        self.__line_tags.setText('')
+
+    def reload_tags(self):
+        self.empty_tags()
+        tags = self.__tags.all_tags()
+        for tag in sorted(tags):
+            self.__create_check_box_for_tag(tag)
+        self.__loaded_tags = tags
+
+    def select_tags(self, tags: [str]):
+        for tag in tags:
+            if tag not in self.__loaded_tags:
+                self.__create_check_box_for_tag(tag)
+                self.__loaded_tags.append(tag)
+        for check_box in self.__check_tags:
+            check_box.setChecked(check_box.text() in tags)
+
+    def get_selected_tags(self):
+        input_tags = Tags.str_to_tags(self.__line_tags.text())
+        select_tags = [check_box.text() for check_box in self.__check_tags if check_box.isChecked()]
+        return list(set(input_tags + select_tags))
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -147,6 +240,9 @@ def __verify_basic_test(tags: Tags, test_table: dict) -> bool:
     return True
 
 
+TAGS = None
+
+
 def test_basic():
     test_table = {
         'ObjA': ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
@@ -166,6 +262,9 @@ def test_basic():
     assert tags.load()
     assert __verify_basic_test(tags, test_table)
 
+    global TAGS
+    TAGS = tags
+
 
 def test_entry():
     test_basic()
@@ -173,8 +272,21 @@ def test_entry():
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+def tags_ensure(tags_ui: TagsUi):
+    tags = tags_ui.get_selected_tags()
+    QMessageBox.information(None, 'Select Tags', Tags.tags_to_str(tags))
+    # tags_ui.close()
+    # exit(0)
+
+
 def main():
     test_entry()
+
+    app = QApplication(sys.argv)
+    w = TagsUi(TAGS)
+    w.on_ensure(partial(tags_ensure, w))
+    w.show()
+    sys.exit(app.exec_())
 
 
 # ----------------------------------------------------------------------------------------------------------------------
