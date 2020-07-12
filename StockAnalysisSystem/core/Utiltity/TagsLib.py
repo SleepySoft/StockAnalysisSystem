@@ -13,6 +13,7 @@ class Tags:
         self.__tags_path = record_path
         self.__tag_obj_dict = {}
         self.__obj_tag_dict = {}
+        self.load()
 
     def all_tags(self) -> [str]:
         return list(self.__tag_obj_dict.keys())
@@ -42,6 +43,9 @@ class Tags:
         self.clear_obj_tags(obj)
         self.__obj_tag_dict[obj] = tags
         for tag in tags:
+            tag = tag.strip()
+            if tag == '':
+                continue
             if tag not in self.__tag_obj_dict:
                 self.__tag_obj_dict[tag] = [obj]
             elif obj not in self.__tag_obj_dict[tag]:
@@ -192,9 +196,13 @@ class TagsUi(QScrollArea):
         self.__button_ensure.clicked.connect(func)
 
     def empty_tags(self):
+        # https://stackoverflow.com/a/10067548
         while self.__flow_layout.count() > 0:
-            self.__flow_layout.takeAt(0)
+            child = self.__flow_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
         self.__check_tags.clear()
+        self.__loaded_tags.clear()
         self.__line_tags.setText('')
 
     def reload_tags(self):
@@ -219,7 +227,6 @@ class TagsUi(QScrollArea):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-
 
 def __verify_basic_test(tags: Tags, test_table: dict) -> bool:
     all_tags = []
@@ -285,6 +292,8 @@ def main():
     app = QApplication(sys.argv)
     w = TagsUi(TAGS)
     w.on_ensure(partial(tags_ensure, w))
+    w.reload_tags()
+    w.select_tags(['A', 'C', 'E'])
     w.show()
     sys.exit(app.exec_())
 
