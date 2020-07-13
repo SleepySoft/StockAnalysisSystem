@@ -680,7 +680,7 @@ class StockHistoryUi(QWidget):
 
     # ----------------------------------------------------------------------------
 
-    def show_security(self, security: str):
+    def show_security(self, security: str, check_update: bool = False):
         if self.__radio_adj_tail.isChecked():
             adjust_method = StockHistoryUi.ADJUST_TAIL
         elif self.__radio_adj_head.isChecked():
@@ -697,7 +697,7 @@ class StockHistoryUi(QWidget):
         else:
             return_style = StockHistoryUi.RETURN_SIMPLE
 
-        if not self.load_security_data(security, adjust_method, return_style):
+        if not self.load_security_data(security, adjust_method, return_style, check_update):
             QMessageBox.information(self,
                                     QtCore.QCoreApplication.translate('History', '没有数据'),
                                     QtCore.QCoreApplication.translate('History', '没有交易数据，请检查证券编码或更新本地数据'),
@@ -720,7 +720,8 @@ class StockHistoryUi(QWidget):
         # self.__memo_editor.show()
         self.__memo_editor.exec()
 
-    def load_security_data(self, securities: str, adjust_method: int, return_style: int) -> bool:
+    def load_security_data(self, securities: str, adjust_method: int, return_style: int,
+                           check_update: bool = False) -> bool:
         data_utility = self.__sas.get_data_hub_entry().get_data_utility()
         index_dict = data_utility.get_support_index()
 
@@ -729,6 +730,8 @@ class StockHistoryUi(QWidget):
                 uri = 'TradeData.Index.Daily'
             else:
                 uri = 'TradeData.Stock.Daily'
+            if check_update:
+                self.__sas.get_data_hub_entry().get_data_utility().check_update(uri, securities)
             trade_data = self.__sas.get_data_hub_entry().get_data_center().query(uri, securities)
 
             # base_path = os.path.dirname(os.path.abspath(__file__))
@@ -769,6 +772,7 @@ class StockHistoryUi(QWidget):
             trade_data['low'] = np.log(trade_data['low'])
 
         bars = self.df_to_bar_data(trade_data, securities)
+        self.__vnpy_chart.get_bar_manager().clear_all()
         self.__vnpy_chart.get_bar_manager().update_history(bars)
 
         return True
@@ -797,6 +801,7 @@ class StockHistoryUi(QWidget):
             max_memo_count = max(memo_count, max_memo_count)
             bar_manager.set_item_data(group_time, 'memo', group_df)
         bar_manager.set_item_data_range('memo', 0.0, max_memo_count)
+        bar_manager.update_history([])
 
         # memo_item = self.__vnpy_chart.get_item('memo')
         # if memo_item is not None:
@@ -1093,7 +1098,7 @@ class MemoExtra_MemoHistory(MemoExtra):
         pass
 
     def security_entry(self, security: str):
-        self.__memo_history.show_security(security)
+        self.__memo_history.show_security(security, True)
         self.__memo_history.setVisible(True)
 
     def title_text(self) -> str:

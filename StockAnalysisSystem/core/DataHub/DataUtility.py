@@ -150,6 +150,15 @@ class DataUtility:
         return self.get_stock_listing_date(securities, default_val) if securities in self.__stock_id_name.keys() else \
                self.get_index_listing_date(securities, default_val)
 
+    def check_update(self, uri: str, identity: str or [str] = None):
+        listing_date = self.get_securities_listing_date(identity, default_since())
+        since, until = self.__data_center.calc_update_range(uri, identity)
+        since = max(listing_date, since)
+        if since == until:
+            return
+        patch = self.__data_center.build_local_data_patch(uri, identity, (since, until))
+        self.__data_center.apply_local_data_patch(patch)
+
     # -------------------------------- Guess --------------------------------
 
     def guess_securities(self, text: str) -> [str]:
