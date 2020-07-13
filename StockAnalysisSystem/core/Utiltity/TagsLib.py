@@ -38,6 +38,8 @@ class Tags:
         return list(set(objs))
 
     def set_obj_tags(self, obj: str, tags: str or [str]):
+        if tags is None or tags == '':
+            return
         if not isinstance(tags, (list, tuple)):
             tags = [tags]
         self.clear_obj_tags(obj)
@@ -46,9 +48,10 @@ class Tags:
             tag = tag.strip()
             if tag == '':
                 continue
+            obj_valid = obj is not None and obj != ''
             if tag not in self.__tag_obj_dict:
-                self.__tag_obj_dict[tag] = [obj]
-            elif obj not in self.__tag_obj_dict[tag]:
+                self.__tag_obj_dict[tag] = [obj] if obj_valid else []
+            elif obj_valid and obj not in self.__tag_obj_dict[tag]:
                 self.__tag_obj_dict[tag].append(obj)
 
     def clear_obj_tags(self, obj: str):
