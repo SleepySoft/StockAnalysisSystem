@@ -1109,6 +1109,8 @@ class MemoExtra_MemoHistory(MemoExtra):
 # ---------------------------------- Tags ----------------------------------
 
 class MemoExtra_StockTags(MemoExtra):
+    PRESET_TAGS = ['黑名单', '灰名单', '关注']
+
     def __init__(self, memo_data: StockMemoData):
         self.__memo_data = memo_data
         super(MemoExtra_StockTags, self).__init__()
@@ -1116,6 +1118,7 @@ class MemoExtra_StockTags(MemoExtra):
         self.__stock_tags_ui: TagsUi = TagsUi(self.__stock_tags)
         self.__stock_tags_ui.on_ensure(self.__on_tags_ui_ensure)
         self.__current_stock = ''
+        self.__stock_tags.set_obj_tags('', MemoExtra_StockTags.PRESET_TAGS)
 
     def __on_tags_ui_ensure(self):
         tags = self.__stock_tags_ui.get_selected_tags()
