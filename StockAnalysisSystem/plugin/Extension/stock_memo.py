@@ -860,12 +860,18 @@ NOTE = '''Stock Memo说明
 
 class MemoExtra:
     def __init__(self):
+        self.__memo_ui = None
+
+    def set_memo_ui(self, memo_ui):
+        self.__memo_ui = memo_ui
+
+    def notify_memo_ui_update(self):
+        self.__memo_ui.update_list()
+
+    def global_entry(self):
         pass
 
-    def enter_global(self):
-        pass
-
-    def enter_security(self, security: str):
+    def security_entry(self, security: str):
         pass
 
     def title_text(self) -> str:
@@ -883,11 +889,11 @@ class DummyMemoExtra(MemoExtra):
         self.__title_text = title_text
         super(DummyMemoExtra, self).__init__()
 
-    def enter_global(self):
-        print('enter_global')
+    def global_entry(self):
+        print('global_entry')
 
-    def enter_security(self, security: str):
-        print('enter_security')
+    def security_entry(self, security: str):
+        print('security_entry')
 
     def title_text(self) -> str:
         return self.__title_text
@@ -974,6 +980,7 @@ class StockMemo(QWidget):
         self.__button_filter.clicked.connect(self.__on_button_filter_clicked)
 
     def add_memo_extra(self, extra: MemoExtra):
+        extra.set_memo_ui(self)
         self.__memo_extras.append(extra)
 
     def update_list(self):
@@ -1002,7 +1009,7 @@ class StockMemo(QWidget):
         item_data = index.data(Qt.UserRole)
         if item_data is not None and isinstance(item_data, tuple):
             memo_extra, security = item_data
-            memo_extra.enter_security(security)
+            memo_extra.security_entry(security)
             # print('Double Click on memo item: %s - %s' % (memo_extra.title_text(), security))
 
     def __update_memo_securities_list(self, securities: [str]):
@@ -1048,10 +1055,10 @@ class MemoExtra_MemoContent(MemoExtra):
             if self.__memo_data is not None else None
         super(MemoExtra_MemoContent, self).__init__()
 
-    def enter_global(self):
+    def global_entry(self):
         pass
 
-    def enter_security(self, security: str):
+    def security_entry(self, security: str):
         if self.__memo_editor is not None:
             self.__memo_editor.select_security(security)
             self.__memo_editor.select_memo_by_list_index(0)
@@ -1082,10 +1089,10 @@ class MemoExtra_MemoHistory(MemoExtra):
         self.__memo_history = StockHistoryUi(self.__memo_data)
         super(MemoExtra_MemoHistory, self).__init__()
 
-    def enter_global(self):
+    def global_entry(self):
         pass
 
-    def enter_security(self, security: str):
+    def security_entry(self, security: str):
         self.__memo_history.show_security(security)
         self.__memo_history.setVisible(True)
 
@@ -1115,11 +1122,12 @@ class MemoExtra_StockTags(MemoExtra):
         self.__stock_tags_ui.close()
         self.__stock_tags.set_obj_tags(self.__current_stock, tags)
         self.__stock_tags.save()
+        self.notify_memo_ui_update()
 
-    def enter_global(self):
+    def global_entry(self):
         pass
 
-    def enter_security(self, security: str):
+    def security_entry(self, security: str):
         tags = self.__stock_tags.tags_of_objs(security)
         self.__stock_tags_ui.reload_tags()
         self.__stock_tags_ui.select_tags(tags)
