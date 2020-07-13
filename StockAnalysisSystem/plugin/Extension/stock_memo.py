@@ -160,7 +160,7 @@ class StockMemoData:
 # ----------------------------------------------- class StockMemoEditor ------------------------------------------------
 
 class StockMemoEditor(QDialog):
-    LIST_HEADER = ['Time', 'Content']
+    LIST_HEADER = ['Time', 'Preview']
 
     class Observer:
         def __init__(self):
@@ -227,7 +227,7 @@ class StockMemoEditor(QDialog):
         self.setMinimumSize(500, 600)
 
     def config_ui(self):
-        self.setWindowTitle('笔记编辑器')
+        self.setWindowTitle('Memo Editor')
         self.__datetime_time.setCalendarPopup(True)
 
         self.__combo_stock.setEditable(False)
@@ -382,7 +382,12 @@ class StockMemoEditor(QDialog):
 
         for index, row in self.__current_memos.iterrows():
             row_index = self.__table_memo_index.rowCount()
-            self.__table_memo_index.AppendRow([datetime2text(row['time']), row['content']], index)
+
+            brief = row['brief']
+            content = row['content']
+            text = brief if str_available(brief) else content
+            # https://stackoverflow.com/a/2873416/12929244
+            self.__table_memo_index.AppendRow([datetime2text(row['time']), text[:30] + (text[30:] and '...')], index)
             self.__table_memo_index.item(row_index, 0).setData(Qt.UserRole, index)
 
     def create_new_memo(self, _time: datetime.datetime):
@@ -1081,8 +1086,11 @@ class MemoExtra_MemoContent(MemoExtra):
         df = self.__memo_record.get_records({'security': security})
         if df is not None and not df.empty:
             df.sort_values('time')
-            text = df.iloc[-1]['content']
-            return text
+            brief = df.iloc[-1]['brief']
+            content = df.iloc[-1]['content']
+            text = brief if str_available(brief) else content
+            # https://stackoverflow.com/a/2873416/12929244
+            return text[:30] + (text[30:] and '...')
         return ''
 
 
