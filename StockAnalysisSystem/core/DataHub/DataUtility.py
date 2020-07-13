@@ -36,103 +36,78 @@ SUPPORT_INDEX = collections.OrderedDict([
 #     df.to_csv(csv_file + '_parsed.csv')
 
 
-# ----------------------------------------------- IdentityNameInfoCache ------------------------------------------------
-
-class IdentityNameInfoCache:
-    def __init__(self):
-        self.__identity_info_dict = {}
-        self.__identity_name_dict = {}
-        self.__name_identity_dict = {}
-
-    # ----------------------- Sets -----------------------
-
-    def clean(self):
-        self.__identity_info_dict.clear()
-        self.__identity_name_dict.clear()
-        self.__name_identity_dict.clear()
-
-    def set_id_name(self, _id: str, name: str):
-        id_s = self.__normalize_id_name(_id)
-        name_s = self.__normalize_id_name(name)
-        self.__check_init_id_space(id_s)
-        try:
-            if name_s not in self.__identity_name_dict[id_s]:
-                self.__identity_name_dict[id_s].append(name_s)
-            self.__name_identity_dict[name_s] = id_s
-        except Exception as e:
-            print('Error')
-        finally:
-            pass
-
-    def set_id_info(self, _id: str, key: str, val: any):
-        id_s = self.__normalize_id_name(_id)
-        key_s = self.__normalize_id_name(key)
-        self.__check_init_id_space(id_s)
-        self.__identity_info_dict[id_s][key_s] = val
-
-    # ----------------------- Gets -----------------------
-
-    def empty(self) -> bool:
-        return len(self.__identity_info_dict) == 0 and \
-               len(self.__identity_name_dict) == 0
-
-    def name_to_id(self, names: str or [str]) -> str or [str]:
-        if not isinstance(names, (list, tuple)):
-            return self.__name_identity_dict.get(self.__normalize_id_name(names),
-                                                 self.__normalize_id_name(names))
-        else:
-            return [self.__name_identity_dict.get(self.__normalize_id_name(name),
-                                                  self.__normalize_id_name(name))
-                    for name in names]
-
-    def id_to_names(self, _id: str) -> [str]:
-        id_s = self.__normalize_id_name(_id)
-        return self.__identity_name_dict.get(id_s, [''])
-
-    def get_ids(self) -> [str]:
-        return list(self.__identity_info_dict.keys())
-
-    def get_id_info(self, _id: str, keys: str or [str], default_value: any = None) -> any or [any]:
-        id_info = self.__identity_info_dict.get(self.__normalize_id_name(_id), {})
-        if not isinstance(keys, (list, tuple)):
-            return id_info.get(self.__normalize_id_name(keys), default_value)
-        else:
-            return [id_info.get(self.__normalize_id_name(key), default_value) for key in keys]
-
-    def guess_securities(self, text: str) -> [str]:
-        """
-        Guess securities by parts of text. Match in following orders:
-        1.Security name
-        2.Security code (only if the text len >= 3)
-        :param text:
-        :return:
-        """
-        match_result = self.__guess_text_in_list(list(self.__name_identity_dict.keys()), text)
-        result = [self.__name_identity_dict.get(k) for k in match_result]
-
-        if text.isdigit() and len(text) > 3:
-            match_result = self.__guess_text_in_list(list(self.__identity_name_dict.keys()), text)
-            result.extend(match_result)
-
-        return list(set(result))
-
-    @staticmethod
-    def __guess_text_in_list(text_list: list, text: str) -> [str]:
-        result = []
-        for t in text_list:
-            if t.inlcudes(text):
-                result.append(t)
-        return result
-
-    # ---------------------------------------------------------------------------------------
-
-    def __check_init_id_space(self, _id: str):
-        if _id not in self.__identity_info_dict.keys():
-            self.__identity_info_dict[_id] = {}
-            self.__identity_name_dict[_id] = []
-
-    def __normalize_id_name(self, id_or_name: str) -> str:
-        return id_or_name.strip()
+# # ----------------------------------------------- IdentityNameInfoCache ------------------------------------------------
+#
+# class IdentityNameInfoCache:
+#     def __init__(self):
+#         self.__identity_info_dict = {}
+#         self.__identity_name_dict = {}
+#         self.__name_identity_dict = {}
+#
+#     # ----------------------- Sets -----------------------
+#
+#     def clean(self):
+#         self.__identity_info_dict.clear()
+#         self.__identity_name_dict.clear()
+#         self.__name_identity_dict.clear()
+#
+#     def set_id_name(self, _id: str, name: str):
+#         id_s = self.__normalize_id_name(_id)
+#         name_s = self.__normalize_id_name(name)
+#         self.__check_init_id_space(id_s)
+#         try:
+#             if name_s not in self.__identity_name_dict[id_s]:
+#                 self.__identity_name_dict[id_s].append(name_s)
+#             self.__name_identity_dict[name_s] = id_s
+#         except Exception as e:
+#             print('Error')
+#         finally:
+#             pass
+#
+#     def set_id_info(self, _id: str, key: str, val: any):
+#         id_s = self.__normalize_id_name(_id)
+#         key_s = self.__normalize_id_name(key)
+#         self.__check_init_id_space(id_s)
+#         self.__identity_info_dict[id_s][key_s] = val
+#
+#     # ----------------------- Gets -----------------------
+#
+#     def empty(self) -> bool:
+#         return len(self.__identity_info_dict) == 0 and \
+#                len(self.__identity_name_dict) == 0
+#
+#     def name_to_id(self, names: str or [str]) -> str or [str]:
+#         if not isinstance(names, (list, tuple)):
+#             return self.__name_identity_dict.get(self.__normalize_id_name(names),
+#                                                  self.__normalize_id_name(names))
+#         else:
+#             return [self.__name_identity_dict.get(self.__normalize_id_name(name),
+#                                                   self.__normalize_id_name(name))
+#                     for name in names]
+#
+#     def id_to_names(self, _id: str) -> [str]:
+#         id_s = self.__normalize_id_name(_id)
+#         return self.__identity_name_dict.get(id_s, [''])
+#
+#     def get_ids(self) -> [str]:
+#         return list(self.__identity_info_dict.keys())
+#
+#     def get_id_info(self, _id: str, keys: str or [str], default_value: any = None) -> any or [any]:
+#         id_info = self.__identity_info_dict.get(self.__normalize_id_name(_id), {})
+#         if not isinstance(keys, (list, tuple)):
+#             return id_info.get(self.__normalize_id_name(keys), default_value)
+#         else:
+#             return [id_info.get(self.__normalize_id_name(key), default_value) for key in keys]
+#
+#     # ---------------------------------------------------------------------------------------
+#
+#     def __check_init_id_space(self, _id: str):
+#         if _id not in self.__identity_info_dict.keys():
+#             self.__identity_info_dict[_id] = {}
+#             self.__identity_name_dict[_id] = []
+#
+#     def __normalize_id_name(self, id_or_name: str) -> str:
+#         return id_or_name.strip()
 
 
 # ---------------------------------------------------- DataUtility -----------------------------------------------------
@@ -174,6 +149,33 @@ class DataUtility:
     def get_securities_listing_date(self, securities: str, default_val: datetime.datetime) -> datetime.datetime:
         return self.get_stock_listing_date(securities, default_val) if securities in self.__stock_id_name.keys() else \
                self.get_index_listing_date(securities, default_val)
+
+    # -------------------------------- Guess --------------------------------
+
+    def guess_securities(self, text: str) -> [str]:
+        """
+        Guess securities by parts of text. Match in following orders:
+        1.Security name
+        2.Security code (only if the text len >= 3)
+        :param text:
+        :return:
+        """
+        match_result = self.__guess_text_in_list(list(self.__stock_name_id.keys()), text)
+        result = [self.__stock_name_id.get(k) for k in match_result]
+
+        if text.isdigit() and len(text) > 3:
+            match_result = self.__guess_text_in_list(list(self.__stock_id_name.keys()), text)
+            result.extend(match_result)
+
+        return list(set(result))
+
+    @staticmethod
+    def __guess_text_in_list(text_list: list, text: str) -> [str]:
+        result = []
+        for t in text_list:
+            if text in t:
+                result.append(t)
+        return result
 
     # -------------------------------- Stock --------------------------------
 
