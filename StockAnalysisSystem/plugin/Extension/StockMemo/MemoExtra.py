@@ -1,0 +1,187 @@
+import os
+
+from StockAnalysisSystem.core.Utiltity.common import *
+from StockAnalysisSystem.core.Utiltity.TagsLib import *
+
+root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+os.sys.path.append(root_path)
+
+from StockMemo.MemoUtility import *
+from StockMemo.StockChartUi import StockChartUi
+from StockMemo.StockMemoEditor import StockMemoEditor
+
+# ------------------------------------------------ Memo Extra Interface ------------------------------------------------
+
+class MemoExtra:
+    def __init__(self):
+        self.__memo_ui = None
+
+    def set_memo_ui(self, memo_ui):
+        self.__memo_ui = memo_ui
+
+    def notify_memo_ui_update(self):
+        self.__memo_ui.update_list()
+
+    def global_entry(self):
+        pass
+
+    def security_entry(self, security: str):
+        pass
+
+    def title_text(self) -> str:
+        pass
+
+    def global_entry_text(self) -> str:
+        pass
+
+    def security_entry_text(self, security: str) -> str:
+        pass
+
+
+class DummyMemoExtra(MemoExtra):
+    def __init__(self, title_text: str):
+        self.__title_text = title_text
+        super(DummyMemoExtra, self).__init__()
+
+    def global_entry(self):
+        print('global_entry')
+
+    def security_entry(self, security: str):
+        print('security_entry')
+
+    def title_text(self) -> str:
+        return self.__title_text
+
+    def global_entry_text(self) -> str:
+        return 'DummyMemoExtra'
+
+    def security_entry_text(self, security: str) -> str:
+        return self.__title_text + ': ' + security
+
+
+# ---------------------------------------------------- Memo Extras -----------------------------------------------------
+
+# --------------------------------- Editor ---------------------------------
+
+class MemoExtra_MemoContent(MemoExtra):
+    def __init__(self, memo_data: StockMemoData):
+        self.__memo_data = memo_data
+        self.__memo_editor: StockMemoEditor = self.__memo_data.get_data('editor') \
+            if self.__memo_data is not None else None
+        self.__memo_record: StockMemoRecord = self.__memo_data.get_memo_record() \
+            if self.__memo_data is not None else None
+        super(MemoExtra_MemoContent, self).__init__()
+
+    def global_entry(self):
+        pass
+
+    def security_entry(self, security: str):
+        if self.__memo_editor is not None:
+            self.__memo_editor.select_security(security)
+            self.__memo_editor.select_memo_by_list_index(0)
+            self.__memo_editor.exec()
+
+    def title_text(self) -> str:
+        return 'Memo'
+
+    def global_entry_text(self) -> str:
+        return ''
+
+    def security_entry_text(self, security: str) -> str:
+        if self.__memo_record is None:
+            return '-'
+        df = self.__memo_record.get_records({'security': security})
+        if df is not None and not df.empty:
+            df.sort_values('time')
+            brief = df.iloc[-1]['brief']
+            content = df.iloc[-1]['content']
+            text = brief if str_available(brief) else content
+            # https://stackoverflow.com/a/2873416/12929244
+            return text[:30] + (text[30:] and '...')
+        return ''
+
+
+# --------------------------------- History ---------------------------------
+
+class MemoExtra_MemoHistory(MemoExtra):
+    def __init__(self, memo_data: StockMemoData):
+        self.__memo_data = memo_data
+        self.__memo_history = StockChartUi(self.__memo_data)
+        super(MemoExtra_MemoHistory, self).__init__()
+
+    def global_entry(self):
+        pass
+
+    def security_entry(self, security: str):
+        self.__memo_history.show_security(security, True)
+        self.__memo_history.setVisible(True)
+
+    def title_text(self) -> str:
+        return 'Chart'
+
+    def global_entry_text(self) -> str:
+        return ''
+
+    def security_entry_text(self, security: str) -> str:
+        return 'View'
+
+
+# ---------------------------------- Tags ----------------------------------
+
+class MemoExtra_StockTags(MemoExtra):
+    PRESET_TAGS = ['黑名单', '灰名单', '关注']
+
+    def __init__(self, memo_data: StockMemoData):
+        self.__memo_data = memo_data
+        super(MemoExtra_StockTags, self).__init__()
+        self.__stock_tags: Tags = self.__memo_data.get_data('tags')
+        self.__stock_tags_ui: TagsUi = TagsUi(self.__stock_tags)
+        self.__stock_tags_ui.on_ensure(self.__on_tags_ui_ensure)
+        self.__current_stock = ''
+        self.__stock_tags.set_obj_tags('', MemoExtra_StockTags.PRESET_TAGS)
+
+    def __on_tags_ui_ensure(self):
+        tags = self.__stock_tags_ui.get_selected_tags()
+        self.__stock_tags_ui.close()
+        self.__stock_tags.set_obj_tags(self.__current_stock, tags)
+        self.__stock_tags.save()
+        self.notify_memo_ui_update()
+
+    def global_entry(self):
+        pass
+
+    def security_entry(self, security: str):
+        tags = self.__stock_tags.tags_of_objs(security)
+        self.__stock_tags_ui.reload_tags()
+        self.__stock_tags_ui.select_tags(tags)
+        self.__stock_tags_ui.setVisible(True)
+        self.__current_stock = security
+
+    def title_text(self) -> str:
+        return 'Tags'
+
+    def global_entry_text(self) -> str:
+        return ''
+
+    def security_entry_text(self, security: str) -> str:
+        tags = self.__stock_tags.tags_of_objs(security)
+        return Tags.tags_to_str(tags)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
