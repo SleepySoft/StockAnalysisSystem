@@ -64,6 +64,8 @@ class ChartItem(pg.GraphicsObject):
         """
         Get information text to show by cursor.
         """
+
+    def set_visible(self, visible: bool):
         pass
 
     def refresh_history(self):
@@ -152,6 +154,7 @@ class CandleItem(ChartItem):
 
     def __init__(self, manager: BarManager):
         """"""
+        self._y_dynamic = True
         super().__init__(manager)
 
     def _draw_bar_picture(self, ix: int, bar: BarData) -> QtGui.QPicture:
@@ -160,34 +163,35 @@ class CandleItem(ChartItem):
         candle_picture = QtGui.QPicture()
         painter = QtGui.QPainter(candle_picture)
 
-        # Set painter color
-        if bar.close_price >= bar.open_price:
-            painter.setPen(self._up_pen)
-            painter.setBrush(self._up_brush)
-        else:
-            painter.setPen(self._down_pen)
-            painter.setBrush(self._down_brush)
+        if bar.high_price >= 0.01:
+            # Set painter color
+            if bar.close_price >= bar.open_price:
+                painter.setPen(self._up_pen)
+                painter.setBrush(self._up_brush)
+            else:
+                painter.setPen(self._down_pen)
+                painter.setBrush(self._down_brush)
 
-        # Draw candle shadow
-        painter.drawLine(
-            QtCore.QPointF(ix, bar.high_price),
-            QtCore.QPointF(ix, bar.low_price)
-        )
-
-        # Draw candle body
-        if bar.open_price == bar.close_price:
+            # Draw candle shadow
             painter.drawLine(
-                QtCore.QPointF(ix - BAR_WIDTH, bar.open_price),
-                QtCore.QPointF(ix + BAR_WIDTH, bar.open_price),
+                QtCore.QPointF(ix, bar.high_price),
+                QtCore.QPointF(ix, bar.low_price)
             )
-        else:
-            rect = QtCore.QRectF(
-                ix - BAR_WIDTH,
-                bar.open_price,
-                BAR_WIDTH * 2,
-                bar.close_price - bar.open_price
-            )
-            painter.drawRect(rect)
+
+            # Draw candle body
+            if bar.open_price == bar.close_price:
+                painter.drawLine(
+                    QtCore.QPointF(ix - BAR_WIDTH, bar.open_price),
+                    QtCore.QPointF(ix + BAR_WIDTH, bar.open_price),
+                )
+            else:
+                rect = QtCore.QRectF(
+                    ix - BAR_WIDTH,
+                    bar.open_price,
+                    BAR_WIDTH * 2,
+                    bar.close_price - bar.open_price
+                )
+                painter.drawRect(rect)
 
         # Finish
         painter.end()
@@ -205,13 +209,19 @@ class CandleItem(ChartItem):
         )
         return rect
 
+    def set_y_range_dynamic(self, dynamic: bool):
+        self._y_dynamic = dynamic
+
     def get_y_range(self, min_ix: int = None, max_ix: int = None) -> Tuple[float, float]:
         """
         Get range of y-axis with given x-axis range.
 
         If min_ix and max_ix not specified, then return range with whole data set.
         """
-        min_price, max_price = self._manager.get_price_range(min_ix, max_ix)
+        if self._y_dynamic:
+            min_price, max_price = self._manager.get_price_range(min_ix, max_ix)
+        else:
+            min_price, max_price = self._manager.get_price_range()
         return min_price, max_price
 
     def get_info_text(self, ix: int) -> str:

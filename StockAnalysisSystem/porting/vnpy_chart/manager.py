@@ -119,6 +119,9 @@ class BarManager:
         min_price = first_bar.low_price
 
         for bar in bar_list[1:]:
+            # No price data
+            if bar.high_price < 0.01:
+                continue
             max_price = max(max_price, bar.high_price)
             min_price = min(min_price, bar.low_price)
 
