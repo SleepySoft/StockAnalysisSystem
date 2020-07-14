@@ -2,7 +2,6 @@ import copy
 from typing import Dict, List, Tuple
 from datetime import datetime
 
-from .constant import *
 from .data import BarData
 from .base import to_int
 
@@ -196,25 +195,18 @@ class BarManager:
                 return mid
         return -1
 
-    def set_item_data(self, ix: float or datetime, item_name: str, item_data: any):
+    def set_item_data(self, ix: float or datetime, item_name: str, item_data: any) -> bool:
         if isinstance(ix, datetime):
             ix = self.get_index_by_time(ix)
         bar = self.get_bar(ix)
-        if bar is None:
-            if len(self._bars) > 0:
-                _, sample = self._bars.items()
-                bar = copy.copy(sample)
-                bar.extra.clear()
-            else:
-                bar = BarData(datetime=ix,
-                              exchange=Exchange.LOCAL,
-                              symbol='')
-            self._bars[bar.datetime] = bar
         if bar is not None:
             if bar.extra is not None:
                 bar.extra[item_name] = item_data
             else:
                 bar.extra = {item_name: item_data}
+            return True
+        else:
+            return False
 
     def get_item_data(self, ix: float, item_name: str) -> any:
         bar = self.get_bar(ix)
