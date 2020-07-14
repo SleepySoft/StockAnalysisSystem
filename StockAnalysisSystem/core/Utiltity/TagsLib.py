@@ -216,6 +216,7 @@ class TagsUi(QScrollArea):
         for tag in sorted(tags):
             self.__create_check_box_for_tag(tag)
         self.__loaded_tags = tags
+        self.__flow_layout.update()
 
     def select_tags(self, tags: [str]):
         for tag in tags:
