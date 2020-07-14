@@ -132,7 +132,7 @@ class Tags:
 
     @staticmethod
     def str_to_tags(text: str) -> [str]:
-        return [tag.strip() for tag in text.split(';')]
+        return [tag.strip() for tag in text.split(';')] if text.strip() != '' else []
 
 
 # ----------------------------------------------------- class Tags -----------------------------------------------------
@@ -225,6 +225,7 @@ class TagsUi(QScrollArea):
                 self.__loaded_tags.append(tag)
         for check_box in self.__check_tags:
             check_box.setChecked(check_box.text() in tags)
+        self.__flow_layout.update()
 
     def get_selected_tags(self):
         input_tags = Tags.str_to_tags(self.__line_tags.text())
