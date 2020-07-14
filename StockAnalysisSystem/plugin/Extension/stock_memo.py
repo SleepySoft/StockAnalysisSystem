@@ -329,11 +329,11 @@ class StockMemoEditor(QDialog):
         self.__combo_stock.select_security(security, True)
 
     def select_memo_by_day(self, _time: datetime.datetime):
-        if self.__table_memo_index is None or self.__table_memo_index.is_empty():
+        if self.__current_memos is None or self.__current_memos.empty:
             self.create_new_memo(_time)
             return
 
-        df = self.__table_memo_index
+        df = self.__current_memos
         time_serial = df['time'].dt.normalize()
         select_df = df[time_serial == _time.replace(hour=0, minute=0, second=0, microsecond=0)]
 
@@ -735,8 +735,8 @@ class StockHistoryUi(QWidget):
                 uri = 'TradeData.Index.Daily'
             else:
                 uri = 'TradeData.Stock.Daily'
-            if check_update:
-                self.__sas.get_data_hub_entry().get_data_utility().check_update(uri, securities)
+            # if check_update:
+            #     self.__sas.get_data_hub_entry().get_data_utility().check_update(uri, securities)
             trade_data = self.__sas.get_data_hub_entry().get_data_center().query(uri, securities)
 
             # base_path = os.path.dirname(os.path.abspath(__file__))
@@ -800,13 +800,19 @@ class StockHistoryUi(QWidget):
         finally:
             pass
 
+        append_items = []
         max_memo_count = 0
         for group_time, group_df in memo_df_grouped:
             memo_count = len(group_df)
             max_memo_count = max(memo_count, max_memo_count)
-            bar_manager.set_item_data(group_time, 'memo', group_df)
+            if not bar_manager.set_item_data(group_time, 'memo', group_df):
+                bar = BarData(datetime=group_time,
+                              exchange=Exchange.SSE,
+                              symbol=self.__paint_securities)
+                bar.extra = {'memo': group_df}
+                append_items.append(bar)
         bar_manager.set_item_data_range('memo', 0.0, max_memo_count)
-        bar_manager.update_history([])
+        bar_manager.update_history(append_items)
 
         # memo_item = self.__vnpy_chart.get_item('memo')
         # if memo_item is not None:
