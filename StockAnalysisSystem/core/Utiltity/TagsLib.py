@@ -94,6 +94,8 @@ class Tags:
             pass
 
     def __load(self, record_path: str) -> bool:
+        self.__obj_tag_dict.clear()
+        self.__tag_obj_dict.clear()
         try:
             with open(record_path, 'rt') as f:
                 self.__obj_tag_dict.clear()

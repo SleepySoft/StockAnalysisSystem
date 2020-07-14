@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QTimer, QDateTime, QPoint, pyqtSlot
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QButtonGroup, QDateTimeEdit, QApplication, QLabel, QTextEdit, QPushButton, QVBoxLayout, \
-    QMessageBox, QWidget, QComboBox, QCheckBox, QRadioButton, QLineEdit, QAbstractItemView
+    QMessageBox, QWidget, QComboBox, QCheckBox, QRadioButton, QLineEdit, QAbstractItemView, QFileDialog
 from pyqtgraph.GraphicsScene.mouseEvents import MouseClickEvent
 
 from StockAnalysisSystem.core.config import *
@@ -90,10 +90,12 @@ class StockMemoData:
         user_path = os.path.expanduser('~')
         project_path = self.__sas.get_project_path() if self.__sas is not None else os.getcwd()
 
-        # TODO: Load root path config for config module
-        self.__root_path = \
-            memo_path_from_project_path(project_path) if user_path == '' else \
-            memo_path_from_user_path(user_path)
+        memo_path = self.__sas.get_config().get('memo_path', '')
+        memo_path = memo_path if memo_path != '' else (
+            memo_path_from_project_path(project_path) if user_path == '' else
+            memo_path_from_user_path(user_path))
+
+        self.__root_path = memo_path
         self.__memo_record = StockMemoRecord(os.path.join(self.__root_path, 'stock_memo.csv'))
         if not self.__memo_record.load():
             print('Load stock memo fail, maybe no memo exists.')
@@ -101,8 +103,8 @@ class StockMemoData:
     def get_root_path(self) -> str:
         return self.__root_path
 
-    def set_root_path(self, root_path):
-        self.__root_path = root_path
+    def set_root_path(self, _path: str):
+        self.__root_path = _path
 
     # -------------- Core Object --------------
 
@@ -1004,6 +1006,7 @@ class StockMemo(QWidget):
         self.__memo_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.__memo_table.doubleClicked.connect(self.__on_memo_item_double_clicked)
 
+        self.__button_browse.clicked.connect(self.__on_button_browse)
         self.__button_new.clicked.connect(self.__on_button_new_clicked)
         self.__button_filter.clicked.connect(self.__on_button_filter_clicked)
 
@@ -1022,6 +1025,26 @@ class StockMemo(QWidget):
         self.update_list()
 
     # ----------------------------------------------------------------------------
+
+    def __on_button_browse(self):
+        folder = str(QFileDialog.getExistingDirectory(self, "Select Private Folder",
+                                                      directory=self.__line_path.text()))
+        if folder == '':
+            return
+        self.__line_path.setText(folder)
+
+        # Save to system config
+        self.__sas.get_config().set('memo_path', folder)
+        self.__sas.get_config().save_config()
+
+        # Update new path to memo extras
+        self.__memo_data.set_root_path(folder)
+
+        # TODO: Auto handle path update
+        stock_tags: Tags = self.__memo_data.get_data('tags')
+        if stock_tags is not None:
+            stock_tags.load(os.path.join(folder, 'tags.json'))
+        self.__memo_data.get_memo_record().load(os.path.join(folder, 'stock_memo.csv'))
 
     def __on_button_new_clicked(self):
         security = self.__stock_selector.get_input_securities()
