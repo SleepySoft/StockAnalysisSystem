@@ -568,6 +568,7 @@ class StockHistoryUi(QWidget):
         self.__combo_name = SecuritiesSelector(data_utility)
         self.__button_ensure = QPushButton('确定')
 
+        self.__check_abs = QCheckBox('固定价格范围')
         self.__check_memo = QCheckBox('笔记')
         self.__check_volume = QCheckBox('成交量')
 
@@ -608,7 +609,7 @@ class StockHistoryUi(QWidget):
 
         group_layout.addLayout(horizon_layout([
             self.__combo_name, group_box_adj, group_box_return, self.__button_ensure,
-            self.__check_volume, self.__check_memo
+            self.__check_abs, self.__check_volume, self.__check_memo
         ]))
 
     def __config_ui(self):
@@ -622,6 +623,7 @@ class StockHistoryUi(QWidget):
         self.__radio_adj_none.setChecked(True)
         self.__radio_simple_return.setChecked(True)
 
+        self.__check_abs.clicked.connect(self.on_button_abs)
         self.__check_memo.clicked.connect(self.on_button_memo)
         self.__check_volume.clicked.connect(self.on_button_volume)
         self.__button_ensure.clicked.connect(self.on_button_ensure)
@@ -665,11 +667,21 @@ class StockHistoryUi(QWidget):
         # Workaround for click event double fire
         self.__accepted = False
 
+    def on_button_abs(self):
+        enable = self.__check_abs.isChecked()
+        self.__vnpy_chart.get_item('candle').set_y_range_dynamic(not enable)
+        self.__vnpy_chart.refresh_history()
+        self.__vnpy_chart.update()
+
     def on_button_memo(self):
-        enable = self.__check_memo.isChecked()
+        # enable = self.__check_memo.isChecked()
+        # self.__vnpy_chart.enable_item('memo', enable)
+        pass
 
     def on_button_volume(self):
-        enable = self.__check_volume.isChecked()
+        # enable = self.__check_volume.isChecked()
+        # self.__vnpy_chart.enable_item('volume', enable)
+        pass
 
     def on_button_ensure(self):
         input_securities = self.__combo_name.currentText()

@@ -136,6 +136,15 @@ class ChartWidget(pg.PlotWidget):
     def get_item(self, item_name: str) -> ChartItem or None:
         return self._items.get(item_name, None)
 
+    def enable_item(self, item_name: str, enable: bool):
+        _item = self.get_item(item_name)
+        _plot = self._item_plot_map.get(_item, None)
+        if _plot is not None:
+            if enable and _item not in _plot.items:
+                _plot.addItem(_item)
+            elif not enable and _item in _plot.items:
+                _plot.removeItem(_item)
+
     def get_all_plots(self) -> List[pg.PlotItem]:
         """
         Get all plot objects.
@@ -209,6 +218,7 @@ class ChartWidget(pg.PlotWidget):
         min_ix = self._right_ix - self._bar_count
 
         for plot in self._plots.values():
+            plot.setRange(xRange=(0, 0), padding=0)
             plot.setRange(xRange=(min_ix, max_ix), padding=0)
 
     def _update_y_range(self) -> None:
