@@ -52,7 +52,7 @@ NOTE = '''Stock Memo说明
 # ------------------------------------------------ class StockMemoDeck -------------------------------------------------
 
 class StockMemoDeck(QWidget):
-    STATIC_HEADER = ['Security']
+    STATIC_HEADER = ['Code', 'Name']
 
     def __init__(self, memo_data: StockMemoData):
         super(StockMemoDeck, self).__init__()
@@ -193,10 +193,13 @@ class StockMemoDeck(QWidget):
             self.__memo_table.AppendRow([''] * len(columns))
             row_count = self.__memo_table.RowCount()
             row = row_count - 1
-            col = 0
             
+            col = 0
             self.__memo_table.SetItemText(row, col, security)
             self.__memo_table.SetItemData(row, col, security)
+
+            col = 1
+            self.__memo_table.SetItemText(row, col, self.__data_utility.stock_identity_to_name(security))
 
             for memo_extra in self.__memo_extras:
                 col += 1

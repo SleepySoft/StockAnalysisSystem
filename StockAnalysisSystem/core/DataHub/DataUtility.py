@@ -201,10 +201,19 @@ class DataUtility:
         ret = list(self.__stock_id_name.keys())
         return ret
 
-    def names_to_stock_identity(self, names: [str]) -> [str]:
+    def names_to_stock_identity(self, names: str or [str]) -> str or [str]:
         self.__check_refresh_stock_cache()
-        ret = [self.__stock_name_id.get(name, name) for name in names]
-        return ret
+        if isinstance(names, list):
+            return [self.__stock_name_id.get(name, name) for name in names]
+        else:
+            return self.__stock_name_id.get(names, names)
+
+    def stock_identity_to_name(self, stock_identities: [str]) -> str or [str]:
+        self.__check_refresh_stock_cache()
+        if isinstance(stock_identities, list):
+            return [self.__stock_id_name.get(stock_identity, stock_identity) for stock_identity in stock_identities]
+        else:
+            return self.__stock_id_name.get(stock_identities, stock_identities)
 
     def get_stock_industry(self, stock_identity: str, default_val: str = '') -> str:
         return self.__query_identity_filed_value('Market.SecuritiesInfo', stock_identity, 'industry', default_val)
