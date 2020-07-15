@@ -29,12 +29,12 @@ finally:
 class StockMemoEditor(QDialog):
     LIST_HEADER = ['Time', 'Preview']
 
-    class Observer:
-        def __init__(self):
-            pass
-
-        def on_memo_updated(self):
-            pass
+    # class Observer:
+    #     def __init__(self):
+    #         pass
+    #
+    #     def on_memo_updated(self):
+    #         pass
 
     def __init__(self, memo_data: StockMemoData, parent: QWidget = None):
         self.__memo_data = memo_data
@@ -70,6 +70,7 @@ class StockMemoEditor(QDialog):
 
         self.__button_new = QPushButton('New')
         self.__button_apply = QPushButton('Save')
+        self.__button_delete = QPushButton('Delete')
 
         self.init_ui()
         self.config_ui()
@@ -81,6 +82,7 @@ class StockMemoEditor(QDialog):
         group_box, group_layout = create_v_group_box('')
         group_layout.addWidget(self.__combo_stock, 1)
         group_layout.addWidget(self.__table_memo_index, 99)
+        group_layout.addWidget(self.__button_delete, 1)
         root_layout.addWidget(group_box, 4)
 
         group_box, group_layout = create_v_group_box('')
@@ -110,6 +112,7 @@ class StockMemoEditor(QDialog):
 
         self.__button_new.clicked.connect(self.on_button_new)
         self.__button_apply.clicked.connect(self.on_button_apply)
+        self.__button_delete.clicked.connect(self.on_button_delete)
 
         # self.setWindowFlags(
         #     QtCore.Qt.Window |
@@ -123,7 +126,7 @@ class StockMemoEditor(QDialog):
         if not str_available(self.__current_stock):
             QMessageBox.information(self, '错误', '请选择需要做笔记的股票', QMessageBox.Ok, QMessageBox.Ok)
         self.create_new_memo(None)
-        self.__trigger_memo_updated()
+        # self.__trigger_memo_updated()
 
     # ['time', 'security', 'brief', 'content', 'classify']
 
@@ -164,8 +167,16 @@ class StockMemoEditor(QDialog):
             else:
                 self.select_memo_by_list_index(0)
 
-        self.__trigger_memo_updated()
+        # self.__trigger_memo_updated()
         self.__memo_data.broadcast_data_updated('memo_record')
+
+    def on_button_delete(self):
+        if self.__current_index is not None:
+            self.__memo_record.del_records(self.__current_index)
+            self.__memo_record.save()
+            self.load_security_memo(self.__current_stock)
+            self.update_memo_list()
+            self.__memo_data.broadcast_data_updated('memo_record')
 
     def on_combo_select_changed(self):
         input_securities = self.__combo_stock.get_input_securities()
@@ -177,19 +188,19 @@ class StockMemoEditor(QDialog):
         if sel_index < 0:
             return
         sel_item = self.__table_memo_index.item(sel_index, 0)
-        if item is None:
+        if sel_item is None:
             return
         df_index = sel_item.data(Qt.UserRole)
         self.load_edit_memo(df_index)
 
     # --------------------------------------------------------------------------------------------
 
-    def add_observer(self, ob: Observer):
-        self.__observers.append(ob)
-
-    def __trigger_memo_updated(self):
-        for ob in self.__observers:
-            ob.on_memo_updated()
+    # def add_observer(self, ob: Observer):
+    #     self.__observers.append(ob)
+    #
+    # def __trigger_memo_updated(self):
+    #     for ob in self.__observers:
+    #         ob.on_memo_updated()
 
     # ------------------------------------- Select Functions -------------------------------------
     #                     Will update UI control, which will trigger the linkage
@@ -259,13 +270,17 @@ class StockMemoEditor(QDialog):
             self.__table_memo_index.AppendRow([datetime2text(row['time']), text[:30] + (text[30:] and '...')], index)
             self.__table_memo_index.item(row_index, 0).setData(Qt.UserRole, index)
 
-    def create_new_memo(self, _time: datetime.datetime):
+        self.__current_index = None
+        self.__enter_new_mode()
+
+    def create_new_memo(self, _time: datetime.datetime or None):
         self.__table_memo_index.clearSelection()
         if _time is not None:
             self.__datetime_time.setDateTime(_time)
         self.__line_brief.setText('')
         self.__text_record.setText('')
         self.__current_index = None
+        self.__enter_new_mode()
 
     def load_edit_memo(self, index: int):
         """
@@ -292,6 +307,13 @@ class StockMemoEditor(QDialog):
         self.__datetime_time.setDateTime(to_py_datetime(_time))
         self.__line_brief.setText(brief)
         self.__text_record.setText(content)
+        self.__enter_edit_mode()
+        
+    def __enter_new_mode(self):
+        self.__button_new.setText('New *')
+
+    def __enter_edit_mode(self):
+        self.__button_new.setText('New')
 
     # def update_memo_content(self, index: int):
     #     for row in range(0, self.__table_memo_index.rowCount()):

@@ -144,7 +144,7 @@ class StockMemoData:
     # ------------- Extra Object --------------
 
     def set_data(self, name: str, _data: any):
-        if name not in StockMemoData.RESERVED_DATA:
+        if name in StockMemoData.RESERVED_DATA:
             print("You're setting reserve data.")
         self.__extra_data[name] = _data
 
