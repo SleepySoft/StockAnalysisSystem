@@ -2,13 +2,24 @@ import os
 
 from StockAnalysisSystem.core.Utiltity.common import *
 from StockAnalysisSystem.core.Utiltity.TagsLib import *
+from StockAnalysisSystem.core.Utiltity.df_utility import *
+from StockAnalysisSystem.core.Utiltity.time_utility import *
 
-root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-os.sys.path.append(root_path)
+try:
+    # Only for pycharm indicating imports
+    from .MemoUtility import *
+    from .StockChartUi import StockChartUi
+    from .StockMemoEditor import StockMemoEditor
+except Exception as e:
+    root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    os.sys.path.append(root_path)
 
-from StockMemo.MemoUtility import *
-from StockMemo.StockChartUi import StockChartUi
-from StockMemo.StockMemoEditor import StockMemoEditor
+    from StockMemo.MemoUtility import *
+    from StockMemo.StockChartUi import StockChartUi
+    from StockMemo.StockMemoEditor import StockMemoEditor
+finally:
+    pass
+pass
 
 # ------------------------------------------------ Memo Extra Interface ------------------------------------------------
 
@@ -19,8 +30,8 @@ class MemoExtra:
     def set_memo_ui(self, memo_ui):
         self.__memo_ui = memo_ui
 
-    def notify_memo_ui_update(self):
-        self.__memo_ui.update_list()
+    # def notify_memo_ui_update(self):
+    #     self.__memo_ui.update_list()
 
     def global_entry(self):
         pass
@@ -80,6 +91,7 @@ class MemoExtra_MemoContent(MemoExtra):
             self.__memo_editor.select_security(security)
             self.__memo_editor.select_memo_by_list_index(0)
             self.__memo_editor.exec()
+            self.__memo_data.broadcast_data_updated('memo_record')
 
     def title_text(self) -> str:
         return 'Memo'
@@ -145,7 +157,7 @@ class MemoExtra_StockTags(MemoExtra):
         self.__stock_tags_ui.close()
         self.__stock_tags.set_obj_tags(self.__current_stock, tags)
         self.__stock_tags.save()
-        self.notify_memo_ui_update()
+        self.__memo_data.broadcast_data_updated('tags')
 
     def global_entry(self):
         pass
@@ -167,6 +179,46 @@ class MemoExtra_StockTags(MemoExtra):
         tags = self.__stock_tags.tags_of_objs(security)
         return Tags.tags_to_str(tags)
 
+
+# -------------------------------- Analysis --------------------------------
+
+class MemoExtra_Analysis(MemoExtra):
+    PRESET_TAGS = ['黑名单', '灰名单', '关注']
+
+    def __init__(self, memo_data: StockMemoData):
+        self.__memo_data = memo_data
+        super(MemoExtra_Analysis, self).__init__()
+
+    def global_entry(self):
+        pass
+
+    def security_entry(self, security: str):
+        from StockAnalysisSystem.core.Utiltity.AnalyzerUtility import analysis_dataframe_to_list
+
+        strategy_entry = self.__memo_data.get_sas().get_strategy_entry()
+        analyzer_info = strategy_entry.analyzer_info()
+        analyzer = [uuid for uuid, _, _, _ in analyzer_info]
+
+        df = strategy_entry.result_from_cache('Result.Analyzer',
+                                              analyzer=analyzer,
+                                              time_serial=(years_ago(5), now()))
+        if df is not None and not df.empty:
+            result = analysis_dataframe_to_list(df)
+        else:
+            result = self.__strategy.run_strategy([security], analyzer,
+                                                  time_serial=(years_ago(5), now()))
+        # table = QTableWidget()
+        # write_df_to_qtable(result, table)
+        # table.show()
+
+    def title_text(self) -> str:
+        return 'Analysis'
+
+    def global_entry_text(self) -> str:
+        return ''
+
+    def security_entry_text(self, security: str) -> str:
+        return 'Go'
 
 
 

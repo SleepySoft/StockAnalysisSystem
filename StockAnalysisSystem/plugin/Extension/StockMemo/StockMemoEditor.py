@@ -13,10 +13,15 @@ from StockAnalysisSystem.core.Utiltity.ui_utility import *
 from StockAnalysisSystem.core.Utiltity.time_utility import *
 from StockAnalysisSystem.core.Utiltity.securities_selector import SecuritiesSelector
 
-root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-os.sys.path.append(root_path)
+try:
+    from .MemoUtility import *
+except Exception as e:
+    root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    os.sys.path.append(root_path)
 
-from StockMemo.MemoUtility import *
+    from StockMemo.MemoUtility import *
+finally:
+    pass
 
 
 # ----------------------------------------------- class StockMemoEditor ------------------------------------------------
@@ -158,7 +163,9 @@ class StockMemoEditor(QDialog):
                 self.select_memo_by_memo_index(self.__current_index)
             else:
                 self.select_memo_by_list_index(0)
+
         self.__trigger_memo_updated()
+        self.__memo_data.broadcast_data_updated('memo_record')
 
     def on_combo_select_changed(self):
         input_securities = self.__combo_stock.get_input_securities()
