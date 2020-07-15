@@ -91,7 +91,6 @@ class MemoExtra_MemoContent(MemoExtra):
             self.__memo_editor.select_security(security)
             self.__memo_editor.select_memo_by_list_index(0)
             self.__memo_editor.exec()
-            self.__memo_data.broadcast_data_updated('memo_record')
 
     def title_text(self) -> str:
         return 'Memo'
