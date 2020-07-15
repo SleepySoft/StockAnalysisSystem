@@ -24,13 +24,21 @@ from StockAnalysisSystem.core.Utiltity.time_utility import *
 from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 from StockAnalysisSystem.core.Utiltity.securities_selector import SecuritiesSelector
 
-root_path = os.path.dirname(os.path.abspath(__file__))
-os.sys.path.append(root_path)
+try:
+    from .StockMemo.MemoExtra import *
+    from .StockMemo.MemoUtility import *
+    from .StockMemo.StockChartUi import StockChartUi
+    from .StockMemo.StockMemoEditor import StockMemoEditor
+except Exception as e:
+    root_path = os.path.dirname(os.path.abspath(__file__))
+    os.sys.path.append(root_path)
 
-from StockMemo.MemoExtra import *
-from StockMemo.MemoUtility import *
-from StockMemo.StockChartUi import StockChartUi
-from StockMemo.StockMemoEditor import StockMemoEditor
+    from StockMemo.MemoExtra import *
+    from StockMemo.MemoUtility import *
+    from StockMemo.StockChartUi import StockChartUi
+    from StockMemo.StockMemoEditor import StockMemoEditor
+finally:
+    pass
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -50,11 +58,11 @@ class StockMemoDeck(QWidget):
     def __init__(self, memo_data: StockMemoData):
         super(StockMemoDeck, self).__init__()
         self.__memo_data = memo_data
+        self.__memo_data.add_observer(self)
 
         self.__sas = self.__memo_data.get_sas()
         self.__memo_record: StockMemoRecord = self.__memo_data.get_memo_record()
         self.__memo_editor: StockMemoEditor = self.__memo_data.get_data('editor')
-        self.__memo_editor.add_observer(self)
         self.__data_utility = self.__sas.get_data_hub_entry().get_data_utility() if self.__sas is not None else None
 
         self.__memo_extras = []
@@ -126,10 +134,15 @@ class StockMemoDeck(QWidget):
             if isinstance(self.__list_securities, str) else self.__list_securities
         self.__update_memo_securities_list(list_securities)
 
-    # ------------------- Interface of StockMemoEditor.Observer ------------------
+    # ------------------- Interface of StockMemoData.Observer --------------------
 
-    def on_memo_updated(self):
-        self.update_list()
+    # def on_memo_updated(self):
+    #     self.update_list()
+
+    def on_data_updated(self, name: str, data: any):
+        nop(data)
+        if name in ['memo_record', 'tags']:
+            self.update_list()
 
     # ----------------------------------------------------------------------------
 
@@ -250,6 +263,7 @@ def widget(parent: QWidget) -> (QWidget, dict):
     memo_ui.add_memo_extra(MemoExtra_MemoContent(memoData))
     memo_ui.add_memo_extra(MemoExtra_MemoHistory(memoData))
     memo_ui.add_memo_extra(MemoExtra_StockTags(memoData))
+    # memo_ui.add_memo_extra(MemoExtra_Analysis(memoData))
     memo_ui.update_list()
 
     return memo_ui, {'name': '股票笔记', 'show': False}

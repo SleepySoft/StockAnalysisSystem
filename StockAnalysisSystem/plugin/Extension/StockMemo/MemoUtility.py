@@ -4,9 +4,6 @@ import errno
 from StockAnalysisSystem.core.Utiltity.CsvRecord import *
 from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 
-root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-os.sys.path.append(root_path)
-
 
 # -------------------------------------------------- Global Functions --------------------------------------------------
 
@@ -100,28 +97,41 @@ class StockMemoRecord(CsvRecord):
 # ------------------------------------------------ class StockMemoData -------------------------------------------------
 
 class StockMemoData:
+    RESERVED_DATA = ['root_path', 'memo_record']
+
+    class Observer:
+        def __init__(self):
+            pass
+
+        def on_data_updated(self, name: str, data: any):
+            pass
+
     def __init__(self, sas: StockAnalysisSystem):
         self.__sas = sas
-        self.__extra_data = {}
 
         user_path = os.path.expanduser('~')
         project_path = self.__sas.get_project_path() if self.__sas is not None else os.getcwd()
 
-        memo_path = self.__sas.get_config().get('memo_path', '')
-        memo_path = memo_path if memo_path != '' else (
+        root_path = self.__sas.get_config().get('memo_path', '')
+        root_path = root_path if root_path != '' else (
             memo_path_from_project_path(project_path) if user_path == '' else
             memo_path_from_user_path(user_path))
 
-        self.__root_path = memo_path
-        self.__memo_record = StockMemoRecord(os.path.join(self.__root_path, 'stock_memo.csv'))
-        if not self.__memo_record.load():
+        memo_record = StockMemoRecord(os.path.join(root_path, 'stock_memo.csv'))
+        if not memo_record.load():
             print('Load stock memo fail, maybe no memo exists.')
 
+        self.__extra_data = {
+            'root_path': root_path,
+            'memo_record': memo_record,
+        }
+        self.__observers = []
+
     def get_root_path(self) -> str:
-        return self.__root_path
+        return self.__extra_data.get('root_path', '')
 
     def set_root_path(self, _path: str):
-        self.__root_path = _path
+        self.__extra_data['root_path'] = _path
 
     # -------------- Core Object --------------
 
@@ -129,15 +139,26 @@ class StockMemoData:
         return self.__sas
 
     def get_memo_record(self) -> StockMemoRecord:
-        return self.__memo_record
+        return self.__extra_data.get('memo_record', None)
 
     # ------------- Extra Object --------------
 
     def set_data(self, name: str, _data: any):
+        if name not in StockMemoData.RESERVED_DATA:
+            print("You're setting reserve data.")
         self.__extra_data[name] = _data
 
     def get_data(self, name: str) -> any:
         return self.__extra_data.get(name, None)
+
+    # ---------------- Update ----------------
+
+    def add_observer(self, ob: Observer):
+        self.__observers.append(ob)
+
+    def broadcast_data_updated(self, name: str):
+        for ob in self.__observers:
+            ob.on_data_updated(name, self.__extra_data.get(name, None))
 
 
 

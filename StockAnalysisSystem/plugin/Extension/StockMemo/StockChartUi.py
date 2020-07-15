@@ -12,11 +12,18 @@ from StockAnalysisSystem.core.Utiltity.common import *
 from StockAnalysisSystem.core.Utiltity.ui_utility import *
 from StockAnalysisSystem.core.Utiltity.securities_selector import SecuritiesSelector
 
-root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-os.sys.path.append(root_path)
+try:
+    # Only for pycharm indicating imports
+    from .MemoUtility import *
+    from .StockMemoEditor import StockMemoEditor
+except Exception as e:
+    root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    os.sys.path.append(root_path)
 
-from StockMemo.MemoUtility import *
-from StockMemo.StockMemoEditor import StockMemoEditor
+    from StockMemo.MemoUtility import *
+    from StockMemo.StockMemoEditor import StockMemoEditor
+finally:
+    pass
 
 
 # ----------------------------------------------------------------------------------------------------------------------

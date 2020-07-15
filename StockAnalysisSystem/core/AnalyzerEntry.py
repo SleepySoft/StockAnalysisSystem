@@ -75,6 +75,25 @@ class StrategyEntry:
                 name_dict[method[0]] = method[1]
         return name_dict
 
+    def analyzer_info(self) -> [(str, str, str, str)]:
+        """
+        Get all analyzer info in list of tuple.
+        :return: [(uuid, name, detail, entry)]
+        """
+        info = []
+        probs = self.strategy_prob()
+        for prob in probs:
+            methods = prob.get('methods', [])
+            for method in methods:
+                method_uuid = method[0]
+                method_name = method[1]
+                method_detail = method[2]
+                method_entry = method[3]
+                if method_entry is not None and '测试' not in method_name:
+                    # Notice the item order
+                    info.append((method_uuid, method_name, method_detail, method_entry))
+        return info
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 #                                                         Test
