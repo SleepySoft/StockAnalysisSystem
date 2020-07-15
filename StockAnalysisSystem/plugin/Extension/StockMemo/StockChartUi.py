@@ -1,15 +1,17 @@
 import os
+import pyqtgraph as pg
+from pyqtgraph.GraphicsScene.mouseEvents import MouseClickEvent
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QTimer, QDateTime, QPoint, pyqtSlot
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QButtonGroup, QDateTimeEdit, QApplication, QLabel, QTextEdit, QPushButton, QVBoxLayout, \
     QMessageBox, QWidget, QComboBox, QCheckBox, QRadioButton, QLineEdit, QAbstractItemView, QFileDialog, QDialog
-from pyqtgraph.GraphicsScene.mouseEvents import MouseClickEvent
 
 from StockAnalysisSystem.porting.vnpy_chart import *
 from StockAnalysisSystem.core.Utiltity.common import *
 from StockAnalysisSystem.core.Utiltity.ui_utility import *
+from StockAnalysisSystem.core.Utiltity.time_utility import *
 from StockAnalysisSystem.core.Utiltity.securities_selector import SecuritiesSelector
 
 try:
@@ -40,12 +42,15 @@ class StockChartUi(QWidget):
     RETURN_SIMPLE = 4
 
     def __init__(self, memo_data: StockMemoData):
-        self.__memo_data = memo_data
         super(StockChartUi, self).__init__()
+
+        self.__memo_data = memo_data
+        self.__memo_data.add_observer(self)
 
         self.__sas = memo_data.get_sas()
         self.__memo_record: StockMemoRecord = memo_data.get_memo_record()
 
+        self.__in_edit_mode = True
         self.__paint_securities = ''
         self.__paint_trade_data = None
 
@@ -63,7 +68,6 @@ class StockChartUi(QWidget):
 
         # Memo editor
         self.__memo_editor: StockMemoEditor = self.__memo_data.get_data('editor')
-        self.__memo_editor.add_observer(self)
 
         # Timer for workaround signal fired twice
         self.__accepted = False
@@ -198,11 +202,18 @@ class StockChartUi(QWidget):
             input_securities = input_securities.split('|')[0].strip()
         self.show_security(input_securities)
 
-    # ------------------- Interface of StockMemoEditor.Observer ------------------
+    # ------------------- Interface of StockMemoData.Observer --------------------
 
-    def on_memo_updated(self):
-        self.load_security_memo()
-        self.__vnpy_chart.refresh_history()
+    # def on_memo_updated(self):
+    #     self.load_security_memo()
+    #     self.__vnpy_chart.refresh_history()
+
+    def on_data_updated(self, name: str, data: any):
+        nop(data)
+        if self.__in_edit_mode and name == 'memo_record':
+            self.load_security_memo()
+            self.__vnpy_chart.refresh_history()
+            self.__in_edit_mode = False
 
     # ----------------------------------------------------------------------------
 
@@ -239,6 +250,7 @@ class StockChartUi(QWidget):
             self.popup_memo_editor_by_time(_time)
         else:
             self.popup_memo_editor_by_time(now())
+        self.__in_edit_mode = True
 
     def popup_memo_editor_by_time(self, _time: datetime):
         self.__memo_editor.select_security(self.__paint_securities)

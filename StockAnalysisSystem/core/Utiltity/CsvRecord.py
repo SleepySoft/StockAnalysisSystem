@@ -48,7 +48,7 @@ class CsvRecord:
         # return df[np.logical_and.reduce([df[k] == v for k, v in conditions.items()])]
 
     def del_records(self, idx: int or [int]):
-        self.__record_sheet.drop(idx)
+        self.__record_sheet = self.__record_sheet.drop(idx)
 
     def load(self, record_path: str = '') -> bool:
         if record_path != '':
