@@ -167,7 +167,21 @@ def get_security_result_from_analysis_result_list(result_list: [AnalysisResult],
 
 def analysis_result_list_to_single_stock_report(result_list: [AnalysisResult], stock_ideneity: str) -> pd.DataFrame:
     security_result_list = get_security_result_from_analysis_result_list(result_list, stock_ideneity)
-    pass
+    result_table = {}
+    for analysis_result in security_result_list:
+        analyzer_uuid = analysis_result.method
+        if analyzer_uuid not in result_table.keys():
+            result_table[analyzer_uuid] = [analysis_result]
+        else:
+            result_table[analyzer_uuid].append(analysis_result)
+    result_report = None
+    # TODO: Check Duplicate: {"period" : ISODate("2015-12-31T00:00:00Z"),"stock_identity" : "600103.SSE", "method":"7e132f82-a28e-4aa9-aaa6-81fa3692b10c"}
+    for analyzer_uuid, result_list in result_table.items():
+        s = pd.Series(result_list, index=[r.period for r in result_list])
+        df = s.to_frame()
+        result_report = df if result_report is None else \
+            result_report.merge(s.to_frame(), left_index=True, right_index=True)
+    return result_report
 
 
 def analysis_dataframe_to_list(df: pd.DataFrame) -> [AnalysisResult]:

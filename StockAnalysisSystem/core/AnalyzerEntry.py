@@ -97,7 +97,8 @@ class StrategyEntry:
             df = self.__data_hub.get_data_center().query(uri, identity, time_serial, analyzer={'$in': analyzer})
         return df
 
-    def analysis_advance(self, securities: [str], analyzers: [str], time_serial: (datetime.datetime, datetime.datetime),
+    def analysis_advance(self, securities: str or [str], analyzers: [str],
+                         time_serial: (datetime.datetime, datetime.datetime),
                          progress_rate: ProgressRate = None,
                          enable_calculation: bool = True,
                          enable_from_cache: bool = True, enable_update_cache: bool = True,
@@ -105,7 +106,12 @@ class StrategyEntry:
                          dump_path: str = '') -> [AnalysisResult]:
         clock = Clock()
         total_result = []
-        progress_rate.reset()
+
+        if progress_rate is not None:
+            progress_rate.reset()
+
+        if not isinstance(securities, list):
+            securities = [securities]
 
         for analyzer in analyzers:
             result = None
@@ -119,7 +125,8 @@ class StrategyEntry:
                 print('Analyzer %s : Load json finished, time spending: %ss' % (analyzer, clock.elapsed_s()))
             else:
                 if enable_from_cache:
-                    df = self.result_from_cache('Result.Analyzer', analyzer=analyzer, time_serial=time_serial)
+                    df = self.result_from_cache('Result.Analyzer', analyzer=analyzer,
+                                                identity=securities, time_serial=time_serial)
                     result = analysis_dataframe_to_list(df)
 
                     if result is None or len(result) == 0:
@@ -127,14 +134,18 @@ class StrategyEntry:
                         print('Analyzer %s : No cache data' % analyzer)
                     else:
                         uncached = False
-                        progress_rate.set_progress(analyzer, 1, 1)
-                        progress_rate.finish_progress(analyzer)
+                        if progress_rate is not None:
+                            progress_rate.set_progress(analyzer, 1, 1)
+                            progress_rate.finish_progress(analyzer)
                         print('Analyzer %s : Load cache finished, time spending: %ss' % (analyzer, clock.elapsed_s()))
 
                 if result is None and enable_calculation:
                     clock.reset()
-                    result = self.run_strategy(securities, [analyzer],
-                                               time_serial=time_serial, progress=progress_rate)
+                    if progress_rate is not None:
+                        result = self.run_strategy(securities, [analyzer],
+                                                   time_serial=time_serial, progress=progress_rate)
+                    else:
+                        result = self.run_strategy(securities, [analyzer], time_serial=time_serial)
                     print('Analyzer %s : Execute analysis, time spending: %ss' % (analyzer, clock.elapsed_s()))
 
                 if result is not None and len(result) > 0:

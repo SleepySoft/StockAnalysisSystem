@@ -265,7 +265,7 @@ def widget(parent: QWidget) -> (QWidget, dict):
     memo_ui.add_memo_extra(MemoExtra_MemoContent(memoData))
     memo_ui.add_memo_extra(MemoExtra_MemoHistory(memoData))
     memo_ui.add_memo_extra(MemoExtra_StockTags(memoData))
-    # memo_ui.add_memo_extra(MemoExtra_Analysis(memoData))
+    memo_ui.add_memo_extra(MemoExtra_Analysis(memoData))
     memo_ui.update_list()
 
     return memo_ui, {'name': '股票笔记', 'show': False}
