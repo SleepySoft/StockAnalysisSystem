@@ -4,6 +4,7 @@ from StockAnalysisSystem.core.Utiltity.common import *
 from StockAnalysisSystem.core.Utiltity.TagsLib import *
 from StockAnalysisSystem.core.Utiltity.df_utility import *
 from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.Utiltity.AnalyzerUtility import *
 
 try:
     # Only for pycharm indicating imports
@@ -192,23 +193,15 @@ class MemoExtra_Analysis(MemoExtra):
         pass
 
     def security_entry(self, security: str):
-        from StockAnalysisSystem.core.Utiltity.AnalyzerUtility import analysis_dataframe_to_list
-
         strategy_entry = self.__memo_data.get_sas().get_strategy_entry()
         analyzer_info = strategy_entry.analyzer_info()
-        analyzer = [uuid for uuid, _, _, _ in analyzer_info]
+        analyzers = [uuid for uuid, _, _, _ in analyzer_info]
 
-        df = strategy_entry.result_from_cache('Result.Analyzer',
-                                              analyzer=analyzer,
-                                              time_serial=(years_ago(5), now()))
-        if df is not None and not df.empty:
-            result = analysis_dataframe_to_list(df)
-        else:
-            result = self.__strategy.run_strategy([security], analyzer,
-                                                  time_serial=(years_ago(5), now()))
-        # table = QTableWidget()
-        # write_df_to_qtable(result, table)
-        # table.show()
+        result = strategy_entry.analysis_advance(security, analyzers, (years_ago(5), now()))
+        df = analysis_result_list_to_single_stock_report(result, security)
+        table = QTableWidget()
+        write_df_to_qtable(df, table)
+        table.show()
 
     def title_text(self) -> str:
         return 'Analysis'
