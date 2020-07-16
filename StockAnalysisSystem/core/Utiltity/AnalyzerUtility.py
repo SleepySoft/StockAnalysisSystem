@@ -118,7 +118,7 @@ class AnalysisResult:
                sys.getsizeof(self.weight)
 
 
-# --------------------------------------------- Analysis Result Convertion ---------------------------------------------
+# --------------------------------------------- Analysis Result Conversion ---------------------------------------------
 
 def analysis_results_to_json(result_list: [AnalysisResult], fp=None) -> bool or str:
     def _analysis_result_json_hook(analysis_result: AnalysisResult) ->dict:
@@ -153,6 +153,21 @@ def analysis_result_list_to_table(result_list: [AnalysisResult]) -> {str: {str: 
             result_table[analyzer_uuid][stock_identity] = []
         result_table[analyzer_uuid][stock_identity].append(analysis_result)
     return result_table
+
+
+def get_security_result_from_analysis_result_list(result_list: [AnalysisResult],
+                                                  stock_identity: str) -> [AnalysisResult]:
+    security_result_list = []
+    for analysis_result in result_list:
+        identity = analysis_result.securities
+        if identity == stock_identity:
+            security_result_list.append(analysis_result)
+    return security_result_list
+
+
+def analysis_result_list_to_single_stock_report(result_list: [AnalysisResult], stock_ideneity: str) -> pd.DataFrame:
+    security_result_list = get_security_result_from_analysis_result_list(result_list, stock_ideneity)
+    pass
 
 
 def analysis_dataframe_to_list(df: pd.DataFrame) -> [AnalysisResult]:
