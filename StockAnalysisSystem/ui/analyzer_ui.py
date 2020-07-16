@@ -73,82 +73,22 @@ class AnalysisTask(TaskQueue.Task):
         return stock_list
 
     def analysis(self, securities_list: [str]) -> [AnalysisResult]:
-        clock = Clock()
         clock_all = Clock()
-        total_result = []
-        self.__progress_rate.reset()
-
-        for analyzer in self.__analyzer_list:
-            result = None
-            uncached = True
-
-            if self.__options & AnalysisTask.OPTION_FROM_JSON:
-                # DEBUG: Load result from json file
-                clock.reset()
-                with open(self.__json_path(analyzer), 'rt') as f:
-                    result = analysis_results_from_json(f)
-                print('Analyzer %s : Load json finished, time spending: %ss' % (analyzer, clock.elapsed_s()))
-            else:
-                if self.__options & AnalysisTask.OPTION_FROM_CACHE:
-                    clock.reset()
-                    df = self.__strategy.result_from_cache('Result.Analyzer',
-                                                           analyzer=analyzer, time_serial=self.__time_serial)
-                    result = analysis_dataframe_to_list(df)
-
-                    if result is None or len(result) == 0:
-                        result = None
-                        print('Analyzer %s : No cache data' % analyzer)
-                    else:
-                        uncached = False
-                        self.__progress_rate.set_progress(analyzer, 1, 1)
-                        self.__progress_rate.finish_progress(analyzer)
-                        print('Analyzer %s : Load cache finished, time spending: %ss' % (analyzer, clock.elapsed_s()))
-
-                if result is None and self.__options & AnalysisTask.OPTION_CALC:
-                    clock.reset()
-                    result = self.__strategy.run_strategy(securities_list, [analyzer],
-                                                          time_serial=self.__time_serial, progress=self.__progress_rate)
-                    print('Analyzer %s : Execute analysis, time spending: %ss' % (analyzer, clock.elapsed_s()))
-
-            if result is not None and len(result) > 0:
-                total_result.extend(result)
-                byte_size = sys.getsizeof(total_result) + sum(r.rough_size() for r in total_result)
-                print('Total result size = %.2f MB' % (float(byte_size) / 1024 / 1024))
-
-                if self.__options & AnalysisTask.OPTION_DUMP_JSON:
-                    # DEBUG: Dump result to json file
-                    clock.reset()
-                    with open(self.__json_path(analyzer), 'wt') as f:
-                        analysis_results_to_json(result, f)
-                    print('Analyzer %s : Dump json, time spending: %ss' % (analyzer, clock.elapsed_s()))
-
-                if uncached and self.__options & AnalysisTask.OPTION_UPDATE_CACHE:
-                    clock.reset()
-                    self.__strategy.cache_analysis_result('Result.Analyzer', result)
-                    print('Analyzer %s : Cache result, time spending: %ss' % (analyzer, clock.elapsed_s()))
-
+        total_result = self.__strategy.analysis_advance(
+            securities_list, self.__analyzer_list, self.__time_serial,
+            self.__progress_rate,
+            self.__options & AnalysisTask.OPTION_CALC != 0,
+            self.__options & AnalysisTask.OPTION_FROM_CACHE != 0, self.__options & AnalysisTask.OPTION_UPDATE_CACHE != 0,
+            self.__options & AnalysisTask.OPTION_FROM_JSON != 0, self.__options & AnalysisTask.OPTION_DUMP_JSON != 0,
+            os.path.join(StockAnalysisSystem().get_project_path(), 'TestData')
+        )
         print('All analysis finished, time spending: %ss' % clock_all.elapsed_s())
         return total_result
 
     def gen_report(self, result_list: [AnalysisResult]):
         clock = Clock()
-
-        # ------------ Parse to Table ------------
-        result_table = analysis_result_list_to_table(result_list)
-
-        # ------------- Collect Info -------------
-        stock_list = self.__data_hub.get_data_utility().get_stock_list()
-        stock_dict = {_id: _name for _id, _name in stock_list}
-        name_dict = self.__strategy.strategy_name_dict()
-
-        # ----------- Generate report ------------
-        generate_analysis_report(result_table, self.__report_path, name_dict, stock_dict)
-
+        self.__strategy.generate_report_excel_common(result_list, self.__report_path)
         print('Generate report time spending: %ss' % str(clock.elapsed_s()))
-
-    @staticmethod
-    def __json_path(analyzer: str) -> str:
-        return os.path.join(StockAnalysisSystem().get_project_path(), 'TestData', analyzer + '.json')
 
 
 # ---------------------------------------------------- AnalyzerUi ----------------------------------------------------
