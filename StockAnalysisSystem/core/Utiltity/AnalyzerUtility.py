@@ -175,13 +175,27 @@ def analysis_result_list_to_single_stock_report(result_list: [AnalysisResult], s
         else:
             result_table[analyzer_uuid].append(analysis_result)
     result_report = None
+
     # TODO: Check Duplicate: {"period" : ISODate("2015-12-31T00:00:00Z"),"stock_identity" : "600103.SSE", "method":"7e132f82-a28e-4aa9-aaa6-81fa3692b10c"}
     for analyzer_uuid, result_list in result_table.items():
-        s = pd.Series(result_list, index=[r.period for r in result_list])
+        # content = [r.reason + ' | ' + str(r.score) for r in result_list]
+        # indexes = [r.period for r in result_list]
+
+        content = []
+        indexes = []
+        for r in result_list:
+            text = r.reason if str_available(r.reason) else 'OK'
+            text += ' [' + str(r.score) + ']'
+            content.append(text)
+            indexes.append(r.period)
+
+        s = pd.Series(content, index=indexes)
+        s.name = analyzer_uuid
+
         df = s.to_frame()
-        result_report = df if result_report is None else \
-            result_report.merge(s.to_frame(), left_index=True, right_index=True)
-    return result_report
+        df = df.groupby(df.index).first()
+        result_report = df if result_report is None else pd.concat([result_report, df], axis=1)
+    return result_report.sort_index(ascending=False)
 
 
 def analysis_dataframe_to_list(df: pd.DataFrame) -> [AnalysisResult]:
@@ -662,11 +676,68 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
     wb.save(file_path)
 
 
+# --------------------------------------------------------- UI ---------------------------------------------------------
+
+from StockAnalysisSystem.core.Utiltity.ui_utility import *
+from StockAnalysisSystem.core.Utiltity.TableViewEx import *
 
 
+class AnalyzerSelector(QDialog):
+    TABLE_HEADER_ANALYZER = ['', 'Strategy', 'Comments', 'UUID']
 
+    def __init__(self, analyzer_utility):
+        super(AnalyzerSelector, self).__init__()
+        self.__analyzer_utility = analyzer_utility
+        self.__ok = True
+        self.__table_analyzer = TableViewEx()
+        self.__button_ok = QPushButton('OK')
+        self.__button_cancel = QPushButton('Cancel')
+        self.init_ui()
 
+    def init_ui(self):
+        layout = QVBoxLayout()
+        self.setLayout(layout)
 
+        layout.addWidget(self.__table_analyzer)
+        layout.addLayout(horizon_layout([QLabel(''), self.__button_ok, self.__button_cancel], [8, 1, 1]))
+
+        self.__table_analyzer.SetCheckableColumn(0)
+        self.__table_analyzer.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+
+        self.__button_ok.clicked.connect(self.__on_button_ok)
+        self.__button_cancel.clicked.connect(self.__on_button_cancel)
+
+        self.setMinimumSize(800, 600)
+        self.setWindowTitle('Select Analyzer')
+
+        self.load_analyzer()
+
+    def __on_button_ok(self):
+        self.__ok = True
+        self.close()
+
+    def __on_button_cancel(self):
+        self.close()
+
+    def is_ok(self) -> bool:
+        return self.__ok
+
+    def load_analyzer(self):
+        self.__table_analyzer.Clear()
+        self.__table_analyzer.SetRowCount(0)
+        self.__table_analyzer.SetColumn(AnalyzerSelector.TABLE_HEADER_ANALYZER)
+
+        analyzer_info = self.__analyzer_utility.analyzer_info()
+        for analyzer_uuid, analyzer_name, analyzer_detail, _ in analyzer_info:
+            self.__table_analyzer.AppendRow(['', analyzer_name, analyzer_detail, analyzer_uuid])
+
+    def get_select_strategy(self):
+        analyzer_list = []
+        for i in range(self.__table_analyzer.RowCount()):
+            if self.__table_analyzer.GetItemCheckState(i, 0) == QtCore.Qt.Checked:
+                uuid = self.__table_analyzer.GetItemText(i, 3)
+                analyzer_list.append(uuid)
+        return analyzer_list
 
 
 
