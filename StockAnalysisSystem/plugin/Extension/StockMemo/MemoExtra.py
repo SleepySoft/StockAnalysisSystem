@@ -194,14 +194,33 @@ class MemoExtra_Analysis(MemoExtra):
 
     def security_entry(self, security: str):
         strategy_entry = self.__memo_data.get_sas().get_strategy_entry()
-        analyzer_info = strategy_entry.analyzer_info()
-        analyzers = [uuid for uuid, _, _, _ in analyzer_info]
+
+        selector = AnalyzerSelector(strategy_entry)
+        selector.exec()
+        if not selector.is_ok():
+            return
+
+        analyzers = selector.get_select_strategy()
+        if len(analyzers) == 0:
+            return
+
+        # analyzer_info = strategy_entry.analyzer_info()
+        # analyzers = [uuid for uuid, _, _, _ in analyzer_info]
 
         result = strategy_entry.analysis_advance(security, analyzers, (years_ago(5), now()))
+
         df = analysis_result_list_to_single_stock_report(result, security)
+        df = df.fillna('-')
+        df = df.rename(columns=strategy_entry.strategy_name_dict())
+
         table = QTableWidget()
-        write_df_to_qtable(df, table)
-        table.show()
+        table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        table.setMinimumSize(800, 600)
+        write_df_to_qtable(df, table, True)
+
+        dlg = WrapperQDialog(table)
+        dlg.setWindowTitle('Analysis Result')
+        dlg.exec()
 
     def title_text(self) -> str:
         return 'Analysis'

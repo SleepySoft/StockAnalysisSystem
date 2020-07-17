@@ -67,17 +67,19 @@ def restore_text_editor(editor: QTextEdit):
 # Takes a df and writes it to a qtable provided. df headers become qtable headers
 # From: https://stackoverflow.com/a/57225144
 
-def write_df_to_qtable(df: pd.DataFrame, table: QTableWidget):
+def write_df_to_qtable(df: pd.DataFrame, table: QTableWidget, index=False):
     headers = list(df)
     table.setRowCount(df.shape[0])
-    table.setColumnCount(df.shape[1])
-    table.setHorizontalHeaderLabels(headers)
+    table.setColumnCount(df.shape[1] + (1 if index else 0))
+    table.setHorizontalHeaderLabels(([''] if index else []) + headers)
 
     # getting data from df is computationally costly so convert it to array first
     df_array = df.values
     for row in range(df.shape[0]):
         for col in range(df.shape[1]):
-            table.setItem(row, col, QTableWidgetItem(str(df_array[row, col])))
+            if col == 0 and index:
+                table.setItem(row, col, QTableWidgetItem(str(df.index[row])))
+            table.setItem(row, col + (1 if index else 0), QTableWidgetItem(str(df_array[row, col])))
 
 
 # ----------------------------------------------------------------------------------------------------------------------

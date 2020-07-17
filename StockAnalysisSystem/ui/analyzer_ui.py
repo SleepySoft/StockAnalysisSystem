@@ -14,7 +14,8 @@ import traceback
 import threading
 
 from PyQt5.QtCore import QTimer, pyqtSignal
-from PyQt5.QtWidgets import QHeaderView, QLineEdit, QFileDialog, QCheckBox, QDateTimeEdit, QGridLayout
+from PyQt5.QtWidgets import QHeaderView, QLineEdit, QFileDialog, QCheckBox, QDateTimeEdit, QGridLayout, QRadioButton, \
+    QButtonGroup
 
 from StockAnalysisSystem.core.AnalyzerEntry import *
 from StockAnalysisSystem.core.Utiltity.task_queue import *
@@ -139,6 +140,12 @@ class AnalyzerUi(QWidget):
 
         self.__table_selector = TableViewEx()
         self.__table_analyzer = TableViewEx()
+
+        # self.__radio_group_selector = QButtonGroup(self)
+        # self.__radio_all = QRadioButton('All')
+        # self.__radio_tags = QRadioButton('Tags')
+        # self.__radio_manual = QRadioButton('Manual')
+        # self.__table_preview = QTableWidget()
 
         self.__check_force_calc = QCheckBox('Force Calc')
         self.__check_auto_cache = QCheckBox('Cache Result')
@@ -318,13 +325,13 @@ class AnalyzerUi(QWidget):
         self.__table_analyzer.SetColumn(AnalyzerUi.TABLE_HEADER_ANALYZER)
 
         for method_uuid, method_name, method_detail, _ in self.__analyzer_info:
-            line = []
-            line.append('')             # Place holder for check box
-            line.append(method_name)
-            line.append(method_detail)
-            line.append(method_uuid)
-            line.append('')             # Place holder for status
-
+            line = [
+                '',             # Place holder for check box
+                method_name,
+                method_detail,
+                method_uuid,
+                '',             # Place holder for status
+                ]
             self.__table_analyzer.AppendRow(line)
             # index = self.__table_analyzer.RowCount() - 1
 
