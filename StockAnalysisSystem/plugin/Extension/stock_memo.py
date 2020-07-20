@@ -10,7 +10,7 @@ from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QTimer, QDateTime, QPoint, pyqtSlot
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QButtonGroup, QDateTimeEdit, QApplication, QLabel, QTextEdit, QPushButton, QVBoxLayout, \
-    QMessageBox, QWidget, QComboBox, QCheckBox, QRadioButton, QLineEdit, QAbstractItemView, QFileDialog
+    QMessageBox, QWidget, QComboBox, QCheckBox, QRadioButton, QLineEdit, QAbstractItemView, QFileDialog, QSpinBox
 from pyqtgraph.GraphicsScene.mouseEvents import MouseClickEvent
 
 from StockAnalysisSystem.core.config import *
@@ -74,16 +74,16 @@ class StockMemoDeck(QWidget):
             self.__data_utility = None
 
         self.__memo_extras = []
-        self.__list_securities = self.__memo_record.get_all_security() if self.__memo_record is not None else []
+        self.__list_securities = []
 
         # ---------------- Page -----------------
 
-        self.__page = 0
+        self.__page = 1
         self.__item_per_page = 20
 
         self.__button_first = QPushButton('|<')
         self.__button_prev = QPushButton('<')
-        self.__line_page = QLineEdit('0')
+        self.__spin_page = QSpinBox()
         self.__button_jump = QPushButton('GO')
         self.__button_next = QPushButton('>')
         self.__button_last = QPushButton('>|')
@@ -103,6 +103,8 @@ class StockMemoDeck(QWidget):
         self.init_ui()
         self.config_ui()
 
+        self.show_securities(self.__memo_record.get_all_security() if self.__memo_record is not None else [])
+
     def init_ui(self):
         main_layout = QVBoxLayout()
         self.setLayout(main_layout)
@@ -112,7 +114,7 @@ class StockMemoDeck(QWidget):
         page_control_line.addWidget(QLabel(''), 99)
         page_control_line.addWidget(self.__button_first, 1)
         page_control_line.addWidget(self.__button_prev, 1)
-        page_control_line.addWidget(self.__line_page, 1)
+        page_control_line.addWidget(self.__spin_page, 1)
         page_control_line.addWidget(self.__button_jump, 1)
         page_control_line.addWidget(self.__button_next, 1)
         page_control_line.addWidget(self.__button_last, 1)
@@ -169,9 +171,11 @@ class StockMemoDeck(QWidget):
         self.__memo_extras.append(extra)
 
     def update_list(self):
-        list_securities = [self.__list_securities] \
-            if isinstance(self.__list_securities, str) else self.__list_securities
-        self.__update_memo_securities_list(list_securities)
+        self.__update_memo_securities_list(self.__list_securities)
+
+    def show_securities(self, securities: [str]):
+        self.__update_securities(securities)
+        self.__update_memo_securities_list(self.__list_securities)
 
     # ------------------- Interface of StockMemoData.Observer --------------------
 
@@ -186,9 +190,25 @@ class StockMemoDeck(QWidget):
     # ----------------------------------------------------------------------------
 
     def __on_page_control(self, button_mark: str):
-        max_page = len(self.__list_securities) / self.__item_per_page
+        new_page = self.__page
         if button_mark == '|<':
-            self.__page = 0
+            new_page = 0
+        elif button_mark == '<':
+            new_page -= 1
+        elif button_mark == 'g':
+            new_page = self.__spin_page.value()
+        elif button_mark == '>':
+            new_page += 1
+        elif button_mark == '>|':
+            new_page = self.__max_page()
+
+        new_page = max(1, new_page)
+        new_page = min(self.__max_page(), new_page)
+
+        if self.__page != new_page:
+            self.__page = new_page
+            self.__spin_page.setValue(self.__page)
+            self.update_list()
 
     def __on_button_browse(self):
         folder = str(QFileDialog.getExistingDirectory(self, "Select Private Folder",
@@ -218,8 +238,8 @@ class StockMemoDeck(QWidget):
 
     def __on_button_filter_clicked(self):
         input_security = self.__stock_selector.get_input_securities()
-        self.__list_securities = self.__data_utility.guess_securities(input_security)
-        self.update_list()
+        list_securities = self.__data_utility.guess_securities(input_security)
+        self.show_securities(list_securities)
 
     def __on_memo_item_double_clicked(self, index: QModelIndex):
         item_data = index.data(Qt.UserRole)
@@ -233,9 +253,16 @@ class StockMemoDeck(QWidget):
 
         self.__memo_table.Clear()
         self.__memo_table.SetColumn(columns)
-        self.__memo_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
-        for security in securities:
+        index = []
+        offset = (self.__page - 1) * self.__item_per_page
+
+        for i in range(offset, offset + self.__item_per_page):
+            if i < 0 or i >= len(securities):
+                continue
+            security = securities[i]
+            index.append(str(i + 1))
+
             self.__memo_table.AppendRow([''] * len(columns))
             row_count = self.__memo_table.RowCount()
             row = row_count - 1
@@ -257,8 +284,24 @@ class StockMemoDeck(QWidget):
                 # _item = self.__memo_table.GetItem(row, col)
                 # _item.clicked.connect(partial(self.__on_memo_item_clicked, _item, security, memo_extra))
 
+        model = self.__memo_table.model()
+        model.setVerticalHeaderLabels(index)
+
+    def __update_securities(self, list_securities: [str]):
+        self.__list_securities = list_securities if isinstance(list_securities, (list, tuple)) else [list_securities]
+        self.__update_page_control()
+
     def __memo_table_columns(self) -> [str]:
         return StockMemoDeck.STATIC_HEADER + [memo_extra.title_text() for memo_extra in self.__memo_extras]
+
+    def __max_page(self) -> int:
+        return (len(self.__list_securities) + self.__item_per_page - 1) // self.__item_per_page
+
+    def __update_page_control(self):
+        self.__page = 1
+        self.__spin_page.setValue(1)
+        self.__spin_page.setMinimum(1)
+        self.__spin_page.setMaximum(self.__max_page())
 
 
 # ----------------------------------------------------------------------------------------------------------------------
