@@ -84,6 +84,7 @@ class StockMemoDeck(QWidget):
         self.__button_first = QPushButton('|<')
         self.__button_prev = QPushButton('<')
         self.__spin_page = QSpinBox()
+        self.__label_total_page = QLabel('/ 1')
         self.__button_jump = QPushButton('GO')
         self.__button_next = QPushButton('>')
         self.__button_last = QPushButton('>|')
@@ -115,6 +116,7 @@ class StockMemoDeck(QWidget):
         page_control_line.addWidget(self.__button_first, 1)
         page_control_line.addWidget(self.__button_prev, 1)
         page_control_line.addWidget(self.__spin_page, 1)
+        page_control_line.addWidget(self.__label_total_page, 1)
         page_control_line.addWidget(self.__button_jump, 1)
         page_control_line.addWidget(self.__button_next, 1)
         page_control_line.addWidget(self.__button_last, 1)
@@ -299,9 +301,11 @@ class StockMemoDeck(QWidget):
 
     def __update_page_control(self):
         self.__page = 1
+        max_page = self.__max_page()
         self.__spin_page.setValue(1)
         self.__spin_page.setMinimum(1)
-        self.__spin_page.setMaximum(self.__max_page())
+        self.__spin_page.setMaximum(max_page)
+        self.__label_total_page.setText('/ %s' % max_page)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
