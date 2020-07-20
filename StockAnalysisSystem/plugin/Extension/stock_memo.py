@@ -44,9 +44,10 @@ finally:
 # ------------------------------------------------------ Main UI -------------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------------------
 
-NOTE = '''Stock Memo说明
-1.Stock Memo相关的数据作为个人数据默认保存到系统用户目录下，更新程序不会破坏数据
-2.如果用户自己指定保存目录，请手动复制已存在的文件到新目录下'''
+NOTE = '''说明
+1.笔记相关的数据作为个人数据默认保存到系统用户目录下
+2.用户可以选择笔记保存路径，请注意备份自己的数据
+3.列表默认列出有笔记的股票，可以通过“股票选择”筛选并列出其它股票'''
 
 
 # ------------------------------------------------ class StockMemoDeck -------------------------------------------------
@@ -57,22 +58,42 @@ class StockMemoDeck(QWidget):
     def __init__(self, memo_data: StockMemoData):
         super(StockMemoDeck, self).__init__()
         self.__memo_data = memo_data
-        self.__memo_data.add_observer(self)
 
-        self.__sas = self.__memo_data.get_sas()
-        self.__memo_record: StockMemoRecord = self.__memo_data.get_memo_record()
-        self.__memo_editor: StockMemoEditor = self.__memo_data.get_data('editor')
-        self.__data_utility = self.__sas.get_data_hub_entry().get_data_utility() if self.__sas is not None else None
+        if self.__memo_data is not None:
+            self.__memo_data.add_observer(self)
+
+            self.__sas = self.__memo_data.get_sas()
+            self.__memo_record: StockMemoRecord = self.__memo_data.get_memo_record()
+            self.__memo_editor: StockMemoEditor = self.__memo_data.get_data('editor')
+            self.__data_utility = self.__sas.get_data_hub_entry().get_data_utility() if self.__sas is not None else None
+        else:
+            # For layout debug
+            self.__sas = None
+            self.__memo_record = None
+            self.__memo_editor = None
+            self.__data_utility = None
 
         self.__memo_extras = []
-        self.__list_securities = self.__memo_record.get_all_security()
+        self.__list_securities = self.__memo_record.get_all_security() if self.__memo_record is not None else []
+
+        # ---------------- Page -----------------
+
+        self.__page = 0
+        self.__item_per_page = 20
+
+        self.__button_first = QPushButton('|<')
+        self.__button_prev = QPushButton('<')
+        self.__line_page = QLineEdit('0')
+        self.__button_jump = QPushButton('GO')
+        self.__button_next = QPushButton('>')
+        self.__button_last = QPushButton('>|')
 
         # --------------- Widgets ---------------
 
         self.__memo_table = TableViewEx()
         self.__stock_selector = \
             SecuritiesSelector(self.__data_utility) if self.__data_utility is not None else QComboBox()
-        self.__line_path = QLineEdit(self.__memo_data.get_root_path())
+        self.__line_path = QLineEdit(self.__memo_data.get_root_path() if self.__memo_data is not None else root_path)
         self.__info_panel = QLabel(NOTE)
         self.__button_new = QPushButton('New')
         self.__button_filter = QPushButton('Filter')
@@ -86,14 +107,25 @@ class StockMemoDeck(QWidget):
         main_layout = QVBoxLayout()
         self.setLayout(main_layout)
 
+        # Page control
+        page_control_line = QHBoxLayout()
+        page_control_line.addWidget(QLabel(''), 99)
+        page_control_line.addWidget(self.__button_first, 1)
+        page_control_line.addWidget(self.__button_prev, 1)
+        page_control_line.addWidget(self.__line_page, 1)
+        page_control_line.addWidget(self.__button_jump, 1)
+        page_control_line.addWidget(self.__button_next, 1)
+        page_control_line.addWidget(self.__button_last, 1)
+
         group_box, group_layout = create_v_group_box('Stock Memo')
         group_layout.addWidget(self.__memo_table)
+        group_layout.addLayout(page_control_line)
         main_layout.addWidget(group_box, 10)
 
         group_box, group_layout = create_h_group_box('Edit')
         right_area = QVBoxLayout()
-        group_layout.addWidget(self.__info_panel, 3)
-        group_layout.addLayout(right_area, 7)
+        group_layout.addWidget(self.__info_panel, 4)
+        group_layout.addLayout(right_area, 6)
 
         line = horizon_layout([QLabel('股票选择：'), self.__stock_selector, self.__button_new, self.__button_filter],
                               [1, 10, 1, 1])
@@ -112,6 +144,14 @@ class StockMemoDeck(QWidget):
     def config_ui(self):
         self.setMinimumSize(800, 600)
         self.__info_panel.setWordWrap(True)
+
+        # -------------- Page Control --------------
+
+        self.__button_first.clicked.connect(partial(self.__on_page_control, '|<'))
+        self.__button_prev.clicked.connect(partial(self.__on_page_control, '<'))
+        self.__button_jump.clicked.connect(partial(self.__on_page_control, 'g'))
+        self.__button_next.clicked.connect(partial(self.__on_page_control, '>'))
+        self.__button_last.clicked.connect(partial(self.__on_page_control, '>|'))
 
         self.__memo_table.SetColumn(self.__memo_table_columns())
         self.__memo_table.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -145,6 +185,11 @@ class StockMemoDeck(QWidget):
 
     # ----------------------------------------------------------------------------
 
+    def __on_page_control(self, button_mark: str):
+        max_page = len(self.__list_securities) / self.__item_per_page
+        if button_mark == '|<':
+            self.__page = 0
+
     def __on_button_browse(self):
         folder = str(QFileDialog.getExistingDirectory(self, "Select Private Folder",
                                                       directory=self.__line_path.text()))
@@ -172,7 +217,8 @@ class StockMemoDeck(QWidget):
         self.__memo_editor.exec()
 
     def __on_button_filter_clicked(self):
-        self.__list_securities = self.__stock_selector.get_input_securities()
+        input_security = self.__stock_selector.get_input_securities()
+        self.__list_securities = self.__data_utility.guess_securities(input_security)
         self.update_list()
 
     def __on_memo_item_double_clicked(self, index: QModelIndex):
