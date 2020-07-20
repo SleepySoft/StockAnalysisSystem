@@ -55,7 +55,7 @@ class StockMemoRecord(CsvRecord):
 
     def get_all_security(self) -> [str]:
         df = self.get_records()
-        return df['security'].unique()
+        return list(df['security'].unique())
 
 
 # class RecordSet:
