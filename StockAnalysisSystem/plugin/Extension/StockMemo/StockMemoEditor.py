@@ -305,8 +305,8 @@ class StockMemoEditor(QDialog):
         content = s['content']
 
         self.__datetime_time.setDateTime(to_py_datetime(_time))
-        self.__line_brief.setText(brief)
-        self.__text_record.setText(content)
+        self.__line_brief.setText(str(brief))
+        self.__text_record.setText(str(content))
         self.__enter_edit_mode()
         
     def __enter_new_mode(self):
