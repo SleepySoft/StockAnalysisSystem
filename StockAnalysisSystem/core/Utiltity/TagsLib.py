@@ -23,16 +23,14 @@ class Tags:
 
     def tags_of_objs(self, objs: str or [str]) -> [str]:
         tags = []
-        if not isinstance(objs, (list, tuple)):
-            objs = [objs]
+        objs = self.__check_wrap_str(objs)
         for obj in objs:
             tags.extend(self.__obj_tag_dict.get(obj, []))
         return list(set(tags))
 
     def objs_from_tags(self, tags: str or [str]) -> [str]:
         objs = []
-        if not isinstance(tags, (list, tuple)):
-            tags = [tags]
+        tags = self.__check_wrap_str(tags)
         for tag in tags:
             objs.extend(self.__tag_obj_dict.get(tag, []))
         return list(set(objs))
@@ -40,8 +38,7 @@ class Tags:
     def set_obj_tags(self, obj: str, tags: str or [str]):
         if tags is None or tags == '':
             return
-        if not isinstance(tags, (list, tuple)):
-            tags = [tags]
+        tags = self.__check_wrap_str(tags)
         self.clear_obj_tags(obj)
         self.__obj_tag_dict[obj] = tags
         for tag in tags:
@@ -59,6 +56,22 @@ class Tags:
             tags = self.__obj_tag_dict.get(obj, [])
             del self.__obj_tag_dict[obj]
             self.__remove_obj_from_tag_obj_dict(obj, tags)
+
+    def add_obj_tags(self, obj: str, tags: str or [str]):
+        if tags is None or tags == '':
+            return
+        tags = self.__check_wrap_str(tags)
+        exists_tags = self.tags_of_objs(obj)
+        combined_tags = list(set(exists_tags + tags))
+        self.set_obj_tags(obj, combined_tags)
+
+    def remove_obj_tags(self, obj: str, tags: str or [str]):
+        if tags is None or tags == '':
+            return
+        tags = self.__check_wrap_str(tags)
+        exists_tags = self.tags_of_objs(obj)
+        combined_tags = list(set(exists_tags).difference(set(tags)))
+        self.set_obj_tags(obj, combined_tags)
 
     def save(self, record_path: str = ''):
         if record_path != '':
@@ -133,6 +146,10 @@ class Tags:
     @staticmethod
     def str_to_tags(text: str) -> [str]:
         return [tag.strip() for tag in text.split(';')] if text.strip() != '' else []
+
+    @staticmethod
+    def __check_wrap_str(tags: str or [str]) -> [str]:
+        return tags if isinstance(tags, (list, tuple)) else [tags]
 
 
 # ----------------------------------------------------- class Tags -----------------------------------------------------

@@ -183,8 +183,6 @@ class MemoExtra_StockTags(MemoExtra):
 # -------------------------------- Analysis --------------------------------
 
 class MemoExtra_Analysis(MemoExtra):
-    PRESET_TAGS = ['黑名单', '灰名单', '关注']
-
     def __init__(self, memo_data: StockMemoData):
         self.__memo_data = memo_data
         super(MemoExtra_Analysis, self).__init__()
@@ -231,6 +229,28 @@ class MemoExtra_Analysis(MemoExtra):
     def security_entry_text(self, security: str) -> str:
         return 'Go'
 
+
+# -------------------------------- Analysis --------------------------------
+
+class MemoExtra_BlackList(MemoExtra):
+    def __init__(self, memo_data: StockMemoData):
+        self.__memo_data = memo_data
+        super(MemoExtra_BlackList, self).__init__()
+
+    def global_entry(self):
+        pass
+
+    def security_entry(self, security: str):
+        pass
+
+    def title_text(self) -> str:
+        return ''
+
+    def global_entry_text(self) -> str:
+        return 'Black List'
+
+    def security_entry_text(self, security: str) -> str:
+        return ''
 
 
 
