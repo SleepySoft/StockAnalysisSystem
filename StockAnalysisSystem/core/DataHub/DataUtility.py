@@ -172,9 +172,9 @@ class DataUtility:
         match_result = self.__guess_text_in_list(list(self.__stock_name_id.keys()), text)
         result = [self.__stock_name_id.get(k) for k in match_result]
 
-        if text.isdigit() and len(text) >= 3:
-            match_result = self.__guess_text_in_list(list(self.__stock_id_name.keys()), text)
-            result.extend(match_result)
+        # if text.isdigit() and len(text) >= 3:
+        match_result = self.__guess_text_in_list(list(self.__stock_id_name.keys()), text)
+        result.extend(match_result)
 
         return list(set(result))
 
