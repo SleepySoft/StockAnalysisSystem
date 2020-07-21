@@ -277,6 +277,9 @@ class StockMemoDeck(QWidget):
             self.__memo_table.SetItemText(row, col, self.__data_utility.stock_identity_to_name(security))
 
             for memo_extra in self.__memo_extras:
+                if not str_available(memo_extra.title_text()):
+                    continue
+
                 col += 1
                 text = memo_extra.security_entry_text(security)
             
@@ -294,7 +297,9 @@ class StockMemoDeck(QWidget):
         self.__update_page_control()
 
     def __memo_table_columns(self) -> [str]:
-        return StockMemoDeck.STATIC_HEADER + [memo_extra.title_text() for memo_extra in self.__memo_extras]
+        return StockMemoDeck.STATIC_HEADER + [memo_extra.title_text()
+                                              for memo_extra in self.__memo_extras
+                                              if str_available(memo_extra.title_text())]
 
     def __max_page(self) -> int:
         return (len(self.__list_securities) + self.__item_per_page - 1) // self.__item_per_page
