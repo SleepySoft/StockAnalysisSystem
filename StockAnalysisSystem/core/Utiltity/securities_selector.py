@@ -83,6 +83,10 @@ class SecuritiesSelector(QComboBox):
             input_securities = input_securities.split('|')[0].strip()
         return input_securities.strip()
 
+    def get_select_securities(self) -> str:
+        select_index = self.currentIndex()
+        return self.itemData(select_index) if select_index >= 0 else ''
+
 
 # class SecuritiesSelector(QComboBox):
 #     def __init__(self, data_utility, parent=None):

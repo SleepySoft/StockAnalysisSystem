@@ -293,6 +293,22 @@ def test_basic():
     assert tags.load()
     assert __verify_basic_test(tags, test_table)
 
+    tags.add_obj_tags('ObjA', ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'])
+    assert sorted(tags.tags_of_objs('ObjA')) == sorted(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'])
+
+    tags.remove_obj_tags('ObjA', ['A', 'C', 'E', 'G', 'I'])
+    assert sorted(tags.tags_of_objs('ObjA')) == sorted(['B', 'D', 'F', 'H'])
+
+    tags.add_obj_tags('ObjE', 'X')
+    tags.add_obj_tags('ObjE', 'XY')
+    tags.add_obj_tags('ObjE', 'XYZ')
+    assert sorted(tags.tags_of_objs('ObjE')) == sorted(['X', 'XY', 'XYZ'])
+
+    tags.remove_obj_tags('ObjE', 'X')
+    tags.remove_obj_tags('ObjE', 'Y')
+    tags.remove_obj_tags('ObjE', 'Z')
+    assert sorted(tags.tags_of_objs('ObjE')) == sorted(['XY', 'XYZ'])
+
     global TAGS
     TAGS = tags
 
