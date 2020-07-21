@@ -132,6 +132,9 @@ class StockMemoData:
 
     def set_root_path(self, _path: str):
         self.__extra_data['root_path'] = _path
+        self.broadcast_data_updated('root_path')
+        self.get_memo_record().load(_path)
+        self.broadcast_data_updated('memo_record')
 
     # -------------- Core Object --------------
 
@@ -145,7 +148,7 @@ class StockMemoData:
 
     def set_data(self, name: str, _data: any):
         if name in StockMemoData.RESERVED_DATA:
-            print("You're setting reserve data.")
+            print("Warning: You're setting reserve data.")
         self.__extra_data[name] = _data
 
     def get_data(self, name: str) -> any:
