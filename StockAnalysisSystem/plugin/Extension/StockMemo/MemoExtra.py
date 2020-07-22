@@ -4,6 +4,7 @@ from StockAnalysisSystem.core.Utiltity.common import *
 from StockAnalysisSystem.core.Utiltity.TagsLib import *
 from StockAnalysisSystem.core.Utiltity.df_utility import *
 from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.Utiltity.WaitingWindow import *
 from StockAnalysisSystem.core.Utiltity.AnalyzerUtility import *
 
 try:
@@ -202,14 +203,23 @@ class MemoExtra_Analysis(MemoExtra):
         if len(analyzers) == 0:
             return
 
+        with futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future: futures.Future = executor.submit(self.__analysis, security, analyzers)
+            if not WaitingWindow.wait_future('Waiting Test...', future, None):
+                return
+            df = future.result(0)
+
+        if df is None:
+            return
+
         # analyzer_info = strategy_entry.analyzer_info()
         # analyzers = [uuid for uuid, _, _, _ in analyzer_info]
-
-        result = strategy_entry.analysis_advance(security, analyzers, (years_ago(5), now()))
-
-        df = analysis_result_list_to_single_stock_report(result, security)
-        df = df.fillna('-')
-        df = df.rename(columns=strategy_entry.strategy_name_dict())
+        #
+        # result = strategy_entry.analysis_advance(security, analyzers, (years_ago(5), now()))
+        #
+        # df = analysis_result_list_to_single_stock_report(result, security)
+        # df = df.fillna('-')
+        # df = df.rename(columns=strategy_entry.strategy_name_dict())
 
         table = QTableWidget()
         table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
@@ -228,6 +238,14 @@ class MemoExtra_Analysis(MemoExtra):
 
     def security_entry_text(self, security: str) -> str:
         return 'Go'
+
+    def __analysis(self, security: str, analyzers: [str]) -> pd.DataFrame:
+        strategy_entry = self.__memo_data.get_sas().get_strategy_entry()
+        result = strategy_entry.analysis_advance(security, analyzers, (years_ago(5), now()))
+        df = analysis_result_list_to_single_stock_report(result, security)
+        df = df.fillna('-')
+        df = df.rename(columns=strategy_entry.strategy_name_dict())
+        return df
 
 
 # -------------------------------- Analysis --------------------------------
