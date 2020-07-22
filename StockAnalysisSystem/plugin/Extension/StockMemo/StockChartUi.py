@@ -12,6 +12,7 @@ from StockAnalysisSystem.porting.vnpy_chart import *
 from StockAnalysisSystem.core.Utiltity.common import *
 from StockAnalysisSystem.core.Utiltity.ui_utility import *
 from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.Utiltity.WaitingWindow import *
 from StockAnalysisSystem.core.Utiltity.securities_selector import SecuritiesSelector
 
 try:
@@ -263,51 +264,33 @@ class StockChartUi(QWidget):
         data_utility = self.__sas.get_data_hub_entry().get_data_utility()
         index_dict = data_utility.get_support_index()
 
-        if securities != self.__paint_securities or self.__paint_trade_data is None:
-            if securities in index_dict.keys():
-                uri = 'TradeData.Index.Daily'
-            else:
-                uri = 'TradeData.Stock.Daily'
-            # if check_update:
-            #     self.__sas.get_data_hub_entry().get_data_utility().check_update(uri, securities)
-            trade_data = self.__sas.get_data_hub_entry().get_data_center().query(uri, securities)
+        # if securities != self.__paint_securities or self.__paint_trade_data is None:
 
-            # base_path = os.path.dirname(os.path.abspath(__file__))
-            # history_path = os.path.join(base_path, 'History')
-            # depot_path = os.path.join(history_path, 'depot')
-            # his_file = os.path.join(depot_path, securities + '.his')
-
-            # self.__memo_file = his_file
-            self.__paint_trade_data = trade_data
-            self.__paint_securities = securities
-
-        if self.__paint_trade_data is None or len(self.__paint_trade_data) == 0:
-            return False
-
-        trade_data = pd.DataFrame()
-        if adjust_method == StockChartUi.ADJUST_TAIL and 'adj_factor' in self.__paint_trade_data.columns:
-            trade_data['open'] = self.__paint_trade_data['open'] * self.__paint_trade_data['adj_factor']
-            trade_data['close'] = self.__paint_trade_data['close'] * self.__paint_trade_data['adj_factor']
-            trade_data['high'] = self.__paint_trade_data['high'] * self.__paint_trade_data['adj_factor']
-            trade_data['low'] = self.__paint_trade_data['low'] * self.__paint_trade_data['adj_factor']
-        elif adjust_method == StockChartUi.ADJUST_HEAD and 'adj_factor' in self.__paint_trade_data.columns:
-            trade_data['open'] = self.__paint_trade_data['open'] / self.__paint_trade_data['adj_factor']
-            trade_data['close'] = self.__paint_trade_data['close'] / self.__paint_trade_data['adj_factor']
-            trade_data['high'] = self.__paint_trade_data['high'] / self.__paint_trade_data['adj_factor']
-            trade_data['low'] = self.__paint_trade_data['low'] / self.__paint_trade_data['adj_factor']
+        if securities in index_dict.keys():
+            uri = 'TradeData.Index.Daily'
         else:
-            trade_data['open'] = self.__paint_trade_data['open']
-            trade_data['close'] = self.__paint_trade_data['close']
-            trade_data['high'] = self.__paint_trade_data['high']
-            trade_data['low'] = self.__paint_trade_data['low']
-        trade_data['amount'] = self.__paint_trade_data['amount']
-        trade_data['trade_date'] = pd.to_datetime(self.__paint_trade_data['trade_date'])
+            uri = 'TradeData.Stock.Daily'
 
-        if return_style == StockChartUi.RETURN_LOG:
-            trade_data['open'] = np.log(trade_data['open'])
-            trade_data['close'] = np.log( trade_data['close'])
-            trade_data['high'] = np.log(trade_data['high'])
-            trade_data['low'] = np.log(trade_data['low'])
+        with futures.ThreadPoolExecutor(max_workers=2) as executor:
+            # Code is beautiful.
+            # But the un-canceled network (update task) will still block the main thread.
+            # What the hell...
+
+            if check_update:
+                future_update: futures.Future = executor.submit(self.__update_security_data, uri, securities)
+                WaitingWindow.wait_future('检查更新数据中...\n'
+                                          '取消则使用离线数据\n'
+                                          '注意：更新取消后网络连接超时退出前界面仍可能卡住，这或许是Python的机制导致',
+                                          future_update, None)
+
+            future_load_calc: futures.Future = executor.submit(
+                self.__load_calc_security_data, uri, securities, adjust_method, return_style)
+            if not WaitingWindow.wait_future('载入数据中...', future_load_calc, None):
+                return False
+            trade_data = future_load_calc.result(timeout=0)
+
+        if trade_data is None:
+            return False
 
         bars = self.df_to_bar_data(trade_data, securities)
         self.__vnpy_chart.get_bar_manager().clear_all()
@@ -353,6 +336,45 @@ class StockChartUi(QWidget):
         # self.__vnpy_chart.update_history()
 
         return True
+
+    def __update_security_data(self, uri: str, securities: str):
+        self.__sas.get_data_hub_entry().get_data_utility().check_update(uri, securities)
+
+    def __load_calc_security_data(self, uri: str, securities: str, adjust_method: int, return_style: int):
+        trade_data = self.__sas.get_data_hub_entry().get_data_center().query(uri, securities)
+
+        self.__paint_trade_data = trade_data
+        self.__paint_securities = securities
+
+        if self.__paint_trade_data is None or len(self.__paint_trade_data) == 0:
+            return None
+
+        trade_data = pd.DataFrame()
+        if adjust_method == StockChartUi.ADJUST_TAIL and 'adj_factor' in self.__paint_trade_data.columns:
+            trade_data['open'] = self.__paint_trade_data['open'] * self.__paint_trade_data['adj_factor']
+            trade_data['close'] = self.__paint_trade_data['close'] * self.__paint_trade_data['adj_factor']
+            trade_data['high'] = self.__paint_trade_data['high'] * self.__paint_trade_data['adj_factor']
+            trade_data['low'] = self.__paint_trade_data['low'] * self.__paint_trade_data['adj_factor']
+        elif adjust_method == StockChartUi.ADJUST_HEAD and 'adj_factor' in self.__paint_trade_data.columns:
+            trade_data['open'] = self.__paint_trade_data['open'] / self.__paint_trade_data['adj_factor']
+            trade_data['close'] = self.__paint_trade_data['close'] / self.__paint_trade_data['adj_factor']
+            trade_data['high'] = self.__paint_trade_data['high'] / self.__paint_trade_data['adj_factor']
+            trade_data['low'] = self.__paint_trade_data['low'] / self.__paint_trade_data['adj_factor']
+        else:
+            trade_data['open'] = self.__paint_trade_data['open']
+            trade_data['close'] = self.__paint_trade_data['close']
+            trade_data['high'] = self.__paint_trade_data['high']
+            trade_data['low'] = self.__paint_trade_data['low']
+        trade_data['amount'] = self.__paint_trade_data['amount']
+        trade_data['trade_date'] = pd.to_datetime(self.__paint_trade_data['trade_date'])
+
+        if return_style == StockChartUi.RETURN_LOG:
+            trade_data['open'] = np.log(trade_data['open'])
+            trade_data['close'] = np.log( trade_data['close'])
+            trade_data['high'] = np.log(trade_data['high'])
+            trade_data['low'] = np.log(trade_data['low'])
+
+        return trade_data
 
     # TODO: Move it to common place
     @staticmethod

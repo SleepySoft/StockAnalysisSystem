@@ -205,7 +205,7 @@ class MemoExtra_Analysis(MemoExtra):
 
         with futures.ThreadPoolExecutor(max_workers=1) as executor:
             future: futures.Future = executor.submit(self.__analysis, security, analyzers)
-            if not WaitingWindow.wait_future('Waiting Test...', future, None):
+            if not WaitingWindow.wait_future('分析计算中...', future, None):
                 return
             df = future.result(0)
 
