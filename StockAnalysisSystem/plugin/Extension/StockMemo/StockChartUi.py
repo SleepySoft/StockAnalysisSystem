@@ -280,7 +280,8 @@ class StockChartUi(QWidget):
                 future_update: futures.Future = executor.submit(self.__update_security_data, uri, securities)
                 WaitingWindow.wait_future('检查更新数据中...\n'
                                           '取消则使用离线数据\n'
-                                          '注意：更新取消后网络连接超时退出前界面仍可能卡住，这或许是Python的机制导致',
+                                          '注意：取消更新后在网络连接超时前界面仍可能卡住，这或许是Python的机制导致\n'
+                                          '如果想禁用自动更新功能请删除StockChartUi.py中check_update相关的代码',
                                           future_update, None)
 
             future_load_calc: futures.Future = executor.submit(
