@@ -118,6 +118,21 @@ class ProgressRate:
         current = min(current, total)
         return 1 if total == 0 else current / total
 
+    def get_total_progress_rate(self) -> float:
+        sum_total = 0
+        sum_current = 0
+        for key, val in self.__progress_table.items():
+            total = self.__progress_table[key][ProgressRate.INDEX_TOTAL_PROGRESS]
+            current = self.__progress_table[key][ProgressRate.INDEX_CURRENT_PROGRESS]
+
+            total = max(1, total)
+            current = max(1, current)
+            current = min(current, total)
+
+            sum_total += total
+            sum_current += current
+        return 1 if sum_total == 0 else sum_current / sum_total
+
     def normalize_identity(self, identity: str or list) -> str:
         return '.'.join(list(identity)) if isinstance(identity, (list, tuple)) else identity
 
