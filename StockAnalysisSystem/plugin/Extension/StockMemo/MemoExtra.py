@@ -9,6 +9,7 @@ from StockAnalysisSystem.core.Utiltity.AnalyzerUtility import *
 
 try:
     # Only for pycharm indicating imports
+    from .BlackList import *
     from .MemoUtility import *
     from .StockChartUi import StockChartUi
     from .StockMemoEditor import StockMemoEditor
@@ -16,6 +17,7 @@ except Exception as e:
     root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     os.sys.path.append(root_path)
 
+    from StockMemo.BlackList import *
     from StockMemo.MemoUtility import *
     from StockMemo.StockChartUi import StockChartUi
     from StockMemo.StockMemoEditor import StockMemoEditor
@@ -256,7 +258,11 @@ class MemoExtra_BlackList(MemoExtra):
         super(MemoExtra_BlackList, self).__init__()
 
     def global_entry(self):
-        pass
+        sas = self.__memo_data.get_sas()
+        black_list = self.__memo_data.get_data('black_list')
+        black_list_ui = BlackListUi(black_list, sas)
+        dlg = WrapperQDialog(black_list_ui)
+        dlg.exec()
 
     def security_entry(self, security: str):
         pass

@@ -13,9 +13,12 @@ from StockAnalysisSystem.core.Utiltity.TagsLib import *
 from StockAnalysisSystem.core.Utiltity.CsvRecord import *
 from StockAnalysisSystem.core.Utiltity.ui_utility import *
 from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.Utiltity.WaitingWindow import *
+from StockAnalysisSystem.core.Utiltity.AnalyzerUtility import *
+from StockAnalysisSystem.core.AnalyzerEntry import StrategyEntry
+from StockAnalysisSystem.core.DataHub.DataUtility import DataUtility
 from StockAnalysisSystem.core.Utiltity.TableViewEx import TableViewEx
 from StockAnalysisSystem.core.Utiltity.securities_selector import SecuritiesSelector
-from StockAnalysisSystem.core.DataHub.DataUtility import DataUtility
 
 try:
     from .MemoUtility import *
@@ -42,6 +45,9 @@ class BlackList:
         self.__data_loaded = False
         self.__black_list_securities: list = []
         self.__black_list_record: pd.DataFrame = None
+
+        # TODO: Put it here will slow down start up
+        self.__collect_black_list_data()
 
     # ----------------------------------------------------
 
@@ -136,10 +142,13 @@ class BlackListUi(QWidget):
             return self.__stock_selector.get_select_securities(), \
                    self.__editor_reason.toPlainText()
 
-    def __init__(self, black_list: BlackList, data_utility: DataUtility):
+    def __init__(self, black_list: BlackList, sas: StockAnalysisSystem):
         self.__black_list = black_list
-        self.__data_utility = data_utility
+        self.__sas = sas
         super(BlackListUi, self).__init__()
+
+        self.__data_utility: DataUtility = sas.get_data_hub_entry().get_data_utility() if sas is not None else None
+        self.__strategy_entry: StrategyEntry = sas.get_strategy_entry() if sas is not None else None
 
         self.__black_list_table = TableViewEx()
 
@@ -189,16 +198,31 @@ class BlackListUi(QWidget):
                 self.__black_list.add_to_black_list(security, reason)
 
     def __on_button_import(self):
-        QMessageBox.information(self, '格式说明','导入的CSV文件需要包含以下两个列：\n' 
-                                                 '1. name：添加到名单中的股票ID\n' 
-                                                 '2. reason: 加入此名单的原因，内容为可选\n',
+        QMessageBox.information(self, '格式说明', '导入的CSV文件需要包含以下两个列：\n'
+                                              '1. name：添加到名单中的股票ID\n'
+                                              '2. reason: 加入此名单的原因，内容为可选\n',
                                 QMessageBox.Ok)
         file_path, ok = QFileDialog.getOpenFileName(self, 'Load CSV file', '', 'CSV Files (*.csv);;All Files (*)')
         if ok:
             pass
 
     def __on_button_analysis(self):
-        pass
+        if self.__data_utility is None:
+            return
+
+        progress = ProgressRate()
+        with futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future: futures.Future = executor.submit(self.__analysis, progress)
+            if not WaitingWindow.wait_future('分析计算中...', future, progress):
+                return
+            fail_result = future.result(0)
+
+        if fail_result is None:
+            return
+        
+        for r in fail_result:
+            # TODO: Sort
+            self.__black_list.add_to_black_list(r.securities, r.reason)
 
     def __on_button_remove(self):
         row = self.__black_list_table.GetSelectRows()
@@ -218,6 +242,28 @@ class BlackListUi(QWidget):
                 self.__data_utility.stock_identity_to_name(row['security']),
                 row['content'],
             ])
+
+    def __analysis(self, progress: ProgressRate):
+        if self.__data_utility is None or self.__strategy_entry is None:
+            return
+        analyzers = [
+            '3b01999c-3837-11ea-b851-27d2aa2d4e7d',    # 财报非标
+            'f8f6b993-4cb0-4c93-84fd-8fd975b7977d',    # 证监会调查
+            ]
+        securities = self.__data_utility.get_stock_identities()
+
+        if progress is not None:
+            for s in securities:
+                progress.set_progress(s, 0, len(analyzers))
+
+        result = self.__strategy_entry.analysis_advance(securities, analyzers, (years_ago(5), now()),
+                                                        progress_rate=progress,
+                                                        enable_calculation=True,
+                                                        enable_from_cache=False,
+                                                        enable_update_cache=True)
+
+        fail_result = [r for r in result if r.score == AnalysisResult.SCORE_FAIL]
+        return fail_result
 
 
 # ------------------------------------------------ File Entry : main() -------------------------------------------------
