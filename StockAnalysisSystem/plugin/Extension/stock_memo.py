@@ -101,6 +101,8 @@ class StockMemoDeck(QWidget):
         self.__button_browse = QPushButton('Browse')
         self.__button_black_list = QPushButton('Black List')
 
+        self.__layout_extra = QHBoxLayout()
+
         self.init_ui()
         self.config_ui()
 
@@ -139,9 +141,11 @@ class StockMemoDeck(QWidget):
                               [1, 10, 1])
         right_area.addLayout(line)
 
-        line = horizon_layout([QLabel('其它功能：'), self.__button_black_list, QLabel('')],
-                              [1, 1, 10])
-        right_area.addLayout(line)
+        # line = horizon_layout([QLabel('其它功能：'), self.__button_black_list, QLabel('')],
+        #                       [1, 1, 10])
+
+        self.__layout_extra.addWidget(QLabel('其它功能：'))
+        right_area.addLayout(self.__layout_extra)
 
         main_layout.addWidget(group_box, 1)
 
@@ -171,6 +175,12 @@ class StockMemoDeck(QWidget):
     def add_memo_extra(self, extra: MemoExtra):
         extra.set_memo_ui(self)
         self.__memo_extras.append(extra)
+
+        global_entry_text = extra.global_entry_text()
+        if str_available(global_entry_text):
+            button = QPushButton(global_entry_text)
+            button.clicked.connect(partial(self.__on_button_global_entry, extra))
+            self.__layout_extra.addWidget(button)
 
     def update_list(self):
         self.__update_memo_securities_list(self.__list_securities)
@@ -249,6 +259,9 @@ class StockMemoDeck(QWidget):
             memo_extra, security = item_data
             memo_extra.security_entry(security)
             # print('Double Click on memo item: %s - %s' % (memo_extra.title_text(), security))
+
+    def __on_button_global_entry(self, extra: MemoExtra):
+        extra.global_entry()
 
     def __update_memo_securities_list(self, securities: [str]):
         columns = self.__memo_table_columns()
@@ -340,6 +353,24 @@ sasEntry = None
 memoData: StockMemoData = None
 
 
+def __build_memo_data() -> StockMemoData:
+    global memoData
+    memoData.set_data('tags', Tags(os.path.join(memoData.get_root_path(), 'tags.json')))
+    memoData.set_data('editor', StockMemoEditor(memoData))
+    memoData.set_data('black_list', BlackList(memoData))
+    return memoData
+
+
+def __build_memo_extra(memo_data: StockMemoData) -> [MemoExtra]:
+    return [
+        MemoExtra_MemoContent(memo_data),
+        MemoExtra_MemoHistory(memo_data),
+        MemoExtra_StockTags(memo_data),
+        MemoExtra_Analysis(memo_data),
+        MemoExtra_BlackList(memo_data),
+    ]
+
+
 def init(sas: StockAnalysisSystem) -> bool:
     try:
         global sasEntry
@@ -355,15 +386,12 @@ def init(sas: StockAnalysisSystem) -> bool:
 
 
 def widget(parent: QWidget) -> (QWidget, dict):
-    global memoData
-    memoData.set_data('tags', Tags(os.path.join(memoData.get_root_path(), 'tags.json')))
-    memoData.set_data('editor', StockMemoEditor(memoData))
+    memo_data = __build_memo_data()
+    memo_extra = __build_memo_extra(memo_data)
 
     memo_ui = StockMemoDeck(memoData)
-    memo_ui.add_memo_extra(MemoExtra_MemoContent(memoData))
-    memo_ui.add_memo_extra(MemoExtra_MemoHistory(memoData))
-    memo_ui.add_memo_extra(MemoExtra_StockTags(memoData))
-    memo_ui.add_memo_extra(MemoExtra_Analysis(memoData))
+    for extra in memo_extra:
+        memo_ui.add_memo_extra(extra)
     memo_ui.update_list()
 
     return memo_ui, {'name': '股票笔记', 'show': False}
