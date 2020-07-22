@@ -60,6 +60,8 @@ class WaitingWindow(QDialog):
                 done = self.__future.done()
         if self.__progress is not None:
             self.__update_progress()
+        else:
+            self.__update_animation()
         if done:
             self.__finished = True
             self.close()
@@ -75,6 +77,11 @@ class WaitingWindow(QDialog):
     def __update_progress(self):
         rate = self.__progress.get_total_progress_rate()
         self.__label_progress.setText('%.2f%%' % (rate * 100.0))
+
+    def __update_animation(self):
+        text = self.__label_progress.text()
+        text = (text + '.') if len(text) < 10 else ''
+        self.__label_progress.setText(text)
 
     # ----------------------------------------------------------------------------------------------
 

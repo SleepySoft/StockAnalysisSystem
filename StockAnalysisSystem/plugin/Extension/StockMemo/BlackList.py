@@ -189,11 +189,9 @@ class BlackListUi(QWidget):
                 self.__black_list.add_to_black_list(security, reason)
 
     def __on_button_import(self):
-        QMessageBox.information(self, self.__translate('', '格式说明'),
-                                self.__translate('',
-                                                 '导入的CSV文件需要包含以下两个列：\n' 
+        QMessageBox.information(self, '格式说明','导入的CSV文件需要包含以下两个列：\n' 
                                                  '1. name：添加到名单中的股票ID\n' 
-                                                 '2. reason: 加入此名单的原因，内容为可选\n'),
+                                                 '2. reason: 加入此名单的原因，内容为可选\n',
                                 QMessageBox.Ok)
         file_path, ok = QFileDialog.getOpenFileName(self, 'Load CSV file', '', 'CSV Files (*.csv);;All Files (*)')
         if ok:
