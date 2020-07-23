@@ -99,7 +99,8 @@ class StockMemoDeck(QWidget):
         self.__button_new = QPushButton('New')
         self.__button_filter = QPushButton('Filter')
         self.__button_browse = QPushButton('Browse')
-        self.__button_black_list = QPushButton('Black List')
+        self.__button_refresh = QPushButton('Refresh')
+        # self.__button_black_list = QPushButton('Black List')
 
         self.__layout_extra = QHBoxLayout()
 
@@ -114,6 +115,7 @@ class StockMemoDeck(QWidget):
 
         # Page control
         page_control_line = QHBoxLayout()
+        page_control_line.addWidget(self.__button_refresh, 1)
         page_control_line.addWidget(QLabel(''), 99)
         page_control_line.addWidget(self.__button_first, 1)
         page_control_line.addWidget(self.__button_prev, 1)
@@ -133,7 +135,7 @@ class StockMemoDeck(QWidget):
         group_layout.addWidget(self.__info_panel, 4)
         group_layout.addLayout(right_area, 6)
 
-        line = horizon_layout([QLabel('股票选择：'), self.__stock_selector, self.__button_new, self.__button_filter],
+        line = horizon_layout([QLabel('股票选择：'), self.__stock_selector, self.__button_filter, self.__button_new],
                               [1, 10, 1, 1])
         right_area.addLayout(line)
 
@@ -145,6 +147,7 @@ class StockMemoDeck(QWidget):
         #                       [1, 1, 10])
 
         self.__layout_extra.addWidget(QLabel('其它功能：'))
+        self.__layout_extra.addStretch()
         right_area.addLayout(self.__layout_extra)
 
         main_layout.addWidget(group_box, 1)
@@ -168,9 +171,15 @@ class StockMemoDeck(QWidget):
         self.__memo_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.__memo_table.doubleClicked.connect(self.__on_memo_item_double_clicked)
 
-        self.__button_browse.clicked.connect(self.__on_button_browse)
         self.__button_new.clicked.connect(self.__on_button_new_clicked)
+        self.__button_browse.clicked.connect(self.__on_button_browse)
+        self.__button_refresh.clicked.connect(self.__on_button_refresh)
         self.__button_filter.clicked.connect(self.__on_button_filter_clicked)
+
+        self.__button_filter.setDefault(True)
+        line_editor = self.__stock_selector.lineEdit()
+        if line_editor is not None:
+            line_editor.returnPressed.connect(self.__on_button_filter_clicked)
 
     def add_memo_extra(self, extra: MemoExtra):
         extra.set_memo_ui(self)
@@ -180,7 +189,7 @@ class StockMemoDeck(QWidget):
         if str_available(global_entry_text):
             button = QPushButton(global_entry_text)
             button.clicked.connect(partial(self.__on_button_global_entry, extra))
-            self.__layout_extra.addWidget(button)
+            self.__layout_extra.insertWidget(1, button)
 
     def update_list(self):
         self.__update_memo_securities_list(self.__list_securities)
@@ -252,6 +261,9 @@ class StockMemoDeck(QWidget):
         input_security = self.__stock_selector.get_input_securities()
         list_securities = self.__data_utility.guess_securities(input_security)
         self.show_securities(list_securities)
+
+    def __on_button_refresh(self):
+        self.update_list()
 
     def __on_memo_item_double_clicked(self, index: QModelIndex):
         item_data = index.data(Qt.UserRole)
