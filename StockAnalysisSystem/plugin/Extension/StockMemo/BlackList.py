@@ -173,6 +173,7 @@ class BlackListUi(QWidget):
 
         self.init_ui()
         self.config_ui()
+        self.update_table()
 
     def init_ui(self):
         layout = QVBoxLayout()
@@ -203,22 +204,52 @@ class BlackListUi(QWidget):
         dlg.setWindowTitle('加入黑名单')
         dlg.exec()
 
-        if dlg.is_ok():
-            security, reason = dlg.get_wrapped_wnd().get_input()
-            if security == '':
-                QMessageBox.warning(self, 'Input', '请选择股票')
-                return
-            if self.__black_list is not None:
-                self.__black_list.add_to_black_list(security, reason)
+        if not dlg.is_ok():
+            return
+        security, reason = dlg.get_wrapped_wnd().get_input()
+        if security == '':
+            QMessageBox.warning(self, 'Input', '请选择股票')
+            return
+
+        if self.__black_list is not None:
+            self.__black_list.add_to_black_list(security, reason)
+            self.__black_list.save_black_list()
+            self.update_table()
 
     def __on_button_import(self):
         QMessageBox.information(self, '格式说明', '导入的CSV文件需要包含以下两个列：\n'
-                                              '1. name：添加到名单中的股票ID\n'
+                                              '1. security：添加到名单中的股票ID\n'
                                               '2. reason: 加入此名单的原因，内容为可选\n',
                                 QMessageBox.Ok)
         file_path, ok = QFileDialog.getOpenFileName(self, 'Load CSV file', '', 'CSV Files (*.csv);;All Files (*)')
-        if ok:
+        if not ok:
+            return
+
+        try:
+            new_black_list = []
+            df = pd.read_csv(file_path)
+            for security, reason in zip(df['security'], df['reason']):
+                if not self.__black_list.in_black_list(security):
+                    self.__black_list.add_to_black_list(security, reason)
+                    new_black_list.append((security, reason))
+        except Exception as e:
+            print('Load and Parse CSV fail')
+            print(e)
+            QMessageBox.warning(self, '错误', '载入文件错误', QMessageBox.Ok)
+            return
+        finally:
             pass
+
+        if len(new_black_list) > 0:
+            print('New black list:')
+            for securities, reason in new_black_list:
+                print('%s - %s' % (securities, reason))
+            print('|---Total: %s' % len(new_black_list))
+
+            self.__black_list.save_black_list()
+            self.update_table()
+
+        QMessageBox.information(self, '导入成功', '新增黑名单数量：%s' % len(new_black_list), QMessageBox.Ok)
 
     def __on_button_analysis(self):
         if self.__data_utility is None:
@@ -236,7 +267,7 @@ class BlackListUi(QWidget):
 
         new_black_list = []
         for r in fail_result:
-            if not self.__black_list.in_black_list(r):
+            if not self.__black_list.in_black_list(r.securities):
                 self.__black_list.add_to_black_list(r.securities, r.reason)
                 new_black_list.append(r)
 
@@ -249,6 +280,9 @@ class BlackListUi(QWidget):
             self.__black_list.save_black_list()
         else:
             print('No new black list.')
+        self.update_table()
+
+        QMessageBox.information(self, '分析完成', '新增黑名单数量：%s' % len(new_black_list), QMessageBox.Ok)
 
     def __on_button_remove(self):
         row = self.__black_list_table.GetSelectRows()
@@ -264,10 +298,13 @@ class BlackListUi(QWidget):
         self.__black_list_table.Clear()
         self.__black_list_table.SetColumn(BlackListUi.HEADER)
 
+        # TODO: It should update when update
+        self.__black_list.reload_black_list_data()
+
         black_list_data = self.__black_list.get_black_list_data()
 
         for index, row in black_list_data.iterrows():
-            self.__memo_table.AppendRow([
+            self.__black_list_table.AppendRow([
                 row['security'],
                 self.__data_utility.stock_identity_to_name(row['security']),
                 row['content'],
