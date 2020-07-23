@@ -22,6 +22,7 @@ class WaitingWindow(QDialog):
         super(WaitingWindow, self).__init__()
 
         self.__finished = False
+        self.__freeze_count = 0
         self.__progress: ProgressRate = None
         self.__wait_mode = WaitingWindow.WAIT_MODE_NONE
 
@@ -76,7 +77,19 @@ class WaitingWindow(QDialog):
 
     def __update_progress(self):
         rate = self.__progress.get_total_progress_rate()
-        self.__label_progress.setText('%.2f%%' % (rate * 100.0))
+        if abs(rate - 1.0) < 0.00001:
+            self.__freeze_count += 1
+        else:
+            self.__freeze_count = 0
+
+        # If the progress reaches 100% for 2s (200ms * 10) and not quit yet
+        # Display animation instead
+
+        if self.__freeze_count < 10:
+            self.__label_progress.setText('%.2f%%' % (rate * 100.0))
+        else:
+            self.__label_progress.setText('')
+            self.__update_animation()
 
     def __update_animation(self):
         text = self.__label_progress.text()

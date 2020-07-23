@@ -114,6 +114,9 @@ class StrategyEntry:
             securities = [securities]
 
         for analyzer in analyzers:
+            progress_rate.set_progress(analyzer, 0, len(securities))
+
+        for analyzer in analyzers:
             result = None
             uncached = True
 
@@ -135,7 +138,6 @@ class StrategyEntry:
                     else:
                         uncached = False
                         if progress_rate is not None:
-                            progress_rate.set_progress(analyzer, 1, 1)
                             progress_rate.finish_progress(analyzer)
                         print('Analyzer %s : Load cache finished, time spending: %ss' % (analyzer, clock.elapsed_s()))
 

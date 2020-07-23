@@ -58,6 +58,9 @@ class BlackList:
             self.__memo_data.broadcast_data_updated('tags')
             self.__memo_data.broadcast_data_updated('memo_record')
 
+    def in_black_list(self, security: str):
+        return security in self.__black_list_securities
+
     def add_to_black_list(self, security: str, reason: str):
         if self.__data_valid() and self.__data_loaded:
             return
@@ -71,6 +74,7 @@ class BlackList:
             'classify': BlackList.RECORD_CLASSIFY,
         }, False)
         self.__stock_tag.add_obj_tags(security, BlackList.BLACK_LIST_TAGS)
+        self.__black_list_securities.append(security)
 
     def remove_from_black_list(self, security: str, reason: str):
         if security not in self.__black_list_securities:
@@ -83,6 +87,7 @@ class BlackList:
             'classify': BlackList.RECORD_CLASSIFY,
         }, False)
         self.__stock_tag.remove_obj_tags(security, BlackList.BLACK_LIST_TAGS)
+        self.__black_list_securities.remove(security)
 
     def get_black_list_data(self) -> pd.DataFrame:
         return self.__black_list_record
@@ -213,16 +218,28 @@ class BlackListUi(QWidget):
         progress = ProgressRate()
         with futures.ThreadPoolExecutor(max_workers=1) as executor:
             future: futures.Future = executor.submit(self.__analysis, progress)
-            if not WaitingWindow.wait_future('分析计算中...', future, progress):
+            if not WaitingWindow.wait_future('分析中...', future, progress):
                 return
             fail_result = future.result(0)
 
         if fail_result is None:
             return
-        
+
+        new_black_list = []
         for r in fail_result:
-            # TODO: Sort
-            self.__black_list.add_to_black_list(r.securities, r.reason)
+            if not self.__black_list.in_black_list(r):
+                self.__black_list.add_to_black_list(r.securities, r.reason)
+                new_black_list.append(r)
+
+        if len(new_black_list) > 0:
+            print('New black list:')
+            for r in new_black_list:
+                print('%s - %s' % (r.securities, r.reason))
+            print('    Total: %s' % len(new_black_list))
+
+            self.__black_list.save_black_list()
+        else:
+            print('No new black list.')
 
     def __on_button_remove(self):
         row = self.__black_list_table.GetSelectRows()
@@ -263,6 +280,7 @@ class BlackListUi(QWidget):
                                                         enable_update_cache=True)
 
         fail_result = [r for r in result if r.score == AnalysisResult.SCORE_FAIL]
+        fail_result = sorted(fail_result, key=lambda x: x.period if x.period is not None else now())
         return fail_result
 
 
