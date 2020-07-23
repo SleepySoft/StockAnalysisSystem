@@ -1,4 +1,4 @@
-
+from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QTimer, QSortFilterProxyModel
 from PyQt5.QtWidgets import QCompleter, QComboBox
 from StockAnalysisSystem.core.DataHub.DataUtility import DataUtility
@@ -35,6 +35,14 @@ class SecuritiesSelector(QComboBox):
         # connect signals
         self.lineEdit().textEdited.connect(self.pFilterModel.setFilterFixedString)
         self.completer.activated.connect(self.on_completer_activated)
+
+    # def keyPressEvent(self, event):
+    #     super(SecuritiesSelector, self).keyPressEvent(event)
+    #     key = event.key()
+    #     if event.key() == QtCore.Qt.Key_Return:
+    #         print('return key pressed')
+    #     else:
+    #         print('key pressed: %i' % key)
 
     def on_timer(self):
         # Check stock list ready and update combobox
