@@ -89,6 +89,9 @@ class StockMemoDeck(QWidget):
         self.__button_next = QPushButton('>')
         self.__button_last = QPushButton('>|')
 
+        self.__button_reload = QPushButton('Reload')
+        self.__check_show_black_list = QCheckBox('Black List')
+
         # --------------- Widgets ---------------
 
         self.__memo_table = TableViewEx()
@@ -99,7 +102,6 @@ class StockMemoDeck(QWidget):
         self.__button_new = QPushButton('New')
         self.__button_filter = QPushButton('Filter')
         self.__button_browse = QPushButton('Browse')
-        self.__button_refresh = QPushButton('Refresh')
         # self.__button_black_list = QPushButton('Black List')
 
         self.__layout_extra = QHBoxLayout()
@@ -115,7 +117,7 @@ class StockMemoDeck(QWidget):
 
         # Page control
         page_control_line = QHBoxLayout()
-        page_control_line.addWidget(self.__button_refresh, 1)
+        page_control_line.addWidget(self.__button_reload, 1)
         page_control_line.addWidget(QLabel(''), 99)
         page_control_line.addWidget(self.__button_first, 1)
         page_control_line.addWidget(self.__button_prev, 1)
@@ -164,6 +166,9 @@ class StockMemoDeck(QWidget):
         self.__button_next.clicked.connect(partial(self.__on_page_control, '>'))
         self.__button_last.clicked.connect(partial(self.__on_page_control, '>|'))
 
+        self.__button_reload.clicked.connect(self.__on_button_reload)
+        self.__check_show_black_list.clicked.connect(self.__on_check_show_black_list)
+
         self.__memo_table.SetColumn(self.__memo_table_columns())
         self.__memo_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.__memo_table.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -173,7 +178,6 @@ class StockMemoDeck(QWidget):
 
         self.__button_new.clicked.connect(self.__on_button_new_clicked)
         self.__button_browse.clicked.connect(self.__on_button_browse)
-        self.__button_refresh.clicked.connect(self.__on_button_refresh)
         self.__button_filter.clicked.connect(self.__on_button_filter_clicked)
 
         self.__button_filter.setDefault(True)
@@ -262,7 +266,10 @@ class StockMemoDeck(QWidget):
         list_securities = self.__data_utility.guess_securities(input_security)
         self.show_securities(list_securities)
 
-    def __on_button_refresh(self):
+    def __on_button_reload(self):
+        self.show_securities(self.__memo_record.get_all_security() if self.__memo_record is not None else [])
+
+    def __on_check_show_black_list(self):
         self.update_list()
 
     def __on_memo_item_double_clicked(self, index: QModelIndex):
