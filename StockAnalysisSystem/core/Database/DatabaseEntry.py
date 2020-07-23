@@ -32,43 +32,47 @@ class DatabaseEntry:
 
         self.__no_sql_tables = {}
 
-        self.__alias_table = None
+        # self.__alias_table = None
         self.__update_table = None
 
-        self.__gray_table = None
-        self.__focus_table = None
-        self.__black_table = None
+        # self.__gray_table = None
+        # self.__focus_table = None
+        # self.__black_table = None
 
     # ------------------------------------------------------------------------------------------------------------------
 
     def config_sql_db(self, db_path: str) -> bool:
-        self.__sqlite_db_file = path.join(db_path, 'sAsUtility.db')
-        self.__sql_db_access = SqlAccess(self.__sqlite_db_file)
-        conn = self.__sql_db_access.BuildConnection()
-        if conn is not None:
-            conn.close()
+        # Currently do not use sql db
+        nop(self, db_path)
+        return True
 
-            # import Database.AliasTable as AliasTable
-            from .XListTable import XListTable
-            # import Database.UpdateTableEx as UpdateTableEx
-
-            # self.__alias_table = AliasTable.AliasTable(self.__sql_db_access)
-            # self.__update_table = UpdateTableEx.UpdateTableEx(self.__sql_db_access)
-
-            self.__gray_table = XListTable('gray_table', self.__sql_db_access)
-            self.__focus_table = XListTable('focus_table', self.__sql_db_access)
-            self.__black_table = XListTable('black_table', self.__sql_db_access)
-
-            return True
-        else:
-            self.__alias_table = None
-            self.__update_table = None
-
-            self.__gray_table = None
-            self.__focus_table = None
-            self.__black_table = None
-
-            return False
+    #     self.__sqlite_db_file = path.join(db_path, 'sAsUtility.db')
+    #     self.__sql_db_access = SqlAccess(self.__sqlite_db_file)
+    #     conn = self.__sql_db_access.BuildConnection()
+    #     if conn is not None:
+    #         conn.close()
+    #
+    #         import Database.AliasTable as AliasTable
+    #         from .XListTable import XListTable
+    #         import Database.UpdateTableEx as UpdateTableEx
+    #
+    #         self.__alias_table = AliasTable.AliasTable(self.__sql_db_access)
+    #         self.__update_table = UpdateTableEx.UpdateTableEx(self.__sql_db_access)
+    #
+    #         self.__gray_table = XListTable('gray_table', self.__sql_db_access)
+    #         self.__focus_table = XListTable('focus_table', self.__sql_db_access)
+    #         self.__black_table = XListTable('black_table', self.__sql_db_access)
+    #
+    #         return True
+    #     else:
+    #         self.__alias_table = None
+    #         self.__update_table = None
+    #
+    #         self.__gray_table = None
+    #         self.__focus_table = None
+    #         self.__black_table = None
+    #
+    #         return False
 
     def config_nosql_db(self, host: str, port: str, user: str, password: str) -> bool:
         self.__mongo_db_host = host
@@ -112,20 +116,20 @@ class DatabaseEntry:
 
     # ------------------------------------------------- SQL Table Entry ------------------------------------------------
 
-    def get_alias_table(self):
-        return self.__alias_table
+    # def get_alias_table(self):
+    #     return self.__alias_table
 
     def get_update_table(self):
         return self.__update_table
 
-    def get_gray_table(self):
-        return self.__gray_table
-
-    def get_focus_table(self):
-        return self.__focus_table
-
-    def get_black_table(self):
-        return self.__black_table
+    # def get_gray_table(self):
+    #     return self.__gray_table
+    #
+    # def get_focus_table(self):
+    #     return self.__focus_table
+    #
+    # def get_black_table(self):
+    #     return self.__black_table
 
     # ------------------------------------------------ NoSQL Table Entry -----------------------------------------------
 
