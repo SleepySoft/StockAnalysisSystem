@@ -3,7 +3,7 @@ import errno
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QTimer, QDateTime, QPoint, pyqtSlot
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor, QShowEvent
 from PyQt5.QtWidgets import QButtonGroup, QDateTimeEdit, QApplication, QLabel, QTextEdit, QPushButton, QVBoxLayout, \
     QMessageBox, QWidget, QComboBox, QCheckBox, QRadioButton, QLineEdit, QAbstractItemView, QFileDialog, QDialog
 from pyqtgraph.GraphicsScene.mouseEvents import MouseClickEvent
@@ -57,12 +57,15 @@ class BlackList:
             self.__memo_record.save()
             self.__memo_data.broadcast_data_updated('tags')
             self.__memo_data.broadcast_data_updated('memo_record')
+        else:
+            print('Warning: Black list has not been Loaded yet.')
 
     def in_black_list(self, security: str):
         return security in self.__black_list_securities
 
     def add_to_black_list(self, security: str, reason: str):
-        if self.__data_valid() and self.__data_loaded:
+        if not self.__data_valid() or not self.__data_loaded:
+            print('Warning: Black list has not been Loaded yet.')
             return
         if security in self.__black_list_securities:
             return
@@ -70,13 +73,16 @@ class BlackList:
             'time': now(),
             'security': security,
             'brief': '加入黑名单',
-            'content': '加入黑名单: %s' % reason,
+            'content': reason,
             'classify': BlackList.RECORD_CLASSIFY,
         }, False)
         self.__stock_tag.add_obj_tags(security, BlackList.BLACK_LIST_TAGS)
         self.__black_list_securities.append(security)
 
     def remove_from_black_list(self, security: str, reason: str):
+        if not self.__data_valid() or not self.__data_loaded:
+            print('Warning: Black list has not been Loaded yet.')
+            return
         if security not in self.__black_list_securities:
             return
         self.__memo_record.add_record({
@@ -235,7 +241,7 @@ class BlackListUi(QWidget):
             print('New black list:')
             for r in new_black_list:
                 print('%s - %s' % (r.securities, r.reason))
-            print('    Total: %s' % len(new_black_list))
+            print('|---Total: %s' % len(new_black_list))
 
             self.__black_list.save_black_list()
         else:
@@ -246,6 +252,10 @@ class BlackListUi(QWidget):
         if len(row) > 0:
             security = self.__black_list_table.GetItemText(row[0], 0)
             self.__black_list.remove_from_black_list(security, '手工删除')
+
+    def showEvent(self, event: QShowEvent):
+        if self.__black_list is not None:
+            self.__black_list.reload_black_list_data()
 
     def update_table(self):
         self.__black_list_table.Clear()
