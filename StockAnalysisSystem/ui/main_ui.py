@@ -9,7 +9,6 @@ from StockAnalysisSystem.ui.config_ui import *
 from StockAnalysisSystem.ui.DataHubUi import *
 from StockAnalysisSystem.ui.analyzer_ui import *
 from StockAnalysisSystem.ui.data_update_ui import *
-from StockAnalysisSystem.ui.XListTableUi import *
 from StockAnalysisSystem.ui.task_queue_ui import *
 from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 
@@ -38,9 +37,10 @@ class MainWindow(CommonMainWindow):
         self.__strategy_ui = AnalyzerUi(data_hub_entry, strategy_entry)
         self.__data_update_ui = DataUpdateUi(data_hub_entry, update_table)
 
-        self.__gray_list_ui = XListTableUi(database_entry.get_gray_table(), '灰名单')
-        self.__black_list_ui = XListTableUi(database_entry.get_black_table(), '黑名单')
-        self.__focus_list_ui = XListTableUi(database_entry.get_focus_table(), '关注名单')
+        # Deprecated, use stock memo black list and tags
+        # self.__gray_list_ui = XListTableUi(database_entry.get_gray_table(), '灰名单')
+        # self.__black_list_ui = XListTableUi(database_entry.get_black_table(), '黑名单')
+        # self.__focus_list_ui = XListTableUi(database_entry.get_focus_table(), '关注名单')
 
         # self.__alias_table_module = database_entry.get_alias_table()
         # self.__alias_table_ui = AliasTableUi(self.__alias_table_module)
@@ -116,32 +116,32 @@ class MainWindow(CommonMainWindow):
 
         # -------------------------------------------------------------------------
 
-        self.add_sub_window(self.__black_list_ui, 'black_list_ui', {
-            'DockName': self.__translate('main', '黑名单'),
-            'DockArea': Qt.NoDockWidgetArea,
-            'DockShow': False,
-            'DockFloat': True,
-            'MenuPresent': True,
-            'ActionTips': self.__translate('main', '黑名单'),
-        })
-
-        self.add_sub_window(self.__focus_list_ui, 'focus_list_ui', {
-            'DockName': self.__translate('main', '关注名单'),
-            'DockArea': Qt.NoDockWidgetArea,
-            'DockShow': False,
-            'DockFloat': True,
-            'MenuPresent': True,
-            'ActionTips': self.__translate('main', '关注名单'),
-        })
-
-        self.add_sub_window(self.__gray_list_ui, 'gray_list_ui', {
-            'DockName': self.__translate('main', '灰名单'),
-            'DockArea': Qt.NoDockWidgetArea,
-            'DockShow': False,
-            'DockFloat': True,
-            'MenuPresent': True,
-            'ActionTips': self.__translate('main', '灰名单'),
-        })
+        # self.add_sub_window(self.__black_list_ui, 'black_list_ui', {
+        #     'DockName': self.__translate('main', '黑名单'),
+        #     'DockArea': Qt.NoDockWidgetArea,
+        #     'DockShow': False,
+        #     'DockFloat': True,
+        #     'MenuPresent': True,
+        #     'ActionTips': self.__translate('main', '黑名单'),
+        # })
+        #
+        # self.add_sub_window(self.__focus_list_ui, 'focus_list_ui', {
+        #     'DockName': self.__translate('main', '关注名单'),
+        #     'DockArea': Qt.NoDockWidgetArea,
+        #     'DockShow': False,
+        #     'DockFloat': True,
+        #     'MenuPresent': True,
+        #     'ActionTips': self.__translate('main', '关注名单'),
+        # })
+        #
+        # self.add_sub_window(self.__gray_list_ui, 'gray_list_ui', {
+        #     'DockName': self.__translate('main', '灰名单'),
+        #     'DockArea': Qt.NoDockWidgetArea,
+        #     'DockShow': False,
+        #     'DockFloat': True,
+        #     'MenuPresent': True,
+        #     'ActionTips': self.__translate('main', '灰名单'),
+        # })
 
         # -------------------------------------------------------------------------
 
