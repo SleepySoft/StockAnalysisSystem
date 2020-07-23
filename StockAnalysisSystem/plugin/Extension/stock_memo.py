@@ -75,6 +75,7 @@ class StockMemoDeck(QWidget):
 
         self.__memo_extras = []
         self.__list_securities = []
+        self.__show_securities = []
 
         # ---------------- Page -----------------
 
@@ -118,6 +119,8 @@ class StockMemoDeck(QWidget):
         # Page control
         page_control_line = QHBoxLayout()
         page_control_line.addWidget(self.__button_reload, 1)
+        page_control_line.addWidget(self.__check_show_black_list, 1)
+
         page_control_line.addWidget(QLabel(''), 99)
         page_control_line.addWidget(self.__button_first, 1)
         page_control_line.addWidget(self.__button_prev, 1)
@@ -167,6 +170,8 @@ class StockMemoDeck(QWidget):
         self.__button_last.clicked.connect(partial(self.__on_page_control, '>|'))
 
         self.__button_reload.clicked.connect(self.__on_button_reload)
+
+        self.__check_show_black_list.setChecked(False)
         self.__check_show_black_list.clicked.connect(self.__on_check_show_black_list)
 
         self.__memo_table.SetColumn(self.__memo_table_columns())
@@ -196,11 +201,11 @@ class StockMemoDeck(QWidget):
             self.__layout_extra.insertWidget(1, button)
 
     def update_list(self):
-        self.__update_memo_securities_list(self.__list_securities)
+        self.__update_memo_securities_list()
 
     def show_securities(self, securities: [str]):
         self.__update_securities(securities)
-        self.__update_memo_securities_list(self.__list_securities)
+        self.__update_memo_securities_list()
 
     # ------------------- Interface of StockMemoData.Observer --------------------
 
@@ -270,7 +275,8 @@ class StockMemoDeck(QWidget):
         self.show_securities(self.__memo_record.get_all_security() if self.__memo_record is not None else [])
 
     def __on_check_show_black_list(self):
-        self.update_list()
+        self.__update_securities()
+        self.__update_memo_securities_list()
 
     def __on_memo_item_double_clicked(self, index: QModelIndex):
         item_data = index.data(Qt.UserRole)
@@ -282,7 +288,10 @@ class StockMemoDeck(QWidget):
     def __on_button_global_entry(self, extra: MemoExtra):
         extra.global_entry()
 
-    def __update_memo_securities_list(self, securities: [str]):
+    def __update_memo_securities_list(self, securities: [str] or None = None):
+        if securities is None:
+            securities = self.__show_securities
+
         columns = self.__memo_table_columns()
 
         self.__memo_table.Clear()
@@ -324,9 +333,25 @@ class StockMemoDeck(QWidget):
         model = self.__memo_table.model()
         model.setVerticalHeaderLabels(index)
 
-    def __update_securities(self, list_securities: [str]):
-        self.__list_securities = list_securities if isinstance(list_securities, (list, tuple)) else [list_securities]
+    def __update_securities(self, list_securities: [str] or None = None):
+        if list_securities is None:
+            # Just refresh the show securities
+            pass
+        else:
+            self.__list_securities = list_securities \
+                if isinstance(list_securities, (list, tuple)) else [list_securities]
+        self.__update_show_securities()
         self.__update_page_control()
+
+    def __update_show_securities(self):
+        self.__show_securities = self.__list_securities
+
+        show_black_list = self.__check_show_black_list.isChecked()
+        if not show_black_list:
+            black_list: BlackList = self.__memo_data.get_data('black_list')
+            if black_list is not None:
+                black_list_securities = black_list.all_black_list()
+                self.__show_securities = list(set(self.__show_securities).difference(set(black_list_securities)))
 
     def __memo_table_columns(self) -> [str]:
         return StockMemoDeck.STATIC_HEADER + [memo_extra.title_text()
@@ -334,7 +359,7 @@ class StockMemoDeck(QWidget):
                                               if str_available(memo_extra.title_text())]
 
     def __max_page(self) -> int:
-        return (len(self.__list_securities) + self.__item_per_page - 1) // self.__item_per_page
+        return (len(self.__show_securities) + self.__item_per_page - 1) // self.__item_per_page
 
     def __update_page_control(self):
         self.__page = 1

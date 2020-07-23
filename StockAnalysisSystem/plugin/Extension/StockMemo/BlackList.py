@@ -46,7 +46,7 @@ class BlackList:
         self.__black_list_securities: list = []
         self.__black_list_record: pd.DataFrame = None
 
-        # TODO: Put it here will slow down start up
+        # TODO: It may spends lot of time
         self.__collect_black_list_data()
 
     # ----------------------------------------------------
@@ -62,6 +62,9 @@ class BlackList:
 
     def in_black_list(self, security: str):
         return security in self.__black_list_securities
+
+    def all_black_list(self) -> []:
+        return self.__black_list_securities
 
     def add_to_black_list(self, security: str, reason: str):
         if not self.__data_valid() or not self.__data_loaded:
@@ -112,8 +115,8 @@ class BlackList:
             df = self.__memo_record.get_records({'classify': BlackList.RECORD_CLASSIFY})
             if df is not None and not df.empty:
                 df = df.sort_values('time')
-                df = df.groupby('security').last()
-                df = df[df['security'] in black_list_securities]
+                df = df.groupby('security', as_index=False, sort=False).last()
+                df = df[df['security'].isin(black_list_securities)]
             self.__black_list_securities = black_list_securities
             self.__black_list_record = df
             self.__data_loaded = True
@@ -253,9 +256,9 @@ class BlackListUi(QWidget):
             security = self.__black_list_table.GetItemText(row[0], 0)
             self.__black_list.remove_from_black_list(security, '手工删除')
 
-    def showEvent(self, event: QShowEvent):
-        if self.__black_list is not None:
-            self.__black_list.reload_black_list_data()
+    # def showEvent(self, event: QShowEvent):
+    #     if self.__black_list is not None:
+    #         self.__black_list.reload_black_list_data()
 
     def update_table(self):
         self.__black_list_table.Clear()
