@@ -92,7 +92,7 @@ class BlackList:
             'time': now(),
             'security': security,
             'brief': '移除黑名单',
-            'content': '移除黑名单: ' % reason,
+            'content': reason,
             'classify': BlackList.RECORD_CLASSIFY,
         }, False)
         self.__stock_tag.remove_obj_tags(security, BlackList.BLACK_LIST_TAGS)
@@ -289,6 +289,7 @@ class BlackListUi(QWidget):
         if len(row) > 0:
             security = self.__black_list_table.GetItemText(row[0], 0)
             self.__black_list.remove_from_black_list(security, '手工删除')
+            self.update_table()
 
     # def showEvent(self, event: QShowEvent):
     #     if self.__black_list is not None:
