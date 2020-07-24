@@ -192,7 +192,6 @@ class BlackListUi(QWidget):
         self.__black_list_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.__black_list_table.setSelectionMode(QAbstractItemView.SingleSelection)
         self.__black_list_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.__black_list_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
         self.__button_add.clicked.connect(self.__on_button_add)
         self.__button_import.clicked.connect(self.__on_button_import)
@@ -310,6 +309,11 @@ class BlackListUi(QWidget):
                 self.__data_utility.stock_identity_to_name(row['security']),
                 row['content'],
             ])
+
+        header = self.__black_list_table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.Stretch)
 
     def __analysis(self, progress: ProgressRate):
         if self.__data_utility is None or self.__strategy_entry is None:
