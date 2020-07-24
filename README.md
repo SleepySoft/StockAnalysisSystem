@@ -24,6 +24,13 @@ https://github.com/SleepySoft/StockAnalysisSystem
 > 可以通过插件形式扩展Stock Memo的功能  
 > 当前支持的扩展：笔记，标签，分析器，图表，通过双击对应的格式进入  
 > TIPS：标签功能会在今后的功能中发挥重要作用  
+  
+* 三张图说明Stock Memo怎么用  
+  
+![image](res/StockMemo_00.png)
+![image](res/StockMemo_01.png)
+![image](res/StockMemo_02.png)
+  
 * 由于图表引入了pyqtgraph，导致pyinstaller打包出现问题，并且尝试py2exe也不成功，故暂停以EXE形式发布Release  
   
 * 更新相应文档  
