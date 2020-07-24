@@ -310,6 +310,7 @@ class BlackListUi(QWidget):
                 row['content'],
             ])
 
+        # https://stackoverflow.com/a/38129829/12929244
         header = self.__black_list_table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
