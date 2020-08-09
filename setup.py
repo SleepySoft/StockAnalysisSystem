@@ -70,7 +70,6 @@ if __name__ == "__main__":
             'pymongo',
             'openpyxl',
             'tushare',
-            'pylab-sdk',
             'matplotlib',
             'requests_html',
             'PyExecJS',

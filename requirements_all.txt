@@ -32,7 +32,7 @@ pyee==7.0.2
 PyExecJS==1.5.1
 Pygments==2.6.1
 pyjsparser==2.7.1
-pylab-sdk==1.1.2
+# pylab-sdk==1.1.2
 pymongo==3.10.1
 pyparsing==2.4.6
 pyppeteer==0.2.2

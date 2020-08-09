@@ -9,7 +9,7 @@ pandas
 pymongo
 openpyxl
 tushare
-pylab-sdk
+# pylab-sdk
 matplotlib
 requests_html
 PyExecJS
