@@ -37,6 +37,8 @@ class AnalysisTask(TaskQueue.Task):
     OPTION_FROM_JSON = 1024
     OPTION_DUMP_JSON = 2048
 
+    OPTION_ATTACH_BASIC_INDEX = 4096
+
     def __init__(self, ui, strategy_entry: StrategyEntry, data_hub: DataHubEntry,
                  selector_list: [str], analyzer_list: [str], time_serial: tuple,
                  options: int, report_path: str, progress_rate: ProgressRate):
@@ -57,7 +59,8 @@ class AnalysisTask(TaskQueue.Task):
         clock = Clock()
         stock_list = self.select()
         result_list = self.analysis(stock_list)
-        self.gen_report(result_list)
+        stock_metrics = self.fetch_stock_metrics()
+        self.gen_report(result_list, stock_metrics)
 
         print('Analysis task finished, time spending: ' + str(clock.elapsed_s()) + ' s')
 
@@ -86,9 +89,29 @@ class AnalysisTask(TaskQueue.Task):
         print('All analysis finished, time spending: %ss' % clock_all.elapsed_s())
         return total_result
 
-    def gen_report(self, result_list: [AnalysisResult]):
+    def fetch_stock_metrics(self) -> pd.DataFrame or None:
+        if self.__options & AnalysisTask.OPTION_ATTACH_BASIC_INDEX == 0:
+            return None
+        trade_calender = self.__data_hub.get_data_center().query_from_plugin('Market.TradeCalender', exchange='SSE',
+                                                                             trade_date=(days_ago(365), now()))
+        trade_calender = trade_calender[trade_calender['status'] == 1]
+        trade_calender = trade_calender.sort_values('trade_date', ascending=False)
+        last_trade_date = trade_calender.iloc[0]['trade_date']
+
+        daily_metrics = self.__data_hub.get_data_center().query_from_plugin(
+            'Metrics.Stock.Daily', trade_date=(last_trade_date, last_trade_date))
+        if daily_metrics.empty:
+            print('Get stock metrics fail.')
+            return None
+
+        del daily_metrics['trade_date']
+        daily_metrics.columns = self.__data_hub.get_data_center().fields_to_readable(list(daily_metrics.columns))
+
+        return daily_metrics
+
+    def gen_report(self, result_list: [AnalysisResult], stock_metrics: pd.DataFrame or None):
         clock = Clock()
-        self.__strategy.generate_report_excel_common(result_list, self.__report_path)
+        self.__strategy.generate_report_excel_common(result_list, self.__report_path, stock_metrics)
         print('Generate report time spending: %ss' % str(clock.elapsed_s()))
 
 
@@ -164,6 +187,8 @@ class AnalyzerUi(QWidget):
         self.__button_result = QPushButton('Result')
         self.__button_run_strategy = QPushButton('Run Strategy')
 
+        self.__check_attach_basic_index = QCheckBox('Attach Basic Index')
+
         self.init_ui()
         self.update_selector()
         self.update_analyzer()
@@ -202,6 +227,9 @@ class AnalyzerUi(QWidget):
         grid_layout.addWidget(QLabel('Until'), 1, 3)
         grid_layout.addWidget(self.__datetime_time_since, 0, 4)
         grid_layout.addWidget(self.__datetime_time_until, 1, 4)
+
+        grid_layout.addWidget(self.__check_attach_basic_index, 2, 0, 3, 1)
+
         self.__layout_option.addLayout(grid_layout)
 
         main_layout.addWidget(self.__group_option)
@@ -372,6 +400,9 @@ class AnalyzerUi(QWidget):
             options |= AnalysisTask.OPTION_FROM_JSON
         if self.__check_dump_json.isChecked():
             options |= AnalysisTask.OPTION_DUMP_JSON
+
+        if self.__check_attach_basic_index.isChecked():
+            options |= AnalysisTask.OPTION_ATTACH_BASIC_INDEX
 
         time_serial = (to_py_datetime(self.__datetime_time_since.dateTime()),
                        to_py_datetime(self.__datetime_time_until.dateTime()))

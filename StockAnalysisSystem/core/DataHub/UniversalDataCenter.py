@@ -325,7 +325,7 @@ class UniversalDataCenter:
         self.__check_cache_fields_declaration()
         return [self.__field_readable_dict.get(f, f) for f in fields]
 
-    def field_map_readable(self, fields: [str]) -> [str]:
+    def field_map_readable(self, fields: [str]) -> {}:
         self.__check_cache_fields_declaration()
         return {f: self.__field_readable_dict.get(f, f) for f in fields}
 
@@ -357,7 +357,7 @@ class UniversalDataCenter:
         self.__check_cache_fields_declaration()
         return [self.__readable_field_dict.get(r, r) for r in readable]
 
-    def readable_map_field(self, readable: [str]) -> [str]:
+    def readable_map_field(self, readable: [str]) -> dict:
         self.__check_cache_fields_declaration()
         return {r: self.__readable_field_dict.get(r, r) for r in readable}
 

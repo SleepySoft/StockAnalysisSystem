@@ -298,7 +298,26 @@ def build_data_agent(database_entry: DatabaseEntry):
             datetime_field='trade_date',
 
             query_declare={
-                'stock_identity': ([str], [],           True,  ''),
+                'stock_identity': ([str], [],           False,  ''),
+                'trade_date':     ([tuple, None], [],   False, ''),
+            },
+            result_declare={
+                'trade_date':     (['datetime'], [],    True, ''),
+            },
+        ),
+
+        DataAgentSecurityDaily(
+            uri='Metrics.Stock.Daily',
+            database_entry=database_entry,
+
+            depot_name='StockDaily',
+            table_prefix='',
+
+            identity_field='stock_identity',
+            datetime_field='trade_date',
+
+            query_declare={
+                'stock_identity': ([str], [],           False,  ''),
                 'trade_date':     ([tuple, None], [],   False, ''),
             },
             result_declare={
