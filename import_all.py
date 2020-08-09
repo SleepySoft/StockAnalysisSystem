@@ -2,7 +2,6 @@
 
 import sys
 import time
-import pylab
 import logging
 import pyqtgraph
 import traceback
