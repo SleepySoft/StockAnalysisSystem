@@ -17,20 +17,20 @@ FIELDS = {
 
         # daily_basic()
         'turnover_rate':                 '换手率',                            # （%）
-        'turnover_rate_f':               '换手率',                            # （自由流通股）
+        'turnover_rate_f':               '换手率（流通股）',                    # （自由流通股）
         'volume_ratio':                  '量比',
         'pe':                            '市盈率',                            # （总市值/净利润）
-        'pe_ttm':                        '市盈率',                            # （TTM）
+        'pe_ttm':                        '市盈率（TTM）',                      # （TTM）
         'pb':                            '市净率',                            # （总市值/净资产）
         'ps':                            '市销率',
-        'ps_ttm':                        '市销率',                            # （TTM）
+        'ps_ttm':                        '市销率（TTM）',                      # （TTM）
         'dv_ratio':                      '股息率',                            # （%）
-        'dv_ttm':                        '股息率（TTM）',                       # （%）
-        'total_share':                   '总股本',                            # （万股）
-        'float_share':                   '流通股本',                           # （万股）
-        'free_share':                    '自由流通股本',                         # （万）
-        'total_mv':                      '总市值',                            # （万元）
-        'circ_mv':                       '流通市值',                           # （万元）
+        'dv_ttm':                        '股息率（TTM）',                      # （%）
+        'total_share':                   '总股本（万股）',                      # （万股）
+        'float_share':                   '流通股本（万股）',                    # （万股）
+        'free_share':                    '自由流通股本（万）',                   # （万）
+        'total_mv':                      '总市值（万）',                        # （万元）
+        'circ_mv':                       '流通市值（万）',                       # （万元）
     },
 }
 
