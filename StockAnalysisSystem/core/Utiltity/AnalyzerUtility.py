@@ -1,4 +1,6 @@
 import json
+from collections import OrderedDict
+
 import openpyxl
 import pandas as pd
 
@@ -143,12 +145,12 @@ def analysis_results_from_json(fp) -> [AnalysisResult]:
 
 
 def analysis_result_list_to_table(result_list: [AnalysisResult]) -> {str: {str: [AnalysisResult]}}:
-    result_table = {}
+    result_table = OrderedDict()
     for analysis_result in result_list:
         analyzer_uuid = analysis_result.method
         stock_identity = analysis_result.securities
         if analyzer_uuid not in result_table.keys():
-            result_table[analyzer_uuid] = {}
+            result_table[analyzer_uuid] = OrderedDict()
         if stock_identity not in result_table[analyzer_uuid].keys():
             result_table[analyzer_uuid][stock_identity] = []
         result_table[analyzer_uuid][stock_identity].append(analysis_result)
@@ -545,7 +547,11 @@ def __calc_avg_score_with_weight(scores: list, weights: list) -> int or None:
     return (sum_score / sum_weight) if sum_weight > 0 else None
 
 
-def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: dict = {}, stock_name_dict: dict = {}):
+def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: dict = {}, stock_name_dict: dict = {},
+                             extra_data: pd.DataFrame = None):
+    """
+    Format of result: {analyzer_uuid: {security_identity:［AnalysisResult］}}
+    """
     wb = openpyxl.Workbook()
     ws_score = wb.active
     ws_score.title = 'Score'
@@ -582,6 +588,9 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
             #     print('Error: list length not as expect.')
             #     assert False
 
+            # Collect and sort securities list as the following order
+            securities_list = sorted(analysis_result.keys())
+
             row = 2
             col = index_to_excel_column_name(column)
             for security, results in analysis_result.items():
@@ -601,7 +610,8 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
 
         # Write scores
         row = ROW_OFFSET
-        for security, results in analysis_result.items():
+        for security in securities_list:
+            results = analysis_result[security]
             score, weight, reason = __aggregate_single_security_results(results)
 
             ws_score[col + str(row)] = score
@@ -671,6 +681,30 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
         ws_comments[col_vote + str(row)].fill = fill_style
 
         row += 1
+
+    # Write the extra data
+
+    if isinstance(extra_data, pd.DataFrame):
+        row = 1
+        column += 2
+        col_extra = index_to_excel_column_name(column)
+
+        ws_score[col_extra + str(row)] = 'Extra Data: '
+        ws_comments[col_extra + str(row)] = 'Extra Data: '
+        column += 1
+
+        alignment_df = pd.DataFrame({'security_identity': securities_list})
+        merged_df = pd.merge(alignment_df, extra_data, how='left', on='security_identity')
+        merged_df = merged_df.fillna('-')
+
+        columns = merged_df.columns
+        for col in columns:
+            row = 2
+            col_extra = index_to_excel_column_name(column)
+            for serial_item in merged_df[col]:
+                ws_score[col_extra + str(row)] = serial_item
+                row += 1
+            column += 1
 
     # Write file
     wb.save(file_path)

@@ -170,7 +170,8 @@ class StrategyEntry:
 
     # ----------------------------------------------------- Report -----------------------------------------------------
 
-    def generate_report_excel_common(self, result_list: [AnalysisResult], report_path: str):
+    def generate_report_excel_common(self, result_list: [AnalysisResult], report_path: str,
+                                     extra_data: pd.DataFrame = None):
         # ------------ Parse to Table ------------
         result_table = analysis_result_list_to_table(result_list)
 
@@ -180,7 +181,7 @@ class StrategyEntry:
         name_dict = self.strategy_name_dict()
 
         # ----------- Generate report ------------
-        generate_analysis_report(result_table, report_path, name_dict, stock_dict)
+        generate_analysis_report(result_table, report_path, name_dict, stock_dict, extra_data)
 
 
 # ----------------------------------------------------------------------------------------------------------------------

@@ -159,6 +159,13 @@ class DataUtility:
         patch = self.__data_center.build_local_data_patch(uri, identity, (since, until))
         self.__data_center.apply_local_data_patch(patch)
 
+    # def get_last_trading_day(self, exchange='SSE') -> datetime.datetime:
+    #     trade_calender = self.__data_center.query('Market.TradeCalender', exchange=exchange,
+    #                                               trade_date=(days_ago(365), now()), status=1)
+    #     trade_calender = trade_calender[trade_calender['status'] == 1]
+    #     trade_calender = trade_calender.sort('trade_date')
+    #     return trade_calender[0]['trade_date']
+
     # -------------------------------- Guess --------------------------------
 
     def guess_securities(self, text: str) -> [str]:

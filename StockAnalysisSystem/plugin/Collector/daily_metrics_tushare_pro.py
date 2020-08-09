@@ -11,23 +11,9 @@ from StockAnalysisSystem.core.Utiltity.CollectorUtility import *
 # ------------------------------------------------------- Fields -------------------------------------------------------
 
 FIELDS = {
-    'TradeData.Stock.Daily': {
+    'Metrics.Stock.Daily': {
         'ts_code':                       '股票代码',
         'trade_date':                    '交易日期',
-
-        # daily()
-        'open':                          '开盘价',
-        'high':                          '最高价',
-        'low':                           '最低价',
-        'close':                         '收盘价',
-        'pre_close':                     '昨收价',
-        'change':                        '涨跌额',
-        'pct_chg':                       '涨跌幅',                            # （未复权，如果是复权请用 通用行情接口 ）
-        'vol':                           '成交量',                            # （手）
-        'amount':                        '成交额',                            # （千元）
-
-        # adj_factor()
-        'adj_factor':                    '复权因子',
 
         # daily_basic()
         'turnover_rate':                 '换手率',                            # （%）
@@ -53,7 +39,7 @@ FIELDS = {
 
 def plugin_prob() -> dict:
     return {
-        'plugin_name': 'trade_data_tushare_pro',
+        'plugin_name': 'daily_metrics_tushare_pro',
         'plugin_version': '0.0.0.1',
         'tags': ['tusharepro']
     }
@@ -72,7 +58,7 @@ def plugin_capacities() -> list:
 ts_daily_delay = Delayer(int(60 * 1000 / 500))
 
 
-def __fetch_trade_data_daily(**kwargs) -> pd.DataFrame:
+def __fetch_stock_metrics_daily(**kwargs) -> pd.DataFrame:
     uri = kwargs.get('uri')
     result = check_execute_test_flag(**kwargs)
 
@@ -94,24 +80,13 @@ def __fetch_trade_data_daily(**kwargs) -> pd.DataFrame:
             # 500 times per 1 min, do not need delay.
             clock = Clock()
 
-            # Score: Na; Update 15:00 ~ 16:00; 500 queries per one min, 5000 data per one time;
-            # Score: 5000 - No limit.
             ts_daily_delay.delay()
-            result_daily = pro.daily(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
-            # Score: Na; Update: 09:30; No limit
-            # Note that the adjust factor can not be feched by slice
-            result_adjust = pro.adj_factor(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
             # Score 300; Update 15:00 ~ 17:00; No limit;
-            # result_index = pro.daily_basic(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
+            result_metrics = pro.daily_basic(ts_code=ts_code, trade_date=ts_since)
 
             print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
 
-            sub_result = None
-            sub_result = merge_on_columns(sub_result, result_daily, ['ts_code', 'trade_date'])
-            sub_result = merge_on_columns(sub_result, result_adjust, ['ts_code', 'trade_date'])
-            # sub_result = merge_on_columns(sub_result, result_index, ['ts_code', 'trade_date'])
-
-            result = pd.concat([result, sub_result], ignore_index=True)
+            result = pd.concat([result, result_metrics], ignore_index=True)
 
             if time_iter.end():
                 break
@@ -119,10 +94,9 @@ def __fetch_trade_data_daily(**kwargs) -> pd.DataFrame:
     check_execute_dump_flag(result, **kwargs)
 
     if result is not None:
-        result['stock_identity'] = result['ts_code']
-        result['stock_identity'] = result['stock_identity'].str.replace('.SH', '.SSE')
-        result['stock_identity'] = result['stock_identity'].str.replace('.SZ', '.SZSE')
+        result['stock_identity'] = result['ts_code'].apply(ts_code_to_stock_identity)
         result['trade_date'] = pd.to_datetime(result['trade_date'])
+        del result['ts_code']
     return result
 
 
@@ -131,7 +105,7 @@ def __fetch_trade_data_daily(**kwargs) -> pd.DataFrame:
 def query(**kwargs) -> pd.DataFrame or None:
     uri = kwargs.get('uri')
     if uri in list(FIELDS.keys()):
-        return __fetch_trade_data_daily(**kwargs)
+        return __fetch_stock_metrics_daily(**kwargs)
     else:
         return None
 
