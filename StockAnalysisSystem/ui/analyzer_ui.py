@@ -308,6 +308,10 @@ class AnalyzerUi(QWidget):
                 uuid = self.__table_analyzer.GetItemText(i, 3)
                 analyzer_list.append(uuid)
 
+        if len(analyzer_list) == 0:
+            QMessageBox.information(None, '提示', '请至少选择一个分析方法')
+            return
+
         self.__selector_list = selector_list
         self.__analyzer_list = analyzer_list
         self.__result_output = output_path

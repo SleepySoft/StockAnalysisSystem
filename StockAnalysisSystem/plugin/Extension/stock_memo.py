@@ -415,6 +415,20 @@ def __build_memo_extra(memo_data: StockMemoData) -> [MemoExtra]:
     ]
 
 
+def __register_sys_call():
+    if sasEntry is None:
+        return
+    black_list: BlackList = memoData.get_data('black_list')
+    if black_list is not None:
+        sasEntry.register_sys_call('get_black_list_data', {}, '', black_list.get_black_list_data)
+
+
+def __register_extra_data():
+    if sasEntry is None:
+        return
+    sasEntry.get_data_hub_entry().reg_data_extra('black_list', memoData.get_data('black_list'))
+
+
 def init(sas: StockAnalysisSystem) -> bool:
     try:
         global sasEntry
@@ -437,6 +451,9 @@ def widget(parent: QWidget) -> (QWidget, dict):
     for extra in memo_extra:
         memo_ui.add_memo_extra(extra)
     memo_ui.update_list()
+
+    __register_sys_call()
+    __register_extra_data()
 
     return memo_ui, {'name': '股票笔记', 'show': False}
 

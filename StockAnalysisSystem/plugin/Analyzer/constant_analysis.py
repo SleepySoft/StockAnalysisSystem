@@ -13,17 +13,22 @@ from StockAnalysisSystem.core.Database.DatabaseEntry import DatabaseEntry
 def analysis_black_list(securities: str, time_serial: tuple, data_hub: DataHubEntry,
                         database: DatabaseEntry, context: AnalysisContext, **kwargs) -> [AnalysisResult]:
     nop(kwargs)
-    nop(data_hub)
+    nop(database)
     nop(time_serial)
 
     if context.cache.get('black_table', None) is None:
-        context.cache['black_table'] = database.get_black_table().get_name_table()
+        black_list_module = data_hub.get_data_extra('black_list')
+        if black_list_module is not None:
+            context.cache['black_table'] = black_list_module.get_black_list_data()
     black_table = context.cache.get('black_table', None)
 
-    df_slice = black_table[black_table['name'] == securities]
-    in_black_list = len(df_slice) > 0
-    reason = get_dataframe_slice_item(df_slice, 'reason', 0, '') if in_black_list else '不在黑名单中'
-    return AnalysisResult(securities, None, not in_black_list, reason)
+    if isinstance(black_table, pd.DataFrame) and not black_table.empty:
+        df_slice = black_table[black_table['security'] == securities]
+        in_black_list = len(df_slice) > 0
+        reason = get_dataframe_slice_item(df_slice, 'content', 0, '') if in_black_list else '不在黑名单中'
+        return AnalysisResult(securities, None, not in_black_list, reason)
+    else:
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '载入黑名单模块失败')
 
 
 def analysis_less_than_3_years(securities: str, time_serial: tuple, data_hub: DataHubEntry,

@@ -261,6 +261,7 @@ def standard_dispatch_analysis(methods: [str], securities: [str], time_serial: t
     context = AnalysisContext()
     if isinstance(extra, dict):
         context.extra = extra
+        context.sas = extra.get('sas', None)
         context.logger = extra.get('logger', print)
         context.progress = extra.get('progress', ProgressRate())
 
@@ -552,6 +553,9 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
     """
     Format of result: {analyzer_uuid: {security_identity:［AnalysisResult］}}
     """
+    if result is None or len(result) == 0:
+        return
+
     wb = openpyxl.Workbook()
     ws_score = wb.active
     ws_score.title = 'Score'
@@ -611,8 +615,11 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
         # Write scores
         row = ROW_OFFSET
         for security in securities_list:
-            results = analysis_result[security]
-            score, weight, reason = __aggregate_single_security_results(results)
+            results = analysis_result.get(security, None)
+            if results is not None:
+                score, weight, reason = __aggregate_single_security_results(results)
+            else:
+                score, weight, reason = AnalysisResult.SCORE_NOT_APPLIED, 0, 'x'
 
             ws_score[col + str(row)] = score
             ws_comments[col + str(row)] = reason
@@ -693,16 +700,23 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
         ws_comments[col_extra + str(row)] = 'Extra Data: '
         column += 1
 
-        alignment_df = pd.DataFrame({'security_identity': securities_list})
-        merged_df = pd.merge(alignment_df, extra_data, how='left', on='security_identity')
+        alignment_df = pd.DataFrame({'stock_identity': securities_list})
+        merged_df = pd.merge(alignment_df, extra_data, how='left', on='stock_identity')
         merged_df = merged_df.fillna('-')
+        del merged_df['stock_identity']
 
         columns = merged_df.columns
-        for col in columns:
-            row = 2
+        for title in columns:
+            row = 1
             col_extra = index_to_excel_column_name(column)
-            for serial_item in merged_df[col]:
+            ws_score[col_extra + str(row)] = title
+            ws_comments[col_extra + str(row)] = title
+
+            row = 2
+            column_data = merged_df[title]
+            for serial_item in column_data:
                 ws_score[col_extra + str(row)] = serial_item
+                ws_comments[col_extra + str(row)] = serial_item
                 row += 1
             column += 1
 
