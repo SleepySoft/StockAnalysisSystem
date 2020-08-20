@@ -54,10 +54,10 @@ def save_hdf5(securities: [str], since: datetime.datetime, until: datetime.datet
                 if np_arr.dtype.kind == 'O':
                     string_dt = h5py.special_dtype(vlen=str)
                     stock_group.create_dataset(column, data=np_arr, dtype=string_dt,
-                                               maxshape=(None,), chunks=True, compression='lzf')
+                                               maxshape=(None,), chunks=True)
                 else:
                     stock_group.create_dataset(column, data=np_arr,
-                                               maxshape=(None,), chunks=True, compression='lzf')
+                                               maxshape=(None,), chunks=True)
                 print('Create dataset %s, length = %s' % (column, np_arr.shape[0]))
             else:
                 append_len = np_arr.shape[0]
