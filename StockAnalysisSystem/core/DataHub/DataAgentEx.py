@@ -104,8 +104,7 @@ DATA_DURATION_ANNUAL = 1000  # Annual Data
 
 class DataAgent:
     def __init__(self,
-                 uri: str, database_entry: DatabaseEntry,
-                 depot_name: str, table_prefix: str = '',
+                 uri: str, depot: DepotInterface,
                  identity_field: str or None = 'Identity',
                  datetime_field: str or None = 'DateTime',
                  candidate_fields: tuple or None = None,
@@ -121,9 +120,7 @@ class DataAgent:
             the table cannot not updated by id or time. Record is increase only except update by manual.
         """
         self.__uri = uri
-        self.__database_entry = database_entry
-        self.__depot_name = depot_name
-        self.__table_prefix = table_prefix
+        self.__depot = depot
         self.__identity_field = identity_field
         self.__datetime_field = datetime_field
         self.__candidate_fields = candidate_fields
@@ -137,12 +134,6 @@ class DataAgent:
     def base_uri(self) -> str:
         return self.__uri
 
-    def depot_name(self) -> str:
-        return self.__depot_name
-
-    def table_prefix(self) -> str:
-        return self.__table_prefix
-
     def identity_field(self) -> str or None:
         return self.__identity_field
 
@@ -152,15 +143,6 @@ class DataAgent:
     def extra_param(self, key: str, default: any = None) -> any:
         return self.__extra.get(key, default)
 
-    def database_entry(self) -> DatabaseEntry:
-        return self.__database_entry
-
-    def data_table(self, uri: str, identity: str or [str],
-                   time_serial: tuple, extra: dict, fields: list) -> ItkvTable:
-        table_name = self.table_name(uri, identity, time_serial, extra, fields)
-        return self.__database_entry.query_nosql_table(self.__depot_name, table_name,
-                                                       self.__identity_field, self.__datetime_field)
-        
     def get_field_checker(self) -> ParameterChecker:
         return self.__checker
 
@@ -244,7 +226,7 @@ class DataAgent:
             if datetime_field_available and datetime_value is None:
                 print('Warning: datetime field "' + datetime_field + '" of <' + uri + '> missing.')
                 continue
-            table.bulk_upsert(identity_value, datetime_value, row)          # row.dropna().to_dict())
+            table.bulk_upsert(identity_value, datetime_value, row)  # row.dropna().to_dict())
         table.bulk_flush()
 
     def merge2(self, uri: str, identity: str, _data: pd.DataFrame or dict or [dict]):
@@ -259,7 +241,7 @@ class DataAgent:
             data_dict = _data
         else:
             return
-        
+
         table = self.data_table(uri, identity, (None, None), {}, [])
         if table is None:
             return
@@ -426,7 +408,6 @@ class DataAgentFactorQuarter(DataAgent):
     def update_list(self) -> [str]:
         nop(self)
         return DataAgentUtility.a_stock_list()
-
 
 # # ------------------------- CSV Database -------------------------
 #
