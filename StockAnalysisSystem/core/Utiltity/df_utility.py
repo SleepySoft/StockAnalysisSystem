@@ -20,7 +20,7 @@ def get_dataframe_slice_item(df_slice, field: str, order: int = 0, default: any 
 def column_includes(df: pd.DataFrame, fields: [str]) -> bool:
     if isinstance(fields, str):
         fields = [fields]
-    return set(fields).issubset(df)
+    return set(fields).issubset(set(list(df.columns)))
 
 
 def check_date_continuity(df: pd.DataFrame, field: str) -> tuple:
