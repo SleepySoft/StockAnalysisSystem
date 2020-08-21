@@ -29,7 +29,12 @@ class Result:
 
 class DepotInterface:
     def __init__(self, primary_keys: [str]):
-        self.__primary_keys = primary_keys
+        if isinstance(primary_keys, (list, tuple, set)):
+            self.__primary_keys = list(primary_keys)
+        elif isinstance(primary_keys, str):
+            self.__primary_keys = [primary_keys]
+        else:
+            self.__primary_keys = primary_keys
 
     # ------------------------------- Basic Operation -------------------------------
 
