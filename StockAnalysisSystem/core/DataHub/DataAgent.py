@@ -199,12 +199,18 @@ class DataAgent:
         ref_since, ref_until = self.ref_range(uri, identity)
         return local_until, ref_until
 
+    def data_depot_of(self, uri: str = None, identity: str or [str] = None,
+                      time_serial: tuple = None, extra: dict = None, fields: [str] = None) -> DepotInterface:
+        nop(uri, identity, time_serial, extra, fields)
+        return self.__depot
+
     # --------------------------------- Overrideable - RW ---------------------------------
 
     def query(self, uri: str, identity: str or [str], time_serial: tuple,
-              extra: dict, fields: list) -> pd.DataFrame or None:
+              extra: dict, fields: [str]) -> pd.DataFrame or None:
         conditions = self.pack_conditions(identity, time_serial)
-        result = self.__depot.query(conditions=conditions, fields=fields, **extra)
+        depot = self.data_depot_of(uri, identity, time_serial, extra, fields)
+        result = depot.query(conditions=conditions, fields=fields, **extra)
         return result
 
     def merge(self, uri: str, identity: str, df: pd.DataFrame) -> bool:
@@ -227,9 +233,9 @@ class DataAgent:
 
     def pack_conditions(self, identity: str or [str] = None, time_serial: datetime.datetime or tuple = None) -> dict:
         conditions = {}
-        if str_available(self.__identity_field):
+        if str_available(self.__identity_field) and identity is not None:
             conditions[self.__identity_field] = identity
-        if str_available(self.__datetime_field):
+        if str_available(self.__datetime_field) and time_serial is not None:
             since, until = normalize_time_serial(time_serial)
             conditions[self.__datetime_field] = (since, until)
         return conditions
