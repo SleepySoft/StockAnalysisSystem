@@ -134,8 +134,8 @@ class DataUtility:
 
     def get_all_industries(self) -> [str]:
         agent = self.__data_center.get_data_agent('Market.SecuritiesInfo')
-        itkv_table = agent.data_table('Market.SecuritiesInfo', '', None, {}, [])
-        industries = itkv_table.get_distinct_values('industry')
+        depot = agent.data_depot_of('Market.SecuritiesInfo', '', None, {}, [])
+        industries = depot.distinct_value_of_field('industry')
         return industries
 
     def get_industry_stocks(self, industry: str) -> [str]:

@@ -44,6 +44,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             identity_field='exchange',
             datetime_field='trade_date',
             data_duration=DATA_DURATION_DAILY,
+            update_list=DataAgentUtility.support_exchange_list,
         ),
 
         DataAgent(
@@ -77,6 +78,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             identity_field='stock_identity',
             datetime_field='naming_date',
             data_duration=DATA_DURATION_FLOW,
+            update_list=DataAgentUtility.a_stock_list,
         ),
 
         DataAgent(
@@ -88,6 +90,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             identity_field='stock_identity',
             datetime_field=None,
             data_duration=DATA_DURATION_NONE,
+            update_list=DataAgentUtility.a_stock_list,
         ),
 
         # -------------------------- Finance Data --------------------------
@@ -101,6 +104,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             identity_field='stock_identity',
             datetime_field='period',
             data_duration=DATA_DURATION_QUARTER,
+            update_list=DataAgentUtility.a_stock_list,
         ),
 
         DataAgent(
@@ -112,6 +116,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             identity_field='stock_identity',
             datetime_field='period',
             data_duration=DATA_DURATION_QUARTER,
+            update_list=DataAgentUtility.a_stock_list,
         ),
 
         DataAgent(
@@ -123,6 +128,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             identity_field='stock_identity',
             datetime_field='period',
             data_duration=DATA_DURATION_QUARTER,
+            update_list=DataAgentUtility.a_stock_list,
         ),
 
         DataAgent(
@@ -134,6 +140,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             identity_field='stock_identity',
             datetime_field='period',
             data_duration=DATA_DURATION_QUARTER,
+            update_list=DataAgentUtility.a_stock_list,
         ),
 
         DataAgent(
@@ -145,6 +152,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             identity_field='stock_identity',
             datetime_field='period',
             data_duration=DATA_DURATION_QUARTER,
+            update_list=DataAgentUtility.a_stock_list,
         ),
 
         DataAgent(
@@ -156,6 +164,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             identity_field='stock_identity',
             datetime_field='period',
             data_duration=DATA_DURATION_QUARTER,
+            update_list=DataAgentUtility.a_stock_list,
         ),
 
         # ----------------------- Stockholder & Pledge -----------------------
@@ -169,6 +178,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             identity_field='stock_identity',
             datetime_field='period',
             data_duration=DATA_DURATION_QUARTER,
+            update_list=DataAgentUtility.a_stock_list,
         ),
 
         DataAgent(
@@ -180,6 +190,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             identity_field='stock_identity',
             datetime_field='due_date',
             data_duration=DATA_DURATION_FLOW,
+            update_list=DataAgentUtility.a_stock_list,
         ),
 
         DataAgent(
@@ -191,6 +202,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             identity_field='stock_identity',
             datetime_field='due_date',
             data_duration=DATA_DURATION_FLOW,
+            update_list=DataAgentUtility.a_stock_list,
         ),
 
         # ----------------------- Trade Data - Daily -----------------------
@@ -204,6 +216,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             identity_field='stock_identity',
             datetime_field='trade_date',
             data_duration=DATA_DURATION_DAILY,
+            update_list=DataAgentUtility.a_stock_list,
         ),
 
         DataAgent(
@@ -215,6 +228,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             identity_field='stock_identity',
             datetime_field='trade_date',
             data_duration=DATA_DURATION_DAILY,
+            update_list=DataAgentUtility.support_index_list,
         ),
 
         # -------------------- Metrics and Factor - Daily --------------------
@@ -228,6 +242,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             identity_field='stock_identity',
             datetime_field='trade_date',
             data_duration=DATA_DURATION_DAILY,
+            update_list=DataAgentUtility.a_stock_list,
         ),
 
         # ------------------------ Factor - Quarter ------------------------

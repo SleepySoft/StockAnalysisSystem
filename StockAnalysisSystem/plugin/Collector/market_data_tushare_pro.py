@@ -201,13 +201,14 @@ def __fetch_naming_history(**kwargs):
         ts_until = until.strftime('%Y%m%d')
 
         pro = ts.pro_api(TS_TOKEN)
+        # TODO: 抱歉，您每分钟最多访问该接口200次
         result = pro.namechange(ts_code=ts_code, start_date=ts_since, end_date=ts_until,
                                 fields='ts_code,name,start_date,end_date,ann_date,change_reason')
     check_execute_dump_flag(result, **kwargs)
 
     if result is not None:
         if 'start_date' in result.columns:
-            result['naming_date'] = pd.to_datetime(result['start_date'], format='%Y-%m-%d')
+            result['naming_date'] = pd.to_datetime(result['s+tart_date'], format='%Y-%m-%d')
         if 'stock_identity' not in result.columns:
             result['stock_identity'] = result['ts_code'].apply(ts_code_to_stock_identity)
 

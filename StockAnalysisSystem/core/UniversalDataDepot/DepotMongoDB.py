@@ -180,7 +180,7 @@ class DepotMongoDB(DepotInterface):
     def __gen_find_spec(self, *args, conditions: dict) -> dict:
         full_conditions = self.full_conditions(*args, conditions=conditions)
         spec = {}
-        for k, v in full_conditions:
+        for k, v in full_conditions.items():
             if isinstance(v, tuple):
                 # Range
                 sub_cond = {}
