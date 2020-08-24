@@ -213,7 +213,7 @@ def __fetch_naming_history(**kwargs):
 
     if result is not None:
         if 'start_date' in result.columns:
-            result['naming_date'] = pd.to_datetime(result['s+tart_date'], format='%Y-%m-%d')
+            result['naming_date'] = pd.to_datetime(result['start_date'], format='%Y-%m-%d')
         if 'stock_identity' not in result.columns:
             result['stock_identity'] = result['ts_code'].apply(ts_code_to_stock_identity)
 

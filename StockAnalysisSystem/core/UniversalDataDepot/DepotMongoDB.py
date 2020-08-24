@@ -1,6 +1,6 @@
 import pandas as pd
 from bson import Code
-from pymongo import MongoClient, ASCENDING, UpdateOne, UpdateMany, InsertOne, DeleteOne, DeleteMany
+from pymongo import MongoClient, ASCENDING, UpdateOne       # UpdateMany, InsertOne, DeleteOne, DeleteMany
 from .DepotInterface import DepotInterface
 
 
@@ -216,7 +216,3 @@ class DepotMongoDB(DepotInterface):
     def __collection_empty(db, collection_name: str) -> bool:
         return not DepotMongoDB.__collection_exists(db, collection_name) or\
                (db[collection_name].count == 0)
-
-
-
-
