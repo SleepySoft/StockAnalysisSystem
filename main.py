@@ -14,14 +14,14 @@ def main():
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def exception_hook(type, value, tback):
+def exception_hook(_type, value, tback):
     # log the exception here
     print('Exception hook triggered.')
-    print(type)
+    print(_type)
     print(value)
     print(tback)
     # then call the default handler
-    sys.__excepthook__(type, value, tback)
+    sys.__excepthook__(_type, value, tback)
 
 
 if __name__ == "__main__":
