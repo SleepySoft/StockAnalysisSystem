@@ -42,6 +42,9 @@ class DepotHDF5(DepotInterface):
 
         return result
 
+    def insert(self, dataset: pd.DataFrame or dict or any) -> bool:
+        pass
+
     def upsert(self, dataset: pd.DataFrame or dict or any) -> bool:
         if not self.check_primary_keys(dataset):
             return False
