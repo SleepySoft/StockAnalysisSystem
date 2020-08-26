@@ -55,6 +55,9 @@ class DepotInterface:
         """
         pass
 
+    def insert(self, dataset: pd.DataFrame or dict or any) -> bool:
+        pass
+
     def upsert(self, dataset: pd.DataFrame or dict or any) -> bool:
         pass
 

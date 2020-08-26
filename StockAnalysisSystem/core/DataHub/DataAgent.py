@@ -103,10 +103,14 @@ DATA_DURATION_ANNUAL = 1000  # Annual Data
 #
 
 class DataAgent:
+    MERGE_UPSERT = 0
+    MERGE_INSERT = 1
+
     def __init__(self,
                  uri: str, depot: DepotInterface,
                  identity_field: str or None = 'Identity',
                  datetime_field: str or None = 'DateTime',
+                 merge_strategy: int = MERGE_UPSERT,
                  **kwargs):
         """
         If you specify both identity_field and datetime_field, the combination will be the primary key. Which means
@@ -122,6 +126,7 @@ class DataAgent:
         self.__depot = depot
         self.__identity_field = identity_field
         self.__datetime_field = datetime_field
+        self.__merge_strategy = merge_strategy
         self.__checker = None
         self.__extra = kwargs
 
@@ -217,7 +222,8 @@ class DataAgent:
         nop(identity)
         if not self.adapt(uri):
             return False
-        return self.__depot.upsert(df)
+        return self.__depot.upsert(df) if self.__merge_strategy == DataAgent.MERGE_UPSERT else \
+               self.__depot.insert(df)
 
     def data_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
         nop(uri)
@@ -239,295 +245,4 @@ class DataAgent:
             since, until = normalize_time_serial(time_serial)
             conditions[self.__datetime_field] = (since, until)
         return conditions
-
-
-# # ----------------------------------------------------------------------------------------------------------------------
-# # ------------------------------------------------ DataAgent Implements ------------------------------------------------
-# # ----------------------------------------------------------------------------------------------------------------------
-#
-# # -------------------------------------- Exchange Data --------------------------------------
-#
-# class DataAgentExchangeData(DataAgent):
-#     def __init__(self,
-#                  uri: str, depot: DepotInterface,
-#                  **kwargs):
-#         super(DataAgentExchangeData, self).__init__(
-#             uri=uri, depot=depot, identity_field='Identity', datetime_field=None, **kwargs)
-#
-#     def ref_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
-#         nop(self, uri)
-#         return DataAgentUtility.a_share_market_start(), DataAgentUtility.latest_day()
-#
-#     def update_list(self) -> [str]:
-#         nop(self)
-#         return DataAgentUtility.support_exchange_list()
-#
-#
-# # ------------------------------------ Stock Common Data ------------------------------------
-#
-# class DataAgentStockData(DataAgent):
-#     def __init__(self, **kwargs):
-#         super(DataAgentStockData, self).__init__(**kwargs)
-#
-#     def ref_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
-#         nop(self, uri)
-#         return DataAgentUtility.stock_listing(identity), DataAgentUtility.latest_quarter()
-#
-#     def update_list(self) -> [str]:
-#         nop(self)
-#         return DataAgentUtility.a_stock_list()
-#
-#
-# # ------------------ Stock Quarter Data ------------------
-#
-# class DataAgentStockQuarter(DataAgent):
-#     def __init__(self, **kwargs):
-#         super(DataAgentStockQuarter, self).__init__(**kwargs)
-#
-#     def data_duration(self) -> int:
-#         nop(self)
-#         return DATA_DURATION_QUARTER
-#
-#     def ref_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
-#         nop(self, uri)
-#         return DataAgentUtility.stock_listing(identity), DataAgentUtility.latest_quarter()
-#
-#     def update_list(self) -> [str]:
-#         nop(self)
-#         return DataAgentUtility.a_stock_list()
-#
-#
-# # ------------------ Securities Daily Data ------------------
-#
-# class DataAgentSecurityDaily(DataAgent):
-#     def __init__(self, **kwargs):
-#         super(DataAgentSecurityDaily, self).__init__(**kwargs)
-#
-#     # ------------------------------------
-#
-#     def data_duration(self) -> int:
-#         nop(self)
-#         return DATA_DURATION_DAILY
-#
-#     def table_name(self, uri: str, identity: str, time_serial: tuple, extra: dict, fields: list) -> str:
-#         name = (uri + '_' + identity) if str_available(identity) else uri
-#         return name.replace('.', '_')
-#
-#     def update_list(self) -> [str]:
-#         nop(self)
-#         return DataAgentUtility.a_stock_list()
-#
-#     # ------------------------------------
-#
-#     def query(self, uri: str, identity: str or [str], time_serial: tuple,
-#               extra: dict, fields: list) -> pd.DataFrame or None:
-#         result = None
-#         if not isinstance(identity, (list, tuple)):
-#             identity = [identity]
-#         for _id in identity:
-#             df = super(DataAgentSecurityDaily, self).query(uri, _id, time_serial, extra, fields)
-#             if df is None or len(df) == 0:
-#                 continue
-#             result = df if result is None else pd.merge(result, df, on=self.merge_on())
-#         return result
-#
-#     def merge(self, uri: str, identity: str, df: pd.DataFrame):
-#         grouped = df.groupby(df[self.identity_field()])
-#         for sub_identity in grouped.groups:
-#             sub_dataframe = grouped.get_group(sub_identity)
-#             super(DataAgentSecurityDaily, self).merge2(uri, sub_identity, sub_dataframe)
-#
-#
-# # ------------------ Securities In Day Data ------------------
-#
-# class DataAgentSecurityInDay(DataAgentSecurityDaily):
-#     def __init__(self, **kwargs):
-#         super(DataAgentSecurityInDay, self).__init__(**kwargs)
-#
-#
-# # ---------------------- Index Daily Data ----------------------
-#
-# class DataAgentIndexDaily(DataAgentSecurityDaily):
-#     def __init__(self, **kwargs):
-#         super(DataAgentIndexDaily, self).__init__(**kwargs)
-#
-#     def update_list(self) -> [str]:
-#         nop(self)
-#         return DataAgentUtility.support_index_list()
-#
-#
-# # --------------------- Factor Quarter Data ---------------------
-#
-# class DataAgentFactorQuarter(DataAgent):
-#     def __init__(self, **kwargs):
-#         super(DataAgentFactorQuarter, self).__init__(**kwargs)
-#
-#     def adapt(self, uri: str) -> bool:
-#         return 'factor' in uri.lower() and 'daily' not in uri.lower()
-#
-#     def update_list(self) -> [str]:
-#         nop(self)
-#         return DataAgentUtility.a_stock_list()
-
-# # ------------------------- CSV Database -------------------------
-#
-# class DataAgentResult:
-#     def __init__(self,
-#                  uri: str, name: str,
-#                  identity_field: str or None = 'Identity',
-#                  datetime_field: str or None = 'DateTime',
-#                  **kwargs):
-#         super(DataAgentRecord, self).__init__(uri, None, name, '', identity_field, datetime_field, **kwargs)
-#
-#     # ---------------------------------- Constant ----------------------------------
-#
-#     def data_table(self, uri: str, identity: str or [str],
-#                    time_serial: tuple, extra: dict, fields: list) -> ItkvTable:
-#         table_name = self.table_name(uri, identity, time_serial, extra, fields)
-#         return self.__database_entry.query_nosql_table(self.__depot_name, table_name,
-#                                                        self.__identity_field, self.__datetime_field)
-#
-#     def get_field_checker(self) -> ParameterChecker:
-#         return self.__checker
-#
-#     def config_field_checker(self, query_declare: dict, result_declare: dict):
-#         if query_declare is not None or result_declare is not None:
-#             self.__checker = ParameterChecker(result_declare, query_declare)
-#
-#     # ------------------------------- Overrideable -------------------------------
-#
-#     def adapt(self, uri: str) -> bool:
-#         return self.__uri.lower() == uri.lower()
-#
-#     def data_duration(self) -> int:
-#         nop(self)
-#         return self.extra_param('duration', DATA_DURATION_AUTO)
-#
-#     def ref_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
-#         nop(self, uri, identity)
-#         return None, None
-#
-#     def data_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
-#         table = self.data_table(uri, identity, (None, None), {}, [])
-#         return (table.min_of(self.datetime_field(), identity), table.max_of(self.datetime_field(), identity)) \
-#             if str_available(self.datetime_field()) else (None, None)
-#
-#     def update_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
-#         local_since, local_until = self.data_range(uri, identity)
-#         ref_since, ref_until = self.ref_range(uri, identity)
-#         return local_until, ref_until
-#
-#     def merge_on(self) -> list:
-#         on_column = []
-#         if str_available(self.__identity_field):
-#             on_column.append(self.__identity_field)
-#         if str_available(self.__datetime_field):
-#             on_column.append(self.__datetime_field)
-#         on_column += self.extra_param('extra_key', [])
-#         return on_column
-#
-#     def table_name(self, uri: str, identity: str or [str], time_serial: tuple, extra: dict, fields: list) -> str:
-#         nop(self, identity, time_serial, extra, fields)
-#         return self.table_prefix() + uri.replace('.', '_')
-#
-#     def update_list(self) -> [str]:
-#         nop(self)
-#         return []
-#
-#     # ------------------------------ Overrideable but -------------------------------------
-#
-#     def query(self, uri: str, identity: str or [str], time_serial: tuple,
-#               extra: dict, fields: list) -> pd.DataFrame or None:
-#         table = self.data_table(uri, identity, time_serial, extra, fields)
-#         since, until = normalize_time_serial(time_serial)
-#         result = table.query(identity, since, until, extra, fields)
-#         df = pd.DataFrame(result)
-#         return df
-#
-#     def merge(self, uri: str, identity: str, df: pd.DataFrame):
-#         table = self.data_table(uri, identity, (None, None), {}, [])
-#         identity_field, datetime_field = table.identity_field(), table.datetime_field()
-#
-#         table.set_connection_threshold(1)
-#         for index, row in df.iterrows():
-#             identity_value = None
-#             if str_available(identity_field):
-#                 if identity_field in list(row.index):
-#                     identity_value = row[identity_field]
-#             if str_available(identity_field) and identity_value is None:
-#                 print('Warning: identity field "' + identity_field + '" of <' + uri + '> missing.')
-#                 continue
-#
-#             datetime_value = None
-#             if str_available(datetime_field):
-#                 if datetime_field in list(row.index):
-#                     datetime_value = row[datetime_field]
-#                     if isinstance(datetime_value, str):
-#                         datetime_value = text_auto_time(datetime_value)
-#             if str_available(datetime_field) and datetime_value is None:
-#                 print('Warning: datetime field "' + datetime_field + '" of <' + uri + '> missing.')
-#                 continue
-#             table.bulk_upsert(identity_value, datetime_value, row.dropna().to_dict())
-#         table.bulk_flush()
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-# class DataAgentFactory:
-#     NO_SQL_ENTRY = None
-#
-#     def __init__(self):
-#         pass
-#
-#     @staticmethod
-#     def create_data_agent(uri: str, database: str, table_prefix: str,
-#                           identity_field: str or None, datetime_field: str or None, **argv) -> DataAgent:
-#         """
-#
-#         :param uri:
-#         :param database:
-#         :param table_prefix:
-#         :param identity_field:
-#         :param identity_update_list:
-#         :param datetime_field:
-#         :param data_since:
-#         :param data_until:
-#         :param data_duration:
-#         :param extra_key:
-#         :param key_type:
-#         :param table_name:
-#         :param query_split:
-#         :param merge_split:
-#         :param query_declare:
-#         :param result_declare:
-#         :param argv:
-#         :return:
-#         """
-#
-#         data_agent = DataAgent(uri, DataAgentFactory.NO_SQL_ENTRY,
-#                                database, table_prefix, identity_field, datetime_field)
-#
-#         data_agent.identity_update_list = argv.get('identity_update_list', None)
-#
-#         data_agent.data_since = argv.get('data_since', None)
-#         data_agent.data_until = argv.get('data_until', None)
-#         data_agent.data_duration = argv.get('data_duration', None)
-#
-#         data_agent.extra_key = argv.get('extra_key', None)
-#         data_agent.key_type = argv.get('key_type', None)
-#         data_agent.table_name = argv.get('table_name', None)
-#
-#         data_agent.query_split = argv.get('query_split', None)
-#         data_agent.merge_split = argv.get('merge_split', None)
-#
-#         data_agent.checker = ParameterChecker(argv.get('query_declare', None), argv.get('result_declare', None))
-#
-#
-# DECLARE_DATA_AGENT = DataAgentFactory.create_data_agent
-
-
-
-
-
-
-
 

@@ -1,6 +1,6 @@
 import pandas as pd
 from bson import Code
-from pymongo import MongoClient, ASCENDING, UpdateOne       # UpdateMany, InsertOne, DeleteOne, DeleteMany
+from pymongo import MongoClient, ASCENDING, UpdateOne, InsertOne       # UpdateMany, DeleteOne, DeleteMany
 from .DepotInterface import DepotInterface
 
 
@@ -34,36 +34,11 @@ class DepotMongoDB(DepotInterface):
 
         return df
 
+    def insert(self, dataset: pd.DataFrame or dict or any) -> bool:
+        return self.__xsert(dataset, 0)
+
     def upsert(self, dataset: pd.DataFrame or dict or any) -> bool:
-        if not self.check_primary_keys(dataset):
-            return False
-        if isinstance(dataset, pd.DataFrame):
-            # clock = Clock()
-            data_dict = dataset.T.apply(lambda x: x.dropna().to_dict()).tolist()
-            # data_dict = _data.T.to_dict().values()
-            # print('Convert DataFrame size(%d) time spending: %s' % (len(_data), clock.elapsed_s()))
-        elif isinstance(dataset, dict):
-            data_dict = [dataset]
-        elif isinstance(dataset, (list, tuple)):
-            data_dict = dataset
-        else:
-            return False
-
-        collection = self.__get_collection()
-        if collection is None:
-            return False
-
-        bulk_operations = []
-        for document in data_dict:
-            spec = self.__gen_upsert_spec(document)
-            bulk_operations.append(UpdateOne(spec, {'$set': document}, upsert=True))
-            # Max 1000 operations
-            if len(bulk_operations) >= 999:
-                collection.bulk_write(bulk_operations)
-                bulk_operations.clear()
-        if len(bulk_operations) > 0:
-            collection.bulk_write(bulk_operations)
-            bulk_operations.clear()
+        return self.__xsert(dataset, 1)
 
     def delete(self, *args, conditions: dict = None, fields: [str] or None = None,
                delete_all: bool = False, **kwargs) -> bool:
@@ -176,6 +151,52 @@ class DepotMongoDB(DepotInterface):
             #   again it will be automatically re-opened and the threads restarted unless auto encryption is enabled.
             self.__client.close()
             self.__connection_count = 0
+
+    def __xsert(self, dataset: pd.DataFrame or dict or any, operation: int) -> bool:
+        # 0: Insert
+        # 1: Upsert
+
+        ret, data_dict = self.__process_xsert_prarm(dataset)
+        if not ret:
+            return False
+
+        collection = self.__get_collection()
+        if collection is None:
+            return False
+
+        bulk_operations = []
+        for document in data_dict:
+            if operation == 0:
+                bulk_operations.append(InsertOne({'$set': document}))
+            elif operation == 1:
+                spec = self.__gen_upsert_spec(document)
+                bulk_operations.append(UpdateOne(spec, {'$set': document}, upsert=True))
+            else:
+                assert False
+            # Max 1000 operations
+            if len(bulk_operations) >= 999:
+                collection.bulk_write(bulk_operations)
+                bulk_operations.clear()
+        if len(bulk_operations) > 0:
+            collection.bulk_write(bulk_operations)
+            bulk_operations.clear()
+        return True
+
+    def __process_xsert_prarm(self, dataset: pd.DataFrame or dict or any) -> (bool, [dict]):
+        if not self.check_primary_keys(dataset):
+            return False, None
+        if isinstance(dataset, pd.DataFrame):
+            # clock = Clock()
+            data_dict = dataset.T.apply(lambda x: x.dropna().to_dict()).tolist()
+            # data_dict = _data.T.to_dict().values()
+            # print('Convert DataFrame size(%d) time spending: %s' % (len(_data), clock.elapsed_s()))
+        elif isinstance(dataset, dict):
+            data_dict = [dataset]
+        elif isinstance(dataset, (list, tuple)):
+            data_dict = dataset
+        else:
+            return False, None
+        return True, data_dict
 
     def __gen_find_spec(self, *args, conditions: dict) -> dict:
         full_conditions = self.full_conditions(*args, conditions=conditions)

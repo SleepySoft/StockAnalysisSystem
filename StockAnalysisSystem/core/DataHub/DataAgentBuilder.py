@@ -58,16 +58,17 @@ def build_data_agent(database_entry: DatabaseEntry):
             data_duration=DATA_DURATION_FLOW,
         ),
 
-        DataAgent(
-            uri='Market.Investigation',
-            depot=DepotMongoDB(primary_keys=['stock_identity', 'investigate_date'],
-                               client=mongodb_client,
-                               database='StockAnalysisSystem',
-                               data_table=uri_to_table('Market.Investigation')),
-            identity_field='stock_identity',
-            datetime_field='investigate_date',
-            data_duration=DATA_DURATION_FLOW,
-        ),
+        # No this data anymore
+        # DataAgent(
+        #     uri='Market.Investigation',
+        #     depot=DepotMongoDB(primary_keys=['stock_identity', 'investigate_date'],
+        #                        client=mongodb_client,
+        #                        database='StockAnalysisSystem',
+        #                        data_table=uri_to_table('Market.Investigation')),
+        #     identity_field='stock_identity',
+        #     datetime_field='investigate_date',
+        #     data_duration=DATA_DURATION_FLOW,
+        # ),
 
         DataAgent(
             uri='Market.NamingHistory',
