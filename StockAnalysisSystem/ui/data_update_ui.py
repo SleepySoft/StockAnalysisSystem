@@ -146,7 +146,7 @@ class UpdateTask(TaskQueue.Task):
                 self.progress.set_progress([uri, identity], 1, 1)
             self.progress.increase_progress(uri)
         except Exception as e:
-            print(e)
+            print('e')
             return False
         finally:
             self.__apply_count += 1
