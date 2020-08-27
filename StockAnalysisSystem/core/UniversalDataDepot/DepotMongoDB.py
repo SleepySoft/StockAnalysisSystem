@@ -1,3 +1,4 @@
+import time
 import pandas as pd
 from bson import Code
 from pymongo import MongoClient, ASCENDING, UpdateOne, InsertOne       # UpdateMany, DeleteOne, DeleteMany
@@ -186,8 +187,13 @@ class DepotMongoDB(DepotInterface):
         if not self.check_primary_keys(dataset):
             return False, None
         if isinstance(dataset, pd.DataFrame):
-            # clock = Clock()
-            data_dict = dataset.T.apply(lambda x: x.dropna().to_dict()).tolist()
+            # s1 = time.time()
+            # data_dict = dataset.T.apply(lambda x: x.dropna().to_dict()).tolist()
+            # print('Method1 - Timespending: %sms' % int((time.time() - s1) * 1000))
+            #
+            # s2 = time.time()
+            data_dict = dataset.to_dict('records')
+            # print('Method2 - Timespending: %sms' % int((time.time() - s2) * 1000))
             # data_dict = _data.T.to_dict().values()
             # print('Convert DataFrame size(%d) time spending: %s' % (len(_data), clock.elapsed_s()))
         elif isinstance(dataset, dict):
