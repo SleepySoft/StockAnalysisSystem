@@ -1,16 +1,20 @@
+from .Utiltity.common import *
 from .DataHub.DataAgentBuilder import *
+from .Utiltity.task_queue import TaskQueue
 from .DataHub.DataUtility import DataUtility
 from .Database.DatabaseEntry import DatabaseEntry
 from .Utiltity.plugin_manager import PluginManager
-from StockAnalysisSystem.core.Utiltity.common import *
 from .DataHub.UniversalDataCenter import UniversalDataCenter
+
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, Executor
 
 
 class UpdateHelper:
-    class UpdateTask:
+    class UpdateTask(TaskQueue.Task):
         def __init__(self, data_center: UniversalDataCenter, data_utility: DataUtility,
                      uri: str, update_items: [str] or None = None, force: bool = False,
                      progress: ProgressRate or None = None, clock: Clock or None = None, **kwargs):
+            super(UpdateHelper.UpdateTask, self).__init__('UpdateHelper.UpdateTask')
             self.__uri = uri
             self.__force = force
             self.__clock = clock
@@ -22,16 +26,42 @@ class UpdateHelper:
                 self.__update_items = list(update_items)
             else:
                 self.__update_items = None
-
-            self.__quit = False
             self.__extra = kwargs
+
+            # Thread pool
+            self.__quit = False
+            self.__patch_count = 0
+            self.__apply_count = 0
+            self.__last_future = None
+            self.__pool = ThreadPoolExecutor(max_workers=1)
 
             self.__data_center = data_center
             self.__data_utility = data_utility
             self.__uri_data_agent = self.__data_center.get_data_agent(self.__uri)
 
+        # ------------------------------------ Interface of TaskQueue.Task ------------------------------------
+
+        def run(self):
+            print('Update task start.')
+            try:
+                # Catch "pymongo.errors.ServerSelectionTimeoutError: No servers found yet" exception and continue.
+                self.__execute_update()
+            except Exception as e:
+                print('Update got Exception: ')
+                print(e)
+                print(traceback.format_exc())
+                print('Continue...')
+            finally:
+                if self.__last_future is not None:
+                    self.__last_future.cancel()
+                    self.__last_future = None
+            print('Update task finished.')
+
         def quit(self):
             self.__quit = True
+
+        def identity(self) -> str:
+            return self.__uri_data_agent.base_uri() if self.__uri_data_agent is not None else ''
 
         # ------------------------------------- Task -------------------------------------
 
@@ -49,6 +79,8 @@ class UpdateHelper:
                 self.__progress.reset()
                 self.__progress.set_progress(self.__uri, 0, progress)
 
+            self.__patch_count = 0
+            self.__apply_count = 0
             for identity in update_list:
                 while (self.__patch_count - self.__apply_count > 20) and not self.__quit:
                     time.sleep(0.5)
@@ -58,56 +90,159 @@ class UpdateHelper:
 
                 print('------------------------------------------------------------------------------------')
 
-                if identity is not None:
-                    # Optimise: Update not earlier than listing date.
-                    listing_date = self.__data_utility.get_securities_listing_date(identity, default_since())
-
-                    if self.__force:
-                        since, until = listing_date, now()
-                    else:
-                        since, until = self.__data_center.calc_update_range(self.__uri_data_agent.base_uri(), identity)
-                        since = max(listing_date, since)
-                    time_serial = (since, until)
-                else:
-                    time_serial = None
-
-                patch = self.__data_center.build_local_data_patch(
-                    self.__uri_data_agent.base_uri(), identity, time_serial, force=self.__force)
+                patch = self.__execute_fetching(identity)
                 self.__patch_count += 1
                 print('Patch count: ' + str(self.__patch_count))
+                self.__last_future = self.__pool.submit(self.__execute_persistence, identity, patch)
 
-                self.__future = self.__pool.submit(self.__execute_persistence,
-                                                   self.__uri_data_agent.base_uri(), identity, patch)
-
-            if self.__future is not None:
+            if self.__last_future is not None:
                 print('Waiting for persistence task finish...')
-                self.__future.result()
+                self.__last_future.result()
             if self.__clock is not None:
                 self.__clock.freeze()
 
-        def __execute_persistence(self, uri: str, identity: str, patch: tuple) -> bool:
+        def __execute_fetching(self, identity: str or None):
+            if self.__quit:
+                return None
+            if identity is not None:
+                # Optimise: Update not earlier than listing date.
+                listing_date = self.__data_utility.get_securities_listing_date(identity, default_since())
+
+                if self.__force:
+                    since, until = listing_date, now()
+                else:
+                    since, until = self.__data_center.calc_update_range(self.__uri_data_agent.base_uri(), identity)
+                    since = max(listing_date, since)
+                time_serial = (since, until)
+            else:
+                time_serial = None
+
+            patch = self.__data_center.build_local_data_patch(
+                self.__uri_data_agent.base_uri(), identity, time_serial, force=self.__force)
+            return patch
+
+        def __execute_persistence(self, identity: str, patch: tuple) -> bool:
+            if self.__quit or patch is None:
+                return False
             try:
                 if patch is not None:
                     self.__data_center.apply_local_data_patch(patch)
+                uri = self.__uri_data_agent.base_uri()
                 if identity is not None:
-                    self.progress.set_progress([uri, identity], 1, 1)
-                self.progress.increase_progress(uri)
+                    self.__progress.set_progress([uri, identity], 1, 1)
+                self.__progress.increase_progress(uri)
             except Exception as e:
-                print('e')
+                print(e)
                 return False
             finally:
                 self.__apply_count += 1
                 print('Persistence count: ' + str(self.__apply_count))
             return True
 
-    def __init__(self, data_center: UniversalDataCenter, data_utility: DataUtility):
-        self.__data_center = data_center
-        self.__data_utility = data_utility
+    UPDATE_RANGE_AUTO = 1
+    UPDATE_RANGE_FORCE = 2
+
+    PERSISTENCE_NO = 0
+    PERSISTENCE_SYNC = 1
+    PERSISTENCE_THREAD = 2
+    PERSISTENCE_PROCESS = 3
+
+    def __init__(self, data_utility, update_task_queue: TaskQueue):
+        self.__data_center = data_utility.get_data_center()
+        self.__data_utility = data_utility.__data_utility()
+        self.__update_task_queue = update_task_queue if update_task_queue is not None else TaskQueue()
 
         self.__pending_task = []
 
-    def post_update_task(self, task: UpdateTask, finish_callback: collections.Callable or None):
-        self.__pending_task.append(task)
+    def block_update(self, uri: str, update_items: str or [str],
+                     update_range: (datetime.datetime, datetime.datetime), **kwargs):
+        pass
+
+    def slice_update(self, uri: str, update_items: str or [str] or None,
+                     update_range: datetime.datetime, **kwargs):
+        pass
+
+    def serial_update(self, uri: str, update_items: str or [str],
+                      update_range: (datetime.datetime, datetime.datetime) or int = UPDATE_RANGE_AUTO, **kwargs):
+        clock = kwargs.get('clock', None)
+        progress = kwargs.get('progress', None)
+
+        # Get identities here to ensure we can get the new list after stock info updated
+        if update_items is not None and len(update_items) > 0:
+            update_list = update_items
+        else:
+            data_agent = self.__data_center.get_data_agent(uri)
+            update_list = data_agent.update_list()
+        if update_list is None or len(update_list) == 0:
+            update_list = [None]
+
+        if clock is not None:
+            clock.reset()
+        if progress is not None:
+            progress.reset()
+            progress(uri, 0, len(update_list))
+
+        patch_count = 0
+        apply_count = 0
+        for identity in update_list:
+            while (patch_count - apply_count > 20) and not self.__quit:
+                time.sleep(0.5)
+                continue
+            if self.__quit:
+                break
+
+            print('------------------------------------------------------------------------------------')
+
+            if update_range == UpdateHelper.UPDATE_RANGE_FORCE:
+                listing_date = self.__data_utility.get_securities_listing_date(identity, default_since())
+                since, until = listing_date, now()
+            else:
+                since, until = self.__data_utility.calc_update_range(uri, identity, update_range)
+            patch = self.__data_center.build_local_data_patch(uri, identity, (since, until),
+                                                              force=update_range == UpdateHelper.UPDATE_RANGE_FORCE)
+
+            self.__patch_count += 1
+            print('Patch count: ' + str(self.__patch_count))
+            self.__last_future = self.__pool.submit(self.__execute_persistence, identity, patch)
+
+        if self.__last_future is not None:
+            print('Waiting for persistence task finish...')
+            self.__last_future.result()
+        if self.__clock is not None:
+            self.__clock.freeze()
+
+    # ---------------------------------------------------------------------------------------------
+
+    def __persistence_patch(self, patch: tuple, **kwargs):
+        clock = kwargs.get('clock', None)
+        progress = kwargs.get('progress', None)
+        persistence = kwargs.get('persistence', UpdateHelper.PERSISTENCE_THREAD)
+        
+        if persistence == UpdateHelper.PERSISTENCE_NO:
+            return True
+        elif persistence == UpdateHelper.PERSISTENCE_SYNC:
+            return self.__execute_persistence(patch, progress, clock, **kwargs)
+        elif persistence == UpdateHelper.PERSISTENCE_THREAD:
+            self.__pool.submit(self.__execute_persistence, patch, progress, clock, **kwargs)
+
+    def __execute_persistence(self, patch: tuple, persistence: int = PERSISTENCE_THREAD,
+                              progress: ProgressRate or None = None, clock: Clock or None = None, **kwargs) -> bool:
+        if self.__quit or patch is None:
+            return False
+        try:
+            if patch is not None:
+                self.__data_center.apply_local_data_patch(patch)
+            uri = self.__uri_data_agent.base_uri()
+            if identity is not None:
+                self.__progress.set_progress([uri, identity], 1, 1)
+            self.__progress.increase_progress(uri)
+        except Exception as e:
+            print(e)
+            return False
+        finally:
+            self.__apply_count += 1
+            print('Persistence count: ' + str(self.__apply_count))
+        return True
 
 
 class DataHubEntry:
