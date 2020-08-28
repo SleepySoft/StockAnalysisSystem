@@ -159,17 +159,33 @@ class UpdateHelper:
         self.__pool = ThreadPoolExecutor(max_workers=1)
         self.__pending_task = []
 
-    def block_update(self, uri: str, update_items: str or [str],
-                     update_range: (datetime.datetime, datetime.datetime), **kwargs):
+    def smart_update(self, uri: str,
+                     update_items: str or [str] or int = UPDATE_ITEM_NONE,
+                     update_range: (datetime.datetime, datetime.datetime) or int = UPDATE_RANGE_AUTO,
+                     **kwargs) -> bool:
         pass
 
+    def block_update(self, uri: str, update_items: str or [str],
+                     update_range: (datetime.datetime, datetime.datetime), **kwargs) -> bool:
+        if update_items is None:
+            return False
+        if not isinstance(update_range, (tuple, list, set)) or \
+                len(update_range) != 2 or \
+                not isinstance(update_range[0], datetime.datetime) or \
+                not isinstance(update_range[1], datetime.datetime):
+            # Must specify update range
+            return False
+        return self.__update_entry(uri, update_items, update_range, **kwargs)
+
     def slice_update(self, uri: str, update_items: str or [str] or None,
-                     update_range: datetime.datetime, **kwargs):
-        pass
+                     update_time: datetime.datetime, **kwargs):
+        if not isinstance(update_time, datetime.datetime):
+            return False
+        return self.__update_entry(uri, update_items, update_time, **kwargs)
 
     def serial_update(self, uri: str, update_items: str or [str],
                       update_range: (datetime.datetime, datetime.datetime) or int = UPDATE_RANGE_AUTO, **kwargs):
-        pass
+        return self.__update_entry(uri, update_items, update_range, **kwargs)
 
     # ---------------------------------------------------------------------------------------------
 
@@ -245,6 +261,8 @@ class UpdateHelper:
             print('Persistence fail.')
         if clock is not None:
             clock.freeze()
+
+        return True
 
     def __persistence_entry(self, uri: str, identity: str,
                             patch: tuple, counter: [int, int], **kwargs) ->Future or bool:
