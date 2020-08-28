@@ -6,7 +6,7 @@ from .Database.DatabaseEntry import DatabaseEntry
 from .Utiltity.plugin_manager import PluginManager
 from .DataHub.UniversalDataCenter import UniversalDataCenter
 
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, Executor
+from concurrent.futures import ThreadPoolExecutor, Future, ProcessPoolExecutor, Executor
 
 
 class UpdateHelper:
@@ -139,6 +139,10 @@ class UpdateHelper:
                 print('Persistence count: ' + str(self.__apply_count))
             return True
 
+    UPDATE_ITEM_NONE = 0
+    UPDATE_ITEM_AUTO = 1
+
+    UPDATE_RANGE_NONE = 0
     UPDATE_RANGE_AUTO = 1
     UPDATE_RANGE_FORCE = 2
 
@@ -152,6 +156,7 @@ class UpdateHelper:
         self.__data_utility = data_utility.__data_utility()
         self.__update_task_queue = update_task_queue if update_task_queue is not None else TaskQueue()
 
+        self.__pool = ThreadPoolExecutor(max_workers=1)
         self.__pending_task = []
 
     def block_update(self, uri: str, update_items: str or [str],
@@ -164,16 +169,34 @@ class UpdateHelper:
 
     def serial_update(self, uri: str, update_items: str or [str],
                       update_range: (datetime.datetime, datetime.datetime) or int = UPDATE_RANGE_AUTO, **kwargs):
+        pass
+
+    # ---------------------------------------------------------------------------------------------
+
+    PATCH_COUNT_INDEX = 0
+    APPLY_COUNT_INDEX = 1
+
+    def __update_entry(self, uri: str, update_items: str or [str] or int = UPDATE_ITEM_AUTO,
+                       update_range: (datetime.datetime, datetime.datetime) or int = UPDATE_RANGE_AUTO, **kwargs):
         clock = kwargs.get('clock', None)
         progress = kwargs.get('progress', None)
+        quit_flag = kwargs.get('quit_flag', [False])
 
-        # Get identities here to ensure we can get the new list after stock info updated
-        if update_items is not None and len(update_items) > 0:
-            update_list = update_items
-        else:
+        # ---------------------- Calculate Update Items ----------------------
+
+        if update_items == UpdateHelper.UPDATE_ITEM_NONE:
+            update_list = [None]
+        elif update_items == UpdateHelper.UPDATE_ITEM_AUTO:
             data_agent = self.__data_center.get_data_agent(uri)
             update_list = data_agent.update_list()
-        if update_list is None or len(update_list) == 0:
+        elif str_available(update_items):
+            update_list = [update_items]
+        elif isinstance(update_items, (list, tuple, set)):
+            update_list = list(update_items)
+        else:
+            update_list = [None]
+
+        if len(update_list) == 0:
             update_list = [None]
 
         if clock is not None:
@@ -182,66 +205,79 @@ class UpdateHelper:
             progress.reset()
             progress(uri, 0, len(update_list))
 
-        patch_count = 0
-        apply_count = 0
+        counter = [0, 0]
+        last_future = None
+
         for identity in update_list:
-            while (patch_count - apply_count > 20) and not self.__quit:
+            if quit_flag[0]:
+                break
+            while counter[UpdateHelper.PATCH_COUNT_INDEX] - counter[UpdateHelper.APPLY_COUNT_INDEX] > 20:
                 time.sleep(0.5)
                 continue
-            if self.__quit:
-                break
 
-            print('------------------------------------------------------------------------------------')
+            # ------------------- Calculate Update Time Serial -------------------
 
-            if update_range == UpdateHelper.UPDATE_RANGE_FORCE:
+            if update_range == UpdateHelper.UPDATE_RANGE_NONE:
+                time_serial = None
+            elif update_range == UpdateHelper.UPDATE_RANGE_AUTO:
+                time_serial = self.__data_utility.calc_update_range(uri, identity, None)
+            elif update_range == UpdateHelper.UPDATE_RANGE_FORCE:
                 listing_date = self.__data_utility.get_securities_listing_date(identity, default_since())
-                since, until = listing_date, now()
+                time_serial = listing_date, now()
             else:
-                since, until = self.__data_utility.calc_update_range(uri, identity, update_range)
-            patch = self.__data_center.build_local_data_patch(uri, identity, (since, until),
+                time_serial = self.__data_utility.calc_update_range(uri, identity, update_range)
+
+            # -------------------------- Execute Update --------------------------
+
+            patch = self.__data_center.build_local_data_patch(uri, identity, time_serial,
                                                               force=update_range == UpdateHelper.UPDATE_RANGE_FORCE)
+            counter[UpdateHelper.PATCH_COUNT_INDEX] += 1
+            print('Patch count: ' + str(counter[UpdateHelper.PATCH_COUNT_INDEX]))
 
-            self.__patch_count += 1
-            print('Patch count: ' + str(self.__patch_count))
-            self.__last_future = self.__pool.submit(self.__execute_persistence, identity, patch)
+            # ----------------------- Execute Persistence ------------------------
 
-        if self.__last_future is not None:
+            last_future = self.__persistence_entry(uri, identity, patch, counter, **kwargs)
+
+        if isinstance(last_future, Future):
             print('Waiting for persistence task finish...')
-            self.__last_future.result()
-        if self.__clock is not None:
-            self.__clock.freeze()
+            last_future.result()
+        elif not last_future:
+            print('Persistence fail.')
+        if clock is not None:
+            clock.freeze()
 
-    # ---------------------------------------------------------------------------------------------
-
-    def __persistence_patch(self, patch: tuple, **kwargs):
-        clock = kwargs.get('clock', None)
-        progress = kwargs.get('progress', None)
+    def __persistence_entry(self, uri: str, identity: str,
+                            patch: tuple, counter: [int, int], **kwargs) ->Future or bool:
         persistence = kwargs.get('persistence', UpdateHelper.PERSISTENCE_THREAD)
-        
+
         if persistence == UpdateHelper.PERSISTENCE_NO:
             return True
         elif persistence == UpdateHelper.PERSISTENCE_SYNC:
-            return self.__execute_persistence(patch, progress, clock, **kwargs)
+            return self.__execute_persistence(uri, identity, patch, counter, **kwargs)
         elif persistence == UpdateHelper.PERSISTENCE_THREAD:
-            self.__pool.submit(self.__execute_persistence, patch, progress, clock, **kwargs)
+            return self.__pool.submit(self.__execute_persistence, uri, identity, patch, counter, **kwargs)
+        else:
+            return False
 
-    def __execute_persistence(self, patch: tuple, persistence: int = PERSISTENCE_THREAD,
-                              progress: ProgressRate or None = None, clock: Clock or None = None, **kwargs) -> bool:
-        if self.__quit or patch is None:
+    def __execute_persistence(self, uri: str, identity: str, patch: tuple, counter: [int, int], **kwargs) -> bool:
+        progress = kwargs.get('progress', None)
+        quit_flag = kwargs.get('quit_flag', [False])
+
+        if quit_flag[0] or patch is None:
             return False
         try:
             if patch is not None:
                 self.__data_center.apply_local_data_patch(patch)
-            uri = self.__uri_data_agent.base_uri()
-            if identity is not None:
-                self.__progress.set_progress([uri, identity], 1, 1)
-            self.__progress.increase_progress(uri)
+            if progress is not None:
+                if identity is not None:
+                    progress.set_progress([uri, identity], 1, 1)
+                progress.increase_progress(uri)
         except Exception as e:
             print(e)
             return False
         finally:
-            self.__apply_count += 1
-            print('Persistence count: ' + str(self.__apply_count))
+            counter[UpdateHelper.APPLY_COUNT_INDEX] += 1
+            print('Persistence count: ' + str(counter[UpdateHelper.APPLY_COUNT_INDEX]))
         return True
 
 
