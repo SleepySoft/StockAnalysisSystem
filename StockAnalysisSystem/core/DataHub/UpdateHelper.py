@@ -1,3 +1,4 @@
+from .DataAgent import DataAgent
 from ..Utiltity.common import *
 from ..Utiltity.time_utility import *
 from ..Utiltity.task_queue import TaskQueue

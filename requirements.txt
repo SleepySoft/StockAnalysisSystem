@@ -1,6 +1,6 @@
 pyqt5
 # pyqtgraph
-pip install pyqtgraph==0.11.0rc0
+pyqtgraph==0.11.0rc0
 pyqtwebengine
 bs4
 lxml
