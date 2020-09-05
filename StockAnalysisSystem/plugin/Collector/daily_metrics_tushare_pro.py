@@ -82,7 +82,7 @@ def __fetch_stock_metrics_daily(**kwargs) -> pd.DataFrame:
 
             ts_daily_delay.delay()
             # Score 300; Update 15:00 ~ 17:00; No limit;
-            result_metrics = pro.daily_basic(ts_code=ts_code, trade_date=ts_since)
+            result_metrics = pro.daily_basic(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
 
             print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
 

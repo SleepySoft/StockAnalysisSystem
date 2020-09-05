@@ -5,6 +5,7 @@ pyqtwebengine
 bs4
 lxml
 requests
+numpy
 pandas
 pymongo
 openpyxl
