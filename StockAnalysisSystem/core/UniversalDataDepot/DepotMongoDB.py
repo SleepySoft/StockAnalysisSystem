@@ -1,4 +1,7 @@
 import time
+import traceback
+
+import numpy as np
 import pandas as pd
 from bson import Code
 from pymongo import MongoClient, ASCENDING, UpdateOne, InsertOne       # UpdateMany, DeleteOne, DeleteMany
@@ -167,17 +170,25 @@ class DepotMongoDB(DepotInterface):
 
         bulk_operations = []
         for document in data_dict:
+            # Consider "array like" value
+            clean_doc = {k: v for k, v in document.items() if not (pd.notnull(v) is False)}
             if operation == 0:
-                bulk_operations.append(InsertOne({'$set': document}))
+                bulk_operations.append(InsertOne({'$set': clean_doc}))
             elif operation == 1:
                 spec = self.__gen_upsert_spec(document)
-                bulk_operations.append(UpdateOne(spec, {'$set': document}, upsert=True))
+                bulk_operations.append(UpdateOne(spec, {'$set': clean_doc}, upsert=True))
             else:
                 assert False
             # Max 1000 operations
-            if len(bulk_operations) >= 999:
-                collection.bulk_write(bulk_operations)
-                bulk_operations.clear()
+            try:
+                if len(bulk_operations) >= 1000:
+                    collection.bulk_write(bulk_operations)
+                    bulk_operations.clear()
+            except Exception as e:
+                print('Error update: ' + str(e))
+                print(traceback.format_exc())
+            finally:
+                pass
         if len(bulk_operations) > 0:
             collection.bulk_write(bulk_operations)
             bulk_operations.clear()

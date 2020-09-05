@@ -82,7 +82,7 @@ def __fetch_trade_data_daily(**kwargs) -> pd.DataFrame:
             ts_daily_delay.delay()
             result_daily = pro.daily(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
             # Score: Na; Update: 09:30; No limit
-            # Note that the adjust factor can not be feched by slice
+            # Note that the adjust factor can not be fetched by slice
             result_adjust = pro.adj_factor(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
             # Score 300; Update 15:00 ~ 17:00; No limit;
             # result_index = pro.daily_basic(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
