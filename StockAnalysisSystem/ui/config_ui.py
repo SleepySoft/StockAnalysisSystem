@@ -183,7 +183,8 @@ class ConfigUi(QWidget):
                          ' --host ' + mongodb_host + \
                          ' --port ' + mongodb_port + \
                          ' -d ' + mongodb_name + \
-                         ' ' + folder
+                         ' --dir ' + folder + \
+                         self.__generate_auth_parameters()
         self.execute_command(import_command)
 
     def on_button_export(self):
@@ -208,13 +209,23 @@ class ConfigUi(QWidget):
             self.__generate_export_command(export_binary, mongodb_host, mongodb_port, folder, 'StockAnalysisSystem'),
         ])
 
-    @staticmethod
-    def __generate_export_command(export_binary: str, mongodb_host: str,
+    def __generate_export_command(self, export_binary: str, mongodb_host: str,
                                   mongodb_port: str, folder: str, db_name: str) -> str:
         return '"' + export_binary + '"' + \
                ' -h ' + mongodb_host + ':' + mongodb_port + \
                ' -d ' + db_name + \
-               ' -o ' + folder
+               ' -o ' + folder + \
+               self.__generate_auth_parameters()
+
+    def __generate_auth_parameters(self) -> str:
+        mongodb_user = self.__line_nosql_db_user.text()
+        mongodb_pass = self.__line_nosql_db_pass.text()
+        auth_param = ''
+        if mongodb_user != '':
+            auth_param += ' -u ' + mongodb_user
+        if mongodb_pass != '':
+            auth_param += ' -p ' + mongodb_pass
+        return auth_param
 
     # -----------------------------------------------------------------------------------
 
@@ -289,6 +300,10 @@ class ConfigUi(QWidget):
             return False
 
     def execute_command(self, cmd: str):
+        tips = 'Execute command:　' + cmd
+        self.__text_information.append(tips)
+        print(tips)
+
         self.__process = QProcess()
         self.__process.setProcessChannelMode(QProcess.MergedChannels)
         self.__process.started.connect(self.on_command_start)
@@ -307,7 +322,7 @@ class ConfigUi(QWidget):
         tips = 'Process finished...'
         print(tips)
         self.__text_information.append(tips)
-        self.__text_information.append('注意：sqlite数据库文件[ Data/sAsUtility.db ]需要手动进行备份或替换')
+        self.__text_information.append('导入完成')
 
     def read_output(self):
         output = bytes(self.__process.readAllStandardOutput()).decode('UTF-8').strip()
