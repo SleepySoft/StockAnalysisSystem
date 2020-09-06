@@ -39,7 +39,7 @@ https://github.com/SleepySoft/StockAnalysisSystem
 * 如果一切正常，运行命令：“conda activate sas”，这时你的命令行会出现(sas)字样  
 * 执行以下命令切换到代码目录：“cd "你的代码目录"”比如：cd "D:\Code\git\StockAnalysisSystem"  
 * 切换到代码目录后运行命令：“pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple”  
-* 如果提示pip版本太旧，按提示运行命令：“python -m pip install --upgrade pip -i https://pypi.tuna.tsinghua.edu.cn/simple”完成后再执行上一条命令  
+* 如果提示pip版本太旧，按提示运行命令：“python -m pip install --upgrade pip -i https://pypi.tuna.tsinghua.edu.cn/simple” 完成后再执行上一条命令  
 * 最后一步，运行命令：“python main.py”  
 ------------------------------------------------------------  
 * 以后运行只需要打开cmd并切换到代码目录（一个简单的方法，用文件管理器打开代码目录，在上方的地址栏直接输入cmd回车即可）  
