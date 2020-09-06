@@ -121,11 +121,16 @@ def __fetch_securities_info(**kwargs) -> pd.DataFrame or None:
     return result
 
 
+delay_stock_concept = Delayer(60 * 1000 // 200)
+
+
 def __fetch_stock_concept(**kwargs) -> pd.DataFrame or None:
     result = check_execute_test_flag(**kwargs)
     if result is None:
         ts_code = pickup_ts_code(kwargs)
         pro = ts.pro_api(TS_TOKEN)
+        # 抱歉，您每分钟最多访问该接口200次
+        delay_stock_concept.delay()
         result = pro.concept_detail(ts_code=ts_code, fields=[
             'id', 'concept_name', 'ts_code', 'name', 'in_date', 'out_date'])
     check_execute_dump_flag(result, **kwargs)
