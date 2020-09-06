@@ -23,28 +23,28 @@ https://github.com/SleepySoft/StockAnalysisSystem
 * 由于图表引入了pyqtgraph，导致pyinstaller打包出现问题，并且尝试py2exe也不成功，故暂停以EXE形式发布Release  
   
 ## 只想看结果  
-打开analysis_report.xlsx  
+* 打开analysis_report.xlsx  
   
 ## 大神看这里  
-需要安装MongoDB  
-Python3.7，推荐Anaconda  
-requirements.txt你们懂的  
-从main.py运行  
+* 需要安装MongoDB  
+* Python3.7，推荐Anaconda  
+* requirements.txt你们懂的  
+* 从main.py运行  
   
 ## 新手看这里  
-从网盘下载MongoDB及Anaconda并安装  
-按WIN键，输入：“cmd”，选择用管理员运行命令行  
-在命令行中执行命令：“conda create -n sas python=3.7”，需要确认就输入y回车  
-如果提示找不到conda，请参考这篇文章，将你的anaconda加入到系统目录中：https://blog.csdn.net/u013211009/article/details/78437098  
-如果一切正常，运行命令：“conda activate sas”，这时你的命令行会出现(sas)字样  
-执行以下命令切换到代码目录：“cd "你的代码目录"”比如：cd "D:\Code\git\StockAnalysisSystem"  
-切换到代码目录后运行命令：“pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple”  
-如果提示pip版本太旧，按提示运行命令：“python -m pip install --upgrade pip -i https://pypi.tuna.tsinghua.edu.cn/simple”完成后再执行上一条命令  
-最后一步，运行命令：“python main.py”  
+* 从网盘下载MongoDB及Anaconda并安装  
+* 按WIN键，输入：“cmd”，选择用管理员运行命令行  
+* 在命令行中执行命令：“conda create -n sas python=3.7”，需要确认就输入y回车  
+* 如果提示找不到conda，请参考这篇文章，将你的anaconda加入到系统目录中：https://blog.csdn.net/u013211009/article/details/78437098  
+* 如果一切正常，运行命令：“conda activate sas”，这时你的命令行会出现(sas)字样  
+* 执行以下命令切换到代码目录：“cd "你的代码目录"”比如：cd "D:\Code\git\StockAnalysisSystem"  
+* 切换到代码目录后运行命令：“pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple”  
+* 如果提示pip版本太旧，按提示运行命令：“python -m pip install --upgrade pip -i https://pypi.tuna.tsinghua.edu.cn/simple”完成后再执行上一条命令  
+* 最后一步，运行命令：“python main.py”  
 ------------------------------------------------------------  
-以后运行只需要打开cmd并切换到代码目录（一个简单的方法，用文件管理器打开代码目录，在上方的地址栏直接输入cmd回车即可）  
-先运行命令：“conda activate sas”  
-再运行命令：“python main.py”  
+* 以后运行只需要打开cmd并切换到代码目录（一个简单的方法，用文件管理器打开代码目录，在上方的地址栏直接输入cmd回车即可）  
+* 先运行命令：“conda activate sas”  
+* 再运行命令：“python main.py”  
   
 # 软件配置  
 当软件没检测到配置文件，会自动弹出配置窗口，配置如下：  
