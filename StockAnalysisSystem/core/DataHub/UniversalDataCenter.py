@@ -132,7 +132,7 @@ class UniversalDataCenter:
         for plugin in plugins:
             result = self.get_plugin_manager().execute_module_function(plugin, 'query', argv)
             df = result[0] if len(result) > 0 else None
-            if df is not None and isinstance(df, pd.DataFrame) and len(df) > 0:
+            if df is not None and isinstance(df, pd.DataFrame):
                 return df
         return None
 
@@ -195,7 +195,11 @@ class UniversalDataCenter:
         # ------------------------- Unpack -------------------------
         try:
             ret, params, result = patch
-            if not ret or result is None:
+            if not ret or not isinstance(result, pd.DataFrame):
+                print('Warning: Error patch.')
+                return ret
+            if len(result) == 0:
+                print('Empty patch - Ignore')
                 return ret
             uri, identity, since, until, table = params
         except Exception as e:
