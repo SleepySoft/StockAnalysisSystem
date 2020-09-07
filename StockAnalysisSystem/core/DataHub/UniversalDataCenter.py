@@ -143,7 +143,7 @@ class UniversalDataCenter:
         if agent is None:
             return False
         clock = Clock()
-        agent.merge2(uri, identity, data)
+        agent.merge(uri, identity, data)
         print('%s: [%s] - Persistence finished, time spending: %sms' % (uri, str(identity), clock.elapsed_ms()))
         return True
 
