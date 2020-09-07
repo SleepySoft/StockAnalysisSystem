@@ -121,7 +121,7 @@ def clean_str(input_str: str) -> str:
 
 
 ##### ##### ##### #####
-# http://www.iwencai.com/stockpick/search?querytype=stock&w=证监会立案
+# http://www.iwencai.com/stockpick/search?querytype=stock&w=立案
 # 证监会立案
 # 理论上可以抓取同花顺所有数据
 def get_csrc_iwc() -> pd.DataFrame:

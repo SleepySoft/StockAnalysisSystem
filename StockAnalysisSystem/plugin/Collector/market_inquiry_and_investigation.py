@@ -141,7 +141,7 @@ def clean_str(input_str: str) -> str:
 
 
 ##### ##### ##### #####
-# http://www.iwencai.com/stockpick/search?querytype=stock&w=证监会立案
+# http://www.iwencai.com/stockpick/search?querytype=stock&w=立案
 # 证监会立案
 # 理论上可以抓取同花顺所有数据
 def get_csrc_iwc() -> pd.DataFrame:
@@ -152,7 +152,7 @@ def get_csrc_iwc() -> pd.DataFrame:
     with open(js_path, 'r') as fl:
         jscontent = fl.read()
     ss.headers['Cookie'] = 'v=' + run_js(jscontent, 'v')
-    url = 'http://www.iwencai.com/stockpick/search?querytype=stock&w=证监会立案'
+    url = 'http://www.iwencai.com/stockpick/search?querytype=stock&w=立案'
     res = ss.get(url)
     res_df = pd.read_html(res.text, encoding='utf-8')
     df1 = res_df[4][[2, 3]]
