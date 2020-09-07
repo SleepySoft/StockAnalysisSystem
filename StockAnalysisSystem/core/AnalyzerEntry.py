@@ -91,7 +91,7 @@ class StrategyEntry:
         else:
             if isinstance(analyzer, str):
                 analyzer = [analyzer]
-            df = self.__data_hub.get_data_center().query(uri, identity, time_serial, analyzer={'$in': analyzer})
+            df = self.__data_hub.get_data_center().query(uri, identity, time_serial, analyzer=analyzer)
         return df
 
     def analysis_advance(self, securities: str or [str], analyzers: [str],

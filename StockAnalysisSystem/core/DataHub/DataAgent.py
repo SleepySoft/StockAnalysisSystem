@@ -214,6 +214,8 @@ class DataAgent:
     def query(self, uri: str, identity: str or [str], time_serial: tuple,
               extra: dict, fields: [str]) -> pd.DataFrame or None:
         conditions = self.pack_conditions(identity, time_serial)
+        # TODO: Process and Remove not condition params
+        conditions.update(extra)
         depot = self.data_depot_of(uri, identity, time_serial, extra, fields)
         result = depot.query(conditions=conditions, fields=fields, **extra)
         return result
