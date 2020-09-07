@@ -92,16 +92,29 @@ class AnalysisTask(TaskQueue.Task):
     def fetch_stock_metrics(self) -> pd.DataFrame or None:
         if self.__options & AnalysisTask.OPTION_ATTACH_BASIC_INDEX == 0:
             return None
+
         trade_calender = self.__data_hub.get_data_center().query_from_plugin('Market.TradeCalender', exchange='SSE',
-                                                                             trade_date=(days_ago(365), now()))
+                                                                             trade_date=(days_ago(30), now()))
+        if not isinstance(trade_calender, pd.DataFrame) or trade_calender.empty:
+            print('Get latest trade date from web fail, use local.')
+            trade_calender = self.__data_hub.get_data_center().query_from_local('Market.TradeCalender', exchange='SSE',
+                                                                                trade_date=(days_ago(30), now()))
+        if not isinstance(trade_calender, pd.DataFrame) or trade_calender.empty:
+            print('No latest trade date data.')
+            return None
+
         trade_calender = trade_calender[trade_calender['status'] == 1]
         trade_calender = trade_calender.sort_values('trade_date', ascending=False)
         last_trade_date = trade_calender.iloc[0]['trade_date']
 
         daily_metrics = self.__data_hub.get_data_center().query_from_plugin(
             'Metrics.Stock.Daily', trade_date=(last_trade_date, last_trade_date))
-        if daily_metrics.empty:
-            print('Get stock metrics fail.')
+        if not isinstance(daily_metrics, pd.DataFrame) or daily_metrics.empty:
+            print('Get latest metrics data from web fail, use local.')
+            daily_metrics = self.__data_hub.get_data_center().query_from_local(
+                'Metrics.Stock.Daily', trade_date=(last_trade_date, last_trade_date))
+        if not isinstance(daily_metrics, pd.DataFrame) or daily_metrics.empty:
+            print('No metrics data.')
             return None
 
         del daily_metrics['trade_date']

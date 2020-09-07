@@ -115,6 +115,9 @@ class DepotInterface:
             return set(self.__primary_keys).issubset(set(list(dataset.keys())))
         if isinstance(dataset, pd.DataFrame):
             return set(self.__primary_keys).issubset(set(list(dataset.columns)))
+        if isinstance(dataset, (list, tuple, set)):
+            # Current do not check the content in list
+            return True
         return False
 
     @staticmethod
