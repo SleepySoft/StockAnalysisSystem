@@ -93,14 +93,25 @@ class AnalysisTask(TaskQueue.Task):
         if self.__options & AnalysisTask.OPTION_ATTACH_BASIC_INDEX == 0:
             return None
 
+        daily_metrics = self.fetch_metrics_from_web()
+        if not isinstance(daily_metrics, pd.DataFrame) or daily_metrics.empty:
+            print('Fetch daily metrics data fail, use local.')
+            daily_metrics = self.fetch_metrics_from_local()
+
+        if not isinstance(daily_metrics, pd.DataFrame) or daily_metrics.empty:
+            print('No metrics data.')
+            return None
+
+        del daily_metrics['trade_date']
+        daily_metrics.columns = self.__data_hub.get_data_center().fields_to_readable(list(daily_metrics.columns))
+
+        return daily_metrics
+
+    def fetch_metrics_from_web(self) -> pd.DataFrame or None:
         trade_calender = self.__data_hub.get_data_center().query_from_plugin('Market.TradeCalender', exchange='SSE',
                                                                              trade_date=(days_ago(30), now()))
         if not isinstance(trade_calender, pd.DataFrame) or trade_calender.empty:
-            print('Get latest trade date from web fail, use local.')
-            trade_calender = self.__data_hub.get_data_center().query_from_local('Market.TradeCalender', exchange='SSE',
-                                                                                trade_date=(days_ago(30), now()))
-        if not isinstance(trade_calender, pd.DataFrame) or trade_calender.empty:
-            print('No latest trade date data.')
+            print('Fetch trade calender from web fail.')
             return None
 
         trade_calender = trade_calender[trade_calender['status'] == 1]
@@ -109,17 +120,18 @@ class AnalysisTask(TaskQueue.Task):
 
         daily_metrics = self.__data_hub.get_data_center().query_from_plugin(
             'Metrics.Stock.Daily', trade_date=(last_trade_date, last_trade_date))
-        if not isinstance(daily_metrics, pd.DataFrame) or daily_metrics.empty:
-            print('Get latest metrics data from web fail, use local.')
-            daily_metrics = self.__data_hub.get_data_center().query_from_local(
-                'Metrics.Stock.Daily', trade_date=(last_trade_date, last_trade_date))
-        if not isinstance(daily_metrics, pd.DataFrame) or daily_metrics.empty:
-            print('No metrics data.')
+        return daily_metrics
+
+    def fetch_metrics_from_local(self) -> pd.DataFrame or None:
+        agent = self.__data_hub.get_data_center().get_data_agent('Metrics.Index.Daily')
+        if agent is None:
+            print('No data agent for Metrics.Stock.Daily')
             return None
-
-        del daily_metrics['trade_date']
-        daily_metrics.columns = self.__data_hub.get_data_center().fields_to_readable(list(daily_metrics.columns))
-
+        since, until = agent.data_range('Metrics.Stock.Daily')
+        if until is None:
+            print('No local metrics data.')
+        daily_metrics = self.__data_hub.get_data_center().query_from_local('Metrics.Stock.Daily',
+                                                                           trade_date=(until, until))
         return daily_metrics
 
     def gen_report(self, result_list: [AnalysisResult], stock_metrics: pd.DataFrame or None):
