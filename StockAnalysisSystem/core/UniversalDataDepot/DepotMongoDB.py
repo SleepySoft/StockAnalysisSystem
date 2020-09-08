@@ -76,10 +76,22 @@ class DepotMongoDB(DepotInterface):
         collection.drop()
         return True
 
-    def range_of(self, field, *args, conditions: dict = None, **kwargs) -> (any, any):
-        result = self.query(*args, conditions=conditions, fields=[field])
-        return (None, None) if (result is None or result.empty or field not in result.columns) else \
-            (result[field].dropna().min(), result[field].dropna().max())
+    def range_of(self, field: str, *args, conditions: dict = None, **kwargs) -> (any, any):
+        collection = self.__get_collection()
+        if collection is None:
+            return None, None
+
+        spec = self.__gen_find_spec(*args, conditions=conditions)
+        result = collection.aggregate([
+            {'$match': spec},
+            {'$group': {
+                '_id': None,
+                'max': {'$max': '$' + field},
+                'min': {'$min': '$' + field}
+            }}
+        ])
+        result_l = list(result)
+        return (None, None) if len(result_l) == 0 else (result_l[0]['min'], result_l[0]['max'])
 
     def record_count(self) -> int:
         collection = self.__get_collection()
