@@ -31,7 +31,10 @@ def analysis_finance_report_sign(securities: str, time_serial: tuple, data_hub: 
         period = row['period']
         conclusion = row['conclusion']
 
-        if conclusion != '标准无保留意见':
+        if pd.isnull(conclusion):
+            score = AnalysisResult.SCORE_NOT_APPLIED
+            reason.append(date2text(period) + ' : No sign data.')
+        elif conclusion != '标准无保留意见':
             score = AnalysisResult.SCORE_FAIL
             reason.append(date2text(period) + ' : ' + conclusion)
         else:
