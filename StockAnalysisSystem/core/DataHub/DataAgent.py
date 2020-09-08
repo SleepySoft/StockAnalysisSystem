@@ -227,10 +227,10 @@ class DataAgent:
         return self.__depot.upsert(df) if self.__merge_strategy == DataAgent.MERGE_UPSERT else \
                self.__depot.insert(df)
 
-    def data_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
+    def data_range(self, uri: str, identity: str = None) -> (datetime.datetime, datetime.datetime):
         nop(uri)
         if str_available(self.datetime_field()):
-            if str_available(self.identity_field()):
+            if str_available(self.identity_field()) and str_available(identity):
                 return self.__depot.range_of(self.datetime_field(), conditions={self.identity_field(): identity})
             else:
                 return self.__depot.range_of(self.datetime_field())

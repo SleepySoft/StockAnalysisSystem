@@ -80,7 +80,9 @@ class StrategyEntry:
             if r.period is None:
                 # Storage with the latest quarter
                 r.period = previous_quarter(now())
-            analysis_result_packs.append(r.pack())
+            p = r.pack()
+            p['period'] = text_auto_time(p['period'])
+            analysis_result_packs.append(p)
         # analysis_result_packs = [r.pack() for r in result_list if r.period is not None]
         self.__data_hub.get_data_center().merge_local_data(uri, '', analysis_result_packs)
 
@@ -112,6 +114,9 @@ class StrategyEntry:
 
         for analyzer in analyzers:
             progress_rate.set_progress(analyzer, 0, len(securities))
+
+        # Remove microsecond to avoid mongodb query fail.
+        # time_serial = [t.replace(microsecond=0)  for t in time_serial]
 
         for analyzer in analyzers:
             result = None
