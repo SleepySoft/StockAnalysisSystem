@@ -38,6 +38,21 @@ FIELDS = {
     'Stockholder.Statistics': {
 
     },
+    'Stockholder.ReductionIncrease': {
+        'ts_code':                       'TS代码',
+        'ann_date':                      '公告日期',
+        'holder_name':                   '股东名称',
+        'holder_type':                   '股东类型',                           # G高管P个人C公司
+        'in_de':                         '增减持类型',                          # IN增持DE减持
+        'change_vol':                    '变动数量',
+        'change_ratio':                  '占流通比例',                          # （%）
+        'after_share':                   '变动后持股',
+        'after_ratio':                   '变动后占流通比例',                       # （%）
+        'avg_price':                     '平均价格',
+        'total_share':                   '持股总数',
+        'begin_date':                    '增减持开始日期',
+        'close_date':                    '增减持结束日期',
+    }
 }
 
 
@@ -322,6 +337,48 @@ def __fetch_stock_holder_statistics_full(**kwargs) -> pd.DataFrame or None:
     return result
 
 
+delayer_stock_holder_reduction_increase = Delayer(60 * 1000 / 100)
+
+
+def __fetch_stock_holder_reduction_increase_full(**kwargs) -> pd.DataFrame or None:
+    uri = kwargs.get('uri')
+    result = check_execute_test_flag(**kwargs)
+
+    if result is None:
+        period = kwargs.get('ann_date')
+        ts_code = pickup_ts_code(kwargs)
+        since, until = normalize_time_serial(period, default_since(), today())
+
+        clock = Clock()
+        pro = ts.pro_api(TS_TOKEN)
+        time_iter = DateTimeIterator(since, until)
+
+        result = None
+        while not time_iter.end():
+            # Fetch 3000 items per one time, almost 10 years
+            sub_since, sub_until = time_iter.iter_years(10)
+            ts_since = sub_since.strftime('%Y%m%d')
+            ts_until = sub_until.strftime('%Y%m%d')
+
+            # 抱歉，您每分钟最多访问该接口100次
+            delayer_stock_holder_reduction_increase.delay()
+            result_part = pro.stk_holdertrade(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
+            result = result_part if result is None else pd.concat([result, result_part], axis=0, ignore_index=True)
+            result.reindex()
+
+        print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
+
+    check_execute_dump_flag(result, **kwargs)
+
+    if result is not None:
+        result.fillna('')
+        result['stock_identity'] = result['ts_code']
+        result['stock_identity'] = result['stock_identity'].str.replace('.SH', '.SSE')
+        result['stock_identity'] = result['stock_identity'].str.replace('.SZ', '.SZSE')
+
+    return result
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 def query(**kwargs) -> pd.DataFrame or None:
@@ -330,6 +387,8 @@ def query(**kwargs) -> pd.DataFrame or None:
         return __fetch_stock_holder_data(**kwargs)
     if uri in ['Stockholder.Statistics']:
         return __fetch_stock_holder_statistics_piece(**kwargs)
+    if uri in ['Stockholder.ReductionIncrease']:
+        return __fetch_stock_holder_reduction_increase_full(**kwargs)
     return None
 
 

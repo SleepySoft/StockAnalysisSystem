@@ -194,6 +194,18 @@ def build_data_agent(database_entry: DatabaseEntry):
             update_list=DataAgentUtility.a_stock_list,
         ),
 
+        DataAgent(
+            uri='Stockholder.ReductionIncrease',
+            depot=DepotMongoDB(primary_keys=['stock_identity', 'ann_date', 'stock_holder'],
+                               client=mongodb_client,
+                               database='StockAnalysisSystem',
+                               data_table=uri_to_table('Stockholder.ReductionIncrease')),
+            identity_field='stock_identity',
+            datetime_field='ann_date',
+            data_duration=DATA_DURATION_FLOW,
+            update_list=DataAgentUtility.a_stock_list,
+        ),
+
         # ----------------------- Trade Data - Daily -----------------------
 
         DataAgent(
