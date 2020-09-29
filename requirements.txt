@@ -19,3 +19,6 @@ tornado
 py2exe
 baostock
 h5py
+flask
+flask-login
+xmltodict
