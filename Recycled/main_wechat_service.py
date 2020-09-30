@@ -3,7 +3,7 @@ import traceback
 from flask import Flask, request, make_response
 
 from StockAnalysisSystem.core.config import Config
-from StockAnalysisSystem.wechatservice.wechat_service import dispatch_wechat_message
+from StockAnalysisSystem.wechatservice.entry import dispatch_wechat_message
 
 
 app = Flask(__name__)

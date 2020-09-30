@@ -66,12 +66,12 @@ def __fetch_business_data(**kwargs) -> pd.DataFrame:
             result = pd.concat([result, sub_result])
         print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
 
-        result.fillna(0.0)
-        del result['ts_code']
-
-        result = pd.DataFrame({'business': result.groupby('end_date').apply(
-            lambda x: x.drop('end_date', axis=1).to_dict('records'))}).reset_index()
-        result['ts_code'] = ts_code
+        if result is not None:
+            result.fillna(0.0)
+            del result['ts_code']
+            result = pd.DataFrame({'business': result.groupby('end_date').apply(
+                lambda x: x.drop('end_date', axis=1).to_dict('records'))}).reset_index()
+            result['ts_code'] = ts_code
 
     check_execute_dump_flag(result, **kwargs)
 
