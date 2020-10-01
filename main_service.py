@@ -30,7 +30,7 @@ def wechat_entry():
 def main():
     web_route.init()
     wechat_route.init()
-    app.run(host='0.0.0.0', port=80, debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=True)
 
 
 if __name__ == '__main__':

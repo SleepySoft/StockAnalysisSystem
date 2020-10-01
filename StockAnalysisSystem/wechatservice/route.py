@@ -1,4 +1,6 @@
 import hashlib
+import time
+
 import xmltodict
 from flask import request
 from StockAnalysisSystem.core.config import Config
@@ -61,10 +63,14 @@ WECHAT_TOKEN = ''
 def handle_request(flask_request: request):
     args = flask_request.args
 
-    signature = args.get('signature')
-    timestamp = args.get('timestamp')
     nonce = args.get('nonce')
     echostr = args.get('echostr')
+    signature = args.get('signature')
+    timestamp = args.get('timestamp')
+
+    if nonce is None or echostr is None or signature is None or timestamp is None:
+        print('Authentication data missing.')
+        return 'errno', 403
 
     # 1. 将token、timestamp、nonce三个参数进行字典序排序
     sign_arr = [WECHAT_TOKEN, timestamp, nonce]
