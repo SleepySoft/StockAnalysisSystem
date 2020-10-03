@@ -19,7 +19,7 @@ def root_entry():
     return 'Hello'
 
 
-@app.route('/weixin', methods=['GET', 'POST'])
+@app.route('/wx', methods=['GET', 'POST'])
 def wechat_entry():
     response = wechat_route.handle_request(request)
     return response
@@ -30,7 +30,7 @@ def wechat_entry():
 def main():
     web_route.init()
     wechat_route.init()
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(host='0.0.0.0', port=80, debug=True)
 
 
 if __name__ == '__main__':
