@@ -17,7 +17,8 @@ def dispatch_wechat_message(flask_request: request) -> str:
     req_data = flask_request.data
     xml_dict = xmltodict.parse(req_data)
     msg_dict = xml_dict.get('xml')
-    print(msg_dict)
+
+    print('  Content: ' + str(msg_dict))
 
     response_content = None
     msg_type = msg_dict.get('MsgType')
@@ -55,41 +56,48 @@ def dispatch_wechat_message(flask_request: request) -> str:
         return ''
 
 
+def check_wechat_authentication(flask_request: request) -> bool:
+    args = flask_request.args
+
+    nonce = args.get('nonce')
+    signature = args.get('signature')
+    timestamp = args.get('timestamp')
+
+    if nonce is None is None or signature is None or timestamp is None:
+        print('Authentication data missing.')
+        return False
+
+    sign_arr = [WECHAT_TOKEN, timestamp, nonce]
+    sign_arr.sort()
+    sign_str = ''.join(sign_arr)
+    hashcode = hashlib.sha1(sign_str.encode('utf-8')).hexdigest()
+
+    if hashcode == signature:
+        print('Signature match.')
+        return True
+    else:
+        print('Signature not match.')
+        return False
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 WECHAT_TOKEN = ''
 
 
 def handle_request(flask_request: request):
-    args = flask_request.args
+    if not check_wechat_authentication(flask_request):
+        return ''
 
-    nonce = args.get('nonce')
-    echostr = args.get('echostr')
-    signature = args.get('signature')
-    timestamp = args.get('timestamp')
+    if flask_request.method == 'GET':
+        print('-> GET')
+        args = flask_request.args
+        echostr = args.get('echostr', '')
+        return echostr
 
-    if nonce is None or echostr is None or signature is None or timestamp is None:
-        print('Authentication data missing.')
-        return 'errno', 403
-
-    # 1. 将token、timestamp、nonce三个参数进行字典序排序
-    sign_arr = [WECHAT_TOKEN, timestamp, nonce]
-    sign_arr.sort()
-    sign_str = ''.join(sign_arr)
-
-    # 2. 将三个参数字符串拼接成一个字符串进行sha1加密
-    sign_dig = hashlib.sha1(sign_str).hexdigest()
-
-    # 3. 开发者获得加密后的字符串可与signature对比
-    if sign_dig == signature:
-        # 根据请求方式.返回不同的内容 ,如果是get方式,代表是验证服务器有效性
-        if flask_request.method == 'GET':
-            return echostr
-        # 如果POST方式,代表是微服务器转发给我们的消息
-        elif flask_request.method == 'POST':
-            return dispatch_wechat_message(flask_request)
-    else:
-        return 'errno', 403
+    elif flask_request.method == 'POST':
+        print('-> POST')
+        return dispatch_wechat_message(flask_request)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
