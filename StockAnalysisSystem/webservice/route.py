@@ -1,6 +1,7 @@
+from StockAnalysisSystem.core.config import Config
 
 
-def init():
+def init(config: Config):
     pass
 
 

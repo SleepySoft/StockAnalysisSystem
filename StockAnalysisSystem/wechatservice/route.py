@@ -10,7 +10,7 @@ from StockAnalysisSystem.core.config import Config
 
 def handle_text_message(msg_dict: dict) -> str:
     content = msg_dict.get('Content')
-    return '收到：' + content
+    return '<a href="https://www.163.com">Link</a>'
 
 
 def dispatch_wechat_message(flask_request: request) -> str:
@@ -102,17 +102,15 @@ def handle_request(flask_request: request):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def load_config():
+def load_config(config: Config):
     global WECHAT_TOKEN
-    config = Config()
-    config.load_config()
     WECHAT_TOKEN = config.get('wechat_token')
-    if WECHAT_TOKEN == '':
+    if WECHAT_TOKEN == '' or WECHAT_TOKEN is None:
         print('Warning: Wechat token is empty.')
 
 
-def init():
-    load_config()
+def init(config: Config):
+    load_config(config)
 
 
 
