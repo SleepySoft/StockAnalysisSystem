@@ -76,7 +76,9 @@ def analysis_investigation(securities: str, time_serial: tuple, data_hub: DataHu
 
 METHOD_LIST = [
     ('b60310bd-cbb4-438f-89c0-ac68b705348d', '交易所问询', '分析该公司近期是否被问询',       analysis_inquiry),
-    ('f8f6b993-4cb0-4c93-84fd-8fd975b7977d', '证监会调查', '分析该公司近期是否被立案调查',   analysis_investigation),
+    # 获取不到这个数据了
+    # 详见market_inquiry_and_investigation.py
+    # ('f8f6b993-4cb0-4c93-84fd-8fd975b7977d', '证监会调查', '分析该公司近期是否被立案调查',   analysis_investigation),
 ]
 
 
