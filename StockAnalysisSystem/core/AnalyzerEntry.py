@@ -127,6 +127,8 @@ class StrategyEntry:
                 clock.reset()
                 with open(path.join(dump_path, analyzer + '.json'), 'rt') as f:
                     result = analysis_results_from_json(f)
+                if result is not None and len(result) > 0:
+                    total_result.extend(result)
                 print('Analyzer %s : Load json finished, time spending: %ss' % (analyzer, clock.elapsed_s()))
             else:
                 if enable_from_cache:
@@ -169,6 +171,29 @@ class StrategyEntry:
                         self.cache_analysis_result('Result.Analyzer', result)
                         print('Analyzer %s : Cache result, time spending: %ss' % (analyzer, clock.elapsed_s()))
         return total_result
+
+    # ------------------------------------------------- Export / Import ------------------------------------------------
+
+    @staticmethod
+    def dump_analysis_report(result_list: [AnalysisResult], export_path: str):
+        def default_dump(obj: AnalysisResult):
+            if not isinstance(obj, AnalysisResult):
+                print('Warning: Not an AnalysisResult object.')
+                return {}
+            return obj.pack(True)
+        with open(export_path, 'wt') as f:
+            json.dump(result_list, f, default=default_dump)
+
+    @staticmethod
+    def load_analysis_report(import_path: str) -> [AnalysisResult]:
+        def handle_object(d: dict):
+            ar = AnalysisResult()
+            ar.unpack(d)
+            return ar
+        result = []
+        with open(import_path, 'rt') as f:
+            result = json.load(f, object_hook=handle_object)
+        return result
 
     # ----------------------------------------------------- Report -----------------------------------------------------
 
