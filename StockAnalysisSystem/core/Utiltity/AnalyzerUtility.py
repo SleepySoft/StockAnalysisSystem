@@ -122,6 +122,8 @@ class AnalysisResult:
 
 # --------------------------------------------- Analysis Result Conversion ---------------------------------------------
 
+# ----------------------- Analysis Result List <--> Json -----------------------
+
 def analysis_results_to_json(result_list: [AnalysisResult], fp=None) -> bool or str:
     def _analysis_result_json_hook(analysis_result: AnalysisResult) ->dict:
         if isinstance(analysis_result, AnalysisResult):
@@ -144,6 +146,8 @@ def analysis_results_from_json(fp) -> [AnalysisResult]:
         return json.load(fp, object_hook=_json_analysis_result_hook)
 
 
+# -------------------- Analysis Result List --> Group/Select --------------------
+
 def analysis_result_list_to_table(result_list: [AnalysisResult]) -> {str: {str: [AnalysisResult]}}:
     result_table = OrderedDict()
     for analysis_result in result_list:
@@ -157,6 +161,28 @@ def analysis_result_list_to_table(result_list: [AnalysisResult]) -> {str: {str: 
     return result_table
 
 
+def group_analysis_report_by_analyzer(result_list: [AnalysisResult]) -> {str: [AnalysisResult]}:
+    analyzer_result_group = {}
+    for analysis_result in result_list:
+        analyzer_uuid = analysis_result.method
+        if analyzer_uuid not in analyzer_result_group.keys():
+            analyzer_result_group[analyzer_uuid] = [analysis_result]
+        else:
+            analyzer_result_group[analyzer_uuid].append(analysis_result)
+    return analyzer_result_group
+
+
+def group_analysis_report_by_securities(result_list: [AnalysisResult]) -> {str: [AnalysisResult]}:
+    security_result_group = {}
+    for analysis_result in result_list:
+        identity = analysis_result.securities
+        if identity in security_result_group.keys():
+            security_result_group[identity].append(analysis_result)
+        else:
+            security_result_group[identity] = [analysis_result]
+    return security_result_group
+
+
 def get_security_result_from_analysis_result_list(result_list: [AnalysisResult],
                                                   stock_identity: str) -> [AnalysisResult]:
     security_result_list = []
@@ -167,18 +193,12 @@ def get_security_result_from_analysis_result_list(result_list: [AnalysisResult],
     return security_result_list
 
 
-def analysis_result_list_to_single_stock_report(result_list: [AnalysisResult], stock_ideneity: str) -> pd.DataFrame:
-    security_result_list = get_security_result_from_analysis_result_list(result_list, stock_ideneity)
-    result_table = {}
-    for analysis_result in security_result_list:
-        analyzer_uuid = analysis_result.method
-        if analyzer_uuid not in result_table.keys():
-            result_table[analyzer_uuid] = [analysis_result]
-        else:
-            result_table[analyzer_uuid].append(analysis_result)
-    result_report = None
+# --------------------- Analysis Result List <--> DataFrame ---------------------
 
-    # TODO: Check Duplicate: {"period" : ISODate("2015-12-31T00:00:00Z"),"stock_identity" : "600103.SSE", "method":"7e132f82-a28e-4aa9-aaa6-81fa3692b10c"}
+def analysis_list_to_dataframe(result_list: [AnalysisResult]) -> pd.DataFrame:
+    result_table = group_analysis_report_by_analyzer(result_list)
+
+    result_report = None
     for analyzer_uuid, result_list in result_table.items():
         # content = [r.reason + ' | ' + str(r.score) for r in result_list]
         # indexes = [r.period for r in result_list]
@@ -221,6 +241,13 @@ def analysis_dataframe_to_list(df: pd.DataFrame) -> [AnalysisResult]:
         if str_available(analyzer):
             result_list.append(analysis_result)
     return result_list
+
+
+# --------------------------------- Compatible ---------------------------------
+
+def analysis_result_list_to_single_stock_report(result_list: [AnalysisResult], stock_ideneity: str) -> pd.DataFrame:
+    security_result_list = get_security_result_from_analysis_result_list(result_list, stock_ideneity)
+    return analysis_list_to_dataframe(security_result_list)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
