@@ -16,12 +16,19 @@ app = Flask(__name__)
 
 @app.route('/', methods=['GET', 'POST'])
 def root_entry():
-    print('-> Request at root.')
+    print('-> Request /')
     return ''
+
+
+@app.route('/analysis', methods=['GET', 'POST'])
+def analysis_entry():
+    print('-> Request /analysis')
+    return web_route.analysis(request)
 
 
 @app.route('/wx', methods=['GET', 'POST'])
 def wechat_entry():
+    print('-> Request /wx')
     response = wechat_route.handle_request(request)
     return response
 

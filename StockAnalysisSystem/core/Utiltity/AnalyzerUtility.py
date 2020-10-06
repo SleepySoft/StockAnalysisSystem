@@ -148,7 +148,8 @@ def analysis_results_from_json(fp) -> [AnalysisResult]:
 
 # -------------------- Analysis Result List --> Group/Select --------------------
 
-def analysis_result_list_to_table(result_list: [AnalysisResult]) -> {str: {str: [AnalysisResult]}}:
+def analysis_result_list_to_analyzer_security_table(
+        result_list: [AnalysisResult], converter=None) -> {str: {str: [AnalysisResult or any]}}:
     result_table = OrderedDict()
     for analysis_result in result_list:
         analyzer_uuid = analysis_result.method
@@ -157,7 +158,27 @@ def analysis_result_list_to_table(result_list: [AnalysisResult]) -> {str: {str: 
             result_table[analyzer_uuid] = OrderedDict()
         if stock_identity not in result_table[analyzer_uuid].keys():
             result_table[analyzer_uuid][stock_identity] = []
-        result_table[analyzer_uuid][stock_identity].append(analysis_result)
+        if converter is None:
+            result_table[analyzer_uuid][stock_identity].append(analysis_result)
+        else:
+            result_table[analyzer_uuid][stock_identity].append(converter(analysis_result))
+    return result_table
+
+
+def analysis_result_list_to_security_analyzer_table(
+        result_list: [AnalysisResult], converter=None) -> {str: {str: [AnalysisResult or any]}}:
+    result_table = OrderedDict()
+    for analysis_result in result_list:
+        analyzer_uuid = analysis_result.method
+        stock_identity = analysis_result.securities
+        if stock_identity not in result_table.keys():
+            result_table[stock_identity] = OrderedDict()
+        if analyzer_uuid not in result_table[stock_identity].keys():
+            result_table[stock_identity][analyzer_uuid] = []
+        if converter is None:
+            result_table[stock_identity][analyzer_uuid].append(analysis_result)
+        else:
+            result_table[stock_identity][analyzer_uuid].append(converter(analysis_result))
     return result_table
 
 
@@ -195,10 +216,8 @@ def get_security_result_from_analysis_result_list(result_list: [AnalysisResult],
 
 # --------------------- Analysis Result List <--> DataFrame ---------------------
 
-def analysis_list_to_dataframe(result_list: [AnalysisResult]) -> pd.DataFrame:
-    result_table = group_analysis_report_by_analyzer(result_list)
-
-    result_report = None
+def analyzer_table_to_dataframe(result_table: {str: [AnalysisResult]}) -> pd.DataFrame:
+    result_table_processed = {}
     for analyzer_uuid, result_list in result_table.items():
         # content = [r.reason + ' | ' + str(r.score) for r in result_list]
         # indexes = [r.period for r in result_list]
@@ -214,13 +233,22 @@ def analysis_list_to_dataframe(result_list: [AnalysisResult]) -> pd.DataFrame:
         s = pd.Series(content, index=indexes)
         s.name = analyzer_uuid
 
-        df = s.to_frame()
-        df = df.groupby(df.index).first()
-        result_report = df if result_report is None else pd.concat([result_report, df], axis=1)
+        result_table_processed[analyzer_uuid] = s
+
+        # df = s.to_frame()
+        # df = df.groupby(df.index).first()
+        # result_report = df if result_report is None else pd.concat([result_report, df], axis=1)
+
+    result_report = pd.DataFrame(result_table_processed)
     return result_report.sort_index(ascending=False)
 
 
-def analysis_dataframe_to_list(df: pd.DataFrame) -> [AnalysisResult]:
+def analysis_result_list_to_dataframe(result_list: [AnalysisResult]) -> pd.DataFrame:
+    result_table = group_analysis_report_by_analyzer(result_list)
+    return analyzer_table_to_dataframe(result_table)
+
+
+def analysis_result_dataframe_to_list(df: pd.DataFrame) -> [AnalysisResult]:
     if df is None or df.empty:
         return []
 
@@ -247,7 +275,7 @@ def analysis_dataframe_to_list(df: pd.DataFrame) -> [AnalysisResult]:
 
 def analysis_result_list_to_single_stock_report(result_list: [AnalysisResult], stock_ideneity: str) -> pd.DataFrame:
     security_result_list = get_security_result_from_analysis_result_list(result_list, stock_ideneity)
-    return analysis_list_to_dataframe(security_result_list)
+    return analysis_result_list_to_dataframe(security_result_list)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
