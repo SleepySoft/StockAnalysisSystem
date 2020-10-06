@@ -98,7 +98,10 @@ class AnalysisTask(TaskQueue.Task):
         if self.__options & AnalysisTask.OPTION_DUMP_JSON != 0 and \
                 self.__options & AnalysisTask.OPTION_LOAD_DUMP_ALL != 0:
             clock_dump = Clock()
+            name_dict_path = os.path.join(StockAnalysisSystem().get_project_path(),
+                                          'TestData', 'analyzer_names.json')
             self.__strategy.dump_analysis_report(total_result, full_dump_path)
+            self.__strategy.dump_strategy_name_dict(name_dict_path)
             print('Dump all analysis result finished, Time spending: %ss' % clock_dump.elapsed_s())
 
         print('All analysis finished, time spending: %ss' % clock_all.elapsed_s())
@@ -528,12 +531,12 @@ class AnalyzerUi(QWidget):
     #     result2 = self.__strategy_entry.result_from_cache('Result.Analyzer')
     #     print(result2)
     #
-    #     result = analysis_dataframe_to_list(result2)
+    #     result = analysis_result_dataframe_to_list(result2)
     #     print(result)
     #
     #     # ------------ Parse to Table ------------
     #
-    #     result_table = analysis_result_list_to_table(result)
+    #     result_table = analysis_result_list_to_analyzer_security_table(result)
     #
     #     # ----------- Generate report ------------
     #     clock.reset()
