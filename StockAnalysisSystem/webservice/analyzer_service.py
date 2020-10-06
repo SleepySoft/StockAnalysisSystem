@@ -1,5 +1,6 @@
 import json
 import traceback
+import pandas as pd
 
 from StockAnalysisSystem.core.config import Config
 import StockAnalysisSystem.core.Utiltity.AnalyzerUtility as analyzer_util
@@ -46,6 +47,15 @@ def init(config: Config):
         pass
 
 
+def data_frame_to_html_simple(df: pd.DataFrame) -> str:
+    html = df.to_html(index=True)
+    html = html.replace('\\n', '<br>')
+    return html
+
+
+data_frame_to_html = data_frame_to_html_simple
+
+
 def analysis(security: str) -> str:
     global ANALYZER_NAME_DICT
     global ANALYSIS_RESULT_HTML
@@ -62,7 +72,9 @@ def analysis(security: str) -> str:
     security_analysis_result = ANALYSIS_RESULT_TABLE[security]
     security_analysis_result_df = analyzer_util.analyzer_table_to_dataframe(security_analysis_result)
     security_analysis_result_df = security_analysis_result_df.rename(columns=ANALYZER_NAME_DICT)
-    security_analysis_result_html = security_analysis_result_df.to_html(index=True)
+    security_analysis_result_df = security_analysis_result_df.fillna('-')
+
+    security_analysis_result_html = data_frame_to_html(security_analysis_result_df)
     ANALYSIS_RESULT_HTML[security] = security_analysis_result_html
 
     return security_analysis_result_html

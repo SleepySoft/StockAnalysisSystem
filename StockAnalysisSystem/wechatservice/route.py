@@ -8,9 +8,23 @@ from StockAnalysisSystem.core.config import Config
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def handle_text_message(msg_dict: dict) -> str:
+def handle_command(msg_dict: dict) -> (bool, str):
+    return False, ''
+
+
+def handle_analysis(msg_dict: dict) -> (bool, str):
     content = msg_dict.get('Content')
-    return '<a href="https://www.163.com">Link</a>'
+    return True, ('<a href="http://211.149.229.160/analysis?security=%s">查看分析结果</a>' % content)
+
+
+def handle_text_message(msg_dict: dict) -> str:
+    ret, resp = handle_command(msg_dict)
+    if ret:
+        return resp
+    ret, resp = handle_analysis(msg_dict)
+    if ret:
+        return resp
+    return ''
 
 
 def dispatch_wechat_message(flask_request: request) -> str:
