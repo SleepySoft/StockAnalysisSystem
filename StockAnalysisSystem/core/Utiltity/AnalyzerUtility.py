@@ -7,8 +7,6 @@ import pandas as pd
 from .common import *
 from .df_utility import *
 from .time_utility import *
-from ..DataHubEntry import DataHubEntry
-from ..Database.DatabaseEntry import DatabaseEntry
 
 
 def methods_from_prob(prob: dict) -> []:
@@ -290,23 +288,23 @@ class AnalysisContext:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def function_entry_example(securities: str, time_serial: tuple, data_hub: DataHubEntry,
-                           database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
-    """
-    The example of analyzer function entry.
-    :param securities: A single securities code, should be a str.
-    :param time_serial: The analysis period
-    :param data_hub:  DataHubEntry type
-    :param database: DatabaseEntry type
-    :param context: AnalysisContext type, which can hold cache data for multiple analysis
-    :return: AnalysisResult
-    """
-    pass
-
-
-method_list_example = [
-    ('5c496d06-9961-4157-8d3e-a90683d6d32c', 'analyzer brief', 'analyzer details', function_entry_example),
-]
+# def function_entry_example(securities: str, time_serial: tuple, data_hub: DataHubEntry,
+#                            database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
+#     """
+#     The example of analyzer function entry.
+#     :param securities: A single securities code, should be a str.
+#     :param time_serial: The analysis period
+#     :param data_hub:  DataHubEntry type
+#     :param database: DatabaseEntry type
+#     :param context: AnalysisContext type, which can hold cache data for multiple analysis
+#     :return: AnalysisResult
+#     """
+#     pass
+#
+#
+# method_list_example = [
+#     ('5c496d06-9961-4157-8d3e-a90683d6d32c', 'analyzer brief', 'analyzer details', function_entry_example),
+# ]
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -473,8 +471,8 @@ def query_readable_annual_report_pattern(data_hub, uri: str, securities: str, ti
     return df, None
 
 
-def check_industry_in(securities: str, industries: [str], data_hub: DataHubEntry,
-                      database: DatabaseEntry, context: AnalysisContext) -> bool:
+def check_industry_in(securities: str, industries: [str], data_hub,
+                      database, context: AnalysisContext) -> bool:
     nop(database)
 
     if context.cache.get('securities_info', None) is None:
