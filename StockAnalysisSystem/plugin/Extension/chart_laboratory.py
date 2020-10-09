@@ -5,7 +5,11 @@ from PyQt5.QtCore import pyqtSignal, QProcess
 from PyQt5.QtWidgets import QWidget, QPushButton, QGridLayout, QLineEdit, QFileDialog, QComboBox, QVBoxLayout, \
     QApplication, QLabel, QRadioButton, QHBoxLayout
 
+# https://stackoverflow.com/a/50286101
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 root_path = path.dirname(path.dirname(path.abspath(__file__)))
