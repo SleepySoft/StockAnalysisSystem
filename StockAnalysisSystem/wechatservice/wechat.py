@@ -1,3 +1,4 @@
+import json
 import time
 import hashlib
 import traceback
@@ -105,7 +106,10 @@ class WeChat:
             print('Signature not match.')
             return False
 
-    def get_access_token(self) -> str:
+    def get_update_access_token(self) -> (str, int):
+        pass
+
+    def get_access_token(self) -> (str, int):
         if self.__app_id == '' or self.__app_secret == '':
             self.log('Appid and Appsecret are must fields.')
             return ''
@@ -113,7 +117,20 @@ class WeChat:
               (self.__app_id, self.__app_secret)
         r = requests.get(uri)
         resp = r.content
-        return ''
+        resp_str = resp.decode('utf-8')
+        resp_json = json.loads(resp_str)
+
+        errmsg = resp_json.get('errmsg')
+        errcode = resp_json.get('errcode')
+
+        expires_in = resp_json.get('expires_in')
+        access_token = resp_json.get('access_token')
+
+        if access_token is None:
+            self.log('Get access token error: %s (code: %s)' % (errmsg, errcode))
+            return '', 0
+        else:
+            return access_token, int(expires_in)
 
     # ------------------------------------------------------------------------------------------
 
@@ -132,15 +149,17 @@ if __name__ == '__main__':
     app = Flask(__name__)
     wechat = WeChat()
 
-    wechat.set_token('')
-    wechat.set_app_id('')
-    wechat.set_app_secret('')
+    wechat.set_token('88c0d7fe9619462fbc92cc51eda2f889')
+    wechat.set_app_id('wx6d7f60573df5a457')
+    wechat.set_app_secret('28c41489badda1dd9051ddf3c1444203')
 
     @app.route('/wx', methods=['GET', 'POST'])
     def wechat_entry():
         print('-> Request /wx')
         response = wechat.handle_request(request)
         return response
+
+    test_get_access_token(wechat)
 
     try:
         app.run(host='0.0.0.0', port=8000, debug=True)
