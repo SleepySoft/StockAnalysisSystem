@@ -13,14 +13,59 @@ class WeChat:
         'text', 'image', 'voice', 'amr', 'video', 'shortvideo', 'location', 'link'
     ]
 
+    class User:
+        def __init__(self, openid: str):
+            self.open_id = openid
+            self.last_message = None
+            self.last_received = 0
+            self.session = {}
+
+    class UserManager:
+        def __init__(self):
+            self.__user_context = {}
+
+        def clear(self):
+            self.__user_context.clear()
+
+        def get_user_list(self) -> [str]:
+            return list(self.__user_context.keys())
+
+        def update_user_session(self, user: str, key: str, val: any):
+            user_ctx = self.get_user_context(user)
+            if user_ctx is not None:
+                user_ctx.session[key] = val
+
+        def get_user_context(self, user: str):
+            return self.__user_context.get(user, None)
+
+        def update_user_context(self, msg_dict: dict):
+            user = msg_dict.get('FromUserName', '')
+            if user == '':
+                return
+            if user not in self.__user_context:
+                user_ctx = WeChat.User(user)
+                self.__user_context[user] = user_ctx
+                print('New user: [%s]' % user)
+            else:
+                user_ctx = self.__user_context[user]
+            user_ctx.last_message = msg_dict
+            user_ctx.last_received = time.time()
+
     def __init__(self, token: str = ''):
+        # Platform keys (keep secret)
         self.__token = token
         self.__app_id = ''
         self.__app_secret = ''
 
+        # Access Token
         self.__access_token = ''
         self.__access_token_expired_ts = 0
 
+        # User manage
+        self.__record_user = True
+        self.__user_manager = WeChat.UserManager()
+
+        # Internal data
         self.__logger = print
         self.__msg_handler = {}
 
@@ -33,6 +78,9 @@ class WeChat:
     def set_app_secret(self, appsecret: str = ''):
         self.__app_secret = appsecret
 
+    def enable_user_record(self, enable: bool):
+        self.__record_user = enable
+
     def set_logger(self, logger: any):
         self.__logger = logger
 
@@ -44,6 +92,9 @@ class WeChat:
             self.log('Warning: Message type %s handler already exists: %s' % msg_type)
         self.__msg_handler[msg_type] = handler
 
+    def get_user_manager(self) -> UserManager:
+        return self.__user_manager
+
     # ------------------------------------------------------------------------------------------
 
     def handle_request(self, flask_request: request):
@@ -51,13 +102,11 @@ class WeChat:
             return ''
 
         if flask_request.method == 'GET':
-            print('-> GET')
             args = flask_request.args
             echostr = args.get('echostr', '')
             return echostr
 
         elif flask_request.method == 'POST':
-            print('-> POST')
             return self.dispatch_message(flask_request)
 
     def dispatch_message(self, flask_request: request) -> str:
@@ -66,6 +115,9 @@ class WeChat:
         msg_dict = xml_dict.get('xml')
 
         print('  Content: ' + str(msg_dict))
+
+        if self.__record_user:
+            self.__user_manager.update_user_context(msg_dict)
 
         response_content = None
         msg_type = msg_dict.get('MsgType')
@@ -146,6 +198,33 @@ class WeChat:
 
     # ------------------------------------------------------------------------------------------
 
+    def send_user_message(self, user: str, message: str, msg_type: str='text') -> bool:
+        user_context = self.__user_manager.get_user_context(user)
+        if user_context is None:
+            self.log('Error in Send message: User [%s] does not exist.' % user)
+            return False
+
+        access_token = self.get_access_token()
+        if access_token == '':
+            self.log('Error in Send message: Invalid Access Token.')
+            return False
+
+        message_dict = {
+            'touser': user,
+            'msgtype': msg_type,
+            'text': {
+                 'content': message
+            }
+        }
+        message_xml = xmltodict.unparse(message_dict)
+
+        uri = 'https://api.weixin.qq.com/cgi-bin/message/custom/send?access_token=%s' % access_token
+        resp = requests.post(uri, data=message_xml)
+
+        return True
+
+    # ------------------------------------------------------------------------------------------
+
     def log(self, text: str):
         if self.__logger is not None:
             self.__logger(text)
@@ -155,6 +234,13 @@ class WeChat:
 
 def test_fetch_access_token(wechat: WeChat):
     wechat.fetch_access_token()
+
+
+def test_send_user_message(wechat: WeChat):
+    user_mgr = wechat.get_user_manager()
+    user_lst = user_mgr.get_user_list()
+    if len(user_lst) > 0:
+        wechat.send_user_message(user_lst[0], 'Hello from Sleepy')
 
 
 if __name__ == '__main__':
