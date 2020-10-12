@@ -85,6 +85,12 @@ class WeChat:
         self.__logger = logger
 
     def set_msg_handler(self, msg_type: str, handler: any) -> bool:
+        """
+        Set message handler for specified type of message.
+        :param msg_type: Message type should be one in SUPPORT_MSG
+        :param handler: Function like: handler(flask_request: request, msg_dict: dict)
+        :return: True if success else False
+        """
         if msg_type not in WeChat.SUPPORT_MSG:
             self.log('Error: WeChat does not support message type: %s' % msg_type)
             return False
@@ -97,7 +103,7 @@ class WeChat:
 
     # ------------------------------------------------------------------------------------------
 
-    def handle_request(self, flask_request: request):
+    def handle_request(self, flask_request: request) -> str:
         if not self.check_authentication(flask_request):
             return ''
 
