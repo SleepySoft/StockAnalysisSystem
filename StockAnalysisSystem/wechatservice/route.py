@@ -1,3 +1,4 @@
+import hashlib
 from flask import request
 
 from .wechat import WeChat
@@ -6,15 +7,52 @@ from StockAnalysisSystem.core.config import Config
 
 wechat: WeChat = None
 
+SasUserWxUserDict = {
+
+}
+
+WxUserSasUserDict = {
+
+}
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-
-def do_test():
+def handle_cmd_test(parameters: str, flask_request: request, msg_dict: dict) -> str:
+    wechat_user = msg_dict.get('FromUserName', '')
+    if wechat_user not in WxUserSasUserDict.keys():
+        return ''
     user_mgr = wechat.get_user_manager()
     user_lst = user_mgr.get_user_list()
     if len(user_lst) > 0:
         wechat.send_user_message(user_lst[0], 'Hello from Sleepy')
+    return 'Test Execute Done'
+
+
+def handle_cmd_login(parameters: str, flask_request: request, msg_dict: dict) -> str:
+    parts = parameters.split(',')
+    username = (parts[0] if len(parts) > 0 else '').strip()
+    password = (parts[1] if len(parts) > 1 else '').strip()
+
+    passwd_sha1 = hashlib.sha1(password.encode('utf-8')).hexdigest()
+
+    if username == 'Sleepy' and passwd_sha1 == '4181a3ababceb12d8cf21523e7eafefb46f7326f':
+        wechat_user = msg_dict.get('FromUserName', '')
+        if wechat_user != '':
+            SasUserWxUserDict[username] = wechat_user
+            WxUserSasUserDict[wechat_user] = username
+            wechat.get_user_manager().update_user_session(wechat_user, 'login', time.time())
+            return 'Login Successful'
+    return ''
+
+
+def handle_cmd_logoff(parameters: str, flask_request: request, msg_dict: dict) -> str:
+    username = parameters.strip()
+    if username != '' and username in SasUserWxUserDict.keys():
+        wechat_user = SasUserWxUserDict[username]
+        wechat.get_user_manager().update_user_session(wechat_user, 'login', 0)
+        del SasUserWxUserDict[username]
+        del WxUserSasUserDict[wechat_user]
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -31,8 +69,11 @@ def handle_command(flask_request: request, msg_dict: dict) -> (bool, str):
     command, parameters = parse_command(content)
 
     if command == 'test':
-        do_test()
-        return True, ''
+        return True, handle_cmd_test(parameters, flask_request, msg_dict)
+    if command == 'login':
+        return True, handle_cmd_login(parameters, flask_request, msg_dict)
+    if command == 'logoff':
+        return True, handle_cmd_logoff(parameters, flask_request, msg_dict)
 
     return False, ''
 
