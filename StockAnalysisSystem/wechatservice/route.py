@@ -1,3 +1,4 @@
+import time
 import hashlib
 from flask import request
 
@@ -95,9 +96,9 @@ def handle_text_message(flask_request: request, msg_dict: dict) -> str:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def handle_request(flask_request: request):
+def handle_request(flask_request: request) -> str:
     global wechat
-    wechat.handle_request(flask_request)
+    return wechat.handle_request(flask_request)
 
 
 # ----------------------------------------------------------------------------------------------------------------------

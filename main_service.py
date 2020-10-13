@@ -29,7 +29,14 @@ def analysis_entry():
 @app.route('/wx', methods=['GET', 'POST'])
 def wechat_entry():
     print('-> Request /wx')
-    response = wechat_route.handle_request(request)
+    try:
+        response = wechat_route.handle_request(request)
+    except Exception as e:
+        print('/wx Error', e)
+        print(traceback.format_exc())
+        response = ''
+    finally:
+        pass
     return response
 
 
