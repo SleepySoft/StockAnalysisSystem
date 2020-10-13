@@ -222,10 +222,13 @@ class WeChat:
                  'content': message
             }
         }
-        message_xml = xmltodict.unparse(message_dict)
+        message_json = json.dumps(message_dict)
 
         uri = 'https://api.weixin.qq.com/cgi-bin/message/custom/send?access_token=%s' % access_token
-        resp = requests.post(uri, data=message_xml)
+        resp = requests.post(uri, data=message_json)
+
+        err_text = resp.content.decode('utf-8')
+        print(err_text)
 
         return True
 

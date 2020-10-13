@@ -12,6 +12,8 @@ ANALYSIS_RESULT_TABLE = {}
 
 
 def init(config: Config):
+    return
+
     global ANALYZER_NAME_DICT
     global ANALYSIS_RESULT_HTML
     global ANALYSIS_RESULT_TABLE
