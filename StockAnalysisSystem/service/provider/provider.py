@@ -1,3 +1,4 @@
+import os
 import base64
 import pickle
 import traceback
@@ -42,7 +43,7 @@ class ServiceProvider:
             self.log('Init StockAnalysisSystem...')
             from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
             self.__sas = StockAnalysisSystem()
-            if not self.__sas.check_initialize():
+            if not self.__sas.check_initialize(os.getcwd()):
                 raise Exception(self.__sas.get_log_errors())
             self.log('Init StockAnalysisSystem Complete.')
             return True

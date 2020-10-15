@@ -36,7 +36,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         self.__database_entry = None
         self.__factor_center = None
 
-        self.__extension_manager = None
+        # self.__extension_manager = None
 
         self.__sys_call = {}
 
@@ -187,9 +187,10 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         # TODO: Refactor
         self.__data_hub_entry.get_data_center().set_factor_center(self.__factor_center)
 
-        from .ExtensionEntry import ExtensionManager
-        self.__extension_manager = ExtensionManager(self, extension_plugin)
-        self.__extension_manager.init()
+        # TODO: Separate extension ui and data
+        # from .ExtensionEntry import ExtensionManager
+        # self.__extension_manager = ExtensionManager(self, extension_plugin)
+        # self.__extension_manager.init()
 
         self.__task_queue.start()
 
@@ -218,8 +219,8 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
     def get_strategy_entry(self):
         return self.__strategy_entry if self.check_initialize() else None
 
-    def get_extension_manager(self):
-        return self.__extension_manager if self.check_initialize() else None
+    # def get_extension_manager(self):
+    #     return self.__extension_manager if self.check_initialize() else None
 
     def get_factor_center(self):
         return self.__factor_center if self.check_initialize() else None

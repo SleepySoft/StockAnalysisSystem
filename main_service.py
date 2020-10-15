@@ -1,10 +1,10 @@
-import hashlib
 import traceback
 
-from flask import Flask, request, make_response
+from flask import Flask, request
 from StockAnalysisSystem.core.config import Config
-import StockAnalysisSystem.webservice.route as web_route
-import StockAnalysisSystem.wechatservice.route as wechat_route
+import StockAnalysisSystem.service.interface.restIF as restIF
+import StockAnalysisSystem.service.interface.wechatIF as wechatIF
+from StockAnalysisSystem.service.provider.provider import ServiceProvider
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -23,14 +23,14 @@ def root_entry():
 @app.route('/analysis', methods=['GET', 'POST'])
 def analysis_entry():
     print('-> Request /analysis')
-    return web_route.analysis(request)
+    return restIF.analysis(request)
 
 
 @app.route('/wx', methods=['GET', 'POST'])
 def wechat_entry():
     print('-> Request /wx')
     try:
-        response = wechat_route.handle_request(request)
+        response = wechatIF.handle_request(request)
     except Exception as e:
         print('/wx Error', e)
         print(traceback.format_exc())
@@ -42,19 +42,26 @@ def wechat_entry():
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def init(config: Config):
+def init(provider: ServiceProvider, config: Config):
+    provider.init()
     config.load_config()
-    web_route.init(config)
-    wechat_route.init(config)
+    restIF.init(provider, config)
+    wechatIF.init(provider, config)
 
 
 def main():
     config = Config()
-    init(config)
+    provider = ServiceProvider({
+        'stock_analysis_system': True,
+        'offline_analysis_result': True,
+    })
+    init(provider, config)
     port = config.get('service_port', '80')
     debug = config.get('service_debug', 'true')
     print('Start service: port = %s, debug = %s.' % (port, debug))
-    app.run(host='0.0.0.0', port=str(port), debug=(debug == 'true'))
+
+    # https://stackoverflow.com/a/9476701/12929244
+    app.run(host='0.0.0.0', port=str(port), debug=(debug == 'true'), use_reloader=False)
 
 
 if __name__ == '__main__':
