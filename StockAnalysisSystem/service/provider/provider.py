@@ -2,6 +2,8 @@ import base64
 import pickle
 import traceback
 import pandas as pd
+from .user_manager import UserManager
+from .access_control import AccessControl
 from ..render.common_render import generate_display_page
 
 
@@ -13,6 +15,8 @@ class ServiceProvider:
 
         self.__config = None
         self.__logger = print
+        self.__user_manager = UserManager()
+        self.__access_control = AccessControl()
 
         self.__sas = None
         self.__offline_analysis_result = None
