@@ -185,6 +185,68 @@ class MemoExtra_StockTags(MemoExtra):
 
 # -------------------------------- Analysis --------------------------------
 
+from StockAnalysisSystem.core.Utiltity.ui_utility import *
+from StockAnalysisSystem.core.Utiltity.TableViewEx import *
+
+
+class AnalyzerSelector(QDialog):
+    TABLE_HEADER_ANALYZER = ['', 'Strategy', 'Comments', 'UUID']
+
+    def __init__(self, analyzer_utility):
+        super(AnalyzerSelector, self).__init__()
+        self.__analyzer_utility = analyzer_utility
+        self.__ok = True
+        self.__table_analyzer = TableViewEx()
+        self.__button_ok = QPushButton('OK')
+        self.__button_cancel = QPushButton('Cancel')
+        self.init_ui()
+
+    def init_ui(self):
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+        layout.addWidget(self.__table_analyzer)
+        layout.addLayout(horizon_layout([QLabel(''), self.__button_ok, self.__button_cancel], [8, 1, 1]))
+
+        self.__table_analyzer.SetCheckableColumn(0)
+        self.__table_analyzer.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+
+        self.__button_ok.clicked.connect(self.__on_button_ok)
+        self.__button_cancel.clicked.connect(self.__on_button_cancel)
+
+        self.setMinimumSize(800, 600)
+        self.setWindowTitle('Select Analyzer')
+
+        self.load_analyzer()
+
+    def __on_button_ok(self):
+        self.__ok = True
+        self.close()
+
+    def __on_button_cancel(self):
+        self.close()
+
+    def is_ok(self) -> bool:
+        return self.__ok
+
+    def load_analyzer(self):
+        self.__table_analyzer.Clear()
+        self.__table_analyzer.SetRowCount(0)
+        self.__table_analyzer.SetColumn(AnalyzerSelector.TABLE_HEADER_ANALYZER)
+
+        analyzer_info = self.__analyzer_utility.analyzer_info()
+        for analyzer_uuid, analyzer_name, analyzer_detail, _ in analyzer_info:
+            self.__table_analyzer.AppendRow(['', analyzer_name, analyzer_detail, analyzer_uuid])
+
+    def get_select_strategy(self):
+        analyzer_list = []
+        for i in range(self.__table_analyzer.RowCount()):
+            if self.__table_analyzer.GetItemCheckState(i, 0) == QtCore.Qt.Checked:
+                uuid = self.__table_analyzer.GetItemText(i, 3)
+                analyzer_list.append(uuid)
+        return analyzer_list
+
+
 class MemoExtra_Analysis(MemoExtra):
     def __init__(self, memo_data: StockMemoData):
         self.__memo_data = memo_data
