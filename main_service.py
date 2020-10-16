@@ -43,8 +43,8 @@ def wechat_entry():
 # ----------------------------------------------------------------------------------------------------------------------
 
 def init(provider: ServiceProvider, config: Config):
-    provider.init()
     config.load_config()
+    provider.init(config)
     restIF.init(provider, config)
     wechatIF.init(provider, config)
 
