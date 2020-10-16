@@ -34,9 +34,8 @@ def handle_cmd_test(parameters: str, flask_request: request, msg_dict: dict) -> 
 
 
 def handle_cmd_login(parameters: str, flask_request: request, msg_dict: dict) -> str:
-    parts = parameters.split(',')
-    username = (parts[0] if len(parts) > 0 else '').strip()
-    password = (parts[1] if len(parts) > 1 else '').strip()
+    username = parameters[0] if len(parameters) > 0 else ''
+    password = parameters[1] if len(parameters) > 1 else ''
 
     passwd_sha1 = hashlib.sha1(password.encode('utf-8')).hexdigest()
 
@@ -51,20 +50,23 @@ def handle_cmd_login(parameters: str, flask_request: request, msg_dict: dict) ->
 
 
 def handle_cmd_logoff(parameters: str, flask_request: request, msg_dict: dict) -> str:
-    username = parameters.strip()
+    username = parameters[0] if len(parameters) > 0 else ''
     if username != '' and username in SasUserWxUserDict.keys():
         wechat_user = SasUserWxUserDict[username]
         wechat.get_user_manager().update_user_session(wechat_user, 'login', 0)
         del SasUserWxUserDict[username]
         del WxUserSasUserDict[wechat_user]
+        return 'Logoff successful'
+    else:
+        return ''
 
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 def parse_command(text: str) -> (str, str):
-    parts = text.split(':')
-    command = (parts[0] if len(parts) > 0 else '').strip()
-    parameters = (parts[1] if len(parts) > 1 else '').strip()
+    parts = text.split()
+    command = parts[0] if len(parts) > 0 else ''
+    parameters = parts[1:] if len(parts) > 1 else ''
     return command, parameters
 
 
@@ -72,11 +74,11 @@ def handle_command(flask_request: request, msg_dict: dict) -> (bool, str):
     content: str = msg_dict.get('Content', '')
     command, parameters = parse_command(content)
 
-    if command == 'test':
+    if command.lower() == 'test':
         return True, handle_cmd_test(parameters, flask_request, msg_dict)
-    if command == 'login':
+    if command.lower() == 'login':
         return True, handle_cmd_login(parameters, flask_request, msg_dict)
-    if command == 'logoff':
+    if command.lower() == 'logoff':
         return True, handle_cmd_logoff(parameters, flask_request, msg_dict)
 
     return False, ''
@@ -88,7 +90,7 @@ def handle_analysis(flask_request: request, msg_dict: dict) -> (bool, str):
     if url != '':
         return True, ('<a href="%s">查看分析结果</a>' % url)
     else:
-        return False, ('没有股票[%s]的分析结果' % security)
+        return security.isdigit(), ('没有股票[%s]的分析结果' % security)
 
 
 def handle_text_message(flask_request: request, msg_dict: dict) -> str:
