@@ -25,8 +25,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         self.__root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.__project_path = self.__root_path
 
-        from .config import Config
-        self.__config = Config()
+        self.__config = None
         self.__task_queue = TaskQueue()
 
         self.__plugin_table = {}
@@ -78,7 +77,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
     def is_initialized(self) -> bool:
         return self.__inited
 
-    def check_initialize(self, project_path: str = '', not_load_config: bool = False) -> bool:
+    def check_initialize(self, project_path: str = '', config=None, not_load_config: bool = False) -> bool:
         if self.__inited:
             return True
 
@@ -102,12 +101,19 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         clock = Clock()
         self.__log_errors = []
 
+        from .config import Config
         from .DataHubEntry import DataHubEntry
         from .AnalyzerEntry import StrategyEntry
         from .Database.DatabaseEntry import DatabaseEntry
         from .Utiltity.plugin_manager import PluginManager
 
-        if not not_load_config:
+        if isinstance(config, Config):
+            self.__config = config
+        else:
+            self.__config = Config()
+        if not_load_config:
+            pass
+        else:
             if not self.__config.load_config(config_file_path):
                 self.__log_errors.append('Load config fail.')
                 return False

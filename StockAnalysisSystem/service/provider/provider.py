@@ -22,11 +22,11 @@ class ServiceProvider:
         self.__sas = None
         self.__offline_analysis_result = None
 
-    def init(self) -> bool:
+    def init(self, config) -> bool:
         final_ret = True
 
         from StockAnalysisSystem.core.config import Config
-        self.__config = Config()
+        self.__config = config if config is not None else Config()
 
         if self.__service_table.get('stock_analysis_system'):
             ret = self.__init_sas()
@@ -43,7 +43,7 @@ class ServiceProvider:
             self.log('Init StockAnalysisSystem...')
             from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
             self.__sas = StockAnalysisSystem()
-            if not self.__sas.check_initialize(os.getcwd()):
+            if not self.__sas.check_initialize(project_path=os.getcwd(), config=self.__config):
                 raise Exception(self.__sas.get_log_errors())
             self.log('Init StockAnalysisSystem Complete.')
             return True
