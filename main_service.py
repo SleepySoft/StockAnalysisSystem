@@ -26,6 +26,11 @@ def analysis_entry():
     return restIF.analysis(request)
 
 
+@app.route('/query', methods=['GET'])
+def query_entry():
+    return restIF.query(request)
+
+
 @app.route('/wx', methods=['GET', 'POST'])
 def wechat_entry():
     print('-> Request /wx')

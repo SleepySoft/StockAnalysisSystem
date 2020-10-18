@@ -91,7 +91,9 @@ def to_py_datetime(dt: any) -> datetime.datetime or None:
     return None
 
 
-def text_auto_time(text: str) -> datetime.datetime:
+def text_auto_time(text: str) -> datetime.datetime or None:
+    if text is None:
+        return None
     if isinstance(text, datetime.datetime):
         return text
     # noinspection PyBroadException
