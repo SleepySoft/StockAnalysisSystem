@@ -3,6 +3,8 @@ import base64
 import pickle
 import traceback
 import pandas as pd
+import StockAnalysisSystem.core.interface as sasIF
+import StockAnalysisSystem.core.Utiltity.time_utility as sasTimeUtil
 from .user_manager import UserManager
 from .access_control import AccessControl
 from ..render.common_render import generate_display_page
@@ -42,9 +44,9 @@ class ServiceProvider:
         try:
             self.log('Init StockAnalysisSystem...')
             from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
-            self.__sas = StockAnalysisSystem()
-            if not self.__sas.check_initialize(project_path=os.getcwd(), config=self.__config):
-                raise Exception(self.__sas.get_log_errors())
+            if not sasIF.sas_init(project_path=os.getcwd(), config=self.__config):
+                raise Exception(sasIF.sas().get_log_errors())
+            self.__sas = sasIF.sas()
             self.log('Init StockAnalysisSystem Complete.')
             return True
         except Exception as e:
@@ -64,7 +66,7 @@ class ServiceProvider:
         self.log('Init OfflineAnalysisResult Complete.')
         return True
 
-    # ------------------------------------------------------------------------------------------------------------------
+    # --------------------------------------------- Offline Analysis Result --------------------------------------------
 
     def get_security_analysis_result_url(self, security: str) -> str:
         if self.__offline_analysis_result is None:
@@ -79,20 +81,41 @@ class ServiceProvider:
         result_html = self.__offline_analysis_result.get_analysis_result_html(security)
         return generate_display_page('分析结果' + security, result_html)
 
+    # -------------------------------------------------- SAS invoking --------------------------------------------------
+
+    def query(self, uri: str, identity: str or None = None,
+              since: str or None = None, until: str or None = None, **extra) -> str:
+        if not isinstance(uri, str):
+            return ''
+        if isinstance(identity, str):
+            identity = identity.split(',')
+            identity = [s.strip() for s in identity]
+        elif identity is None:
+            pass
+        else:
+            return ''
+        time_serial = (sasTimeUtil.text_auto_time(since),
+                       sasTimeUtil.text_auto_time(until))
+        if time_serial[0] is None and time_serial[1] is None:
+            time_serial = None
+        df = sasIF.sas_query(uri, identity, time_serial, **extra)
+        return self.serialize_dataframe(df) if df is not None else ''
+
     # ------------------------------------------------------------------------------------------------------------------
 
     # https://stackoverflow.com/a/57930738/12929244
 
     @staticmethod
     def serialize_dataframe(df: pd.DataFrame) -> str:
-        pickbytes = pickle.dumps(df)
-        b64_pickbytes = base64.b64encode(pickbytes)
-        return b64_pickbytes
+        pickle_bytes = pickle.dumps(df)
+        b64_pickle_bytes = base64.b64encode(pickle_bytes)
+        b64_pickle_bytes_str = b64_pickle_bytes.decode('utf-8')
+        return b64_pickle_bytes_str
 
     @staticmethod
-    def deserialize_dataframe(b64_pickbytes: str) -> pd.DataFrame:
-        pickbytes = base64.b64decode(b64_pickbytes)
-        df = pickle.loads(pickbytes)
+    def deserialize_dataframe(b64_pickle_bytes_str: str) -> pd.DataFrame:
+        pickle_bytes = base64.b64decode(b64_pickle_bytes_str)
+        df = pickle.loads(pickle_bytes)
         return df
 
     def log(self, text: str):
