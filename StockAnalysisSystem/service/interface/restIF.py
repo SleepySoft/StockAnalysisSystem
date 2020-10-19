@@ -1,5 +1,4 @@
 from flask import request
-from ..render.common_render import *
 from ..provider.provider import ServiceProvider
 from StockAnalysisSystem.core.config import Config
 

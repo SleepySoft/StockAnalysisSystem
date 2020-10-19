@@ -41,6 +41,7 @@ class RestCaller:
         )
 
         r = requests.get(self.__service_url + '/query', params=args)
+        print('Receive length: %s' % len(r.content))
         resp = r.content
         resp_str = resp.decode('utf-8')
         df = self.deserialize_dataframe(resp_str)
