@@ -22,8 +22,17 @@ def root_entry():
 
 
 @app.route('/api', methods=['POST'])
-def root_entry():
-    return webapiIF.hand
+def webapi_entry():
+    print('-> Request /api')
+    try:
+        response = webapiIF.handle_request(request)
+    except Exception as e:
+        print('/wx Error', e)
+        print(traceback.format_exc())
+        response = ''
+    finally:
+        pass
+    return response
 
 
 @app.route('/analysis', methods=['GET', 'POST'])
@@ -34,7 +43,16 @@ def analysis_entry():
 
 @app.route('/query', methods=['GET'])
 def query_entry():
-    return restIF.query(request)
+    print('-> Request /query')
+    try:
+        response = restIF.query(request)
+    except Exception as e:
+        print('/wx Error', e)
+        print(traceback.format_exc())
+        response = ''
+    finally:
+        pass
+    return response
 
 
 @app.route('/wx', methods=['GET', 'POST'])
@@ -58,13 +76,14 @@ def init(provider: ServiceProvider, config: Config):
     provider.init(config)
     restIF.init(provider, config)
     wechatIF.init(provider, config)
+    webapiIF.init(provider, config)
 
 
 def main():
     config = Config()
     provider = ServiceProvider({
         'stock_analysis_system': True,
-        'offline_analysis_result': True,
+        # 'offline_analysis_result': True,
     })
     init(provider, config)
     port = config.get('service_port', '80')

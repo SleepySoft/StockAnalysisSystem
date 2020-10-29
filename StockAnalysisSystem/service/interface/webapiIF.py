@@ -55,7 +55,7 @@ class WebApiInterface:
 
 def handle_request(flask_request: request) -> str:
     req_data = flask_request.data
-    req_dict = xmltodict.parse(req_data)
+    req_dict = json.loads(req_data)
 
     global webapi_interface
     return webapi_interface.api_stub(req_dict)
