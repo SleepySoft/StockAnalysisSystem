@@ -4,6 +4,7 @@ from flask import Flask, request
 from StockAnalysisSystem.core.config import Config
 import StockAnalysisSystem.service.interface.restIF as restIF
 import StockAnalysisSystem.service.interface.wechatIF as wechatIF
+import StockAnalysisSystem.service.interface.webapiIF as webapiIF
 from StockAnalysisSystem.service.provider.provider import ServiceProvider
 
 
@@ -18,6 +19,11 @@ app = Flask(__name__)
 def root_entry():
     print('-> Request /')
     return ''
+
+
+@app.route('/api', methods=['POST'])
+def root_entry():
+    return webapiIF.hand
 
 
 @app.route('/analysis', methods=['GET', 'POST'])
