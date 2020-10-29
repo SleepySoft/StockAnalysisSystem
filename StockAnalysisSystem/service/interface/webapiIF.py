@@ -1,5 +1,14 @@
 import json
+
+import xmltodict
+from flask import request
 from ..provider.provider import ServiceProvider
+from StockAnalysisSystem.core.config import Config
+
+webapi_interface = None
+service_provider: ServiceProvider = None
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 class WebApiInterface:
@@ -7,17 +16,21 @@ class WebApiInterface:
         self.__provider = provider
 
     def api_stub(self, args: dict):
-        api = args.get('api')
-        token = args.get('token')
-        params = args.get('params')
+        api = args.get('api', None)
+        token = args.get('token', None)
+        params = args.get('params', {})
 
-        return self.dispatch_request(api, token, params) if self.check_request(api, token, params) else ''
+        return self.dispatch_request(api, token, params) \
+            if self.check_request(api, token, params) else ''
 
-    def check_request(self, api, token, params) -> bool:
-        return True
+    def check_request(self, api: str, token: str, params: dict) -> bool:
+        return isinstance(api, str) and api != '' and \
+               isinstance(token, str) and token != '' and \
+               isinstance(params, dict)
 
-    def dispatch_request(self, api, token, params) -> any:
-        return True
+    def dispatch_request(self, api: str, token: str, params: dict) -> any:
+        if api == 'query':
+            return self.__provider.query(**params)
 
     @staticmethod
     def serialize_response(**kwargs) -> str:
@@ -36,6 +49,32 @@ class WebApiInterface:
             return {}
         finally:
             pass
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def handle_request(flask_request: request) -> str:
+    req_data = flask_request.data
+    req_dict = xmltodict.parse(req_data)
+
+    global webapi_interface
+    return webapi_interface.api_stub(req_dict)
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def load_config(config: Config):
+    pass
+
+
+def init(provider: ServiceProvider, config: Config):
+    global service_provider
+    service_provider = provider
+
+    global webapi_interface
+    webapi_interface = WebApiInterface(provider)
+
+    load_config(config)
 
 
 

@@ -83,6 +83,7 @@ class ServiceProvider:
 
     # -------------------------------------------------- SAS invoking --------------------------------------------------
 
+    @AccessControl.apply('query')
     def query(self, uri: str, identity: str or None = None,
               since: str or None = None, until: str or None = None, **extra) -> str:
         if not isinstance(uri, str):
@@ -99,7 +100,7 @@ class ServiceProvider:
         if time_serial[0] is None and time_serial[1] is None:
             time_serial = None
         df = sasIF.sas_query(uri, identity, time_serial, **extra)
-        return self.serialize_dataframe(df) if df is not None else ''
+        return df
 
     # ------------------------------------------------------------------------------------------------------------------
 
