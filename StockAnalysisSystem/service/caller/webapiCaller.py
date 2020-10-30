@@ -1,8 +1,10 @@
 import json
+import jsonpickle
 import traceback
 
 import requests
 from functools import partial
+from StockAnalysisSystem.core.Utiltity.JsonSerializer import serialize, deserialize
 
 
 class WebApiCaller:
@@ -14,7 +16,7 @@ class WebApiCaller:
     def __getattr__(self, attr):
         return partial(self.api_proxy, attr)
 
-    def set_token(self, token: str):
+    def update_token(self, token: str):
         self.__token = token
 
     def set_timeout(self, timeout: int):
@@ -27,8 +29,8 @@ class WebApiCaller:
         payload = {
             'api': api,
             'token': self.__token,
-            'args': self.serialize_args(*args),
-            'kwargs': self.serialize_kwargs(**kwargs),
+            'args': serialize(args),
+            'kwargs': serialize(kwargs),
         }
         headers = {
 
@@ -38,21 +40,15 @@ class WebApiCaller:
             resp = requests.post(self.__api_url, json=payload, headers=headers, timeout=self.__timeout)
             return self.deserialize_response(resp.text)
         except Exception as e:
-            return None
+            print('Parse result fail: ' + str(e))
+            print(traceback.format_exc())
         finally:
             pass
 
     @staticmethod
-    def serialize_args(*args) -> str:
-        return json.dumps(args)
-
-    @staticmethod
-    def serialize_kwargs(**kwargs) -> str:
-        return json.dumps(kwargs)
-
-    @staticmethod
     def deserialize_response(resp_text: str) -> any:
-        result = json.loads(resp_text)
+        # result = json.loads(resp_text)
+        result = deserialize(resp_text)
         return result
 
 
@@ -60,7 +56,8 @@ class WebApiCaller:
 
 def main():
     caller = WebApiCaller('http://127.0.0.1/api')
-    df = caller.query('Market.SecuritiesInfo')
+    caller.update_token('xxxxxx')
+    df = caller.query('Market.SecuritiesInfo', '000001.SZSE')
     print(df)
 
 
