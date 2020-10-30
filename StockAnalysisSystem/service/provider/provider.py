@@ -81,7 +81,7 @@ class ServiceProvider:
         result_html = self.__offline_analysis_result.get_analysis_result_html(security)
         return generate_display_page('分析结果' + security, result_html)
 
-    # -------------------------------------------------- SAS invoking --------------------------------------------------
+    # ---------------------------------------------------- Web API -----------------------------------------------------
 
     @AccessControl.apply('query')
     def query(self, uri: str, identity: str or None = None,
@@ -102,26 +102,29 @@ class ServiceProvider:
         df = sasIF.sas_query(uri, identity, time_serial, **extra)
         return df
 
+    def analysis(self):
+        sasIF.sas_update()
+
     # ------------------------------------------------------------------------------------------------------------------
-
-    # https://stackoverflow.com/a/57930738/12929244
-
-    @staticmethod
-    def serialize_dataframe(df: pd.DataFrame) -> str:
-        pickle_bytes = pickle.dumps(df)
-        b64_pickle_bytes = base64.b64encode(pickle_bytes)
-        b64_pickle_bytes_str = b64_pickle_bytes.decode('utf-8')
-        return b64_pickle_bytes_str
-
-    @staticmethod
-    def deserialize_dataframe(b64_pickle_bytes_str: str) -> pd.DataFrame:
-        pickle_bytes = base64.b64decode(b64_pickle_bytes_str)
-        df = pickle.loads(pickle_bytes)
-        return df
 
     def log(self, text: str):
         if self.__logger is not None:
             self.__logger(text)
+
+    # https://stackoverflow.com/a/57930738/12929244
+
+    # @staticmethod
+    # def serialize_dataframe(df: pd.DataFrame) -> str:
+    #     pickle_bytes = pickle.dumps(df)
+    #     b64_pickle_bytes = base64.b64encode(pickle_bytes)
+    #     b64_pickle_bytes_str = b64_pickle_bytes.decode('utf-8')
+    #     return b64_pickle_bytes_str
+    #
+    # @staticmethod
+    # def deserialize_dataframe(b64_pickle_bytes_str: str) -> pd.DataFrame:
+    #     pickle_bytes = base64.b64decode(b64_pickle_bytes_str)
+    #     df = pickle.loads(pickle_bytes)
+    #     return df
 
 
 

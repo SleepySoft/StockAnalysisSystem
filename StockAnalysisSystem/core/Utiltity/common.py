@@ -1,6 +1,7 @@
+import sys
 import string
 import logging
-import sys
+import functools
 import collections
 
 import requests
@@ -32,6 +33,15 @@ logging.basicConfig(
 # console.setFormatter(formatter)
 #
 # logging.getLogger('').addHandler(console)
+
+
+# -----------------------------------------------------------------------------------------------------
+
+def local_function(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    return wrapper
 
 
 # -----------------------------------------------------------------------------------------------------

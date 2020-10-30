@@ -1,9 +1,14 @@
 import pandas as pd
 import datetime
 
+from .StockAnalysisSystem import StockAnalysisSystem
+from StockAnalysisSystem.core.Utiltity.common import *
+from StockAnalysisSystem.core.DataHubEntry import DataHubEntry
+from StockAnalysisSystem.core.DataHub.UniversalDataCenter import UniversalDataCenter
 
-def sas():
-    from .StockAnalysisSystem import StockAnalysisSystem
+
+@local_function
+def sas() -> StockAnalysisSystem:
     return StockAnalysisSystem()
 
 
@@ -12,16 +17,12 @@ def sas_init(project_path: str = None, config=None, not_load_config: bool = Fals
 
 
 def sas_query(uri: str, identity: str or [str] = None, time_serial: tuple = None, **extra) -> pd.DataFrame or None:
-    from .DataHubEntry import DataHubEntry
-    from .DataHub.UniversalDataCenter import UniversalDataCenter
     data_hub: DataHubEntry = sas().get_data_hub_entry()
     data_center: UniversalDataCenter = data_hub.get_data_center()
     return data_center.query(uri, identity, time_serial, **extra)
 
 
 def sas_update(uri: str, identity: str or [str] = None, time_serial: tuple = None, **extra) -> bool:
-    from .DataHubEntry import DataHubEntry
-    from .DataHub.UniversalDataCenter import UniversalDataCenter
     data_hub: DataHubEntry = sas().get_data_hub_entry()
     data_center: UniversalDataCenter = data_hub.get_data_center()
     return data_center.update_local_data(uri, identity, time_serial, **extra)
