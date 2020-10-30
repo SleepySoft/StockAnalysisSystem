@@ -101,10 +101,10 @@ class UniversalDataCenter:
         if fields is not None:
             # Fill the missing columns
             result = result.reindex(columns=fields)
-            if readable:
-                columns = list(result.columns)
-                columns_mapping = self.field_map_readable(columns)
-                result.rename(columns=columns_mapping, inplace=True)
+        if readable:
+            columns = list(result.columns)
+            columns_mapping = self.field_map_readable(columns)
+            result.rename(columns=columns_mapping, inplace=True)
         return result
 
     def query_from_plugin(self, uri: str, identity: str or [str] = None,

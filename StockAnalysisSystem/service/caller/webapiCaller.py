@@ -57,7 +57,11 @@ class WebApiCaller:
 def main():
     caller = WebApiCaller('http://127.0.0.1/api')
     caller.update_token('xxxxxx')
+
     df = caller.query('Market.SecuritiesInfo', '000001.SZSE')
+    print(df)
+
+    df = caller.query('Finance.IncomeStatement', '000001.SZSE', ('2000-01-01', '2020-12-31'), readable=True)
     print(df)
 
 
