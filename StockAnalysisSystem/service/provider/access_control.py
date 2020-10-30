@@ -29,6 +29,7 @@ class AccessControl:
                 if AccessControl.CONTROL_INSTANCE is None:
                     print('Access Control missing - [%s] Blocked' % feature_name)
                     return 'Access Control missing.'
+                del kwargs['token']
                 access, reason = AccessControl.\
                     CONTROL_INSTANCE.accessible(token, feature_name, **kwargs)
                 return func(*args, **kwargs) if access else reason

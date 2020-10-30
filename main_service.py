@@ -27,7 +27,7 @@ def webapi_entry():
     try:
         response = webapiIF.handle_request(request)
     except Exception as e:
-        print('/wx Error', e)
+        print('/api Error', e)
         print(traceback.format_exc())
         response = ''
     finally:
