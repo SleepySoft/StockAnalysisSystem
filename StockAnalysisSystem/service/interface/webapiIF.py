@@ -1,5 +1,4 @@
 import json
-import jsonpickle
 import pandas as pd
 from flask import request
 from ..provider.provider import ServiceProvider
@@ -44,15 +43,21 @@ class WebApiInterface:
         finally:
             pass
 
+    # ------------------------------------------------------------------------------------------------------------------
+
     def dispatch_request(self, api: str, token: str, *args, **kwargs) -> any:
-        if api == 'query':
-            df = self.__provider.query(*args, **kwargs, token=token)
-            return '' if df is None else self.serialize_response(df)
+        # if api == 'query':
+        #     df = self.__provider.query(*args, **kwargs, token=token)
+        #     return '' if df is None else self.serialize_response(df)
+        # else:
+        func = getattr(self.__provider, api, None)
+        resp = func(*args, **kwargs, token=token) if func is not None else ''
+        return self.serialize_response(resp)
 
     @staticmethod
     def serialize_response(resp) -> str:
         try:
-            return serialize(resp)
+            return serialize(resp) if resp is not None else ''
         except Exception as e:
             print('Serialize Response Fail: ' + str(e))
             return ''

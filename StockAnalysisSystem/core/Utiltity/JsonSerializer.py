@@ -5,6 +5,14 @@ import pandas as pd
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+"""
+Note:
+    The object in DataFrame (like time stamp) will be different after serialize and deserialize (it turns to str).
+"""
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
 def serialize_obj(py_object: any):
     if isinstance(py_object, pd.DataFrame):
         return {'__dataframe__': py_object.to_dict(orient='records')}
@@ -19,7 +27,7 @@ def serialize_obj(py_object: any):
 
 
 def serialize(o: any) -> str:
-    return json.dumps(o, default=serialize_obj)
+    return json.dumps(o, default=serialize_obj) if o is not None else ''
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -34,5 +42,5 @@ def deserialize_obj(json_object: dict):
 
 
 def deserialize(s: str) -> any:
-    return json.loads(s, object_hook=deserialize_obj)
+    return json.loads(s, object_hook=deserialize_obj) if isinstance(s, str) else None
 
