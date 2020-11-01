@@ -7,6 +7,7 @@ import StockAnalysisSystem.core.interface as sasIF
 import StockAnalysisSystem.core.Utiltity.time_utility as sasTimeUtil
 from .user_manager import UserManager
 from .access_control import AccessControl
+from .resource_manager import ResourceManager
 from ..render.common_render import generate_display_page
 
 
@@ -20,6 +21,7 @@ class ServiceProvider:
         self.__logger = print
         self.__user_manager = UserManager()
         self.__access_control = AccessControl()
+        self.__resource_manager = ResourceManager()
 
         self.__sas = None
         self.__offline_analysis_result = None

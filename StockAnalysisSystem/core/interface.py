@@ -1,8 +1,11 @@
-import pandas as pd
 import datetime
+import pandas as pd
 
+from .interface_util import *
+from .AnalyzerEntry import StrategyEntry
 from .StockAnalysisSystem import StockAnalysisSystem
 from StockAnalysisSystem.core.Utiltity.common import *
+from StockAnalysisSystem.core.Utiltity.task_future import *
 from StockAnalysisSystem.core.DataHubEntry import DataHubEntry
 from StockAnalysisSystem.core.DataHub.UniversalDataCenter import UniversalDataCenter
 
@@ -28,16 +31,13 @@ def sas_update(uri: str, identity: str or [str] = None, time_serial: tuple = Non
     return data_center.update_local_data(uri, identity, time_serial, **extra)
 
 
-# def sas_analysis(securities: str or [str], analyzers: [str],
-#                  time_serial: (datetime.datetime, datetime.datetime),
-#                  progress_rate: ProgressRate = None,
-#                  enable_calculation: bool = True,
-#                  enable_from_cache: bool = True, enable_update_cache: bool = True,
-#                  debug_load_json: bool = False, debug_dump_json: bool = False,
-#                  dump_path: str = '') -> pd.DataFrame:
-#     from .AnalyzerEntry import StrategyEntry
-#     strategy_entry: StrategyEntry = sas().get_strategy_entry()
-#     strategy_entry.analysis_advance()
+def sas_start_analysis(securities: str or [str], analyzers: [str],
+                       time_serial: (datetime.datetime, datetime.datetime),
+                       enable_from_cache: bool = True) -> TaskFuture:
+    strategy_entry: StrategyEntry = sas().get_strategy_entry()
+    data_hub: DataHubEntry = sas().get_data_hub_entry()
+    task = SasAnalysisTask(strategy_entry, data_hub, securities, analyzers, time_serial, enable_from_cache)
+    sas().get_task_queue().append_task(task)
 
 
 def sas_get_all_uri() -> [str]:
