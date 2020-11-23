@@ -3,6 +3,7 @@
 
 from PyQt5 import Qt
 from PyQt5.QtWidgets import QMenu
+from .Utility.extension_manager import ExtensionManager
 
 from StockAnalysisSystem.readme import VERSION
 from StockAnalysisSystem.ui.config_ui import *
@@ -10,6 +11,7 @@ from StockAnalysisSystem.ui.DataHubUi import *
 from StockAnalysisSystem.ui.analyzer_ui import *
 from StockAnalysisSystem.ui.data_update_ui import *
 from StockAnalysisSystem.ui.task_queue_ui import *
+from StockAnalysisSystem.core.Utiltity.plugin_manager import PluginManager
 from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 
 
@@ -25,6 +27,7 @@ class MainWindow(CommonMainWindow):
         self.__menu_config = None
         self.__menu_extension = None
         self.__translate = QtCore.QCoreApplication.translate
+        self.__ui_root_path = os.path.dirname(os.path.abspath(__file__))
 
         # ---------- Modules and Sub Window ----------
 
@@ -45,6 +48,13 @@ class MainWindow(CommonMainWindow):
         # self.__alias_table_module = database_entry.get_alias_table()
         # self.__alias_table_ui = AliasTableUi(self.__alias_table_module)
         self.__task_queue_ui = TaskQueueUi(StockAnalysisSystem().get_task_queue())
+
+        # -------- UI Extenerion --------
+
+        extension_plugin = PluginManager()
+        extension_plugin.add_plugin_path(os.path.join(self.__ui_root_path, 'Extension'))
+        self.__extension_manager = ExtensionManager(StockAnalysisSystem(), extension_plugin)
+        self.__extension_manager.init()
 
         # ---------- Deep init ----------
         self.init_ui()
@@ -179,9 +189,7 @@ class MainWindow(CommonMainWindow):
     #     self.__alias_table_ui.Init()
 
     def extension_window_init(self):
-        sas = StockAnalysisSystem()
-        extension_manager = sas.get_extension_manager()
-        widgets_config = extension_manager.create_extensions_widgets(self)
+        widgets_config = self.__extension_manager.create_extensions_widgets(self)
         for widget, _config in widgets_config:
             self.add_sub_window(widget, _config.get('name'), {
                 'DockFloat': True,

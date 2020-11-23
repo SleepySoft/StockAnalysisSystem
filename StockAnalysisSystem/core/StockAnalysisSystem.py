@@ -150,12 +150,12 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         factor_plugin = PluginManager()
         strategy_plugin = PluginManager()
         collector_plugin = PluginManager()
-        extension_plugin = PluginManager()
+        # extension_plugin = PluginManager()
 
         self.__plugin_table['Factor'] = factor_plugin
         self.__plugin_table['Analyzer'] = strategy_plugin
         self.__plugin_table['Collector'] = collector_plugin
-        self.__plugin_table['Extension'] = extension_plugin
+        # self.__plugin_table['Extension'] = extension_plugin
 
         default_plugin_path = os.path.join(self.get_root_path(), 'plugin')
         project_plugin_path = os.path.join(self.get_project_path(), 'plugin')
@@ -166,7 +166,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
             factor_plugin.add_plugin_path(os.path.join(default_plugin_path, 'Factor'))
             strategy_plugin.add_plugin_path(os.path.join(default_plugin_path, 'Analyzer'))
             collector_plugin.add_plugin_path(os.path.join(default_plugin_path, 'Collector'))
-            extension_plugin.add_plugin_path(os.path.join(default_plugin_path, 'Extension'))
+            # extension_plugin.add_plugin_path(os.path.join(default_plugin_path, 'Extension'))
         else:
             print('Default plugin not found.')
 
@@ -175,7 +175,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
             factor_plugin.add_plugin_path(os.path.join(project_plugin_path, 'Factor'))
             strategy_plugin.add_plugin_path(os.path.join(project_plugin_path, 'Analyzer'))
             collector_plugin.add_plugin_path(os.path.join(project_plugin_path, 'Collector'))
-            extension_plugin.add_plugin_path(os.path.join(project_plugin_path, 'Extension'))
+            # extension_plugin.add_plugin_path(os.path.join(project_plugin_path, 'Extension'))
 
         factor_plugin.refresh()
         strategy_plugin.refresh()

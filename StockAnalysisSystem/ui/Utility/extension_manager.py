@@ -3,9 +3,9 @@ from threading import Thread
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QWidget
 
-from .StockAnalysisSystem import *
-from .Utiltity.time_utility import *
-from .Utiltity.plugin_manager import *
+from StockAnalysisSystem.core.StockAnalysisSystem import *
+from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.Utiltity.plugin_manager import *
 
 
 class ExtensionManager:

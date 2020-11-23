@@ -11,7 +11,7 @@ from StockAnalysisSystem.core.Utiltity.plugin_manager import PluginManager
 from StockAnalysisSystem.core.FactorEntry import FactorCenter
 from StockAnalysisSystem.core.DataHubEntry import DataHubEntry
 from StockAnalysisSystem.core.AnalyzerEntry import StrategyEntry
-from StockAnalysisSystem.core.ExtensionEntry import ExtensionManager
+# from StockAnalysisSystem.core.ExtensionEntry import ExtensionManager
 
 from StockAnalysisSystem.core.DataHub.DataAgent import DataAgent
 from StockAnalysisSystem.core.DataHub.DataUtility import DataUtility
@@ -92,8 +92,8 @@ def get_strategy_entry() -> StrategyEntry:
     return sas().get_strategy_entry()
 
 
-def get_extension_manager() -> ExtensionManager:
-    return sas().get_extension_manager()
+# def get_extension_manager() -> ExtensionManager:
+#     return sas().get_extension_manager()
 
 
 def get_factor_center() -> FactorCenter:
