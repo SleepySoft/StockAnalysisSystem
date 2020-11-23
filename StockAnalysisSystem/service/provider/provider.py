@@ -47,8 +47,8 @@ class ServiceProvider:
             self.log('Init StockAnalysisSystem...')
             from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
             if not sasIF.sas_init(project_path=os.getcwd(), config=self.__config):
-                raise Exception(sasIF.sas().get_log_errors())
-            self.__sas = sasIF.sas()
+                raise Exception(sasIF.__sas().get_log_errors())
+            self.__sas = sasIF.__sas()
             self.log('Init StockAnalysisSystem Complete.')
             return True
         except Exception as e:
