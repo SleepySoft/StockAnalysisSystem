@@ -32,7 +32,7 @@ def sas_update(uri: str, identity: str or [str] = None, time_serial: tuple = Non
 
 
 def sas_start_analysis(securities: str or [str], analyzers: [str],
-                       time_serial: (datetime.datetime, datetime.datetime),
+                       time_serial: (datetime, datetime),
                        enable_from_cache: bool = True) -> TaskFuture:
     strategy_entry: StrategyEntry = sas().get_strategy_entry()
     data_hub: DataHubEntry = sas().get_data_hub_entry()
