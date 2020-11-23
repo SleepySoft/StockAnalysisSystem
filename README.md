@@ -17,7 +17,8 @@ https://github.com/SleepySoft/StockAnalysisSystem
 设计与框架：https://www.bilibili.com/video/BV1nK411p7uD/
   
 # 最近更新内容：  
-重新设计数据存储以期望提高速度  
+加入网络服务，从main_service.py启动即可，然而UI并未分离。  
+最近疯狂加班（真是在还年初的债啊 望天），所以更新会慢点。  
   
 # 运行环境  
 * 由于图表引入了pyqtgraph，导致pyinstaller打包出现问题，并且尝试py2exe也不成功，故暂停以EXE形式发布Release  
@@ -111,6 +112,8 @@ QQ群：931499339，进群验证码：SleepySoft
 ----------------------------------------------------------------------------------------------------------------------
   
 # 开发计划：
+  
+* 将UI和服务分离  
   
 * 接入更多数据  
 > 限售股解禁: https://tushare.pro/document/2?doc_id=160  
