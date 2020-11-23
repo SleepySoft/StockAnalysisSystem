@@ -437,6 +437,7 @@ def init(sas: StockAnalysisSystem) -> bool:
         memoData = StockMemoData(sasEntry)
     except Exception as e:
         print(e)
+        print(traceback.format_exc())
         return False
     finally:
         pass
