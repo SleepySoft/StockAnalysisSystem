@@ -1,4 +1,4 @@
-from .AnalyzerEntry import StrategyEntry, AnalysisResult
+from StockAnalysisSystem.code.AnalyzerEntry import StrategyEntry, AnalysisResult
 from StockAnalysisSystem.core.Utiltity.task_future import *
 from StockAnalysisSystem.core.DataHubEntry import DataHubEntry
 

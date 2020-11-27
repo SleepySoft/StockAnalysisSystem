@@ -4,6 +4,7 @@ import pandas as pd
 from .interface_util import *
 from .interface import interface as sas_interface
 from StockAnalysisSystem.core.Utiltity.common import *
+from StockAnalysisSystem.core.DataHub.DataAgent import *
 from StockAnalysisSystem.core.Utiltity.task_future import *
 from StockAnalysisSystem.core.DataHubEntry import DataHubEntry
 from StockAnalysisSystem.core.AnalyzerEntry import StrategyEntry
@@ -36,11 +37,21 @@ class LocalInterface(sas_interface):
         task = SasAnalysisTask(strategy_entry, data_hub, securities, analyzers, time_serial, enable_from_cache)
         self.__sas().get_task_queue().append_task(task)
 
-    def sas_get_all_uri(self) -> [str]:
+    def sas_get_data_agent_probs(self) -> [dict]:
+        """
+        Get list of data agent prob
+        :return: List of dict, dict key includes [uri, depot, identity_field, datetime_field]
+        """
         data_hub: DataHubEntry = self.__sas().get_data_hub_entry()
         data_center: UniversalDataCenter = data_hub.get_data_center()
         data_agents = data_center.get_all_agents()
-        return [agent.base_uri() for agent in data_agents]
+        return [agent.prob() for agent in data_agents]
+
+    def sas_get_data_agent_update_list(self, uri: str) -> [str]:
+        data_hub: DataHubEntry = self.__sas().get_data_hub_entry()
+        data_center: UniversalDataCenter = data_hub.get_data_center()
+        agent: DataAgent = data_center.get_data_agent(uri)
+        return agent.update_list()
 
     def sas_get_all_analyzer(self) -> [str]:
         strategy_entry: StrategyEntry = self.__sas().get_strategy_entry()

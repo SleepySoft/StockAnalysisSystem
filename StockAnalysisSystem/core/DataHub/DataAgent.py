@@ -132,7 +132,17 @@ class DataAgent:
 
         self.config_field_checker(kwargs.get('query_declare', None), kwargs.get('result_declare', None))
 
-    # ---------------------------------- Constant ----------------------------------
+    # -----------------------------------------------------------------------------------
+
+    def prob(self) -> dict:
+        return {
+            'uri': self.__uri,
+            'depot': self.__depot,
+            'identity_field': self.__identity_field if str_available(self.__identity_field) else '',
+            'datetime_field': self.__datetime_field if str_available(self.__datetime_field) else '',
+        }
+
+    # ------------------------------------- Constant ------------------------------------
 
     def base_uri(self) -> str:
         return self.__uri
