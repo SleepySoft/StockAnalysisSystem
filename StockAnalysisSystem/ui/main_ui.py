@@ -14,6 +14,8 @@ from StockAnalysisSystem.ui.task_queue_ui import *
 from StockAnalysisSystem.core.Utiltity.plugin_manager import PluginManager
 from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 
+from StockAnalysisSystem.interface.interface import interface as sasIF
+
 
 # =========================================== MainWindow ===========================================
 
@@ -31,14 +33,14 @@ class MainWindow(CommonMainWindow):
 
         # ---------- Modules and Sub Window ----------
 
-        data_hub_entry = StockAnalysisSystem().get_data_hub_entry()
-        strategy_entry = StockAnalysisSystem().get_strategy_entry()
-        database_entry = StockAnalysisSystem().get_database_entry()
-        update_table = database_entry.get_update_table()
+        # data_hub_entry = StockAnalysisSystem().get_data_hub_entry()
+        # strategy_entry = StockAnalysisSystem().get_strategy_entry()
+        # database_entry = StockAnalysisSystem().get_database_entry()
+        # update_table = database_entry.get_update_table()
 
-        self.__data_hub_ui = DataHubUi(data_hub_entry.get_data_center())
-        self.__strategy_ui = AnalyzerUi(data_hub_entry, strategy_entry)
-        self.__data_update_ui = DataUpdateUi(data_hub_entry, update_table)
+        self.__data_hub_ui = DataHubUi(sasIF)
+        self.__strategy_ui = AnalyzerUi(sasIF)
+        self.__data_update_ui = DataUpdateUi(sasIF)
 
         # Deprecated, use stock memo black list and tags
         # self.__gray_list_ui = XListTableUi(database_entry.get_gray_table(), '灰名单')
@@ -47,13 +49,13 @@ class MainWindow(CommonMainWindow):
 
         # self.__alias_table_module = database_entry.get_alias_table()
         # self.__alias_table_ui = AliasTableUi(self.__alias_table_module)
-        self.__task_queue_ui = TaskQueueUi(StockAnalysisSystem().get_task_queue())
+        self.__task_queue_ui = TaskQueueUi(sasIF)
 
         # -------- UI Extenerion --------
 
         extension_plugin = PluginManager()
         extension_plugin.add_plugin_path(os.path.join(self.__ui_root_path, 'Extension'))
-        self.__extension_manager = ExtensionManager(StockAnalysisSystem(), extension_plugin)
+        self.__extension_manager = ExtensionManager(sasIF(), extension_plugin)
         self.__extension_manager.init()
 
         # ---------- Deep init ----------
@@ -206,16 +208,16 @@ class MainWindow(CommonMainWindow):
         dlg = WrapperQDialog(ConfigUi())
         dlg.exec()
 
-    def closeEvent(self, event):
-        if StockAnalysisSystem().can_sys_quit():
-            StockAnalysisSystem().finalize()
-            super().closeEvent(event)
-        else:
-            QMessageBox.information(self,
-                                    QtCore.QCoreApplication.translate('main', '无法退出'),
-                                    QtCore.QCoreApplication.translate('main', '有任务正在执行中，无法退出程序'),
-                                    QMessageBox.Ok, QMessageBox.Ok)
-            event.ignore()
+    # def closeEvent(self, event):
+    #     if StockAnalysisSystem().can_sys_quit():
+    #         StockAnalysisSystem().finalize()
+    #         super().closeEvent(event)
+    #     else:
+    #         QMessageBox.information(self,
+    #                                 QtCore.QCoreApplication.translate('main', '无法退出'),
+    #                                 QtCore.QCoreApplication.translate('main', '有任务正在执行中，无法退出程序'),
+    #                                 QMessageBox.Ok, QMessageBox.Ok)
+    #         event.ignore()
 
 
 
