@@ -8,13 +8,17 @@ class TaskFuture(TaskQueue.Task):
         self.__progress = ProgressRate()
         super(TaskFuture, self).__init__(task_name)
 
+    def finished(self) -> bool:
+        return self.status() in \
+               [TaskQueue.Task.STATUS_CANCELED, TaskQueue.Task.STATUS_FINISHED, TaskQueue.Task.STATUS_EXCEPTION]
+
     def get_result(self) -> any:
         return self.__result
 
     def update_result(self, result: any):
         self.__result = result
 
-    def get_progress_rage(self) -> ProgressRate:
+    def get_progress_rate(self) -> ProgressRate:
         return self.__progress
 
     # -------------- Must Override --------------
