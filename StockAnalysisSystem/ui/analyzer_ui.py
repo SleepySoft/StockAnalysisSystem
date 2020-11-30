@@ -17,153 +17,155 @@ from PyQt5.QtCore import QTimer, pyqtSignal
 from PyQt5.QtWidgets import QHeaderView, QLineEdit, QFileDialog, QCheckBox, QDateTimeEdit, QGridLayout, QRadioButton, \
     QButtonGroup
 
-from StockAnalysisSystem.core.AnalyzerEntry import *
-from StockAnalysisSystem.core.Utiltity.task_queue import *
 from StockAnalysisSystem.core.Utiltity.ui_utility import *
 from StockAnalysisSystem.core.Utiltity.TableViewEx import *
 from StockAnalysisSystem.core.Utiltity.time_utility import *
-from StockAnalysisSystem.core.Utiltity.AnalyzerUtility import *
-from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
+from StockAnalysisSystem.interface.interface import SasInterface as sasIF
+
+# from StockAnalysisSystem.core.AnalyzerEntry import *
+# from StockAnalysisSystem.core.Utiltity.task_queue import *
+# from StockAnalysisSystem.core.Utiltity.AnalyzerUtility import *
+# from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 
 
-# ------------------------- Analysis Task -------------------------
-
-class AnalysisTask(TaskQueue.Task):
-    OPTION_CALC = 1
-    OPTION_FROM_CACHE = 2
-    OPTION_UPDATE_CACHE = 16
-    OPTION_AUTO = OPTION_CALC | OPTION_FROM_CACHE | OPTION_UPDATE_CACHE
-
-    OPTION_LOAD_JSON = 1024
-    OPTION_DUMP_JSON = 2048
-    OPTION_LOAD_DUMP_ALL = 4096
-
-    OPTION_ATTACH_BASIC_INDEX = 4096
-
-    def __init__(self, ui, strategy_entry: StrategyEntry, data_hub: DataHubEntry,
-                 selector_list: [str], analyzer_list: [str], time_serial: tuple,
-                 options: int, report_path: str, progress_rate: ProgressRate):
-        super(AnalysisTask, self).__init__('AnalysisTask')
-        self.__ui = ui
-        self.__options = options
-        self.__data_hub = data_hub
-        self.__strategy = strategy_entry
-        self.__selector_list = selector_list
-        self.__analyzer_list = analyzer_list
-        self.__time_serial = time_serial
-        self.__report_path = report_path
-        self.__progress_rate = progress_rate
-
-    def run(self):
-        print('Analysis task start.')
-
-        clock = Clock()
-        stock_list = self.select()
-        result_list = self.analysis(stock_list)
-        stock_metrics = self.fetch_stock_metrics()
-        self.gen_report(result_list, stock_metrics)
-
-        print('Analysis task finished, time spending: ' + str(clock.elapsed_s()) + ' s')
-
-        self.__ui.notify_task_done()
-
-    def identity(self) -> str:
-        return 'AnalysisTask'
-
-    # -----------------------------------------------------------------------------
-
-    def select(self) -> [str]:
-        data_utility = self.__data_hub.get_data_utility()
-        stock_list = data_utility.get_stock_identities()
-        return stock_list
-
-    def analysis(self, securities_list: [str]) -> [AnalysisResult]:
-        clock_all = Clock()
-        full_dump_path = os.path.join(StockAnalysisSystem().get_project_path(), 'TestData', 'analysis_result.json')
-        if self.__options & AnalysisTask.OPTION_LOAD_JSON != 0 and \
-                self.__options & AnalysisTask.OPTION_LOAD_DUMP_ALL != 0:
-            clock_load = Clock()
-            total_result = self.__strategy.load_analysis_report(full_dump_path)
-            print('Load all analysis result finished, Time spending: %ss' % clock_load.elapsed_s())
-        else:
-            total_result = self.__strategy.analysis_advance(
-                securities_list, self.__analyzer_list, self.__time_serial,
-                self.__progress_rate,
-                self.__options & AnalysisTask.OPTION_CALC != 0,
-                self.__options & AnalysisTask.OPTION_FROM_CACHE != 0, self.__options & AnalysisTask.OPTION_UPDATE_CACHE != 0,
-                self.__options & AnalysisTask.OPTION_LOAD_JSON != 0, self.__options & AnalysisTask.OPTION_DUMP_JSON != 0,
-                os.path.join(StockAnalysisSystem().get_project_path(), 'TestData')
-            )
-
-        if self.__options & AnalysisTask.OPTION_DUMP_JSON != 0 and \
-                self.__options & AnalysisTask.OPTION_LOAD_DUMP_ALL != 0:
-            clock_dump = Clock()
-            name_dict_path = os.path.join(StockAnalysisSystem().get_project_path(),
-                                          'TestData', 'analyzer_names.json')
-            self.__strategy.dump_analysis_report(total_result, full_dump_path)
-            self.__strategy.dump_strategy_name_dict(name_dict_path)
-            print('Dump all analysis result finished, Time spending: %ss' % clock_dump.elapsed_s())
-
-        print('All analysis finished, time spending: %ss' % clock_all.elapsed_s())
-        return total_result
-
-    def fetch_stock_metrics(self) -> pd.DataFrame or None:
-        if self.__options & AnalysisTask.OPTION_ATTACH_BASIC_INDEX == 0:
-            return None
-
-        daily_metrics = None
-        # daily_metrics = self.fetch_metrics_from_web()
-        if not isinstance(daily_metrics, pd.DataFrame) or daily_metrics.empty:
-            print('Fetch daily metrics data fail, use local.')
-            daily_metrics = self.fetch_metrics_from_local()
-
-        if not isinstance(daily_metrics, pd.DataFrame) or daily_metrics.empty:
-            print('No metrics data.')
-            return None
-
-        if '_id' in daily_metrics.columns:
-            del daily_metrics['_id']
-        if 'trade_date' in daily_metrics.columns:
-            del daily_metrics['trade_date']
-
-        daily_metrics.columns = self.__data_hub.get_data_center().fields_to_readable(list(daily_metrics.columns))
-
-        return daily_metrics
-
-    def fetch_metrics_from_web(self) -> pd.DataFrame or None:
-        trade_calender = self.__data_hub.get_data_center().query_from_plugin('Market.TradeCalender', exchange='SSE',
-                                                                             trade_date=(days_ago(30), now()))
-        if not isinstance(trade_calender, pd.DataFrame) or trade_calender.empty:
-            print('Fetch trade calender from web fail.')
-            return None
-
-        trade_calender = trade_calender[trade_calender['status'] == 1]
-        trade_calender = trade_calender.sort_values('trade_date', ascending=False)
-        last_trade_date = trade_calender.iloc[1]['trade_date']
-
-        daily_metrics = self.__data_hub.get_data_center().query_from_plugin(
-            'Metrics.Stock.Daily', trade_date=(last_trade_date, last_trade_date))
-        return daily_metrics
-
-    def fetch_metrics_from_local(self) -> pd.DataFrame or None:
-        agent = self.__data_hub.get_data_center().get_data_agent('Metrics.Stock.Daily')
-        if agent is None:
-            print('No data agent for Metrics.Stock.Daily')
-            return None
-        since, until = agent.data_range('Metrics.Stock.Daily')
-        if until is None:
-            print('No local metrics data.')
-        daily_metrics = self.__data_hub.get_data_center().query_from_local('Metrics.Stock.Daily',
-                                                                           trade_date=(until, until))
-        return daily_metrics
-
-    def gen_report(self, result_list: [AnalysisResult], stock_metrics: pd.DataFrame or None):
-        clock = Clock()
-        self.__strategy.generate_report_excel_common(result_list, self.__report_path, stock_metrics)
-        print('Generate report time spending: %ss' % str(clock.elapsed_s()))
-
-
-# ---------------------------------------------------- AnalyzerUi ----------------------------------------------------
+# # ------------------------- Analysis Task -------------------------
+#
+# class AnalysisTask(TaskQueue.Task):
+#     OPTION_CALC = 1
+#     OPTION_FROM_CACHE = 2
+#     OPTION_UPDATE_CACHE = 16
+#     OPTION_AUTO = OPTION_CALC | OPTION_FROM_CACHE | OPTION_UPDATE_CACHE
+#
+#     OPTION_LOAD_JSON = 1024
+#     OPTION_DUMP_JSON = 2048
+#     OPTION_LOAD_DUMP_ALL = 4096
+#
+#     OPTION_ATTACH_BASIC_INDEX = 4096
+#
+#     def __init__(self, ui, strategy_entry: StrategyEntry, data_hub: DataHubEntry,
+#                  selector_list: [str], analyzer_list: [str], time_serial: tuple,
+#                  options: int, report_path: str, progress_rate: ProgressRate):
+#         super(AnalysisTask, self).__init__('AnalysisTask')
+#         self.__ui = ui
+#         self.__options = options
+#         self.__data_hub = data_hub
+#         self.__strategy = strategy_entry
+#         self.__selector_list = selector_list
+#         self.__analyzer_list = analyzer_list
+#         self.__time_serial = time_serial
+#         self.__report_path = report_path
+#         self.__progress_rate = progress_rate
+#
+#     def run(self):
+#         print('Analysis task start.')
+#
+#         clock = Clock()
+#         stock_list = self.select()
+#         result_list = self.analysis(stock_list)
+#         stock_metrics = self.fetch_stock_metrics()
+#         self.gen_report(result_list, stock_metrics)
+#
+#         print('Analysis task finished, time spending: ' + str(clock.elapsed_s()) + ' s')
+#
+#         self.__ui.notify_task_done()
+#
+#     def identity(self) -> str:
+#         return 'AnalysisTask'
+#
+#     # -----------------------------------------------------------------------------
+#
+#     def select(self) -> [str]:
+#         data_utility = self.__data_hub.get_data_utility()
+#         stock_list = data_utility.get_stock_identities()
+#         return stock_list
+#
+#     def analysis(self, securities_list: [str]) -> [AnalysisResult]:
+#         clock_all = Clock()
+#         full_dump_path = os.path.join(StockAnalysisSystem().get_project_path(), 'TestData', 'analysis_result.json')
+#         if self.__options & AnalysisTask.OPTION_LOAD_JSON != 0 and \
+#                 self.__options & AnalysisTask.OPTION_LOAD_DUMP_ALL != 0:
+#             clock_load = Clock()
+#             total_result = self.__strategy.load_analysis_report(full_dump_path)
+#             print('Load all analysis result finished, Time spending: %ss' % clock_load.elapsed_s())
+#         else:
+#             total_result = self.__strategy.analysis_advance(
+#                 securities_list, self.__analyzer_list, self.__time_serial,
+#                 self.__progress_rate,
+#                 self.__options & AnalysisTask.OPTION_CALC != 0,
+#                 self.__options & AnalysisTask.OPTION_FROM_CACHE != 0, self.__options & AnalysisTask.OPTION_UPDATE_CACHE != 0,
+#                 self.__options & AnalysisTask.OPTION_LOAD_JSON != 0, self.__options & AnalysisTask.OPTION_DUMP_JSON != 0,
+#                 os.path.join(StockAnalysisSystem().get_project_path(), 'TestData')
+#             )
+#
+#         if self.__options & AnalysisTask.OPTION_DUMP_JSON != 0 and \
+#                 self.__options & AnalysisTask.OPTION_LOAD_DUMP_ALL != 0:
+#             clock_dump = Clock()
+#             name_dict_path = os.path.join(StockAnalysisSystem().get_project_path(),
+#                                           'TestData', 'analyzer_names.json')
+#             self.__strategy.dump_analysis_report(total_result, full_dump_path)
+#             self.__strategy.dump_strategy_name_dict(name_dict_path)
+#             print('Dump all analysis result finished, Time spending: %ss' % clock_dump.elapsed_s())
+#
+#         print('All analysis finished, time spending: %ss' % clock_all.elapsed_s())
+#         return total_result
+#
+#     def fetch_stock_metrics(self) -> pd.DataFrame or None:
+#         if self.__options & AnalysisTask.OPTION_ATTACH_BASIC_INDEX == 0:
+#             return None
+#
+#         daily_metrics = None
+#         # daily_metrics = self.fetch_metrics_from_web()
+#         if not isinstance(daily_metrics, pd.DataFrame) or daily_metrics.empty:
+#             print('Fetch daily metrics data fail, use local.')
+#             daily_metrics = self.fetch_metrics_from_local()
+#
+#         if not isinstance(daily_metrics, pd.DataFrame) or daily_metrics.empty:
+#             print('No metrics data.')
+#             return None
+#
+#         if '_id' in daily_metrics.columns:
+#             del daily_metrics['_id']
+#         if 'trade_date' in daily_metrics.columns:
+#             del daily_metrics['trade_date']
+#
+#         daily_metrics.columns = self.__data_hub.get_data_center().fields_to_readable(list(daily_metrics.columns))
+#
+#         return daily_metrics
+#
+#     def fetch_metrics_from_web(self) -> pd.DataFrame or None:
+#         trade_calender = self.__data_hub.get_data_center().query_from_plugin('Market.TradeCalender', exchange='SSE',
+#                                                                              trade_date=(days_ago(30), now()))
+#         if not isinstance(trade_calender, pd.DataFrame) or trade_calender.empty:
+#             print('Fetch trade calender from web fail.')
+#             return None
+#
+#         trade_calender = trade_calender[trade_calender['status'] == 1]
+#         trade_calender = trade_calender.sort_values('trade_date', ascending=False)
+#         last_trade_date = trade_calender.iloc[1]['trade_date']
+#
+#         daily_metrics = self.__data_hub.get_data_center().query_from_plugin(
+#             'Metrics.Stock.Daily', trade_date=(last_trade_date, last_trade_date))
+#         return daily_metrics
+#
+#     def fetch_metrics_from_local(self) -> pd.DataFrame or None:
+#         agent = self.__data_hub.get_data_center().get_data_agent('Metrics.Stock.Daily')
+#         if agent is None:
+#             print('No data agent for Metrics.Stock.Daily')
+#             return None
+#         since, until = agent.data_range('Metrics.Stock.Daily')
+#         if until is None:
+#             print('No local metrics data.')
+#         daily_metrics = self.__data_hub.get_data_center().query_from_local('Metrics.Stock.Daily',
+#                                                                            trade_date=(until, until))
+#         return daily_metrics
+#
+#     def gen_report(self, result_list: [AnalysisResult], stock_metrics: pd.DataFrame or None):
+#         clock = Clock()
+#         self.__strategy.generate_report_excel_common(result_list, self.__report_path, stock_metrics)
+#         print('Generate report time spending: %ss' % str(clock.elapsed_s()))
+#
+#
+# # ---------------------------------------------------- AnalyzerUi ----------------------------------------------------
 
 class AnalyzerUi(QWidget):
     task_finish_signal = pyqtSignal()
@@ -171,19 +173,18 @@ class AnalyzerUi(QWidget):
     TABLE_HEADER_SELECTOR = ['', 'Selector', 'Comments', 'UUID', 'Status']
     TABLE_HEADER_ANALYZER = ['', 'Strategy', 'Comments', 'UUID', 'Status']
 
-    def __init__(self, data_hub_entry: DataHubEntry, strategy_entry: StrategyEntry):
+    def __init__(self, sasif: sasIF):
         super(AnalyzerUi, self).__init__()
-        self.__data_hub_entry = data_hub_entry
-        self.__strategy_entry = strategy_entry
 
-        self.__analyzer_info = self.__strategy_entry.analyzer_info()
+        self.__sasif = sasif
+
+        self.__analyzer_info = []
 
         # Thread and task related
         self.__selector_list = []
         self.__analyzer_list = []
-        self.__result_output = StockAnalysisSystem().get_project_path()
+        self.__result_output = os.getcwd()
         self.__timing_clock = Clock()
-        self.__progress_rate = ProgressRate()
         self.task_finish_signal.connect(self.__on_task_done)
 
         # Timer for update status
@@ -407,12 +408,15 @@ class AnalyzerUi(QWidget):
         self.__table_analyzer.SetRowCount(0)
         self.__table_analyzer.SetColumn(AnalyzerUi.TABLE_HEADER_ANALYZER)
 
-        for method_uuid, method_name, method_detail, _ in self.__analyzer_info:
+        if len(self.__analyzer_info) == 0:
+            self.__analyzer_info = self.__sasif.sas_get_analyzer_probs()
+
+        for prob in self.__analyzer_info:
             line = [
                 '',             # Place holder for check box
-                method_name,
-                method_detail,
-                method_uuid,
+                prob.get('uuid', ''),
+                prob.get('name', ''),
+                prob.get('detail', ''),
                 '',             # Place holder for status
                 ]
             self.__table_analyzer.AppendRow(line)
@@ -556,7 +560,7 @@ class AnalyzerUi(QWidget):
         self.task_finish_signal.emit()
 
     def __on_task_done(self):
-        StockAnalysisSystem().release_sys_quit()
+        # StockAnalysisSystem().release_sys_quit()
         QMessageBox.information(self,
                                 QtCore.QCoreApplication.translate('main', '远行完成'),
                                 QtCore.QCoreApplication.translate('main', '策略运行完成，耗时' +
@@ -568,10 +572,11 @@ class AnalyzerUi(QWidget):
 # ----------------------------------------------------------------------------------------------------------------------
 
 def main():
+    from StockAnalysisSystem.interface.interface_local import LocalInterface
+    local_if = LocalInterface()
+    local_if.sas_init(os.getcwd())
     app = QApplication(sys.argv)
-    data_hub_entry = StockAnalysisSystem().get_data_hub_entry()
-    strategy_entry = StockAnalysisSystem().get_strategy_entry()
-    dlg = WrapperQDialog(AnalyzerUi(data_hub_entry, strategy_entry))
+    dlg = WrapperQDialog(AnalyzerUi(local_if))
     dlg.exec()
 
 

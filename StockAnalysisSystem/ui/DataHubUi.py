@@ -7,15 +7,14 @@ from PyQt5.QtWidgets import QLineEdit, QCheckBox, QWidget, QComboBox, QDateTimeE
 from StockAnalysisSystem.core.Utiltity.common import *
 from StockAnalysisSystem.core.Utiltity.ui_utility import *
 from StockAnalysisSystem.core.Utiltity.time_utility import *
-from StockAnalysisSystem.core.DataHub.UniversalDataCenter import UniversalDataCenter
-from StockAnalysisSystem.core.StockAnalysisSystem import  StockAnalysisSystem
+from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 
 
 class DataHubUi(QWidget):
-    def __init__(self, data_center: UniversalDataCenter):
+    def __init__(self, sasif: sasIF):
         super(DataHubUi, self).__init__()
 
-        self.__data_center = data_center
+        self.__sasif = sasif
         self.__translate = QtCore.QCoreApplication.translate
 
         self.__combo_uri = QComboBox()
@@ -70,7 +69,8 @@ class DataHubUi(QWidget):
         self.__datetime_until.setDateTime(now())
         self.__button_query.clicked.connect(self.on_button_query)
 
-        all_uri = self.__data_center.get_all_uri()
+        data_agents = self.__sasif.sas_get_data_agent_probs()
+        all_uri = [da.get('uri', '') for da in data_agents]
         for uri in all_uri:
             self.__combo_uri.addItem(uri)
 
@@ -80,7 +80,7 @@ class DataHubUi(QWidget):
         since = self.__datetime_since.dateTime().toPyDateTime() if self.__check_datetime_enable.isChecked() else None
         until = self.__datetime_until.dateTime().toPyDateTime() if self.__check_datetime_enable.isChecked() else None
 
-        result = self.__data_center.query(uri, identity, (since, until)) if self.__data_center is not None else None
+        result = self.__sasif.query(uri, identity, (since, until))
 
         if result is not None and '_id' in result.columns:
             del result['_id']
@@ -91,7 +91,6 @@ class DataHubUi(QWidget):
 
 def main():
     app = QApplication(sys.argv)
-    sas = StockAnalysisSystem()
     data_hub = sas.get_data_hub_entry()
     data_center = data_hub.get_data_center()
     dlg = WrapperQDialog(DataHubUi(data_center))

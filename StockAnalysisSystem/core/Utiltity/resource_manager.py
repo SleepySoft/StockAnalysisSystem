@@ -27,7 +27,7 @@ class ResourceManager:
         self.unlock()
         return res if res is not None and res.valid() else None
 
-    def add_resource(self, res_type: str, res_content: any, expired_time: int) -> str:
+    def add_resource(self, res_type: str, res_content: any, expired_time: int = time.time() + 3600) -> str:
         self.lock()
         self.__check_expired()
         res_id = str(uuid.uuid4())

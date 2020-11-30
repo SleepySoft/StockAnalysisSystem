@@ -5,9 +5,9 @@ import traceback
 import pandas as pd
 import StockAnalysisSystem.core.interface as sasIF
 import StockAnalysisSystem.core.Utiltity.time_utility as sasTimeUtil
+from StockAnalysisSystem.core.Utiltity.resource_manager import ResourceManager
 from .user_manager import UserManager
 from .access_control import AccessControl
-from .resource_manager import ResourceManager
 from ..render.common_render import generate_display_page
 
 
