@@ -3,11 +3,12 @@
 
 from PyQt5 import Qt
 from PyQt5.QtWidgets import QMenu
+from .Utility.ui_context import UiContext
 from .Utility.extension_manager import ExtensionManager
 
 from StockAnalysisSystem.readme import VERSION
 from StockAnalysisSystem.ui.config_ui import *
-from StockAnalysisSystem.ui.DataHubUi import *
+from StockAnalysisSystem.ui.data_hub_ui import *
 from StockAnalysisSystem.ui.analyzer_ui import *
 from StockAnalysisSystem.ui.data_update_ui import *
 from StockAnalysisSystem.ui.task_queue_ui import *
@@ -18,10 +19,10 @@ from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 # =========================================== MainWindow ===========================================
 
 class MainWindow(CommonMainWindow):
-    def __init__(self, sasif: sasIF):
+    def __init__(self, context: UiContext):
         super(MainWindow, self).__init__(hold_menu=True)
 
-        self.__sasif = sasif
+        self.__context = context
 
         # --------- init Member ---------
 
@@ -37,9 +38,9 @@ class MainWindow(CommonMainWindow):
         # database_entry = StockAnalysisSystem().get_database_entry()
         # update_table = database_entry.get_update_table()
 
-        self.__data_hub_ui = DataHubUi(self.__sasif)
-        self.__strategy_ui = AnalyzerUi(self.__sasif)
-        self.__data_update_ui = DataUpdateUi(self.__sasif)
+        self.__data_hub_ui = DataHubUi(self.__context)
+        self.__strategy_ui = AnalyzerUi(self.__context)
+        self.__data_update_ui = DataUpdateUi(self.__context)
 
         # Deprecated, use stock memo black list and tags
         # self.__gray_list_ui = XListTableUi(database_entry.get_gray_table(), '灰名单')
@@ -48,13 +49,13 @@ class MainWindow(CommonMainWindow):
 
         # self.__alias_table_module = database_entry.get_alias_table()
         # self.__alias_table_ui = AliasTableUi(self.__alias_table_module)
-        self.__task_queue_ui = TaskQueueUi(self.__sasif)
+        self.__task_queue_ui = TaskQueueUi(self.__context)
 
         # -------- UI Extenerion --------
 
         extension_plugin = PluginManager()
         extension_plugin.add_plugin_path(os.path.join(self.__ui_root_path, 'Extension'))
-        self.__extension_manager = ExtensionManager(sasif, extension_plugin)
+        self.__extension_manager = ExtensionManager(self.__context.get_sas_interface(), extension_plugin)
         self.__extension_manager.init()
 
         # ---------- Deep init ----------

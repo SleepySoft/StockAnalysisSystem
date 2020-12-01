@@ -20,12 +20,9 @@ from PyQt5.QtWidgets import QHeaderView, QLineEdit, QFileDialog, QCheckBox, QDat
 from StockAnalysisSystem.core.Utiltity.ui_utility import *
 from StockAnalysisSystem.core.Utiltity.TableViewEx import *
 from StockAnalysisSystem.core.Utiltity.time_utility import *
-from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 
-# from StockAnalysisSystem.core.AnalyzerEntry import *
-# from StockAnalysisSystem.core.Utiltity.task_queue import *
-# from StockAnalysisSystem.core.Utiltity.AnalyzerUtility import *
-# from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
+from StockAnalysisSystem.ui.Utility.ui_context import UiContext
+from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 
 
 # # ------------------------- Analysis Task -------------------------
@@ -173,10 +170,10 @@ class AnalyzerUi(QWidget):
     TABLE_HEADER_SELECTOR = ['', 'Selector', 'Comments', 'UUID', 'Status']
     TABLE_HEADER_ANALYZER = ['', 'Strategy', 'Comments', 'UUID', 'Status']
 
-    def __init__(self, sasif: sasIF):
+    def __init__(self, context: UiContext):
         super(AnalyzerUi, self).__init__()
 
-        self.__sasif = sasif
+        self.__context = context
 
         self.__analyzer_info = []
 
@@ -379,15 +376,15 @@ class AnalyzerUi(QWidget):
             else:
                 self.__table_analyzer.SetItemText(i, 4, '')
 
-    def closeEvent(self, event):
-        if self.__task_thread is not None:
-            QMessageBox.information(self,
-                                    QtCore.QCoreApplication.translate('', '无法关闭窗口'),
-                                    QtCore.QCoreApplication.translate('', '策略运行过程中无法关闭此窗口'),
-                                    QMessageBox.Close, QMessageBox.Close)
-            event.ignore()
-        else:
-            event.accept()
+    # def closeEvent(self, event):
+    #     if self.__task_thread is not None:
+    #         QMessageBox.information(self,
+    #                                 QtCore.QCoreApplication.translate('', '无法关闭窗口'),
+    #                                 QtCore.QCoreApplication.translate('', '策略运行过程中无法关闭此窗口'),
+    #                                 QMessageBox.Close, QMessageBox.Close)
+    #         event.ignore()
+    #     else:
+    #         event.accept()
 
     # --------------------------------------------------------------------------------------
 
@@ -409,7 +406,7 @@ class AnalyzerUi(QWidget):
         self.__table_analyzer.SetColumn(AnalyzerUi.TABLE_HEADER_ANALYZER)
 
         if len(self.__analyzer_info) == 0:
-            self.__analyzer_info = self.__sasif.sas_get_analyzer_probs()
+            self.__analyzer_info = self.__context.get_sas_interface().sas_get_analyzer_probs()
 
         for prob in self.__analyzer_info:
             line = [
@@ -447,32 +444,42 @@ class AnalyzerUi(QWidget):
     # --------------------------------- Thread ---------------------------------
 
     def execute_update_task(self):
-        options = AnalysisTask.OPTION_CALC
-
-        if not self.__check_force_calc.isChecked():
-            options |= AnalysisTask.OPTION_FROM_CACHE
-
-        if self.__check_auto_cache.isChecked():
-            options |= AnalysisTask.OPTION_UPDATE_CACHE
-
-        if self.__check_load_json.isChecked():
-            options |= AnalysisTask.OPTION_LOAD_JSON
-        if self.__check_dump_json.isChecked():
-            options |= AnalysisTask.OPTION_DUMP_JSON
-        if self.__check_load_dump_all.isChecked():
-            options |= AnalysisTask.OPTION_LOAD_DUMP_ALL
-
-        if self.__check_attach_basic_index.isChecked():
-            options |= AnalysisTask.OPTION_ATTACH_BASIC_INDEX
+        # options = AnalysisTask.OPTION_CALC
+        #
+        # if not self.__check_force_calc.isChecked():
+        #     options |= AnalysisTask.OPTION_FROM_CACHE
+        #
+        # if self.__check_auto_cache.isChecked():
+        #     options |= AnalysisTask.OPTION_UPDATE_CACHE
+        #
+        # if self.__check_load_json.isChecked():
+        #     options |= AnalysisTask.OPTION_LOAD_JSON
+        # if self.__check_dump_json.isChecked():
+        #     options |= AnalysisTask.OPTION_DUMP_JSON
+        # if self.__check_load_dump_all.isChecked():
+        #     options |= AnalysisTask.OPTION_LOAD_DUMP_ALL
+        #
+        # if self.__check_attach_basic_index.isChecked():
+        #     options |= AnalysisTask.OPTION_ATTACH_BASIC_INDEX
 
         time_serial = (to_py_datetime(self.__datetime_time_since.dateTime()),
                        to_py_datetime(self.__datetime_time_until.dateTime()))
 
-        self.__timing_clock.reset()
-        task = AnalysisTask(self, self.__strategy_entry, self.__data_hub_entry,
-                            self.__selector_list, self.__analyzer_list, time_serial,
-                            options, self.__result_output, self.__progress_rate)
-        StockAnalysisSystem().get_task_queue().append_task(task)
+        # self.__timing_clock.reset()
+        # task = AnalysisTask(self, self.__strategy_entry, self.__data_hub_entry,
+        #                     self.__selector_list, self.__analyzer_list, time_serial,
+        #                     options, self.__result_output, self.__progress_rate)
+        # StockAnalysisSystem().get_task_queue().append_task(task)
+
+        securities = self.__context.get_sas_interface().sas_get_stock_identities()
+        self.__context.get_sas_interface().sas_execute_analysis(
+            securities, self.__analyzer_list, time_serial,
+            enable_from_cache=not self.__check_force_calc.isChecked(),
+            enable_update_cache=self.__check_auto_cache.isChecked(),
+            debug_load_json=self.__check_load_json.isChecked() or self.__check_load_dump_all.isChecked(),
+            debug_dump_json=self.__check_dump_json.isChecked() or self.__check_load_dump_all.isChecked(),
+            dump_path=self.__result_output,
+        )
 
         # if self.__task_thread is None:
         #     self.__task_thread = threading.Thread(target=self.ui_task)
@@ -573,10 +580,17 @@ class AnalyzerUi(QWidget):
 
 def main():
     from StockAnalysisSystem.interface.interface_local import LocalInterface
+
+    project_path = os.path.dirname(os.path.dirname(os.getcwd()))
+
     local_if = LocalInterface()
-    local_if.sas_init(os.getcwd())
+    local_if.if_init(project_path=project_path)
+
+    context = UiContext()
+    context.set_sas_interface(local_if)
+
     app = QApplication(sys.argv)
-    dlg = WrapperQDialog(AnalyzerUi(local_if))
+    dlg = WrapperQDialog(AnalyzerUi(context))
     dlg.exec()
 
 

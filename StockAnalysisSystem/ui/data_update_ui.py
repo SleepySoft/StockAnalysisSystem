@@ -9,22 +9,21 @@ author:Sleepy
 @modify:
 """
 import copy
+import os
 import traceback
 import threading
 
 from PyQt5.QtCore import QTimer, pyqtSignal
-from PyQt5.QtWidgets import QHeaderView
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, Executor
 
-# from StockAnalysisSystem.core.DataHubEntry import *
-# from StockAnalysisSystem.core.Utiltity.common import *
-# from StockAnalysisSystem.core.Utiltity.ui_utility import *
-# from StockAnalysisSystem.core.Utiltity.task_queue import *
-# from StockAnalysisSystem.core.Utiltity.TableViewEx import *
-# from StockAnalysisSystem.core.Database.UpdateTableEx import *
-# from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
+from StockAnalysisSystem.core.Utiltity.common import *
+from StockAnalysisSystem.core.Utiltity.task_queue import *
+from StockAnalysisSystem.core.Utiltity.ui_utility import *
+from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.Utiltity.TableViewEx import TableViewEx
 
-from StockAnalysisSystem.interface.interface import interface as sasIF
+from StockAnalysisSystem.ui.Utility.ui_context import UiContext
+from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 
 
 DEFAULT_INFO = """数据更新界面说明：
@@ -155,37 +154,37 @@ DEFAULT_INFO = """数据更新界面说明：
 #             self.__apply_count += 1
 #             print('Persistence count: ' + str(self.__apply_count))
 #         return True
-# 
-# 
-# # ---------------------------------- RefreshTask ----------------------------------
-# 
-# class RefreshTask(TaskQueue.Task):
-#     def __init__(self, ui):
-#         super(RefreshTask, self).__init__('RefreshTask')
-#         self.__ui = ui
-# 
-#     def run(self):
-#         print('Refresh task start.')
-#         self.__ui.update_table_content()
-#         self.__ui.refresh_finish_signal.emit()
-#         print('Refresh task finished.')
-# 
-#     def identity(self) -> str:
-#         return 'RefreshTask'
-# 
-# 
+
+
+# ---------------------------------- RefreshTask ----------------------------------
+
+class RefreshTask(TaskQueue.Task):
+    def __init__(self, ui):
+        super(RefreshTask, self).__init__('RefreshTask')
+        self.__ui = ui
+
+    def run(self):
+        print('Refresh task start.')
+        self.__ui.update_table_content()
+        self.__ui.refresh_finish_signal.emit()
+        print('Refresh task finished.')
+
+    def identity(self) -> str:
+        return 'RefreshTask'
+
+
 # # ------------------------------ UpdateStockListTask ------------------------------
-# 
+#
 # class UpdateStockListTask(TaskQueue.Task):
 #     def __init__(self, data_utility):
 #         super(UpdateStockListTask, self).__init__('UpdateStockListTask')
 #         self.__data_utility = data_utility
-# 
+#
 #     def run(self):
 #         print('Update stock list task start.')
 #         self.__data_utility.refresh_cache()
 #         print('Update stock list task finished.')
-# 
+#
 #     def identity(self) -> str:
 #         return 'UpdateStockListTask'
 
@@ -193,7 +192,7 @@ DEFAULT_INFO = """数据更新界面说明：
 # ---------------------------------------------------- DataUpdateUi ----------------------------------------------------
 
 class DataUpdateUi(QWidget):
-    task_finish_signal = pyqtSignal([UpdateTask])
+    task_finish_signal = pyqtSignal()
     refresh_finish_signal = pyqtSignal()
 
     INDEX_CHECK = 0
@@ -209,14 +208,10 @@ class DataUpdateUi(QWidget):
         else:
             print('Error: Agent of URI %s is None.' % uri)
 
-    def __init__(self, interface: sasIF):
+    def __init__(self, context: UiContext):
         super(DataUpdateUi, self).__init__()
 
-        # Access entry
-        # self.__data_hub = data_hub_entry
-        # self.__data_center = self.__data_hub.get_data_center()
-        # self.__update_table = update_table
-        self.__sasIF
+        self.__context = context
 
         # Table content
         self.__display_uri = []
@@ -227,10 +222,12 @@ class DataUpdateUi(QWidget):
         self.__page = 0
         self.__item_per_page = 20
 
-        # For processing updating
-        self.__processing_update_tasks = []
-        # Fot task counting
-        self.__processing_update_tasks_count = []
+        # # For processing updating
+        # self.__processing_update_tasks = []
+        # # Fot task counting
+        # self.__processing_update_tasks_count = []
+
+        self.__task_res_id = []
 
         self.task_finish_signal.connect(self.__on_task_done)
         self.refresh_finish_signal.connect(self.update_table_display)
@@ -257,10 +254,13 @@ class DataUpdateUi(QWidget):
 
         self.init_ui()
 
-        # Post update and cache stock list after posting RefreshTask
-        data_utility = self.__data_hub.get_data_utility()
-        StockAnalysisSystem().get_task_queue().add_observer(self)
-        StockAnalysisSystem().get_task_queue().append_task(UpdateStockListTask(data_utility))
+        # # Post update and cache stock list after posting RefreshTask
+        # data_utility = self.__data_hub.get_data_utility()
+        # self.__context.get_task_queue().add_observer(self)
+        # self.__context.get_task_queue().append_task(UpdateStockListTask(data_utility))
+
+        self.__context.get_task_queue().add_observer(self)
+        self.__context.get_task_queue().append_task(RefreshTask(self))
 
     # ---------------------------------------------------- UI Init -----------------------------------------------------
 
@@ -312,11 +312,13 @@ class DataUpdateUi(QWidget):
 
     def on_auto_update_button(self, uri: str, identity: str):
         print('Auto update ' + uri + ':' + str(identity))
-        self.__build_post_update_task(uri, identity, False)
+        res_id = self.__context.get_sas_interface().sas_execute_update(uri, identity, False)
+        self.__task_res_id.append(res_id)
 
     def on_force_update_button(self, uri: str, identity: str):
         print('Force update ' + uri + ' : ' + str(identity))
-        self.__build_post_update_task(uri, identity, True)
+        res_id = self.__context.get_sas_interface().sas_execute_update(uri, identity, True)
+        self.__task_res_id.append(res_id)
 
     def on_batch_update(self, force: bool):
         for i in range(self.__table_main.RowCount()):
@@ -324,9 +326,11 @@ class DataUpdateUi(QWidget):
                 item_id = self.__table_main.GetItemText(i, DataUpdateUi.INDEX_ITEM)
                 # A little ugly...To distinguish it's uri or securities ideneity
                 if self.__display_identities is None:
-                    self.__build_post_update_task(item_id, None, force)
+                    res_id = self.__context.get_sas_interface().sas_execute_update(item_id, None, force)
+                    self.__task_res_id.append(res_id)
                 else:
-                    self.__build_post_update_task(self.__display_uri[0], item_id, force)
+                    res_id = self.__context.get_sas_interface().sas_execute_update(self.__display_uri[0], item_id, force)
+                    self.__task_res_id.append(res_id)
 
     def on_page_control(self, control: str):
         # data_utility = self.__data_hub.get_data_utility()
@@ -403,7 +407,7 @@ class DataUpdateUi(QWidget):
         self.__table_main.SetColumn(DataUpdateUi.TABLE_HEADER)
         self.__table_main.AppendRow(['', '刷新中...', '', '', '', '', '', '', ''])
         task = RefreshTask(self)
-        StockAnalysisSystem().get_task_queue().append_task(task)
+        self.__context.get_task_queue().append_task(task)
 
     def update_table_display(self):
         self.__table_main.Clear()
@@ -453,19 +457,13 @@ class DataUpdateUi(QWidget):
     def generate_line_content(self, uri: str, identity: str or None) -> [list] or None:
         line = []
 
-        agent = self.__data_center.get_data_agent(uri)
-        update_table = self.__update_table
-
-        if agent is None:
-            return None
-
         update_tags = uri.split('.') + ([identity] if identity is not None else [])
-        since, until = update_table.get_since_until(update_tags)
+        since, until = self.__context.get_sas_interface().sas_get_local_data_range_from_update_table(update_tags)
         
         if since is None or until is None:
             # TODO: Workaround - because each stock storage in each table.
             # So we cannot fetch its time range with this method.
-            since, until = agent.data_range(uri, identity)
+            since, until = self.__context.get_sas_interface().sas_get_data_range(uri, identity)
         if until is not None:
             update_since = min(tomorrow_of(until), now())
             update_until = now()
@@ -473,7 +471,7 @@ class DataUpdateUi(QWidget):
             update_since, update_until = self.__data_center.calc_update_range(uri, identity)
 
         update_tags = uri.split('.')
-        latest_update = self.__update_table.get_last_update_time(update_tags)
+        latest_update = self.__context.get_sas_interface().sas_get_last_update_time_from_update_table(update_tags)
 
         line.append('')     # Place holder for check box
         line.append(identity if str_available(identity) else uri)
@@ -495,7 +493,7 @@ class DataUpdateUi(QWidget):
 
     def __to_top_level(self):
         # Temporary exclude Factor related data
-        support_uri = self.__data_center.get_all_uri()
+        support_uri = self.__context.get_sas_interface().sas_get_all_uri()
         self.__display_uri = [uri for uri in support_uri if 'Factor' not in uri]
         self.__display_identities = None
         self.__page = 0
@@ -507,48 +505,58 @@ class DataUpdateUi(QWidget):
         self.__page = 0
         self.update_table()
 
-    def __build_post_update_task(self, uri: str, identities: list or None, force: bool) -> bool:
-        agent = self.__data_center.get_data_agent(uri)
-        task = UpdateTask(self, self.__data_hub, self.__data_center, force)
-        task.set_work_package(agent, identities)
-        self.__processing_update_tasks.append(task)
-        self.__processing_update_tasks_count.append(task)
-        ret = StockAnalysisSystem().get_task_queue().append_task(task)
-        # After updating market info, also update stock list cache
-        if ret and (uri == 'Market.SecuritiesInfo' or uri == 'Market.IndexInfo'):
-            data_utility = self.__data_hub.get_data_utility()
-            StockAnalysisSystem().get_task_queue().append_task(UpdateStockListTask(data_utility))
-        return ret
+    # def __build_post_update_task(self, uri: str, identities: list or None, force: bool) -> bool:
+    #     agent = self.__data_center.get_data_agent(uri)
+    #     task = UpdateTask(self, self.__data_hub, self.__data_center, force)
+    #     task.set_work_package(agent, identities)
+    #     self.__processing_update_tasks.append(task)
+    #     self.__processing_update_tasks_count.append(task)
+    #     ret = self.__context.get_task_queue().append_task(task)
+    #     # After updating market info, also update stock list cache
+    #     if ret and (uri == 'Market.SecuritiesInfo' or uri == 'Market.IndexInfo'):
+    #         data_utility = self.__data_hub.get_data_utility()
+    #         self.__context.get_task_queue().append_task(UpdateStockListTask(data_utility))
+    #     return ret
 
     # ---------------------------------------------------------------------------------
 
     def on_task_updated(self, task, change: str):
         if change in ['canceled', 'finished']:
-            if task in self.__processing_update_tasks_count:
-                self.task_finish_signal[UpdateTask].emit(task)
+            pass
+            # if task in self.__processing_update_tasks_count:
+            #     self.task_finish_signal[UpdateTask].emit(task)
 
-    def __on_task_done(self, task: UpdateTask):
-        if task in self.__processing_update_tasks_count:
-            self.__processing_update_tasks_count.remove(task)
-            print('Finish task: %s, remaining count: %s' % (task.name(), len(self.__processing_update_tasks_count)))
-            if len(self.__processing_update_tasks_count) == 0:
-                QMessageBox.information(self,
-                                        QtCore.QCoreApplication.translate('main', '更新完成'),
-                                        QtCore.QCoreApplication.translate('main', '数据更新完成'),
-                                        QMessageBox.Ok, QMessageBox.Ok)
-                self.__processing_update_tasks.clear()
-                self.update_table()
-        else:
-            print('Impossible: Cannot find finished task in task list.')
+    def __on_task_done(self):
+        pass
+        # if task in self.__processing_update_tasks_count:
+        #     self.__processing_update_tasks_count.remove(task)
+        #     print('Finish task: %s, remaining count: %s' % (task.name(), len(self.__processing_update_tasks_count)))
+        #     if len(self.__processing_update_tasks_count) == 0:
+        #         QMessageBox.information(self,
+        #                                 QtCore.QCoreApplication.translate('main', '更新完成'),
+        #                                 QtCore.QCoreApplication.translate('main', '数据更新完成'),
+        #                                 QMessageBox.Ok, QMessageBox.Ok)
+        #         self.__processing_update_tasks.clear()
+        #         self.update_table()
+        # else:
+        #     print('Impossible: Cannot find finished task in task list.')
 
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 def main():
+    from StockAnalysisSystem.interface.interface_local import LocalInterface
+
+    project_path = os.path.dirname(os.path.dirname(os.getcwd()))
+
+    local_if = LocalInterface()
+    local_if.if_init(project_path=project_path)
+
+    context = UiContext()
+    context.set_sas_interface(local_if)
+
     app = QApplication(sys.argv)
-    data_hub = StockAnalysisSystem().get_data_hub_entry()
-    update_table = StockAnalysisSystem().get_database_entry().get_update_table()
-    dlg = WrapperQDialog(DataUpdateUi(data_hub, update_table))
+    dlg = WrapperQDialog(DataUpdateUi(context))
     dlg.exec()
 
 

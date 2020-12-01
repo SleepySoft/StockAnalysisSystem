@@ -6,7 +6,7 @@ from PyQt5 import sip
 __all__ = [
     'config_ui',
     'data_update_ui',
-    'DataHubUi',
+    'data_hub_ui.py',
     'main_ui',
     'analyzer_ui.py',
     'task_queue_ui',
