@@ -90,13 +90,13 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         sqlite_data_path = os.path.join(self.get_project_path(), 'Data')
         config_file_path = os.path.join(self.get_project_path(), 'config.json')
 
-        try:
-            os.makedirs(sqlite_data_path)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                print('Build sqlite data path: %s FAIL' % sqlite_data_path)
-        finally:
-            pass
+        # try:
+        #     os.makedirs(sqlite_data_path)
+        # except OSError as e:
+        #     if e.errno != errno.EEXIST:
+        #         print('Build sqlite data path: %s FAIL' % sqlite_data_path)
+        # finally:
+        #     pass
 
         clock = Clock()
         self.__log_errors = []

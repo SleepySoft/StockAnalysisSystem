@@ -1,10 +1,12 @@
 import datetime
 import pandas as pd
-from .interface_util import *
 
 
 class SasInterface:
     def __init__(self):
+        pass
+
+    def if_init(self, *args, **kwargs) -> bool:
         pass
 
     # --------------------------------- Query ---------------------------------
@@ -14,7 +16,13 @@ class SasInterface:
 
     # -------------------------------- Datahub --------------------------------
 
-    def sas_update(self, uri: str, identity: str or [str] = None, time_serial: tuple = None, **extra) -> bool:
+    def sas_execute_update(self, uri: str, identity: str or [str] = None, force: bool = False, **extra) -> str:
+        pass
+
+    def sas_get_all_uri(self) -> [str]:
+        pass
+
+    def sas_get_data_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
         pass
 
     def sas_get_data_agent_probs(self) -> [dict]:
@@ -27,13 +35,33 @@ class SasInterface:
     def sas_get_data_agent_update_list(self, uri: str) -> [str]:
         pass
 
+    # ----------------------------- Update Table -----------------------------
+
+    def sas_get_local_data_range_from_update_table(self, update_tags: [str]) -> (datetime.datetime, datetime.datetime):
+        pass
+
+    def sas_get_last_update_time_from_update_table(self, update_tags: [str]) -> datetime.datetime:
+        pass
+
     # -------------------------------- Analyzer --------------------------------
 
-    def sas_start_analysis(self, securities: str or [str], analyzers: [str],
-                           time_serial: (datetime, datetime),
-                           enable_from_cache: bool = True) -> TaskFuture:
+    def sas_execute_analysis(self, securities: str or [str], analyzers: [str], time_serial: (datetime, datetime),
+                             enable_from_cache: bool = True, **kwargs) -> str:
         pass
 
     def sas_get_analyzer_probs(self) -> [str]:
         pass
+
+    # ------------------------------------------------------------------------------------------------------------------
+
+    def sas_get_stock_info_list(self) -> [str]:
+        pass
+
+    def sas_get_stock_identities(self) -> [str]:
+        pass
+
+    def sas_guess_stock_identities(self, text: str) -> [str]:
+        pass
+
+
 

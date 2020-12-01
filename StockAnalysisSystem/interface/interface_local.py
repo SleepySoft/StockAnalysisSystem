@@ -33,32 +33,48 @@ class LocalInterface(sasIF):
 
     # -------------------------------- Datahub --------------------------------
 
-    def sas_update(self, uri: str, identity: str or [str] = None, time_serial: tuple = None, **extra) -> bool:
-        data_hub: DataHubEntry = self.sas().get_data_hub_entry()
-        data_center: UniversalDataCenter = data_hub.get_data_center()
-        return data_center.update_local_data(uri, identity, time_serial, **extra)
+    def sas_execute_update(self, uri: str, identity: str or [str] = None, force: bool = False, **extra) -> str:
+        task = sasApi.post_auto_update_task(uri, identity, force, **extra)
+        res_id = self.__res_mgr.add_resource('task', task)
+        return res_id
+
+    def sas_get_all_uri(self) -> [str]:
+        probs = sasApi.get_data_agent_info()
+        return [prob.get('uri') for prob in probs]
+
+    def sas_get_data_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
+        return sasApi.get_uri_data_range(uri, identity)
 
     def sas_get_data_agent_probs(self) -> [dict]:
         """
         Get list of data agent prob
         :return: List of dict, dict key includes [uri, depot, identity_field, datetime_field]
         """
-        data_hub: DataHubEntry = self.sas().get_data_hub_entry()
-        data_center: UniversalDataCenter = data_hub.get_data_center()
-        data_agents = data_center.get_all_agents()
-        return [agent.prob() for agent in data_agents]
+        probs = sasApi.get_data_agent_info()
+        return [{
+            'uri': uri,
+            'depot': depot,
+            'identity_field': identity_field,
+            'datetime_field': datetime_field,
+        } for uri, depot, identity_field, datetime_field in probs]
 
     def sas_get_data_agent_update_list(self, uri: str) -> [str]:
-        data_hub: DataHubEntry = self.sas().get_data_hub_entry()
-        data_center: UniversalDataCenter = data_hub.get_data_center()
-        agent: DataAgent = data_center.get_data_agent(uri)
+        agent: DataAgent = sasApi.data_center().get_data_agent(uri)
         return agent.update_list()
+
+    # ----------------------------- Update Table -----------------------------
+
+    def sas_get_local_data_range_from_update_table(self, update_tags: [str]) -> (datetime.datetime, datetime.datetime):
+        return sasApi.get_local_data_range_from_update_table(update_tags)
+
+    def sas_get_last_update_time_from_update_table(self, update_tags: [str]) -> datetime.datetime:
+        return sasApi.get_last_update_time_from_update_table(update_tags)
 
     # -------------------------------- Analyzer --------------------------------
 
     def sas_execute_analysis(self, securities: str or [str], analyzers: [str], time_serial: (datetime, datetime),
-                             enable_from_cache: bool = True, extra: dict = {}) -> str:
-        task = sasApi.execute_analysis(securities, analyzers, time_serial, enable_from_cache, **extra)
+                             enable_from_cache: bool = True, **kwargs) -> str:
+        task = sasApi.post_analysis_task(securities, analyzers, time_serial, enable_from_cache, **kwargs)
         res_id = self.__res_mgr.add_resource('task', task)
         return res_id
 
@@ -73,6 +89,15 @@ class LocalInterface(sasIF):
         } for method_uuid, method_name, method_detail, _ in analyzer_info]
 
     # ------------------------------------------------------------------------------------------------------------------
+
+    def sas_get_stock_info_list(self) -> [str]:
+        return sasApi.get_stock_info_list()
+
+    def sas_get_stock_identities(self) -> [str]:
+        return sasApi.get_stock_identities()
+
+    def sas_guess_stock_identities(self, text: str) -> [str]:
+        return sasApi.guess_stock_identities(text)
 
 
 

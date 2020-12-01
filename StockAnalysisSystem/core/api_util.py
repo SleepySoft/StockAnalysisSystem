@@ -1,7 +1,8 @@
+from .DataHub.DataAgent import *
 from .Utiltity.task_future import *
+from .Utiltity.time_utility import *
 from .DataHubEntry import DataHubEntry
 from .AnalyzerEntry import StrategyEntry, AnalysisResult
-from StockAnalysisSystem.core.Utiltity.time_utility import *
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, Executor
 
 
@@ -42,7 +43,9 @@ class SasUpdateTask(TaskFuture):
         try:
             # Catch "pymongo.errors.ServerSelectionTimeoutError: No servers found yet" exception and continue.
             self.__execute_update()
+            self.update_result(True)
         except Exception as e:
+            self.update_result(False)
             print('Update got Exception: ')
             print(e)
             print(traceback.format_exc())
@@ -123,27 +126,6 @@ class SasUpdateTask(TaskFuture):
             self.__apply_count += 1
             print('Persistence count: ' + str(self.__apply_count))
         return True
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class SasAnalysisTask(TaskFuture):
