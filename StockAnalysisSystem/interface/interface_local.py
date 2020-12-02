@@ -26,6 +26,10 @@ class LocalInterface(sasIF):
     def if_init(self, project_path: str = None, config=None, not_load_config: bool = False) -> bool:
         return sasApi.init(project_path, config, not_load_config)
 
+    def sas_get_resource(self, res_id: str) -> any:
+        res = self.__res_mgr.get_resource(res_id, None)
+        return res
+
     # --------------------------------- Query ---------------------------------
 
     def sas_query(self, uri: str, identity: str or [str] = None, time_serial: tuple = None, **extra) -> pd.DataFrame or None:

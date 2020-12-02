@@ -15,6 +15,19 @@ class ResourceManager:
         def valid(self) -> bool:
             return self.expired_time > time.time()
 
+        def result(self) -> any:
+            pass
+
+        def progress(self) -> dict:
+            """
+            Get progress of this resource.
+            :return: {progress_key: [current_progress, total_progress]}
+            """
+            pass
+
+        def finished(self) -> bool:
+            pass
+
     def __init__(self):
         self.__resource_table = {}
         self.__next_expired_check = 0
@@ -82,6 +95,7 @@ class ResourceManager:
                 if v.expired_time < now_time:
                     del self.__resource_table[k]
             self.__next_expired_check = now_time + 60
+
 
 
 

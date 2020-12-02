@@ -23,6 +23,7 @@ from StockAnalysisSystem.core.Utiltity.time_utility import *
 from StockAnalysisSystem.core.Utiltity.TableViewEx import TableViewEx
 
 from StockAnalysisSystem.ui.Utility.ui_context import UiContext
+from StockAnalysisSystem.ui.Utility.resource_sync import ResourceSync
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 
 
@@ -173,6 +174,20 @@ class RefreshTask(TaskQueue.Task):
         return 'RefreshTask'
 
 
+# ------------------------------- Update Resouce Task -------------------------------
+
+class UpdateResTask(TaskQueue.Task):
+    def __init__(self, ui):
+        super(UpdateResTask, self).__init__('UpdateResTask')
+        self.__ui = ui
+
+    def run(self):
+        self.__ui.
+
+    def identity(self) -> str:
+        return 'UpdateResTask'
+
+
 # # ------------------------------ UpdateStockListTask ------------------------------
 #
 # class UpdateStockListTask(TaskQueue.Task):
@@ -212,6 +227,7 @@ class DataUpdateUi(QWidget):
         super(DataUpdateUi, self).__init__()
 
         self.__context = context
+        self.__res_sync = ResourceSync(context.get_sas_interface())
 
         # Table content
         self.__display_uri = []

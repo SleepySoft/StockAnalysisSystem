@@ -9,6 +9,9 @@ class SasInterface:
     def if_init(self, *args, **kwargs) -> bool:
         pass
 
+    def sas_get_resource(self, res_id: str) -> any:
+        pass
+
     # --------------------------------- Query ---------------------------------
 
     def sas_query(self, uri: str, identity: str or [str] = None, time_serial: tuple = None, **extra) -> pd.DataFrame or None:
