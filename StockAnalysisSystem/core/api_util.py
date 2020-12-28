@@ -1,12 +1,12 @@
 from .DataHub.DataAgent import *
-from .Utiltity.task_future import *
+from .Utiltity.resource_task import *
 from .Utiltity.time_utility import *
 from .DataHubEntry import DataHubEntry
 from .AnalyzerEntry import StrategyEntry, AnalysisResult
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, Executor
 
 
-class SasUpdateTask(TaskFuture):
+class SasUpdateTask(ResourceTask):
     def __init__(self, data_hub, data_center, force: bool):
         super(SasUpdateTask, self).__init__('UpdateTask')
         self.__force = force
@@ -128,7 +128,7 @@ class SasUpdateTask(TaskFuture):
         return True
 
 
-class SasAnalysisTask(TaskFuture):
+class SasAnalysisTask(ResourceTask):
     def __init__(self, strategy_entry: StrategyEntry, data_hub: DataHubEntry,
                  securities: str or [str], analyzer_list: [str], time_serial: tuple,
                  enable_from_cache: bool, **kwargs):

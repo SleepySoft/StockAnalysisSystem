@@ -5,7 +5,7 @@ import pandas as pd
 from .api_util import *
 from .Utiltity.common import *
 from .DataHub.DataAgent import *
-from .Utiltity.task_future import *
+from .Utiltity.resource_task import *
 from .DataHubEntry import DataHubEntry
 from .AnalyzerEntry import StrategyEntry
 from .DataHub.DataUtility import DataUtility
@@ -82,7 +82,7 @@ def analysis(securities: str or [str], analyzers: [str],
 
 # ------------------------------------ Datahub ------------------------------------
 
-def post_auto_update_task(uri: str, identity: str or [str] = None, force: bool = False, **extra) -> TaskFuture:
+def post_auto_update_task(uri: str, identity: str or [str] = None, force: bool = False, **extra) -> ResourceTask:
     agent = data_center().get_data_agent(uri)
     task = SasUpdateTask(data_hub, data_center, force)
     task.set_work_package(agent, identity)
@@ -129,7 +129,7 @@ def get_last_update_time_from_update_table(update_tags: [str]) -> datetime.datet
 # -------------------------------- Analyzer --------------------------------
 
 def post_analysis_task(securities: str or [str], analyzers: [str], time_serial: (datetime, datetime),
-                       enable_from_cache: bool = True, **kwargs) -> TaskFuture:
+                       enable_from_cache: bool = True, **kwargs) -> ResourceTask:
     task = SasAnalysisTask(strategy_entry(), data_hub(),
                            securities, analyzers, time_serial, enable_from_cache, **kwargs)
     append_task(task)
