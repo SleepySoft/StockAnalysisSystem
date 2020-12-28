@@ -9,7 +9,7 @@ class SasInterface:
     def if_init(self, *args, **kwargs) -> bool:
         pass
 
-    def sas_get_resource(self, res_id: str) -> any:
+    def sas_get_resource(self, res_id: str, res_name: str or [str]) -> any or [any]:
         pass
 
     # --------------------------------- Query ---------------------------------

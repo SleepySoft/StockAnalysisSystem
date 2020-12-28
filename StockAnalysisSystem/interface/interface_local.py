@@ -1,12 +1,14 @@
 import uuid
 import datetime
+from functools import partial
+
 import pandas as pd
 
 from .interface import SasInterface as sasIF
 import StockAnalysisSystem.core.api as sasApi
 from StockAnalysisSystem.core.Utiltity.common import *
 from StockAnalysisSystem.core.DataHub.DataAgent import *
-from StockAnalysisSystem.core.Utiltity.task_future import *
+from StockAnalysisSystem.core.Utiltity.resource_task import *
 from StockAnalysisSystem.core.DataHubEntry import DataHubEntry
 from StockAnalysisSystem.core.AnalyzerEntry import StrategyEntry
 from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
@@ -26,9 +28,11 @@ class LocalInterface(sasIF):
     def if_init(self, project_path: str = None, config=None, not_load_config: bool = False) -> bool:
         return sasApi.init(project_path, config, not_load_config)
 
-    def sas_get_resource(self, res_id: str) -> any:
-        res = self.__res_mgr.get_resource(res_id, None)
-        return res
+    def sas_get_resource(self, res_id: str, res_name: str or [str]) -> any or [any]:
+        list_param = isinstance(res_name, (list, tuple))
+        res_names = res_name if list_param else [res_name]
+        res = [self.__res_mgr.get_resource(res_id, name) for name in res_names]
+        return res if list_param else res[0]
 
     # --------------------------------- Query ---------------------------------
 
@@ -79,8 +83,7 @@ class LocalInterface(sasIF):
     def sas_execute_analysis(self, securities: str or [str], analyzers: [str], time_serial: (datetime, datetime),
                              enable_from_cache: bool = True, **kwargs) -> str:
         task = sasApi.post_analysis_task(securities, analyzers, time_serial, enable_from_cache, **kwargs)
-        res_id = self.__res_mgr.add_resource('task', task)
-        return res_id
+        return task.get_res_id()
 
     def sas_get_analyzer_probs(self) -> [str]:
         """
@@ -91,6 +94,17 @@ class LocalInterface(sasIF):
         return [{
             'uuid': method_uuid, 'name': method_name, 'detail': method_detail
         } for method_uuid, method_name, method_detail, _ in analyzer_info]
+
+    # -------------------------------- Resource --------------------------------
+
+    def sas_get_resource_data(self, res_id: str, res_name: str) -> any:
+        pass
+
+    def sas_get_resource_result(self, res_id: str):
+        pass
+
+    def sas_get_resource_progress(self, res_id):
+        pass
 
     # ------------------------------------------------------------------------------------------------------------------
 

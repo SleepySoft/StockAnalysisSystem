@@ -1,11 +1,11 @@
 from StockAnalysisSystem.code.AnalyzerEntry import StrategyEntry, AnalysisResult
-from StockAnalysisSystem.core.Utiltity.task_future import *
+from StockAnalysisSystem.core.Utiltity.resource_task import *
 from StockAnalysisSystem.core.DataHubEntry import DataHubEntry
 
 
 # For core.interface, without ui.
 
-class SasAnalysisTask(TaskFuture):
+class SasAnalysisTask(ResourceTask):
     def __init__(self, strategy_entry: StrategyEntry, data_hub: DataHubEntry,
                  securities: str or [str], analyzer_list: [str], time_serial: tuple, enable_from_cache: bool):
         super(SasAnalysisTask, self).__init__('SasAnalysisTask')
