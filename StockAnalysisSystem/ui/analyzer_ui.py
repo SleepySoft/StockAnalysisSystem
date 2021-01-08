@@ -405,24 +405,24 @@ class AnalyzerUi(QWidget):
         self.__table_analyzer.SetRowCount(0)
         self.__table_analyzer.SetColumn(AnalyzerUi.TABLE_HEADER_ANALYZER)
 
-        if len(self.__analyzer_info) == 0:
-            self.__analyzer_info = self.__context.get_sas_interface().sas_get_analyzer_probs()
-
-        for prob in self.__analyzer_info:
-            line = [
-                '',             # Place holder for check box
-                prob.get('uuid', ''),
-                prob.get('name', ''),
-                prob.get('detail', ''),
-                '',             # Place holder for status
-                ]
-            self.__table_analyzer.AppendRow(line)
-            # index = self.__table_analyzer.RowCount() - 1
-
-            # Add check box
-            # check_item = QTableWidgetItem()
-            # check_item.setCheckState(QtCore.Qt.Unchecked)
-            # self.__table_analyzer.setItem(index, 0, check_item)
+        # if len(self.__analyzer_info) == 0:
+        #     self.__analyzer_info = self.__context.get_sas_interface().sas_get_analyzer_probs()
+        #
+        # for prob in self.__analyzer_info:
+        #     line = [
+        #         '',             # Place holder for check box
+        #         prob.get('uuid', ''),
+        #         prob.get('name', ''),
+        #         prob.get('detail', ''),
+        #         '',             # Place holder for status
+        #         ]
+        #     self.__table_analyzer.AppendRow(line)
+        #     # index = self.__table_analyzer.RowCount() - 1
+        #
+        #     # Add check box
+        #     # check_item = QTableWidgetItem()
+        #     # check_item.setCheckState(QtCore.Qt.Unchecked)
+        #     # self.__table_analyzer.setItem(index, 0, check_item)
 
     # --------------------------------------------------------------------------
 

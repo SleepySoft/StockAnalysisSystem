@@ -7,14 +7,15 @@ from PyQt5.QtWidgets import QLineEdit, QCheckBox, QWidget, QComboBox, QDateTimeE
 from StockAnalysisSystem.core.Utiltity.common import *
 from StockAnalysisSystem.core.Utiltity.ui_utility import *
 from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.ui.Utility.ui_context import UiContext
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 
 
 class DataHubUi(QWidget):
-    def __init__(self, sasif: sasIF):
+    def __init__(self, context: UiContext):
         super(DataHubUi, self).__init__()
 
-        self.__sasif = sasif
+        self.__context = context
         self.__translate = QtCore.QCoreApplication.translate
 
         self.__combo_uri = QComboBox()
@@ -69,7 +70,7 @@ class DataHubUi(QWidget):
         self.__datetime_until.setDateTime(now())
         self.__button_query.clicked.connect(self.on_button_query)
 
-        data_agents = self.__sasif.sas_get_data_agent_probs()
+        data_agents = self.__context.get_sas_interface().sas_get_data_agent_probs()
         all_uri = [da.get('uri', '') for da in data_agents]
         for uri in all_uri:
             self.__combo_uri.addItem(uri)
