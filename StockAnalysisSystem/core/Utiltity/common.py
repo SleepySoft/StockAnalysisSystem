@@ -85,6 +85,9 @@ class ProgressRate:
         key = self.normalize_identity(identity)
         return key in self.__progress_table.keys()
 
+    def progress_done(self) -> bool:
+        return abs(self.get_progress_rate() - 1.0) < 0.0001
+
     def get_progress_table(self) -> collections.OrderedDict:
         return self.__progress_table
 

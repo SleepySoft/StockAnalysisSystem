@@ -5,7 +5,7 @@ import traceback
 from PyQt5.QtWidgets import QApplication
 
 from StockAnalysisSystem.ui.main_ui import MainWindow
-from StockAnalysisSystem.ui.config_ui import ConfigUi
+from StockAnalysisSystem.ui.Utility.ui_context import UiContext
 from StockAnalysisSystem.interface.interface_local import LocalInterface
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 
@@ -13,10 +13,10 @@ from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 def init_if(local: bool = True) -> sasIF or None:
     if local:
         local_if = LocalInterface()
-        local_if.sas_init(os.getcwd())
+        local_if.if_init(os.getcwd())
         return local_if
     else:
-        return None
+        pass
 
 
 def run_ui(sasif: sasIF):
@@ -30,7 +30,10 @@ def run_ui(sasif: sasIF):
     #     dlg.exec()
     #     sas.check_initialize()
 
-    main_wnd = MainWindow(sasif)
+    ui_ctx = UiContext()
+    ui_ctx.set_sas_interface(sasif)
+
+    main_wnd = MainWindow(ui_ctx)
     main_wnd.show()
     sys.exit(app.exec())
 

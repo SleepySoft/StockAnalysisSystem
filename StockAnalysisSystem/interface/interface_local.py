@@ -28,6 +28,8 @@ class LocalInterface(sasIF):
     def if_init(self, project_path: str = None, config=None, not_load_config: bool = False) -> bool:
         return sasApi.init(project_path, config, not_load_config)
 
+    # ------------------------------- Resource --------------------------------
+
     def sas_get_resource(self, res_id: str, res_name: str or [str]) -> any or [any]:
         list_param = isinstance(res_name, (list, tuple))
         res_names = res_name if list_param else [res_name]
@@ -94,17 +96,6 @@ class LocalInterface(sasIF):
         return [{
             'uuid': method_uuid, 'name': method_name, 'detail': method_detail
         } for method_uuid, method_name, method_detail, _ in analyzer_info]
-
-    # -------------------------------- Resource --------------------------------
-
-    def sas_get_resource_data(self, res_id: str, res_name: str) -> any:
-        pass
-
-    def sas_get_resource_result(self, res_id: str):
-        pass
-
-    def sas_get_resource_progress(self, res_id):
-        pass
 
     # ------------------------------------------------------------------------------------------------------------------
 
