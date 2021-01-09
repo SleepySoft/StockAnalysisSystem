@@ -110,8 +110,12 @@ def get_data_agent_update_list(uri: str) -> [str]:
 
 def get_uri_data_range(uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
     agent = data_center().get_data_agent(uri)
-    since, until = agent.data_range(uri, identity) if agent is not None else None, None
+    since, until = agent.data_range(uri, identity) if agent is not None else (None, None)
     return since, until
+
+
+def calc_uri_data_update_range(uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
+    return data_center().calc_update_range(uri, identity)
 
 
 # ----------------------------- Update Table -----------------------------

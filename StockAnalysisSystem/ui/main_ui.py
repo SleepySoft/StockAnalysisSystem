@@ -49,7 +49,7 @@ class MainWindow(CommonMainWindow):
 
         # self.__alias_table_module = database_entry.get_alias_table()
         # self.__alias_table_ui = AliasTableUi(self.__alias_table_module)
-        self.__task_queue_ui = TaskQueueUi(self.__context)
+        self.__task_queue_ui = TaskQueueUi(self.__context.get_task_queue())
 
         # -------- UI Extenerion --------
 

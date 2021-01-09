@@ -30,6 +30,9 @@ class SasInterface:
     def sas_get_data_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
         pass
 
+    def sas_calc_update_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
+        pass
+
     def sas_get_data_agent_probs(self) -> [dict]:
         """
         Get list of data agent prob

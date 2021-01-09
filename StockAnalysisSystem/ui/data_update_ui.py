@@ -245,6 +245,7 @@ class DataUpdateUi(QWidget):
 
         self.__task_res_id = []
         self.__task_progress = {}
+        self.__total_progress = ProgressRate()
 
         self.task_finish_signal.connect(self.__on_task_done)
         self.refresh_finish_signal.connect(self.update_table_display)
@@ -386,6 +387,10 @@ class DataUpdateUi(QWidget):
                 self.__page = new_page
 
     def on_timer(self):
+        self.lock()
+        total_progress = self.__total_progress
+        self.unlock()
+
         for i in range(self.__table_main.RowCount()):
             item_id = self.__table_main.GetItemText(i, DataUpdateUi.INDEX_ITEM)
             # A little ugly...To distinguish it's uri or securities identity
@@ -396,25 +401,35 @@ class DataUpdateUi(QWidget):
                 uri = self.__display_uri[0]
                 prog_id = [uri, item_id]
 
-            for task in self.__processing_update_tasks:
-                if not task.in_work_package(uri):
-                    continue
-                text = []
-                if task.status() in [TaskQueue.Task.STATUS_IDLE, TaskQueue.Task.STATUS_PENDING]:
-                    text.append('等待中...')
+            if not total_progress.has_progress(prog_id):
+                text = ['']
+            else:
+                rate = total_progress.get_progress_rate(prog_id)
+                if rate < 0.0001:
+                    text = ['Waiting...']
                 else:
-                    if task.progress.has_progress(prog_id):
-                        rate = task.progress.get_progress_rate(prog_id)
-                        text.append('%ss' % task.clock.elapsed_s())
-                        text.append('%.2f%%' % (rate * 100))
-                    if task.status() == TaskQueue.Task.STATUS_CANCELED:
-                        text.append('[Canceled]')
-                    elif task.status() == TaskQueue.Task.STATUS_FINISHED:
-                        text.append('[Finished]')
-                    elif task.status() == TaskQueue.Task.STATUS_EXCEPTION:
-                        text.append('[Error]')
-                self.__table_main.SetItemText(i, DataUpdateUi.INDEX_STATUS, ' | '.join(text))
-                break
+                    text = ['%.2f%%' % (rate * 100)]
+
+            # for res_id, progress in self.__task_progress.items():
+            #     if not task.in_work_package(uri):
+            #         continue
+            #     text = []
+            #     if task.status() in [TaskQueue.Task.STATUS_IDLE, TaskQueue.Task.STATUS_PENDING]:
+            #         text.append('等待中...')
+            #     else:
+            #         if progress.has_progress(prog_id):
+            #             rate = progress.get_progress_rate(prog_id)
+            #             text.append('%ss' % task.clock.elapsed_s())
+            #             text.append('%.2f%%' % (rate * 100))
+            #         if task.status() == TaskQueue.Task.STATUS_CANCELED:
+            #             text.append('[Canceled]')
+            #         elif task.status() == TaskQueue.Task.STATUS_FINISHED:
+            #             text.append('[Finished]')
+            #         elif task.status() == TaskQueue.Task.STATUS_EXCEPTION:
+            #             text.append('[Error]')
+
+            self.__table_main.SetItemText(i, DataUpdateUi.INDEX_STATUS, ' | '.join(text))
+            break
 
     # def closeEvent(self, event):
     #     if self.__task_thread is not None:
@@ -497,9 +512,7 @@ class DataUpdateUi(QWidget):
             update_until = now()
         else:
             pass
-            # TODO:
-            # self.__context.get_sas_interface().sas_get_data_range()
-            # update_since, update_until = self.__data_center.calc_update_range(uri, identity)
+            update_since, update_until = self.__context.get_sas_interface().sas_calc_update_range(uri, identity)
 
         update_tags = uri.split('.')
         latest_update = self.__context.get_sas_interface().sas_get_last_update_time_from_update_table(update_tags)
@@ -528,12 +541,15 @@ class DataUpdateUi(QWidget):
         self.unlock()
 
         task_progress = {}
+        total_progress = ProgressRate()
         for res_id in task_res_id:
             progress = self.__context.get_sas_interface().sas_get_resource(res_id, 'progress')
             task_progress[res_id] = progress
+            total_progress.combine_with(progress)
 
         self.lock()
         self.__task_progress = task_progress
+        self.__total_progress = total_progress
         self.unlock()
 
     def clear_finished_progress(self):
