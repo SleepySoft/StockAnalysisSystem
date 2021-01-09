@@ -66,7 +66,10 @@ class ExtensionManager:
             if len(result) == 0 or not result[0]:
                 fail_extension.append(extension)
                 capacity = self.__extension_cap.get(extension, {})
-                print('Fail to init extension: ' + capacity.get('plugin_id', 'NO ID'))
+                if isinstance(capacity, dict):
+                    print('Fail to init extension: ' + capacity.get('plugin_id', 'NO ID'))
+                else:
+                    print('Fail to init extension: prob data error')
         for fail_ext in fail_extension:
             del self.__extension_cap[fail_ext]
             if fail_ext in self.__period_extension:

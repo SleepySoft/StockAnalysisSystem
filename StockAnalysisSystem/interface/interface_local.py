@@ -55,6 +55,9 @@ class LocalInterface(sasIF):
     def sas_get_data_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
         return sasApi.get_uri_data_range(uri, identity)
 
+    def sas_calc_update_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
+        return sasApi.calc_uri_data_update_range(uri, identity)
+
     def sas_get_data_agent_probs(self) -> [dict]:
         """
         Get list of data agent prob

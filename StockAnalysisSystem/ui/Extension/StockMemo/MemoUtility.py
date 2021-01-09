@@ -110,7 +110,8 @@ class StockMemoData:
         self.__sas = sas
 
         user_path = os.path.expanduser('~')
-        project_path = self.__sas.get_project_path() if self.__sas is not None else os.getcwd()
+        # project_path = self.__sas.get_project_path() if self.__sas is not None else os.getcwd()
+        project_path = os.getcwd()
 
         root_path = self.__sas.get_config().get('memo_path', '')
         root_path = root_path if root_path != '' else (
