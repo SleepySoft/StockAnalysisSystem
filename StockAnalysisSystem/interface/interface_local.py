@@ -15,6 +15,181 @@ from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 from StockAnalysisSystem.core.Utiltity.resource_manager import ResourceManager
 from StockAnalysisSystem.core.DataHub.UniversalDataCenter import UniversalDataCenter
 
+from StockAnalysisSystem.core.DataHub.DataAgent import *
+from StockAnalysisSystem.core.Utiltity.resource_task import *
+from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.DataHubEntry import DataHubEntry
+from StockAnalysisSystem.core.AnalyzerEntry import StrategyEntry, AnalysisResult
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, Executor
+
+
+class SasUpdateTask(ResourceTask):
+    def __init__(self, data_hub, data_center, resource_manager: ResourceManager, force: bool):
+        super(SasUpdateTask, self).__init__('UpdateTask', resource_manager)
+        self.__force = force
+        self.__data_hub = data_hub
+        self.__data_center = data_center
+        self.__quit = False
+
+        # Thread pool
+        self.__patch_count = 0
+        self.__apply_count = 0
+        self.__future = None
+        self.__pool = ThreadPoolExecutor(max_workers=1)
+
+        # Parameters
+        self.__agent = None
+        self.__clock = Clock()
+        self.__identities = []
+
+    def in_work_package(self, uri: str) -> bool:
+        return self.__agent.adapt(uri)
+
+    def set_work_package(self, agent: DataAgent, identities: list or str or None):
+        if isinstance(identities, str):
+            identities = [identities]
+        self.__identities = identities
+        self.__agent = agent
+
+    def run(self):
+        print('Update task start.')
+
+        self.__patch_count = 0
+        self.__apply_count = 0
+        try:
+            # Catch "pymongo.errors.ServerSelectionTimeoutError: No servers found yet" exception and continue.
+            self.__execute_update()
+            self.update_result(True)
+        except Exception as e:
+            self.update_result(False)
+            print('Update got Exception: ')
+            print(e)
+            print(traceback.format_exc())
+            print('Continue...')
+        finally:
+            if self.__future is not None:
+                self.__future.cancel()
+        print('Update task finished.')
+
+    def quit(self):
+        self.__quit = True
+
+    def identity(self) -> str:
+        return self.__agent.base_uri() if self.__agent is not None else ''
+
+    # ------------------------------------- Task -------------------------------------
+
+    def __execute_update(self):
+        # Get identities here to ensure we can get the new list after stock info updated
+        update_list = self.__identities if self.__identities is not None and len(self.__identities) > 0 else \
+                      self.__agent.update_list()
+        if update_list is None or len(update_list) == 0:
+            update_list = [None]
+        progress = len(update_list)
+
+        self.__clock.reset()
+        self.progress().reset()
+        self.progress().set_progress(self.__agent.base_uri(), 0, progress)
+
+        for identity in update_list:
+            while (self.__patch_count - self.__apply_count > 20) and not self.__quit:
+                time.sleep(0.5)
+                continue
+            if self.__quit:
+                break
+
+            print('------------------------------------------------------------------------------------')
+
+            if identity is not None:
+                # Optimise: Update not earlier than listing date.
+                listing_date = self.__data_hub.get_data_utility().get_securities_listing_date(identity, default_since())
+
+                if self.__force:
+                    since, until = listing_date, now()
+                else:
+                    since, until = self.__data_center.calc_update_range(self.__agent.base_uri(), identity)
+                    since = max(listing_date, since)
+                time_serial = (since, until)
+            else:
+                time_serial = None
+
+            patch = self.__data_center.build_local_data_patch(
+                self.__agent.base_uri(), identity, time_serial, force=self.__force)
+            self.__patch_count += 1
+            print('Patch count: ' + str(self.__patch_count))
+
+            self.__future = self.__pool.submit(self.__execute_persistence,
+                                               self.__agent.base_uri(), identity, patch)
+
+        if self.__future is not None:
+            print('Waiting for persistence task finish...')
+            self.__future.result()
+        self.__clock().freeze()
+        # self.__ui.task_finish_signal[UpdateTask].emit(self)
+
+    def __execute_persistence(self, uri: str, identity: str, patch: tuple) -> bool:
+        try:
+            if patch is not None:
+                self.__data_center.apply_local_data_patch(patch)
+            if identity is not None:
+                self.progress().set_progress([uri, identity], 1, 1)
+            self.progress().increase_progress(uri)
+        except Exception as e:
+            print('Persistence error: ' + str(e))
+            print(traceback.format_exc())
+            return False
+        finally:
+            self.__apply_count += 1
+            print('Persistence count: ' + str(self.__apply_count))
+        return True
+
+
+class SasAnalysisTask(ResourceTask):
+    def __init__(self, strategy_entry: StrategyEntry, data_hub: DataHubEntry,
+                 securities: str or [str], analyzer_list: [str], time_serial: tuple,
+                 enable_from_cache: bool, **kwargs):
+        super(SasAnalysisTask, self).__init__('SasAnalysisTask')
+        self.__data_hub = data_hub
+        self.__strategy = strategy_entry
+        self.__securities = securities
+        self.__analyzer_list = analyzer_list
+        self.__time_serial = time_serial
+        self.__enable_from_cache = enable_from_cache
+        self.__extra_params = kwargs
+
+    def run(self):
+        stock_list = self.selected_securities()
+        result_list = self.analysis(stock_list)
+        self.update_result(result_list)
+
+    def identity(self) -> str:
+        return 'SasAnalysisTask'
+
+    # -----------------------------------------------------------------------------
+
+    def analysis(self, securities_list: [str]) -> [AnalysisResult]:
+        total_result = self.__strategy.analysis_advance(
+            securities_list, self.__analyzer_list, self.__time_serial, self.get_progress_rate(),
+            enable_from_cache=self.__enable_from_cache,
+            enable_update_cache=self.__extra_params.get('enable_update_cache', True),
+            debug_load_json=self.__extra_params.get('debug_load_json', False),
+            debug_dump_json=self.__extra_params.get('debug_dump_json', False),
+            dump_path=self.__extra_params.get('dump_path', ''),
+        )
+        return total_result
+
+    def selected_securities(self) -> [str]:
+        if self.__securities is None:
+            data_utility = self.__data_hub.get_data_utility()
+            stock_list = data_utility.get_stock_identities()
+        elif isinstance(self.__securities, str):
+            stock_list = [self.__securities]
+        elif isinstance(self.__securities, (list, tuple, set)):
+            stock_list = list(self.__securities)
+        else:
+            stock_list = []
+        return stock_list
+
 
 class LocalInterface(sasIF):
     def __init__(self):
@@ -44,9 +219,11 @@ class LocalInterface(sasIF):
     # -------------------------------- Datahub --------------------------------
 
     def sas_execute_update(self, uri: str, identity: str or [str] = None, force: bool = False, **extra) -> str:
-        task = sasApi.post_auto_update_task(uri, identity, force, **extra)
-        res_id = self.__res_mgr.add_resource('task', task)
-        return res_id
+        agent = sasApi.data_center().get_data_agent(uri)
+        task = SasUpdateTask(sasApi.data_hub(), sasApi.data_center(), self.__res_mgr, force)
+        task.set_work_package(agent, identity)
+        sasApi.append_task(task)
+        return task.res_id()
 
     def sas_get_all_uri(self) -> [str]:
         probs = sasApi.get_data_agent_info()

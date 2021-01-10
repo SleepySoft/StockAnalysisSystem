@@ -176,16 +176,16 @@ class RefreshTask(TaskQueue.Task):
 
 # ------------------------------- Update Resouce Task -------------------------------
 
-class UpdateResTask(TaskQueue.Task):
-    def __init__(self, ui):
-        super(UpdateResTask, self).__init__('UpdateResTask')
-        self.__ui = ui
-
-    def run(self):
-        self.__ui.update_task_progress()
-
-    def identity(self) -> str:
-        return 'UpdateResTask'
+# class UpdateResTask(TaskQueue.Task):
+#     def __init__(self, ui):
+#         super(UpdateResTask, self).__init__('UpdateResTask')
+#         self.__ui = ui
+#
+#     def run(self):
+#         self.__ui.update_task_progress()
+#
+#     def identity(self) -> str:
+#         return 'UpdateResTask'
 
 
 # # ------------------------------ UpdateStockListTask ------------------------------
@@ -331,20 +331,16 @@ class DataUpdateUi(QWidget):
         self.__to_detail_level(uri)
 
     def on_auto_update_button(self, uri: str, identity: str):
-        self.clear_finished_progress()
         print('Auto update ' + uri + ':' + str(identity))
         res_id = self.__context.get_sas_interface().sas_execute_update(uri, identity, False)
-        self.lock()
         self.__task_res_id.append(res_id)
-        self.unlock()
+        self.__context.get_res_sync().add_sync_resource(res_id, 'progress')
 
     def on_force_update_button(self, uri: str, identity: str):
-        self.clear_finished_progress()
         print('Force update ' + uri + ' : ' + str(identity))
         res_id = self.__context.get_sas_interface().sas_execute_update(uri, identity, True)
-        self.lock()
         self.__task_res_id.append(res_id)
-        self.unlock()
+        self.__context.get_res_sync().add_sync_resource(res_id, 'progress')
 
     def on_batch_update(self, force: bool):
         for i in range(self.__table_main.RowCount()):
@@ -387,9 +383,12 @@ class DataUpdateUi(QWidget):
                 self.__page = new_page
 
     def on_timer(self):
-        self.lock()
-        total_progress = self.__total_progress
-        self.unlock()
+        total_progress = ProgressRate()
+        for res_id in self.__task_res_id:
+            progress: ProgressRate = self.__context.get_res_sync().get_resource(res_id, 'progress')
+            total_progress.combine_with(progress)
+            if progress.progress_done():
+                self.__context.get_res_sync().remove_sync_resource(res_id)
 
         for i in range(self.__table_main.RowCount()):
             item_id = self.__table_main.GetItemText(i, DataUpdateUi.INDEX_ITEM)
@@ -429,7 +428,8 @@ class DataUpdateUi(QWidget):
             #             text.append('[Error]')
 
             self.__table_main.SetItemText(i, DataUpdateUi.INDEX_STATUS, ' | '.join(text))
-            break
+        # if not total_progress.progress_done():
+        #     self.__context.get_task_queue().append_task(UpdateResTask(self))
 
     # def closeEvent(self, event):
     #     if self.__task_thread is not None:
@@ -535,32 +535,32 @@ class DataUpdateUi(QWidget):
 
     # -------------------------------------------------------------------------
 
-    def update_task_progress(self):
-        self.lock()
-        task_res_id = self.__task_res_id.copy()
-        self.unlock()
-
-        task_progress = {}
-        total_progress = ProgressRate()
-        for res_id in task_res_id:
-            progress = self.__context.get_sas_interface().sas_get_resource(res_id, 'progress')
-            task_progress[res_id] = progress
-            total_progress.combine_with(progress)
-
-        self.lock()
-        self.__task_progress = task_progress
-        self.__total_progress = total_progress
-        self.unlock()
-
-    def clear_finished_progress(self):
-        self.lock()
-        for res_id, progress in self.__task_progress.items():
-            if progress.progress_done():
-                if res_id in self.__task_res_id:
-                    self.__task_res_id.remove(res_id)
-        self.unlock()
-
-    # -------------------- Call by update UpdateResTask --------------------
+    # def update_task_progress(self):
+    #     self.lock()
+    #     task_res_id = self.__task_res_id.copy()
+    #     self.unlock()
+    #
+    #     task_progress = {}
+    #     total_progress = ProgressRate()
+    #     for res_id in task_res_id:
+    #         progress = self.__context.get_res_sync().get_resource(res_id, 'progress')
+    #         task_progress[res_id] = progress
+    #         total_progress.combine_with(progress)
+    #
+    #     self.lock()
+    #     self.__task_progress = task_progress
+    #     self.__total_progress = total_progress
+    #     self.unlock()
+    #
+    # def clear_finished_progress(self):
+    #     self.lock()
+    #     for res_id, progress in self.__task_progress.items():
+    #         if progress.progress_done():
+    #             if res_id in self.__task_res_id:
+    #                 self.__task_res_id.remove(res_id)
+    #     self.unlock()
+    #
+    # # -------------------- Call by update UpdateResTask --------------------
 
     # --------------------------------------------------------------------------
 

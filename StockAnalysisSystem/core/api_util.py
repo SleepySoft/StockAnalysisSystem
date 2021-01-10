@@ -7,8 +7,8 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, Executor
 
 
 class SasUpdateTask(ResourceTask):
-    def __init__(self, data_hub, data_center, force: bool):
-        super(SasUpdateTask, self).__init__('UpdateTask')
+    def __init__(self, data_hub, data_center, resource_manager: ResourceManager, force: bool):
+        super(SasUpdateTask, self).__init__('UpdateTask', resource_manager)
         self.__force = force
         self.__data_hub = data_hub
         self.__data_center = data_center

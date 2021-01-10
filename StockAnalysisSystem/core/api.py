@@ -40,6 +40,10 @@ def database_entry() -> DatabaseEntry:
     return sas().get_database_entry()
 
 
+def resource_manager() -> ResourceManager:
+    return sas().get_r
+
+
 def update_table() -> UpdateTableEx:
     return database_entry().get_update_table()
 
@@ -82,12 +86,12 @@ def analysis(securities: str or [str], analyzers: [str],
 
 # ------------------------------------ Datahub ------------------------------------
 
-def post_auto_update_task(uri: str, identity: str or [str] = None, force: bool = False, **extra) -> ResourceTask:
-    agent = data_center().get_data_agent(uri)
-    task = SasUpdateTask(data_hub, data_center, force)
-    task.set_work_package(agent, identity)
-    append_task(task)
-    return task
+# def post_auto_update_task(uri: str, identity: str or [str] = None, force: bool = False, **extra) -> ResourceTask:
+#     agent = data_center().get_data_agent(uri)
+#     task = SasUpdateTask(data_hub, data_center, , force)
+#     task.set_work_package(agent, identity)
+#     append_task(task)
+#     return task
 
 
 def get_data_agents() -> [DataAgent]:
