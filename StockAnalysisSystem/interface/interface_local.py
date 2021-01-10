@@ -265,7 +265,7 @@ class LocalInterface(sasIF):
     def sas_execute_analysis(self, securities: str or [str], analyzers: [str], time_serial: (datetime, datetime),
                              enable_from_cache: bool = True, **kwargs) -> str:
         task = sasApi.post_analysis_task(securities, analyzers, time_serial, enable_from_cache, **kwargs)
-        return task.get_res_id()
+        return task.res_id()
 
     def sas_get_analyzer_probs(self) -> [str]:
         """
