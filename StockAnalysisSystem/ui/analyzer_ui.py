@@ -365,7 +365,7 @@ class AnalyzerUi(QWidget):
         self.__analyzer_list = analyzer_list
         self.__result_output = output_path
 
-        self.execute_update_task()
+        self.execute_update()
 
     def on_timer(self):
         for i in range(self.__table_analyzer.RowCount()):
@@ -405,24 +405,27 @@ class AnalyzerUi(QWidget):
         self.__table_analyzer.SetRowCount(0)
         self.__table_analyzer.SetColumn(AnalyzerUi.TABLE_HEADER_ANALYZER)
 
+        self.__analyzer_info = self.__context.get_sas_interface().sas_get_analyzer_probs()
+
         # if len(self.__analyzer_info) == 0:
         #     self.__analyzer_info = self.__context.get_sas_interface().sas_get_analyzer_probs()
         #
-        # for prob in self.__analyzer_info:
-        #     line = [
-        #         '',             # Place holder for check box
-        #         prob.get('uuid', ''),
-        #         prob.get('name', ''),
-        #         prob.get('detail', ''),
-        #         '',             # Place holder for status
-        #         ]
-        #     self.__table_analyzer.AppendRow(line)
-        #     # index = self.__table_analyzer.RowCount() - 1
-        #
-        #     # Add check box
-        #     # check_item = QTableWidgetItem()
-        #     # check_item.setCheckState(QtCore.Qt.Unchecked)
-        #     # self.__table_analyzer.setItem(index, 0, check_item)
+
+        for prob in self.__analyzer_info:
+            line = [
+                '',             # Place holder for check box
+                prob.get('uuid', ''),
+                prob.get('name', ''),
+                prob.get('detail', ''),
+                '',             # Place holder for status
+                ]
+            self.__table_analyzer.AppendRow(line)
+            # index = self.__table_analyzer.RowCount() - 1
+
+            # Add check box
+            # check_item = QTableWidgetItem()
+            # check_item.setCheckState(QtCore.Qt.Unchecked)
+            # self.__table_analyzer.setItem(index, 0, check_item)
 
     # --------------------------------------------------------------------------
 
@@ -443,7 +446,7 @@ class AnalyzerUi(QWidget):
 
     # --------------------------------- Thread ---------------------------------
 
-    def execute_update_task(self):
+    def execute_update(self):
         # options = AnalysisTask.OPTION_CALC
         #
         # if not self.__check_force_calc.isChecked():
@@ -472,7 +475,7 @@ class AnalyzerUi(QWidget):
         # StockAnalysisSystem().get_task_queue().append_task(task)
 
         securities = self.__context.get_sas_interface().sas_get_stock_identities()
-        self.__context.get_sas_interface().sas_execute_analysis(
+        res_id = self.__context.get_sas_interface().sas_execute_analysis(
             securities, self.__analyzer_list, time_serial,
             enable_from_cache=not self.__check_force_calc.isChecked(),
             enable_update_cache=self.__check_auto_cache.isChecked(),
@@ -480,6 +483,7 @@ class AnalyzerUi(QWidget):
             debug_dump_json=self.__check_dump_json.isChecked() or self.__check_load_dump_all.isChecked(),
             dump_path=self.__result_output,
         )
+        self.__context.get_res_sync().add_sync_resource(res_id, 'progress')
 
         # if self.__task_thread is None:
         #     self.__task_thread = threading.Thread(target=self.ui_task)
