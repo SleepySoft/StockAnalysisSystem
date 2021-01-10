@@ -7,6 +7,7 @@ import threading
 class ResourceManager:
     RESOURCE_MASTER = 'master'
     RESOURCE_RESULT = 'result'
+    RESOURCE_STATUS = 'status'
     RESOURCE_PROGRESS = 'progress'
 
     class Resource:
@@ -42,7 +43,7 @@ class ResourceManager:
         self.__next_expired_check = 0
         self.__resource_lock = threading.RLock()
 
-    def add_resource(self, res_type: str, expired_time: int = time.time() + 3600, **kwargs) -> str:
+    def allocate_resource(self, res_type: str, expired_time: int = time.time() + 3600, **kwargs) -> str:
         with self.__resource_lock:
             self.__check_expired()
             res_id = str(uuid.uuid4())
