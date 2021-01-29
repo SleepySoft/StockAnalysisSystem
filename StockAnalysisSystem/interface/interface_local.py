@@ -124,7 +124,7 @@ class SasUpdateTask(ResourceTask):
         if self.__future is not None:
             print('Waiting for persistence task finish...')
             self.__future.result()
-        self.__clock().freeze()
+        self.__clock.freeze()
         # self.__ui.task_finish_signal[UpdateTask].emit(self)
 
     def __execute_persistence(self, uri: str, identity: str, patch: tuple) -> bool:
@@ -145,10 +145,9 @@ class SasUpdateTask(ResourceTask):
 
 
 class SasAnalysisTask(ResourceTask):
-    def __init__(self, strategy_entry: StrategyEntry, data_hub: DataHubEntry,
-                 securities: str or [str], analyzer_list: [str], time_serial: tuple,
-                 enable_from_cache: bool, **kwargs):
-        super(SasAnalysisTask, self).__init__('SasAnalysisTask')
+    def __init__(self, strategy_entry: StrategyEntry, data_hub: DataHubEntry, resource_manager: ResourceManager,
+                 securities: str or [str], analyzer_list: [str], time_serial: tuple, enable_from_cache: bool, **kwargs):
+        super(SasAnalysisTask, self).__init__('SasAnalysisTask', resource_manager)
         self.__data_hub = data_hub
         self.__strategy = strategy_entry
         self.__securities = securities
@@ -169,7 +168,7 @@ class SasAnalysisTask(ResourceTask):
 
     def analysis(self, securities_list: [str]) -> [AnalysisResult]:
         total_result = self.__strategy.analysis_advance(
-            securities_list, self.__analyzer_list, self.__time_serial, self.get_progress_rate(),
+            securities_list, self.__analyzer_list, self.__time_serial, self.progress(),
             enable_from_cache=self.__enable_from_cache,
             enable_update_cache=self.__extra_params.get('enable_update_cache', True),
             debug_load_json=self.__extra_params.get('debug_load_json', False),
@@ -264,7 +263,9 @@ class LocalInterface(sasIF):
 
     def sas_execute_analysis(self, securities: str or [str], analyzers: [str], time_serial: (datetime, datetime),
                              enable_from_cache: bool = True, **kwargs) -> str:
-        task = sasApi.post_analysis_task(securities, analyzers, time_serial, enable_from_cache, **kwargs)
+        task = SasAnalysisTask(sasApi.strategy_entry(), sasApi.data_hub(), self.__res_mgr,
+                               securities, analyzers, time_serial, enable_from_cache, **kwargs)
+        sasApi.append_task(task)
         return task.res_id()
 
     def sas_get_analyzer_probs(self) -> [str]:

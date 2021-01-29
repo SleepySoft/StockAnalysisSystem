@@ -40,10 +40,6 @@ def database_entry() -> DatabaseEntry:
     return sas().get_database_entry()
 
 
-def resource_manager() -> ResourceManager:
-    return sas().get_r
-
-
 def update_table() -> UpdateTableEx:
     return database_entry().get_update_table()
 
@@ -136,12 +132,12 @@ def get_last_update_time_from_update_table(update_tags: [str]) -> datetime.datet
 
 # -------------------------------- Analyzer --------------------------------
 
-def post_analysis_task(securities: str or [str], analyzers: [str], time_serial: (datetime, datetime),
-                       enable_from_cache: bool = True, **kwargs) -> ResourceTask:
-    task = SasAnalysisTask(strategy_entry(), data_hub(),
-                           securities, analyzers, time_serial, enable_from_cache, **kwargs)
-    append_task(task)
-    return task
+# def post_analysis_task(securities: str or [str], analyzers: [str], time_serial: (datetime, datetime),
+#                        enable_from_cache: bool = True, **kwargs) -> ResourceTask:
+#     task = SasAnalysisTask(strategy_entry(), data_hub(), resource_manager(),
+#                            securities, analyzers, time_serial, enable_from_cache, **kwargs)
+#     append_task(task)
+#     return task
 
 
 def get_analyzer_info() -> [str]:

@@ -244,8 +244,8 @@ class DataUpdateUi(QWidget):
         # self.__processing_update_tasks_count = []
 
         self.__task_res_id = []
-        self.__task_progress = {}
-        self.__total_progress = ProgressRate()
+        # self.__task_progress = {}
+        # self.__total_progress = ProgressRate()
 
         self.task_finish_signal.connect(self.__on_task_done)
         self.refresh_finish_signal.connect(self.update_table_display)
@@ -383,12 +383,16 @@ class DataUpdateUi(QWidget):
                 self.__page = new_page
 
     def on_timer(self):
+        remaining_res_id = []
         total_progress = ProgressRate()
         for res_id in self.__task_res_id:
             progress: ProgressRate = self.__context.get_res_sync().get_resource(res_id, 'progress')
             total_progress.combine_with(progress)
             if progress.progress_done():
                 self.__context.get_res_sync().remove_sync_resource(res_id)
+            else:
+                remaining_res_id.append(res_id)
+            self.__task_res_id = remaining_res_id
 
         for i in range(self.__table_main.RowCount()):
             item_id = self.__table_main.GetItemText(i, DataUpdateUi.INDEX_ITEM)

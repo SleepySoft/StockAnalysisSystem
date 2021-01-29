@@ -3,7 +3,7 @@ import base64
 import pickle
 import traceback
 import pandas as pd
-import StockAnalysisSystem.core.interface as sasIF
+from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 import StockAnalysisSystem.core.Utiltity.time_utility as sasTimeUtil
 from StockAnalysisSystem.core.Utiltity.resource_manager import ResourceManager
 from .user_manager import UserManager
