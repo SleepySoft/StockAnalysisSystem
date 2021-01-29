@@ -129,10 +129,9 @@ class SasUpdateTask(ResourceTask):
 
 
 class SasAnalysisTask(ResourceTask):
-    def __init__(self, strategy_entry: StrategyEntry, data_hub: DataHubEntry,
-                 securities: str or [str], analyzer_list: [str], time_serial: tuple,
-                 enable_from_cache: bool, **kwargs):
-        super(SasAnalysisTask, self).__init__('SasAnalysisTask')
+    def __init__(self, strategy_entry: StrategyEntry, data_hub: DataHubEntry, resource_manager: ResourceManager,
+                 securities: str or [str], analyzer_list: [str], time_serial: tuple, enable_from_cache: bool, **kwargs):
+        super(SasAnalysisTask, self).__init__('SasAnalysisTask', resource_manager)
         self.__data_hub = data_hub
         self.__strategy = strategy_entry
         self.__securities = securities

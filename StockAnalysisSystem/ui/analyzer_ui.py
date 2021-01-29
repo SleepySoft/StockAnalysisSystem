@@ -17,6 +17,7 @@ from PyQt5.QtCore import QTimer, pyqtSignal
 from PyQt5.QtWidgets import QHeaderView, QLineEdit, QFileDialog, QCheckBox, QDateTimeEdit, QGridLayout, QRadioButton, \
     QButtonGroup
 
+from StockAnalysisSystem.core.Utiltity.common import ProgressRate
 from StockAnalysisSystem.core.Utiltity.ui_utility import *
 from StockAnalysisSystem.core.Utiltity.TableViewEx import *
 from StockAnalysisSystem.core.Utiltity.time_utility import *
@@ -183,6 +184,8 @@ class AnalyzerUi(QWidget):
         self.__result_output = os.getcwd()
         self.__timing_clock = Clock()
         self.task_finish_signal.connect(self.__on_task_done)
+
+        self.__task_res_id = []
 
         # Timer for update status
         self.__timer = QTimer()
@@ -368,10 +371,23 @@ class AnalyzerUi(QWidget):
         self.execute_update()
 
     def on_timer(self):
+        remaining_res_id = []
+        total_progress = ProgressRate()
+        for res_id in self.__task_res_id:
+            progress: ProgressRate = self.__context.get_res_sync().get_resource(res_id, 'progress')
+            if progress is None:
+                continue
+            total_progress.combine_with(progress)
+            if progress.progress_done():
+                self.__context.get_res_sync().remove_sync_resource(res_id)
+            else:
+                remaining_res_id.append(res_id)
+            self.__task_res_id = remaining_res_id
+
         for i in range(self.__table_analyzer.RowCount()):
             uuid = self.__table_analyzer.GetItemText(i, 3)
-            if self.__progress_rate.has_progress(uuid):
-                rate = self.__progress_rate.get_progress_rate(uuid)
+            if total_progress.has_progress(uuid):
+                rate = total_progress.get_progress_rate(uuid)
                 self.__table_analyzer.SetItemText(i, 4, '%.2f%%' % (rate * 100))
             else:
                 self.__table_analyzer.SetItemText(i, 4, '')
@@ -414,9 +430,9 @@ class AnalyzerUi(QWidget):
         for prob in self.__analyzer_info:
             line = [
                 '',             # Place holder for check box
-                prob.get('uuid', ''),
                 prob.get('name', ''),
                 prob.get('detail', ''),
+                prob.get('uuid', ''),
                 '',             # Place holder for status
                 ]
             self.__table_analyzer.AppendRow(line)
@@ -483,6 +499,7 @@ class AnalyzerUi(QWidget):
             debug_dump_json=self.__check_dump_json.isChecked() or self.__check_load_dump_all.isChecked(),
             dump_path=self.__result_output,
         )
+        self.__task_res_id.append(res_id)
         self.__context.get_res_sync().add_sync_resource(res_id, 'progress')
 
         # if self.__task_thread is None:
