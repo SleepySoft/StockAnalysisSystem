@@ -5,11 +5,8 @@ from ..provider.provider import ServiceProvider
 from StockAnalysisSystem.core.config import Config
 from StockAnalysisSystem.core.Utiltity.JsonSerializer import serialize, deserialize
 
-webapi_interface = None
-service_provider: ServiceProvider = None
 
 # ----------------------------------------------------------------------------------------------------------------------
-
 
 class WebApiInterface:
     def __init__(self, provider: ServiceProvider):
@@ -21,11 +18,11 @@ class WebApiInterface:
         args_json = req_args.get('args', '')
         kwargs_json = req_args.get('kwargs', '')
 
-        if not self.check_request(api, token, args_json, kwargs_json):
-            return ''
-
-        success, args, kwargs = self.parse_request(args_json, kwargs_json)
-        return self.dispatch_request(api, token, *args, **kwargs) if success else ''
+        if self.check_request(api, token, args_json, kwargs_json):
+            success, args, kwargs = self.parse_request(args_json, kwargs_json)
+            if success and self.auth_request(token, api, *args, **kwargs):
+                return self.dispatch_request(api, token, *args, **kwargs)
+        return ''
 
     def check_request(self, api: str, token: str, args_json: str, kwargs_json: str) -> bool:
         return isinstance(api, str) and api != '' and \
@@ -43,7 +40,8 @@ class WebApiInterface:
         finally:
             pass
 
-    # ------------------------------------------------------------------------------------------------------------------
+    def auth_request(self, token: str, feature, *args, **kwargs):
+        return self.__provider.check_accessible(token, feature, *args, **kwargs)
 
     def dispatch_request(self, api: str, token: str, *args, **kwargs) -> any:
         # if api == 'query':
@@ -63,6 +61,12 @@ class WebApiInterface:
             return ''
         finally:
             pass
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+webapi_interface: WebApiInterface = None
+service_provider: ServiceProvider = None
 
 
 # ----------------------------------------------------------------------------------------------------------------------

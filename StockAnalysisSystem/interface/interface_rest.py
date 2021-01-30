@@ -10,7 +10,7 @@ class RestInterface:
     def __init__(self):
         self.__token = None
         self.__timeout = 10
-        self.__api_url = 'http://127.0.0.1:80/sas/api'
+        self.__api_url = 'http://127.0.0.1:80/api'
 
     def if_init(self, api_uri: str = None, token: str = None, timeout=None) -> bool:
         if token is not None:
@@ -54,7 +54,7 @@ class RestInterface:
 
 def main():
     caller = RestInterface()
-    caller.if_init(api_uri='http://127.0.0.1:80/sas/api', token='xxxxxx')
+    caller.if_init(api_uri='http://127.0.0.1:80/api', token='xxxxxx')
 
     df = caller.query('Market.SecuritiesInfo', '000001.SZSE')
     print(df)

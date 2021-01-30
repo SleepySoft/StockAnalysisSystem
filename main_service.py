@@ -1,10 +1,14 @@
+import os
 import traceback
 
 from flask import Flask, request
 from StockAnalysisSystem.core.config import Config
+import StockAnalysisSystem.core.api as sasApi
+from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 import StockAnalysisSystem.service.interface.restIF as restIF
 import StockAnalysisSystem.service.interface.wechatIF as wechatIF
 import StockAnalysisSystem.service.interface.webapiIF as webapiIF
+from StockAnalysisSystem.interface.interface_local import LocalInterface
 from StockAnalysisSystem.service.provider.provider import ServiceProvider
 
 
@@ -21,13 +25,13 @@ def root_entry():
     return ''
 
 
-@app.route('/sas/api', methods=['POST'])
+@app.route('/api', methods=['POST'])
 def webapi_entry():
-    print('-> Request /sas/api')
+    print('-> Request /api')
     try:
         response = webapiIF.handle_request(request)
     except Exception as e:
-        print('/sas//api Error', e)
+        print('/api Error', e)
         print(traceback.format_exc())
         response = ''
     finally:
@@ -41,18 +45,18 @@ def analysis_entry():
     return restIF.analysis(request)
 
 
-@app.route('/query', methods=['GET'])
-def query_entry():
-    print('-> Request /query')
-    try:
-        response = restIF.query(request)
-    except Exception as e:
-        print('/wx Error', e)
-        print(traceback.format_exc())
-        response = ''
-    finally:
-        pass
-    return response
+# @app.route('/query', methods=['GET'])
+# def query_entry():
+#     print('-> Request /query')
+#     try:
+#         response = restIF.query(request)
+#     except Exception as e:
+#         print('/wx Error', e)
+#         print(traceback.format_exc())
+#         response = ''
+#     finally:
+#         pass
+#     return response
 
 
 @app.route('/wx', methods=['GET', 'POST'])
@@ -80,11 +84,13 @@ def init(provider: ServiceProvider, config: Config):
 
 
 def main():
-    config = Config()
     provider = ServiceProvider({
         'stock_analysis_system': True,
         # 'offline_analysis_result': True,
     })
+
+    config = Config()
+    config.load_config()
     init(provider, config)
     port = config.get('service_port', '80')
     debug = config.get('service_debug', 'true')
