@@ -21,13 +21,13 @@ def root_entry():
     return ''
 
 
-@app.route('/api', methods=['POST'])
+@app.route('/sas/api', methods=['POST'])
 def webapi_entry():
-    print('-> Request /api')
+    print('-> Request /sas/api')
     try:
         response = webapiIF.handle_request(request)
     except Exception as e:
-        print('/api Error', e)
+        print('/sas//api Error', e)
         print(traceback.format_exc())
         response = ''
     finally:

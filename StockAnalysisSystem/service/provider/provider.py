@@ -3,6 +3,7 @@ import base64
 import pickle
 import traceback
 import pandas as pd
+import StockAnalysisSystem.core.api as sasApi
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 import StockAnalysisSystem.core.Utiltity.time_utility as sasTimeUtil
 from StockAnalysisSystem.core.Utiltity.resource_manager import ResourceManager
@@ -14,8 +15,10 @@ from ..render.common_render import generate_display_page
 class ServiceProvider:
     SERVICE_LIST = ['stock_analysis_system', 'offline_analysis_result']
 
-    def __init__(self, service_table: dict):
+    def __init__(self, service_table: dict, sas_interface: sasIF, sas_api: sasApi):
         self.__service_table = service_table
+        self.__sas_interface = sas_interface
+        self.__sas_api = sas_api
 
         self.__config = None
         self.__logger = print
@@ -23,7 +26,6 @@ class ServiceProvider:
         self.__access_control = AccessControl()
         self.__resource_manager = ResourceManager()
 
-        self.__sas = None
         self.__offline_analysis_result = None
 
     def init(self, config) -> bool:
@@ -32,7 +34,7 @@ class ServiceProvider:
         from StockAnalysisSystem.core.config import Config
         self.__config = config if config is not None else Config()
 
-        if self.__service_table.get('stock_analysis_system'):
+        if self.__service_table.get('stock_analysis_system', False):
             ret = self.__init_sas()
             final_ret = ret and final_ret
 
