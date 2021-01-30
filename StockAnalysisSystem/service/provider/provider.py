@@ -15,10 +15,10 @@ from ..render.common_render import generate_display_page
 class ServiceProvider:
     SERVICE_LIST = ['stock_analysis_system', 'offline_analysis_result']
 
-    def __init__(self, service_table: dict, sas_interface: sasIF, sas_api: sasApi):
+    def __init__(self, service_table: dict):
         self.__service_table = service_table
-        self.__sas_interface = sas_interface
-        self.__sas_api = sas_api
+        self.__sas_interface = None
+        self.__sas_api = None
 
         self.__config = None
         self.__logger = print
@@ -47,10 +47,13 @@ class ServiceProvider:
     def __init_sas(self) -> bool:
         try:
             self.log('Init StockAnalysisSystem...')
+            from StockAnalysisSystem.interface.interface_local import LocalInterface
             from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
-            if not sasIF.sas_init(project_path=os.getcwd(), config=self.__config):
-                raise Exception(sasIF.__sas().get_log_errors())
-            self.__sas = sasIF.__sas()
+            self.__sas_interface = LocalInterface()
+            self.__sas_interface.if_init(os.getcwd(), config=self.__config)
+            # if not self.__sas_interface.sas_init(project_path=os.getcwd(), config=self.__config):
+            #     raise Exception(sasIF.__sas().get_log_errors())
+            self.__sas_api = sasApi
             self.log('Init StockAnalysisSystem Complete.')
             return True
         except Exception as e:
@@ -85,29 +88,29 @@ class ServiceProvider:
         result_html = self.__offline_analysis_result.get_analysis_result_html(security)
         return generate_display_page('分析结果' + security, result_html)
 
-    # ---------------------------------------------------- Web API -----------------------------------------------------
+    # -------------------------------------------------- Authencation --------------------------------------------------
 
-    @AccessControl.apply('query')
-    def query(self, uri: str, identity: str or None = None,
-              since: str or None = None, until: str or None = None, **extra) -> str:
-        if not isinstance(uri, str):
-            return ''
-        if isinstance(identity, str):
-            identity = identity.split(',')
-            identity = [s.strip() for s in identity]
-        elif identity is None:
-            pass
-        else:
-            return ''
-        time_serial = (sasTimeUtil.text_auto_time(since),
-                       sasTimeUtil.text_auto_time(until))
-        if time_serial[0] is None and time_serial[1] is None:
-            time_serial = None
-        df = sasIF.sas_query(uri, identity, time_serial, **extra)
-        return df
+    def check_accessible(self, token: str, feature, *args, **kwargs):
+        return self.__access_control.accessible(token, feature, **kwargs)
 
-    def analysis(self):
-        sasIF.sas_update()
+    # @AccessControl.apply('query')
+    # def query(self, uri: str, identity: str or None = None,
+    #           since: str or None = None, until: str or None = None, **extra) -> str:
+    #     if not isinstance(uri, str):
+    #         return ''
+    #     if isinstance(identity, str):
+    #         identity = identity.split(',')
+    #         identity = [s.strip() for s in identity]
+    #     elif identity is None:
+    #         pass
+    #     else:
+    #         return ''
+    #     time_serial = (sasTimeUtil.text_auto_time(since),
+    #                    sasTimeUtil.text_auto_time(until))
+    #     if time_serial[0] is None and time_serial[1] is None:
+    #         time_serial = None
+    #     df = sasIF.sas_query(uri, identity, time_serial, **extra)
+    #     return df
 
     # ------------------------------------------------------------------------------------------------------------------
 
