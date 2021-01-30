@@ -193,7 +193,7 @@ class SasAnalysisTask(ResourceTask):
 class LocalInterface(sasIF):
     def __init__(self):
         super(LocalInterface, self).__init__()
-        self.__res_mgr = ResourceManager()
+        self.__resource_manager = ResourceManager()
 
     # ------------------------------------------------------------------------------------------------------------------
     # ----------------------------------------------- Interface of sasIF -----------------------------------------------
@@ -207,7 +207,7 @@ class LocalInterface(sasIF):
     def sas_get_resource(self, res_id: str, res_name: str or [str]) -> any or [any]:
         list_param = isinstance(res_name, (list, tuple))
         res_names = res_name if list_param else [res_name]
-        res = [self.__res_mgr.get_resource(res_id, name) for name in res_names]
+        res = [self.__resource_manager.get_resource(res_id, name) for name in res_names]
         return res if list_param else res[0]
 
     # --------------------------------- Query ---------------------------------
@@ -219,7 +219,7 @@ class LocalInterface(sasIF):
 
     def sas_execute_update(self, uri: str, identity: str or [str] = None, force: bool = False, **extra) -> str:
         agent = sasApi.data_center().get_data_agent(uri)
-        task = SasUpdateTask(sasApi.data_hub(), sasApi.data_center(), self.__res_mgr, force)
+        task = SasUpdateTask(sasApi.data_hub(), sasApi.data_center(), self.__resource_manager, force)
         task.set_work_package(agent, identity)
         sasApi.append_task(task)
         return task.res_id()
@@ -263,7 +263,7 @@ class LocalInterface(sasIF):
 
     def sas_execute_analysis(self, securities: str or [str], analyzers: [str], time_serial: (datetime, datetime),
                              enable_from_cache: bool = True, **kwargs) -> str:
-        task = SasAnalysisTask(sasApi.strategy_entry(), sasApi.data_hub(), self.__res_mgr,
+        task = SasAnalysisTask(sasApi.strategy_entry(), sasApi.data_hub(), self.__resource_manager,
                                securities, analyzers, time_serial, enable_from_cache, **kwargs)
         sasApi.append_task(task)
         return task.res_id()
