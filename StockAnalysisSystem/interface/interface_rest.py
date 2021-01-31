@@ -9,7 +9,7 @@ from StockAnalysisSystem.core.Utiltity.JsonSerializer import serialize, deserial
 class RestInterface:
     def __init__(self):
         self.__token = None
-        self.__timeout = 10
+        self.__timeout = 9999
         self.__api_url = 'http://127.0.0.1:80/api'
 
     def if_init(self, api_uri: str = None, token: str = None, timeout=None) -> bool:
@@ -37,7 +37,7 @@ class RestInterface:
 
         try:
             resp = requests.post(self.__api_url, json=payload, headers=headers, timeout=self.__timeout)
-            return self.deserialize_response(resp.text)
+            return self.deserialize_response(resp.text) if (resp.text is not None and resp.text != '') else None
         except Exception as e:
             print('Parse result fail: ' + str(e))
             print(traceback.format_exc())

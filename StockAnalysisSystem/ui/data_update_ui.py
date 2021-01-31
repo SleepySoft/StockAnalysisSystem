@@ -387,6 +387,8 @@ class DataUpdateUi(QWidget):
         total_progress = ProgressRate()
         for res_id in self.__task_res_id:
             progress: ProgressRate = self.__context.get_res_sync().get_resource(res_id, 'progress')
+            if progress is None:
+                continue
             total_progress.combine_with(progress)
             if progress.progress_done():
                 self.__context.get_res_sync().remove_sync_resource(res_id)
