@@ -56,10 +56,10 @@ def main():
     caller = RestInterface()
     caller.if_init(api_uri='http://127.0.0.1:80/api', token='xxxxxx')
 
-    df = caller.query('Market.SecuritiesInfo', '000001.SZSE')
+    df = caller.sas_query('Market.SecuritiesInfo', '000001.SZSE')
     print(df)
 
-    df = caller.query('Finance.IncomeStatement', '000001.SZSE', ('2000-01-01', '2020-12-31'), readable=True)
+    df = caller.sas_query('Finance.IncomeStatement', '000001.SZSE', ('2000-01-01', '2020-12-31'), readable=True)
     print(df)
 
 
