@@ -88,7 +88,23 @@ class ServiceProvider:
         result_html = self.__offline_analysis_result.get_analysis_result_html(security)
         return generate_display_page('分析结果' + security, result_html)
 
-    # -------------------------------------------------- Authencation --------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
+
+    def sys_call(self, token: str, feature: str, *args, **kwargs):
+        access, reason = self.check_accessible(token, feature, *args, **kwargs)
+        if access:
+            pass
+        else:
+            return reason
+
+    def interface_call(self, token: str, feature: str, *args, **kwargs) -> (bool, any):
+        access, reason = self.check_accessible(token, feature, *args, **kwargs)
+        if access:
+            func = getattr(self.__sas_interface, feature, None)
+            resp = func(*args, **kwargs) if func is not None else None
+            return resp
+        else:
+            return reason
 
     def check_accessible(self, token: str, feature, *args, **kwargs):
         return self.__access_control.accessible(token, feature, **kwargs)
