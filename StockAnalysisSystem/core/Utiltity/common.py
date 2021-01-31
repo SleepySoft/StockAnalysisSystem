@@ -79,7 +79,10 @@ class ProgressRate:
         self.__progress_table.clear()
 
     def combine_with(self, progress_rate):
-        self.__progress_table.update(progress_rate.get_progress_table())
+        if isinstance(progress_rate, str):
+            return
+        new_progress_table = progress_rate.get_progress_table()
+        self.__progress_table.update(new_progress_table)
 
     def has_progress(self, identity: str or [str]):
         key = self.normalize_identity(identity)
@@ -99,6 +102,9 @@ class ProgressRate:
 
     def get_progress_table(self) -> collections.OrderedDict:
         return self.__progress_table
+
+    def set_progress_table(self, progress_table: collections.OrderedDict):
+        self.__progress_table = progress_table
 
     def get_progress_identities(self) -> []:
         return list(self.__progress_table.keys())

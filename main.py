@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QApplication
 
 from StockAnalysisSystem.ui.main_ui import MainWindow
 from StockAnalysisSystem.ui.Utility.ui_context import UiContext
+from StockAnalysisSystem.interface.interface_rest import RestInterface
 from StockAnalysisSystem.interface.interface_local import LocalInterface
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 
@@ -16,7 +17,9 @@ def init_if(local: bool = True) -> sasIF or None:
         local_if.if_init(os.getcwd())
         return local_if
     else:
-        pass
+        remote_if = RestInterface()
+        remote_if.if_init(api_uri='http://127.0.0.1:80/api', token='xxxxxx')
+        return remote_if
 
 
 def run_ui(sasif: sasIF):
@@ -39,7 +42,7 @@ def run_ui(sasif: sasIF):
 
 
 def main():
-    sasif = init_if()
+    sasif = init_if(False)
     run_ui(sasif)
     print('Process Quit.')
 

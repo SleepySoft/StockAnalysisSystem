@@ -1,7 +1,7 @@
 import json
 import pandas as pd
 from flask import request
-from StockAnalysisSystem.interface.interface_local import LocalInterface
+from StockAnalysisSystem.interface.interface_local import LocalInterface, traceback
 from StockAnalysisSystem.service.provider.provider import ServiceProvider
 from StockAnalysisSystem.core.config import Config
 from StockAnalysisSystem.core.Utiltity.JsonSerializer import serialize, deserialize
@@ -56,6 +56,7 @@ class WebApiInterface:
             return serialize(resp) if resp is not None else ''
         except Exception as e:
             print('Serialize Response Fail: ' + str(e))
+            print(traceback.format_exc())
             return ''
         finally:
             pass
