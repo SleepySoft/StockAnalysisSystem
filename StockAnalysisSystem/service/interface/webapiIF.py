@@ -4,6 +4,7 @@ from flask import request
 from StockAnalysisSystem.interface.interface_local import LocalInterface, traceback
 from StockAnalysisSystem.service.provider.provider import ServiceProvider
 from StockAnalysisSystem.core.config import Config
+import StockAnalysisSystem.core.Utiltity.JsonSerializerImpl
 from StockAnalysisSystem.core.Utiltity.JsonSerializer import serialize, deserialize
 
 
@@ -48,7 +49,8 @@ class WebApiInterface:
         resp = self.__provider.interface_call(token, api, *args, **kwargs)
         if resp is None:
             resp = self.__provider.sys_call(token, api, *args, **kwargs)
-        return self.serialize_response(resp)
+        resp_serialized = self.serialize_response(resp)
+        return resp_serialized
 
     @staticmethod
     def serialize_response(resp) -> str:

@@ -3,6 +3,7 @@ import datetime
 import traceback
 import pandas as pd
 from functools import partial
+import StockAnalysisSystem.core.Utiltity.JsonSerializerImpl
 from StockAnalysisSystem.core.Utiltity.JsonSerializer import serialize, deserialize
 
 
