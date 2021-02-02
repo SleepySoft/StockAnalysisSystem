@@ -96,8 +96,7 @@ class ResourceManager:
             for _id, res in self.__resource_table.items():
                 if len(set(res.get_tags()) & tags) == len(tags):
                     res_id.append(_id)
-        return tags
-
+        return res_id
 
     # ----------------------------------------------------------
 

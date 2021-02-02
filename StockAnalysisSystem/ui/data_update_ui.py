@@ -640,6 +640,9 @@ class DataUpdateUi(QWidget):
 
     def post_progress_updater(self):
         updater = ResourceTagUpdater(self.__context.get_sas_interface(), 'Data Update Progress Updater')
+        updater.set_resource_tags('update_task')
+        updater.set_update_resource_keys('progress')
+
         update_task = ResourceUpdateTask(updater)
         self.__context.get_task_queue().append_task(update_task)
         self.__current_update_task = update_task
