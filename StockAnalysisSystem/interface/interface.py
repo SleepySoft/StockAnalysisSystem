@@ -11,7 +11,10 @@ class SasInterface:
 
     # ------------------------------- Resource --------------------------------
 
-    def sas_get_resource(self, res_id: str, res_name: str or [str]) -> any or [any]:
+    def sas_get_resource(self, res_id: str, key: str or [str]) -> any or [any]:
+        pass
+
+    def sas_find_resource(self,  tags: str or [str]) -> [str]:
         pass
 
     # --------------------------------- Query ---------------------------------

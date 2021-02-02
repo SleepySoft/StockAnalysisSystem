@@ -14,6 +14,7 @@ class ResourceManager:
         def __init__(self, res_type: str, expired_time: int, **res_data):
             self.res_type = res_type
             self.res_data = res_data
+            self.res_tags = []
             self.expired_time = expired_time
 
         def type(self):
@@ -37,6 +38,12 @@ class ResourceManager:
 
         def renew(self, sec: int):
             self.expired_time += sec
+
+        def get_tags(self) -> [str]:
+            return self.res_tags
+
+        def set_tags(self, tags: [str]):
+            self.res_tags = tags
 
     def __init__(self):
         self.__resource_table = {}
@@ -70,6 +77,27 @@ class ResourceManager:
         with self.__resource_lock:
             res: ResourceManager.Resource = self.__get_resource(res_id)
             return res.data(k) if res is not None else None
+
+    def set_resource_tags(self, res_id: str, tags: [str]):
+        with self.__resource_lock:
+            res: ResourceManager.Resource = self.__get_resource(res_id)
+            if res is not None:
+                res.set_tags(tags)
+
+    def get_resource_tags(self, res_id: str) -> [str]:
+        with self.__resource_lock:
+            res: ResourceManager.Resource = self.__get_resource(res_id)
+            return res.get_tags() if res is not None else []
+
+    def find_resource_by_tags(self, tags: [str]) -> [str]:
+        res_id = []
+        tags = set(tags)
+        with self.__resource_lock:
+            for _id, res in self.__resource_table.items():
+                if len(set(res.get_tags()) & tags) == len(tags):
+                    res_id.append(_id)
+        return tags
+
 
     # ----------------------------------------------------------
 

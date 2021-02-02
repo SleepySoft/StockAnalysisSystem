@@ -42,6 +42,9 @@ class SasUpdateTask(ResourceTask):
         self.__clock = Clock()
         self.__identities = []
 
+        # Add resource tags here
+        resource_manager.set_resource_tags(self.res_id(), ['update_task'])
+
     def in_work_package(self, uri: str) -> bool:
         return self.__agent.adapt(uri)
 
@@ -156,6 +159,9 @@ class SasAnalysisTask(ResourceTask):
         self.__enable_from_cache = enable_from_cache
         self.__extra_params = kwargs
 
+        # Add resource tags here
+        resource_manager.set_resource_tags(self.res_id(), ['analysis_task'])
+
     def run(self):
         stock_list = self.selected_securities()
         result_list = self.analysis(stock_list)
@@ -204,11 +210,18 @@ class LocalInterface(sasIF):
 
     # ------------------------------- Resource --------------------------------
 
-    def sas_get_resource(self, res_id: str, res_name: str or [str]) -> any or [any]:
-        list_param = isinstance(res_name, (list, tuple))
-        res_names = res_name if list_param else [res_name]
+    def sas_get_resource(self, res_id: str, key: str or [str]) -> any or [any]:
+        list_param = isinstance(key, (list, tuple))
+        res_names = key if list_param else [key]
         res = [self.__resource_manager.get_resource(res_id, name) for name in res_names]
         return res if list_param else res[0]
+
+    def sas_find_resource(self,  tags: str or [str]) -> [str]:
+        if isinstance(tags, (list, tuple, set)):
+            tags = list(tags)
+        else:
+            tags = [str(tags)]
+        return self.__resource_manager.find_resource_by_tags(tags)
 
     # --------------------------------- Query ---------------------------------
 
