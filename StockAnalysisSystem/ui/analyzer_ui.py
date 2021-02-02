@@ -24,6 +24,7 @@ from StockAnalysisSystem.core.Utiltity.time_utility import *
 
 from StockAnalysisSystem.ui.Utility.ui_context import UiContext
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
+from StockAnalysisSystem.ui.Utility.resource_sync import ResourceTagUpdater, ResourceUpdateTask
 
 
 # # ------------------------- Analysis Task -------------------------
@@ -185,7 +186,8 @@ class AnalyzerUi(QWidget):
         self.__timing_clock = Clock()
         self.task_finish_signal.connect(self.__on_task_done)
 
-        self.__task_res_id = []
+        # self.__task_res_id = []
+        self.__current_update_task = None
 
         # Timer for update status
         self.__timer = QTimer()
@@ -242,6 +244,7 @@ class AnalyzerUi(QWidget):
         self.init_ui()
         self.update_selector()
         self.update_analyzer()
+        self.post_progress_updater()
 
     # ---------------------------------------------------- UI Init -----------------------------------------------------
 
@@ -371,18 +374,20 @@ class AnalyzerUi(QWidget):
         self.execute_update()
 
     def on_timer(self):
-        remaining_res_id = []
+        if self.__current_update_task is None or self.__current_update_task.working():
+            return
+
         total_progress = ProgressRate()
-        for res_id in self.__task_res_id:
-            progress: ProgressRate = self.__context.get_res_sync().get_resource(res_id, 'progress')
+        updater: ResourceTagUpdater = self.__current_update_task.get_updater()
+        updated_res_id = updater.get_resource_ids()
+
+        for res_id in updated_res_id:
+            progress: ProgressRate = updater.get_resource(res_id, 'progress')
             if progress is None:
                 continue
             total_progress.combine_with(progress)
             if progress.progress_done():
                 self.__context.get_res_sync().remove_sync_resource(res_id)
-            else:
-                remaining_res_id.append(res_id)
-            self.__task_res_id = remaining_res_id
 
         for i in range(self.__table_analyzer.RowCount()):
             uuid = self.__table_analyzer.GetItemText(i, 3)
@@ -391,6 +396,9 @@ class AnalyzerUi(QWidget):
                 self.__table_analyzer.SetItemText(i, 4, '%.2f%%' % (rate * 100))
             else:
                 self.__table_analyzer.SetItemText(i, 4, '')
+
+        if len(updated_res_id) > 0:
+            self.post_progress_updater()
 
     # def closeEvent(self, event):
     #     if self.__task_thread is not None:
@@ -491,7 +499,7 @@ class AnalyzerUi(QWidget):
         # StockAnalysisSystem().get_task_queue().append_task(task)
 
         securities = self.__context.get_sas_interface().sas_get_stock_identities()
-        res_id = self.__context.get_sas_interface().sas_execute_analysis(
+        self.__context.get_sas_interface().sas_execute_analysis(
             securities, self.__analyzer_list, time_serial,
             enable_from_cache=not self.__check_force_calc.isChecked(),
             enable_update_cache=self.__check_auto_cache.isChecked(),
@@ -499,8 +507,9 @@ class AnalyzerUi(QWidget):
             debug_dump_json=self.__check_dump_json.isChecked() or self.__check_load_dump_all.isChecked(),
             dump_path=self.__result_output,
         )
-        self.__task_res_id.append(res_id)
-        self.__context.get_res_sync().add_sync_resource(res_id, 'progress')
+        self.post_progress_updater()
+        # self.__task_res_id.append(res_id)
+        # self.__context.get_res_sync().add_sync_resource(res_id, 'progress')
 
         # if self.__task_thread is None:
         #     self.__task_thread = threading.Thread(target=self.ui_task)
@@ -595,6 +604,15 @@ class AnalyzerUi(QWidget):
                                                                   str(self.__timing_clock.elapsed_s()) + '秒\n' +
                                                                   '报告生成路径：' + self.__result_output),
                                 QMessageBox.Ok, QMessageBox.Ok)
+
+    def post_progress_updater(self):
+        updater = ResourceTagUpdater(self.__context.get_sas_interface(), 'Analysis Progress Updater')
+        updater.set_resource_tags('analysis_task')
+        updater.set_update_resource_keys('progress')
+
+        update_task = ResourceUpdateTask(updater)
+        self.__context.get_task_queue().append_task(update_task)
+        self.__current_update_task = update_task
 
 
 # ----------------------------------------------------------------------------------------------------------------------
