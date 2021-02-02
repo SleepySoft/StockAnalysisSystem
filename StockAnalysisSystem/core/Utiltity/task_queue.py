@@ -32,6 +32,9 @@ class TaskQueue:
         def status(self) -> int:
             return self.__status
 
+        def working(self) -> bool:
+            return self.__status in [TaskQueue.Task.STATUS_PENDING, TaskQueue.Task.STATUS_RUNNING]
+
         # -------------- Must Override --------------
 
         def run(self):

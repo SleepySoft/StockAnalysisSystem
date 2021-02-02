@@ -23,7 +23,7 @@ from StockAnalysisSystem.core.Utiltity.time_utility import *
 from StockAnalysisSystem.core.Utiltity.TableViewEx import TableViewEx
 
 from StockAnalysisSystem.ui.Utility.ui_context import UiContext
-from StockAnalysisSystem.ui.Utility.resource_sync import ResourceSync
+from StockAnalysisSystem.ui.Utility.resource_sync import ResourceTagUpdater, ResourceUpdateTask
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 
 
@@ -207,7 +207,7 @@ class RefreshTask(TaskQueue.Task):
 # ---------------------------------------------------- DataUpdateUi ----------------------------------------------------
 
 class DataUpdateUi(QWidget):
-    task_finish_signal = pyqtSignal()
+    # task_finish_signal = pyqtSignal()
     refresh_finish_signal = pyqtSignal()
 
     INDEX_CHECK = 0
@@ -243,11 +243,13 @@ class DataUpdateUi(QWidget):
         # # Fot task counting
         # self.__processing_update_tasks_count = []
 
-        self.__task_res_id = []
+        # self.__task_res_id = []
         # self.__task_progress = {}
         # self.__total_progress = ProgressRate()
 
-        self.task_finish_signal.connect(self.__on_task_done)
+        self.__current_update_task: ResourceUpdateTask = None
+
+        # self.task_finish_signal.connect(self.__on_task_done)
         self.refresh_finish_signal.connect(self.update_table_display)
 
         # Timer for update status
@@ -279,8 +281,10 @@ class DataUpdateUi(QWidget):
         # self.__context.get_task_queue().add_observer(self)
         # self.__context.get_task_queue().append_task(UpdateStockListTask(data_utility))
 
-        self.__context.get_task_queue().add_observer(self)
+        # self.__context.get_task_queue().add_observer(self)
         self.__context.get_task_queue().append_task(RefreshTask(self))
+
+        self.post_progress_updater()
 
     # ---------------------------------------------------- UI Init -----------------------------------------------------
 
@@ -332,15 +336,17 @@ class DataUpdateUi(QWidget):
 
     def on_auto_update_button(self, uri: str, identity: str):
         print('Auto update ' + uri + ':' + str(identity))
-        res_id = self.__context.get_sas_interface().sas_execute_update(uri, identity, False)
-        self.__task_res_id.append(res_id)
-        self.__context.get_res_sync().add_sync_resource(res_id, 'progress')
+        self.__context.get_sas_interface().sas_execute_update(uri, identity, False)
+        self.post_progress_updater()
+        # self.__task_res_id.append(res_id)
+        # self.__context.get_res_sync().add_sync_resource(res_id, 'progress')
 
     def on_force_update_button(self, uri: str, identity: str):
         print('Force update ' + uri + ' : ' + str(identity))
-        res_id = self.__context.get_sas_interface().sas_execute_update(uri, identity, True)
-        self.__task_res_id.append(res_id)
-        self.__context.get_res_sync().add_sync_resource(res_id, 'progress')
+        self.__context.get_sas_interface().sas_execute_update(uri, identity, True)
+        self.post_progress_updater()
+        # self.__task_res_id.append(res_id)
+        # self.__context.get_res_sync().add_sync_resource(res_id, 'progress')
 
     def on_batch_update(self, force: bool):
         for i in range(self.__table_main.RowCount()):
@@ -348,11 +354,12 @@ class DataUpdateUi(QWidget):
                 item_id = self.__table_main.GetItemText(i, DataUpdateUi.INDEX_ITEM)
                 # A little ugly...To distinguish it's uri or securities ideneity
                 if self.__display_identities is None:
-                    res_id = self.__context.get_sas_interface().sas_execute_update(item_id, None, force)
-                    self.__task_res_id.append(res_id)
+                    self.__context.get_sas_interface().sas_execute_update(item_id, None, force)
+                    # self.__task_res_id.append(res_id)
                 else:
-                    res_id = self.__context.get_sas_interface().sas_execute_update(self.__display_uri[0], item_id, force)
-                    self.__task_res_id.append(res_id)
+                    self.__context.get_sas_interface().sas_execute_update(self.__display_uri[0], item_id, force)
+                    # self.__task_res_id.append(res_id)
+                self.post_progress_updater()
 
     def on_page_control(self, control: str):
         # data_utility = self.__data_hub.get_data_utility()
@@ -383,18 +390,20 @@ class DataUpdateUi(QWidget):
                 self.__page = new_page
 
     def on_timer(self):
-        remaining_res_id = []
+        if self.__current_update_task is None or self.__current_update_task.working():
+            return
+
         total_progress = ProgressRate()
-        for res_id in self.__task_res_id:
-            progress: ProgressRate = self.__context.get_res_sync().get_resource(res_id, 'progress')
+        updater: ResourceTagUpdater = self.__current_update_task.get_updater()
+        updated_res_id = updater.get_resource_ids()
+
+        for res_id in updated_res_id:
+            progress: ProgressRate = updater.get_resource(res_id, 'progress')
             if progress is None:
                 continue
             total_progress.combine_with(progress)
             if progress.progress_done():
                 self.__context.get_res_sync().remove_sync_resource(res_id)
-            else:
-                remaining_res_id.append(res_id)
-            self.__task_res_id = remaining_res_id
 
         for i in range(self.__table_main.RowCount()):
             item_id = self.__table_main.GetItemText(i, DataUpdateUi.INDEX_ITEM)
@@ -434,6 +443,9 @@ class DataUpdateUi(QWidget):
             #             text.append('[Error]')
 
             self.__table_main.SetItemText(i, DataUpdateUi.INDEX_STATUS, ' | '.join(text))
+
+        if len(updated_res_id) > 0:
+            self.post_progress_updater()
         # if not total_progress.progress_done():
         #     self.__context.get_task_queue().append_task(UpdateResTask(self))
 
@@ -599,14 +611,14 @@ class DataUpdateUi(QWidget):
 
     # ---------------------------------------------------------------------------------
 
-    def on_task_updated(self, task, change: str):
-        if change in ['canceled', 'finished']:
-            pass
-            # if task in self.__processing_update_tasks_count:
-            #     self.task_finish_signal[UpdateTask].emit(task)
+    # def on_task_updated(self, task, change: str):
+    #     if change in ['canceled', 'finished']:
+    #         pass
+    #         # if task in self.__processing_update_tasks_count:
+    #         #     self.task_finish_signal[UpdateTask].emit(task)
 
-    def __on_task_done(self):
-        pass
+    # def __on_task_done(self):
+    #     pass
         # if task in self.__processing_update_tasks_count:
         #     self.__processing_update_tasks_count.remove(task)
         #     print('Finish task: %s, remaining count: %s' % (task.name(), len(self.__processing_update_tasks_count)))
@@ -625,6 +637,12 @@ class DataUpdateUi(QWidget):
 
     def unlock(self):
         self.__lock.release()
+
+    def post_progress_updater(self):
+        updater = ResourceTagUpdater(self.__context.get_sas_interface(), 'Data Update Progress Updater')
+        update_task = ResourceUpdateTask(updater)
+        self.__context.get_task_queue().append_task(update_task)
+        self.__current_update_task = update_task
 
 
 # ----------------------------------------------------------------------------------------------------------------------

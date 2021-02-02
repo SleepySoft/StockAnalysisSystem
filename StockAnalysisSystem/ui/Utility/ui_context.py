@@ -22,7 +22,7 @@ class UiContext:
 
     def set_sas_interface(self, sasif: sasIF):
         self.__sas_interface = sasif
-        self.__res_sync.set_sas_interface(sasif)
+        # self.__res_sync.set_sas_interface(sasif)
 
 
 
