@@ -54,7 +54,8 @@ def JsonDeserializer(deserialize_class: object):
 # ----------------------------------------------------------------------------------------------------------------------
 
 def serialize_obj(py_object: any):
-    class_name = py_object.__class__
+    class_type = py_object.__class__
+    class_name = class_type.__name__
     if class_name in SerializeTable and SerializeTable[class_name][0] is not None:
         py_serialized = SerializeTable[class_name][0](py_object)
         return {META_PREFIX + class_name: py_serialized}
