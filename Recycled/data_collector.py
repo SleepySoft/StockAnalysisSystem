@@ -17,9 +17,9 @@ class IBarFetcher:
 class IFinaFetcher:
     # In:
     #   stock_code: str -> Stock code
-    #   report_type: list of str -> Utiltity.constant.ANNUAL_REPORT_TYPES
+    #   report_type: list of str -> Utility.constant.ANNUAL_REPORT_TYPES
     # Return: map()
-    #   Key: str -> Utiltity.constant.ANNUAL_REPORT_TYPES
+    #   Key: str -> Utility.constant.ANNUAL_REPORT_TYPES
     #   Value: DataFrame -> Columns: ......; Index: Year/Date; Cell: Currency unit in CNY Yuan
     def FetchStockAnnualFinaData(
             self, stock_code: str, report_type: [str],
@@ -55,7 +55,7 @@ class IMarketFetcher:
 class IReportFetcher:
     # In:
     #   stock_code: str -> Stock code
-    #   report_period: str -> Utiltity.constant.REPORT_PERIOD_TYPES
+    #   report_period: str -> Utility.constant.REPORT_PERIOD_TYPES
     #   extension: list of str -> pdf|tsv|......
     #   date_from, date_to: str of date -> pdf|tsv|......
     # Return: pd.DataFrame
@@ -285,7 +285,7 @@ class DataCollector:
 #         if market is None:
 #             return None
 #         url = 'http://table.finance.yahoo.com/table.csv?s=' + stock_code + '.' + market
-#         df = Utiltity.common.DownloadCsvAsDF(url)
+#         df = Utility.common.DownloadCsvAsDF(url)
 #         df.columns = df.columns.map(lambda x: x.replace(' ', '_'))
 #         return df
 #

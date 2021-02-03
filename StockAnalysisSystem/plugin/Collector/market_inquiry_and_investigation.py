@@ -2,10 +2,10 @@ import pandas as pd
 import execjs
 import requests_html
 
-from StockAnalysisSystem.core.Utiltity.common import *
-from StockAnalysisSystem.core.Utiltity.df_utility import *
-from StockAnalysisSystem.core.Utiltity.time_utility import *
-from StockAnalysisSystem.core.Utiltity.CollectorUtility import *
+from StockAnalysisSystem.core.Utility.common import *
+from StockAnalysisSystem.core.Utility.df_utility import *
+from StockAnalysisSystem.core.Utility.time_utility import *
+from StockAnalysisSystem.core.Utility.CollectorUtility import *
 
 
 # ----------------------------------------------------------------------------------------------------------------------

@@ -2,9 +2,9 @@ import pandas as pd
 import tushare as ts
 
 from StockAnalysisSystem.core.config import TS_TOKEN
-from StockAnalysisSystem.core.Utiltity.common import *
-from StockAnalysisSystem.core.Utiltity.time_utility import *
-from StockAnalysisSystem.core.Utiltity.CollectorUtility import *
+from StockAnalysisSystem.core.Utility.common import *
+from StockAnalysisSystem.core.Utility.time_utility import *
+from StockAnalysisSystem.core.Utility.CollectorUtility import *
 
 
 # ----------------------------------------------------------------------------------------------------------------------

@@ -2,7 +2,7 @@ import traceback
 
 import requests
 from functools import partial
-from StockAnalysisSystem.core.Utiltity.JsonSerializer import serialize, deserialize
+from StockAnalysisSystem.core.Utility.JsonSerializer import serialize, deserialize
 
 
 class WebApiCaller:

@@ -1,5 +1,5 @@
 from StockAnalysisSystem.code.AnalyzerEntry import StrategyEntry, AnalysisResult
-from StockAnalysisSystem.core.Utiltity.resource_task import *
+from StockAnalysisSystem.core.Utility.resource_task import *
 from StockAnalysisSystem.core.DataHubEntry import DataHubEntry
 
 

@@ -15,7 +15,7 @@ from os import sys, path, system
 from PyQt5.QtCore import pyqtSignal, QProcess
 from PyQt5.QtWidgets import QGridLayout, QLineEdit, QFileDialog, QComboBox
 
-from StockAnalysisSystem.core.Utiltity.ui_utility import *
+from StockAnalysisSystem.core.Utility.ui_utility import *
 from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 
 

@@ -12,10 +12,11 @@ from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QComboBox
 
 root_path = path.dirname(path.dirname(path.abspath(__file__)))
 
-from StockAnalysisSystem.core.Utiltity.common import *
-from StockAnalysisSystem.core.Utiltity.ui_utility import *
-from StockAnalysisSystem.core.Utiltity.task_queue import *
-from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.Utility.common import *
+from StockAnalysisSystem.core.Utility.ui_utility import *
+from StockAnalysisSystem.core.Utility.task_queue import *
+from StockAnalysisSystem.core.Utility.time_utility import *
+from StockAnalysisSystem.ui.Utility.ui_context import UiContext
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 
 
@@ -486,9 +487,10 @@ def init(sas_if) -> bool:
     return True
 
 
-def widget(parent: QWidget) -> (QWidget, dict):
-    return AnnouncementDownloaderUi(
-        sasEntry.get_data_hub_entry(), sasEntry.get_task_queue()), \
+def widget(parent: QWidget, **kwargs) -> (QWidget, dict):
+    ui_context: UiContext = kwargs.get('ui_context', None)
+    task_manager = None if ui_context is None else ui_context.get_task_queue()
+    return AnnouncementDownloaderUi(sasInterface, task_manager), \
            {'name': '年报下载', 'show': False}
 
 

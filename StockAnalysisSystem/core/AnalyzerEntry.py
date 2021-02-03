@@ -1,9 +1,9 @@
 from os import sys
 
-from .Utiltity.AnalyzerUtility import *
+from .Utility.AnalyzerUtility import *
 from .DataHubEntry import DataHubEntry
 from .Database.DatabaseEntry import DatabaseEntry
-from .Utiltity.plugin_manager import PluginManager
+from .Utility.plugin_manager import PluginManager
 
 
 class StrategyEntry:

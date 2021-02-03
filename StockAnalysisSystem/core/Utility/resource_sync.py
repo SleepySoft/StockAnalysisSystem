@@ -1,7 +1,7 @@
 import threading
 import time
 
-from StockAnalysisSystem.core.Utiltity.task_queue import TaskQueue
+from StockAnalysisSystem.core.Utility.task_queue import TaskQueue
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 
 

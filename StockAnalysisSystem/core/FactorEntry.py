@@ -6,12 +6,12 @@ from os import sys, path
 
 from .Database import NoSqlRw
 from .Database import UpdateTableEx
-from .Utiltity.common import *
-from .Utiltity.dependency import *
-from .Utiltity.df_utility import *
-from .Utiltity.time_utility import *
+from .Utility.common import *
+from .Utility.dependency import *
+from .Utility.df_utility import *
+from .Utility.time_utility import *
 from .Database.DatabaseEntry import DatabaseEntry
-from .Utiltity.plugin_manager import PluginManager
+from .Utility.plugin_manager import PluginManager
 
 
 def wrap_list(val: any):

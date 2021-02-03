@@ -3,7 +3,7 @@ import threading
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QTimer, QSortFilterProxyModel
 from PyQt5.QtWidgets import QCompleter, QComboBox
-from StockAnalysisSystem.core.Utiltity.common import ThreadSafeSingleton
+from StockAnalysisSystem.core.Utility.common import ThreadSafeSingleton
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 
 

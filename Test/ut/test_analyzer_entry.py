@@ -2,7 +2,7 @@ import traceback
 from os import sys, path
 
 from StockAnalysisSystem.core.AnalyzerEntry import *
-from StockAnalysisSystem.core.Utiltity.plugin_manager import PluginManager
+from StockAnalysisSystem.core.Utility.plugin_manager import PluginManager
 
 
 # ----------------------------------------------------------------------------------------------------------------------

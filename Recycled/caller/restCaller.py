@@ -4,7 +4,7 @@ import traceback
 
 import requests
 import pandas as pd
-import StockAnalysisSystem.core.Utiltity.time_utility as sasTimeUtil
+import StockAnalysisSystem.core.Utility.time_utility as sasTimeUtil
 
 
 class RestCaller:

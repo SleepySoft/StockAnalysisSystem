@@ -73,7 +73,7 @@ def thread(context: dict):
     pass
 
 
-def widget(parent: QWidget) -> (QWidget, dict):
+def widget(parent: QWidget, **kwargs) -> (QWidget, dict):
     """
     If you sepcify 'widget' in plugin_capacities(). This function will be invoked once at startup.
     You should create and return a widget and it's config as a dict.

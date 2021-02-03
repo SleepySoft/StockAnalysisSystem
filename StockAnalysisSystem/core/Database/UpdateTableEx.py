@@ -2,7 +2,7 @@ import traceback
 from pymongo import MongoClient
 
 from .NoSqlRw import *
-from ..Utiltity.time_utility import *
+from ..Utility.time_utility import *
 
 
 class UpdateTableEx:

@@ -12,14 +12,14 @@ import os
 
 from PyQt5.QtCore import QTimer
 
-from StockAnalysisSystem.core.Utiltity.common import *
-from StockAnalysisSystem.core.Utiltity.task_queue import *
-from StockAnalysisSystem.core.Utiltity.ui_utility import *
-from StockAnalysisSystem.core.Utiltity.time_utility import *
-from StockAnalysisSystem.core.Utiltity.TableViewEx import TableViewEx
+from StockAnalysisSystem.core.Utility.common import *
+from StockAnalysisSystem.core.Utility.task_queue import *
+from StockAnalysisSystem.core.Utility.ui_utility import *
+from StockAnalysisSystem.core.Utility.time_utility import *
+from StockAnalysisSystem.core.Utility.TableViewEx import TableViewEx
 
 from StockAnalysisSystem.ui.Utility.ui_context import UiContext
-from StockAnalysisSystem.core.Utiltity.resource_sync import ResourceTagUpdater, ResourceUpdateTask
+from StockAnalysisSystem.core.Utility.resource_sync import ResourceTagUpdater, ResourceUpdateTask
 
 DEFAULT_INFO = """数据更新界面说明：
 1. 要使用此功能，首先请在设置界面配置好TS_TOKEN及NOSQL相关设置项目

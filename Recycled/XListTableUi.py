@@ -11,7 +11,7 @@ author:Sleepy
 from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QFileDialog, QComboBox
 
-from StockAnalysisSystem.core.Utiltity.ui_utility import *
+from StockAnalysisSystem.core.Utility.ui_utility import *
 from StockAnalysisSystem.core.Database.XListTable import *
 from StockAnalysisSystem.core.Database.DatabaseEntry import *
 from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem

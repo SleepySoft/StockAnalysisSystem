@@ -1,7 +1,7 @@
 from .DataAgent import DataAgent
-from ..Utiltity.common import *
-from ..Utiltity.time_utility import *
-from ..Utiltity.task_queue import TaskQueue
+from ..Utility.common import *
+from ..Utility.time_utility import *
+from ..Utility.task_queue import TaskQueue
 from ..DataHub.DataUtility import DataUtility
 from ..DataHub.UniversalDataCenter import UniversalDataCenter
 

@@ -1,7 +1,7 @@
 import os
 import errno
 
-from StockAnalysisSystem.core.Utiltity.CsvRecord import *
+from StockAnalysisSystem.core.Utility.CsvRecord import *
 # from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 

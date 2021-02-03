@@ -11,9 +11,9 @@ author:YuQiu
 import os
 import errno
 
-from .Utiltity.common import *
-from .Utiltity.task_queue import *
-from .Utiltity.time_utility import *
+from .Utility.common import *
+from .Utility.task_queue import *
+from .Utility.time_utility import *
 
 
 class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
@@ -105,7 +105,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         from .DataHubEntry import DataHubEntry
         from .AnalyzerEntry import StrategyEntry
         from .Database.DatabaseEntry import DatabaseEntry
-        from .Utiltity.plugin_manager import PluginManager
+        from .Utility.plugin_manager import PluginManager
 
         if isinstance(config, Config):
             self.__config = config

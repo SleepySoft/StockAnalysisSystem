@@ -3,9 +3,9 @@ import datetime
 import pandas as pd
 
 from .api_util import *
-from .Utiltity.common import *
+from .Utility.common import *
 from .DataHub.DataAgent import *
-from .Utiltity.resource_task import *
+from .Utility.resource_task import *
 from .FactorEntry import FactorCenter
 from .DataHubEntry import DataHubEntry
 from .AnalyzerEntry import StrategyEntry
