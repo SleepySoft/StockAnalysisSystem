@@ -217,11 +217,14 @@ class LocalInterface(sasIF):
         return res if list_param else res[0]
 
     def sas_find_resource(self,  tags: str or [str]) -> [str]:
-        if isinstance(tags, (list, tuple, set)):
-            tags = list(tags)
-        else:
-            tags = [str(tags)]
+        tags = list(tags) if isinstance(tags, (list, tuple, set)) else [str(tags)]
         return self.__resource_manager.find_resource_by_tags(tags)
+
+    def sas_delete_resource(self, res_id: str or [str]) -> bool:
+        res_ids = list(res_id) if isinstance(res_id, (list, tuple, set)) else [str(res_id)]
+        for _id in res_ids:
+            self.__resource_manager.pop_resource(_id)
+        return True
 
     # --------------------------------- Query ---------------------------------
 
