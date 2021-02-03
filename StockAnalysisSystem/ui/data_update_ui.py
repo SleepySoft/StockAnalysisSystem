@@ -445,7 +445,10 @@ class DataUpdateUi(QWidget):
             self.__table_main.SetItemText(i, DataUpdateUi.INDEX_STATUS, ' | '.join(text))
 
         if len(updated_res_id) > 0:
-            self.post_progress_updater()
+            if not total_progress.progress_done():
+                self.post_progress_updater()
+            else:
+                self.__context.get_sas_interface().sas_delete_resource()
         # if not total_progress.progress_done():
         #     self.__context.get_task_queue().append_task(UpdateResTask(self))
 

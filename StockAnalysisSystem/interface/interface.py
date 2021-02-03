@@ -17,6 +17,9 @@ class SasInterface:
     def sas_find_resource(self,  tags: str or [str]) -> [str]:
         pass
 
+    def sas_delete_resource(self, res_id: str or [str]) -> bool:
+        pass
+
     # --------------------------------- Query ---------------------------------
 
     def sas_query(self, uri: str, identity: str or [str] = None, time_serial: tuple = None, **extra) -> pd.DataFrame or None:
