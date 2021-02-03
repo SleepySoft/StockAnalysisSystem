@@ -8,13 +8,9 @@ author:Sleepy
 @function:
 @modify:
 """
-import copy
 import os
-import traceback
-import threading
 
-from PyQt5.QtCore import QTimer, pyqtSignal
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, Executor
+from PyQt5.QtCore import QTimer
 
 from StockAnalysisSystem.core.Utiltity.common import *
 from StockAnalysisSystem.core.Utiltity.task_queue import *
@@ -23,9 +19,7 @@ from StockAnalysisSystem.core.Utiltity.time_utility import *
 from StockAnalysisSystem.core.Utiltity.TableViewEx import TableViewEx
 
 from StockAnalysisSystem.ui.Utility.ui_context import UiContext
-from StockAnalysisSystem.ui.Utility.resource_sync import ResourceTagUpdater, ResourceUpdateTask
-from StockAnalysisSystem.interface.interface import SasInterface as sasIF
-
+from StockAnalysisSystem.core.Utiltity.resource_sync import ResourceTagUpdater, ResourceUpdateTask
 
 DEFAULT_INFO = """数据更新界面说明：
 1. 要使用此功能，首先请在设置界面配置好TS_TOKEN及NOSQL相关设置项目

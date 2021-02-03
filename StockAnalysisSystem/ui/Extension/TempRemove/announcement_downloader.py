@@ -16,6 +16,7 @@ from StockAnalysisSystem.core.Utiltity.common import *
 from StockAnalysisSystem.core.Utiltity.ui_utility import *
 from StockAnalysisSystem.core.Utiltity.task_queue import *
 from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 
 
 # -------------------------------------------- class AnnouncementDownloader --------------------------------------------
@@ -328,14 +329,14 @@ class AnnouncementDownloadTask(TaskQueue.Task):
 
 
 class AnnouncementDownloaderUi(QWidget):
-    def __init__(self, datahub_entry, task_manager):
+    def __init__(self, sas_if: sasIF, task_manager):
         super(AnnouncementDownloaderUi, self).__init__()
 
         # ---------------- ext var ----------------
 
-        self.__data_hub = datahub_entry
-        self.__data_center = self.__data_hub.get_data_center() if self.__data_hub is not None else None
-        self.__data_utility = self.__data_hub.get_data_utility() if self.__data_hub is not None else None
+        self.__sas_if = sas_if
+        # self.__data_center = self.__data_hub.get_data_center() if self.__data_hub is not None else None
+        # self.__data_utility = self.__data_hub.get_data_utility() if self.__data_hub is not None else None
         self.__task_manager = task_manager
         self.__translate = QtCore.QCoreApplication.translate
 
@@ -471,13 +472,13 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-sasEntry = None
+sasInterface = None
 
 
-def init(sas) -> bool:
+def init(sas_if) -> bool:
     try:
-        global sasEntry
-        sasEntry = sas
+        global sasInterface
+        sasInterface = sas_if
     except Exception as e:
         pass
     finally:

@@ -46,7 +46,7 @@ class FactorCenter:
 
     # -------------------------------------------------------------------------
 
-    def query(self, sotck_identity: str, factor_name: str or [str],
+    def query(self, stock_identity: str, factor_name: str or [str],
               time_serial: tuple, mapping: dict, extra: dict) -> pd.DataFrame or None:
         # if self.__data_hub_entry is None:
         #     return None
@@ -62,7 +62,7 @@ class FactorCenter:
             result = self.get_plugin_manager().execute_module_function(
                 self.get_plugin_manager().all_modules(), 'calculate', {
                     'factor': factor,
-                    'identity': sotck_identity,
+                    'identity': stock_identity,
                     'time_serial': time_serial,
                     'mapping': mapping,
                     'data_hub': self.__data_hub_entry,

@@ -294,7 +294,11 @@ class LocalInterface(sasIF):
             'uuid': method_uuid, 'name': method_name, 'detail': method_detail
         } for method_uuid, method_name, method_detail, _ in analyzer_info]
 
-    # ------------------------------------------------------------------------------------------------------------------
+    # -------------------------------------------------- Data Utility --------------------------------------------------
+
+    def sas_auto_query(self, identity: str or [str], time_serial: tuple, fields: [str],
+                       join_on: [str] = None) -> pd.DataFrame or [pd.DataFrame]:
+        return sasApi.auto_query(identity, time_serial, fields, join_on)
 
     def sas_get_stock_info_list(self) -> [str]:
         return sasApi.get_stock_info_list()
@@ -305,6 +309,24 @@ class LocalInterface(sasIF):
     def sas_guess_stock_identities(self, text: str) -> [str]:
         return sasApi.guess_stock_identities(text)
 
+    def sas_get_all_industries(self) -> [str]:
+        return sasApi.get_all_industries()
 
+    def sas_get_industry_stocks(self, industry: str) -> [str]:
+        return sasApi.get_industry_stocks(industry)
 
+# ------------------------------------------------------- Factor -------------------------------------------------------
+
+    def sas_get_all_factors(self):
+        return sasApi.get_all_factors()
+
+    def sas_get_factor_depends(self, factor: str) -> [str]:
+        return sasApi.get_factor_depends(factor)
+
+    def sas_get_factor_comments(self, factor: str) -> str:
+        return sasApi.get_factor_comments(factor)
+
+    def sas_factor_query(self, stock_identity: str, factor_name: str or [str],
+                         time_serial: tuple, mapping: dict, **extra) -> pd.DataFrame or None:
+        return sasApi.factor_query(stock_identity, factor_name, time_serial, mapping, **extra)
 

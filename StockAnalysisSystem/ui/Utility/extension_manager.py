@@ -3,9 +3,10 @@ from threading import Thread
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QWidget
 
-from StockAnalysisSystem.core.StockAnalysisSystem import *
+# from StockAnalysisSystem.core.StockAnalysisSystem import *
 from StockAnalysisSystem.core.Utiltity.time_utility import *
 from StockAnalysisSystem.core.Utiltity.plugin_manager import *
+from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 
 
 class ExtensionManager:
@@ -23,8 +24,8 @@ class ExtensionManager:
         def quit(self):
             self.__context['quit_flag'] = True
 
-    def __init__(self, sas: StockAnalysisSystem, plugin: PluginManager):
-        self.__sas = sas
+    def __init__(self, sas_if: sasIF, plugin: PluginManager):
+        self.__sas_if = sas_if
         self.__plugin = plugin
 
         # Timer for update status
@@ -62,7 +63,7 @@ class ExtensionManager:
     def init_extensions(self) -> bool:
         fail_extension = []
         for extension in self.__extension_cap.keys():
-            result = self.__plugin.execute_module_function(extension, 'init', {'sas': self.__sas})
+            result = self.__plugin.execute_module_function(extension, 'init', {'sas_if': self.__sas_if})
             if len(result) == 0 or not result[0]:
                 fail_extension.append(extension)
                 capacity = self.__extension_cap.get(extension, {})

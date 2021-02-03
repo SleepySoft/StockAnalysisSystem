@@ -1,6 +1,6 @@
 from StockAnalysisSystem.core.Utiltity.task_queue import *
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
-from StockAnalysisSystem.ui.Utility.resource_sync import ResourceSync
+from StockAnalysisSystem.core.Utiltity.resource_sync import ResourceSync
 
 
 class UiContext:
