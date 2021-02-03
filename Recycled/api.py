@@ -4,9 +4,9 @@ from StockAnalysisSystem.ui.main_ui import MainWindow
 from StockAnalysisSystem.ui.config_ui import ConfigUi
 
 from StockAnalysisSystem.core.config import Config
-from StockAnalysisSystem.core.Utiltity.common import *
-from StockAnalysisSystem.core.Utiltity.ui_utility import *
-from StockAnalysisSystem.core.Utiltity.plugin_manager import PluginManager
+from StockAnalysisSystem.core.Utility.common import *
+from StockAnalysisSystem.core.Utility.ui_utility import *
+from StockAnalysisSystem.core.Utility.plugin_manager import PluginManager
 
 from StockAnalysisSystem.core.FactorEntry import FactorCenter
 from StockAnalysisSystem.core.DataHubEntry import DataHubEntry

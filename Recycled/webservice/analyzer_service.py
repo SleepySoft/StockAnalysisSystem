@@ -3,7 +3,7 @@ import traceback
 import pandas as pd
 
 from StockAnalysisSystem.core.config import Config
-import StockAnalysisSystem.core.Utiltity.AnalyzerUtility as analyzer_util
+import StockAnalysisSystem.core.Utility.AnalyzerUtility as analyzer_util
 
 
 ANALYZER_NAME_DICT = {}

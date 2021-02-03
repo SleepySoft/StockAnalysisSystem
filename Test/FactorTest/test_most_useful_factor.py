@@ -1,7 +1,7 @@
 from os import sys, path
 root_path = path.dirname(path.dirname(path.abspath(__file__)))
 
-from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.Utility.time_utility import *
 from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 
 

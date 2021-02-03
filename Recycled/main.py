@@ -7,8 +7,8 @@ from PyQt5.QtWidgets import QApplication
 
 from StockAnalysisSystem.ui.main_ui import MainWindow
 from StockAnalysisSystem.ui.config_ui import ConfigUi
-from StockAnalysisSystem.core.Utiltity.ui_utility import *
-from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.Utility.ui_utility import *
+from StockAnalysisSystem.core.Utility.time_utility import *
 from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 
 self_path = path.dirname(path.abspath(__file__))

@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QWidget, QPushButton, QGridLayout, QLineEdit, QFileD
 # https://stackoverflow.com/a/50286101
 import matplotlib
 
-from StockAnalysisSystem.core.Utiltity.securities_selector import SecuritiesSelector
+from StockAnalysisSystem.core.Utility.securities_selector import SecuritiesSelector
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -21,13 +21,13 @@ root_path = path.dirname(path.dirname(path.abspath(__file__)))
 
 # from StockAnalysisSystem.core.FactorEntry import FactorCenter
 # from StockAnalysisSystem.core.DataHubEntry import DataHubEntry
-# from StockAnalysisSystem.core.Utiltity.AnalyzerUtility import *
+# from StockAnalysisSystem.core.Utility.AnalyzerUtility import *
 # from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 
-from StockAnalysisSystem.core.Utiltity.common import *
-from StockAnalysisSystem.core.Utiltity.ui_utility import *
-from StockAnalysisSystem.core.Utiltity.time_utility import *
-from StockAnalysisSystem.core.Utiltity.securities_selector import *
+from StockAnalysisSystem.core.Utility.common import *
+from StockAnalysisSystem.core.Utility.ui_utility import *
+from StockAnalysisSystem.core.Utility.time_utility import *
+from StockAnalysisSystem.core.Utility.securities_selector import *
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 
 
@@ -513,7 +513,7 @@ def init(sas_if: sasIF) -> bool:
     return True
 
 
-def widget(parent: QWidget) -> (QWidget, dict):
+def widget(parent: QWidget, **kwargs) -> (QWidget, dict):
     return ChartLab(sasInterface), {'name': '因子图表', 'show': False}
 
 

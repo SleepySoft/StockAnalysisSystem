@@ -8,10 +8,10 @@ from PyQt5.QtWidgets import QButtonGroup, QDateTimeEdit, QApplication, QLabel, Q
     QMessageBox, QWidget, QComboBox, QCheckBox, QRadioButton, QLineEdit, QAbstractItemView, QFileDialog, QDialog
 from pyqtgraph.GraphicsScene.mouseEvents import MouseClickEvent
 
-from StockAnalysisSystem.core.Utiltity.common import *
-from StockAnalysisSystem.core.Utiltity.ui_utility import *
-from StockAnalysisSystem.core.Utiltity.time_utility import *
-from StockAnalysisSystem.core.Utiltity.securities_selector import SecuritiesSelector
+from StockAnalysisSystem.core.Utility.common import *
+from StockAnalysisSystem.core.Utility.ui_utility import *
+from StockAnalysisSystem.core.Utility.time_utility import *
+from StockAnalysisSystem.core.Utility.securities_selector import SecuritiesSelector
 
 try:
     from .MemoUtility import *

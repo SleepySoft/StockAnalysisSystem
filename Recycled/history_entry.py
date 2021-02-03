@@ -10,7 +10,7 @@ sys.path.append(root_path)
 from History.viewer_ex import *
 from History.Utility.candlestick import *
 from History.Utility.viewer_utility import *
-from StockAnalysisSystem.core.Utiltity.ui_utility import *
+from StockAnalysisSystem.core.Utility.ui_utility import *
 from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 
 

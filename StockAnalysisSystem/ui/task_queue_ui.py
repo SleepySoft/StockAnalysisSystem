@@ -15,7 +15,7 @@ import threading
 from PyQt5.QtWidgets import QHeaderView
 from PyQt5.QtCore import QTimer, pyqtSignal
 
-from StockAnalysisSystem.core.Utiltity.ui_utility import *
+from StockAnalysisSystem.core.Utility.ui_utility import *
 
 
 # ---------------------------------------------------- self ----------------------------------------------------

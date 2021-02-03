@@ -1,11 +1,11 @@
 import os
 
-from StockAnalysisSystem.core.Utiltity.common import *
-from StockAnalysisSystem.core.Utiltity.TagsLib import *
-from StockAnalysisSystem.core.Utiltity.df_utility import *
-from StockAnalysisSystem.core.Utiltity.time_utility import *
-from StockAnalysisSystem.core.Utiltity.WaitingWindow import *
-from StockAnalysisSystem.core.Utiltity.AnalyzerUtility import *
+from StockAnalysisSystem.core.Utility.common import *
+from StockAnalysisSystem.core.Utility.TagsLib import *
+from StockAnalysisSystem.core.Utility.df_utility import *
+from StockAnalysisSystem.core.Utility.time_utility import *
+from StockAnalysisSystem.core.Utility.WaitingWindow import *
+from StockAnalysisSystem.core.Utility.AnalyzerUtility import *
 
 try:
     # Only for pycharm indicating imports
@@ -185,8 +185,8 @@ class MemoExtra_StockTags(MemoExtra):
 
 # -------------------------------- Analysis --------------------------------
 
-from StockAnalysisSystem.core.Utiltity.ui_utility import *
-from StockAnalysisSystem.core.Utiltity.TableViewEx import *
+from StockAnalysisSystem.core.Utility.ui_utility import *
+from StockAnalysisSystem.core.Utility.TableViewEx import *
 
 
 class AnalyzerSelector(QDialog):

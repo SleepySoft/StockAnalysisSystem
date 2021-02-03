@@ -1,6 +1,6 @@
 import pandas as pd
 
-from StockAnalysisSystem.core.Utiltity.FactorUtility import *
+from StockAnalysisSystem.core.Utility.FactorUtility import *
 from StockAnalysisSystem.core.DataHubEntry import DataHubEntry
 from StockAnalysisSystem.core.Database.DatabaseEntry import DatabaseEntry
 

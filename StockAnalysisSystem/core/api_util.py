@@ -1,6 +1,6 @@
 from .DataHub.DataAgent import *
-from .Utiltity.resource_task import *
-from .Utiltity.time_utility import *
+from .Utility.resource_task import *
+from .Utility.time_utility import *
 from .DataHubEntry import DataHubEntry
 from .AnalyzerEntry import StrategyEntry, AnalysisResult
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, Executor

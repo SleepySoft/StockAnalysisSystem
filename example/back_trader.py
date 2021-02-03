@@ -5,8 +5,8 @@ import pandas as pd
 import backtrader as bt
 
 import StockAnalysisSystem.api as sas_api
-from StockAnalysisSystem.core.Utiltity.df_utility import *
-from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.Utility.df_utility import *
+from StockAnalysisSystem.core.Utility.time_utility import *
 
 
 class StrategyGrid(bt.Strategy):

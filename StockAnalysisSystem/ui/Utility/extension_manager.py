@@ -4,8 +4,8 @@ from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QWidget
 
 # from StockAnalysisSystem.core.StockAnalysisSystem import *
-from StockAnalysisSystem.core.Utiltity.time_utility import *
-from StockAnalysisSystem.core.Utiltity.plugin_manager import *
+from StockAnalysisSystem.core.Utility.time_utility import *
+from StockAnalysisSystem.core.Utility.plugin_manager import *
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 
 
@@ -86,10 +86,12 @@ class ExtensionManager:
         self.__run_thread_extensions()
         return True
 
-    def create_extensions_widgets(self, parent: QWidget) -> list:
+    def create_extensions_widgets(self, parent: QWidget, **kwargs) -> list:
         widgets = []
         for extension in self.__widget_extension:
-            result = self.__plugin.execute_module_function(extension, 'widget', {'parent': parent})
+            param = {'parent': parent}
+            param.update(kwargs)
+            result = self.__plugin.execute_module_function(extension, 'widget', param)
             if len(result) > 0 and result[0] is not None:
                 widgets.append(result[0])
         return widgets

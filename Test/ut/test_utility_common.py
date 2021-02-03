@@ -3,7 +3,7 @@ from os import sys, path
 root_path = path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
 sys.path.append(root_path)
 
-from StockAnalysisSystem.core.Utiltity.dependency import test_entry as test_entry_dependency
+from StockAnalysisSystem.core.Utility.dependency import test_entry as test_entry_dependency
 
 
 def test_entry():

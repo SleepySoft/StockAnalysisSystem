@@ -4,8 +4,8 @@ import traceback
 import pandas as pd
 
 import StockAnalysisSystem.api as sas_api
-from StockAnalysisSystem.core.Utiltity.df_utility import *
-from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.Utility.df_utility import *
+from StockAnalysisSystem.core.Utility.time_utility import *
 
 
 def score_function(price: float, prev_price: float, amount: float, prev_amount: float) -> int:

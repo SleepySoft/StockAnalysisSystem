@@ -15,7 +15,7 @@ from pymongo import MongoClient
 
 from .SqlRw import SqlAccess
 from .NoSqlRw import ItkvTable
-from ..Utiltity.common import *
+from ..Utility.common import *
 
 
 class DatabaseEntry:

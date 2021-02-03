@@ -4,8 +4,8 @@ from flask import request
 from StockAnalysisSystem.interface.interface_local import LocalInterface, traceback
 from StockAnalysisSystem.service.provider.provider import ServiceProvider
 from StockAnalysisSystem.core.config import Config
-import StockAnalysisSystem.core.Utiltity.JsonSerializerImpl
-from StockAnalysisSystem.core.Utiltity.JsonSerializer import serialize, deserialize
+import StockAnalysisSystem.core.Utility.JsonSerializerImpl
+from StockAnalysisSystem.core.Utility.JsonSerializer import serialize, deserialize
 
 
 # ----------------------------------------------------------------------------------------------------------------------

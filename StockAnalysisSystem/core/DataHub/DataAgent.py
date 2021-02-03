@@ -1,10 +1,10 @@
 import datetime
 import pandas as pd
 
-from ..Utiltity.common import *
+from ..Utility.common import *
 from ..UniversalDataDepot import *
-from ..Utiltity.df_utility import *
-from ..Utiltity.time_utility import *
+from ..Utility.df_utility import *
+from ..Utility.time_utility import *
 from ..Database.NoSqlRw import ItkvTable
 from ..Database.DatabaseEntry import DatabaseEntry
 from ..StockAnalysisSystem import StockAnalysisSystem

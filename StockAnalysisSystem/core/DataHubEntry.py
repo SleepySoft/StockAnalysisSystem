@@ -2,7 +2,7 @@ from .DataHub.DataAgentBuilder import *
 from .DataHub.DataUtility import DataUtility
 from .DataHub.UpdateHelper import UpdateHelper
 from .Database.DatabaseEntry import DatabaseEntry
-from .Utiltity.plugin_manager import PluginManager
+from .Utility.plugin_manager import PluginManager
 from .DataHub.UniversalDataCenter import UniversalDataCenter
 
 

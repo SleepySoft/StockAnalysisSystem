@@ -1,7 +1,7 @@
 import pandas as pd
 
-from StockAnalysisSystem.core.Utiltity.common import *
-from StockAnalysisSystem.core.Utiltity.AnalyzerUtility import *
+from StockAnalysisSystem.core.Utility.common import *
+from StockAnalysisSystem.core.Utility.AnalyzerUtility import *
 from StockAnalysisSystem.core.DataHubEntry import DataHubEntry
 from StockAnalysisSystem.core.Database.DatabaseEntry import DatabaseEntry
 

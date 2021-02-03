@@ -2,8 +2,8 @@ import datetime
 import threading
 import pandas as pd
 from .Interface import IMarket
-from ..Utiltity.df_utility import *
-from ..Utiltity.time_utility import *
+from ..Utility.df_utility import *
+from ..Utility.time_utility import *
 from ..DataHubEntry import DataHubEntry
 
 

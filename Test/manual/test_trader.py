@@ -1,7 +1,7 @@
 import os
 
 import StockAnalysisSystem.api as sas_api
-from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.Utility.time_utility import *
 
 from StockAnalysisSystem.core.Trader.Market import MarketBackTesting
 from StockAnalysisSystem.core.Trader.TradeStrategy import *

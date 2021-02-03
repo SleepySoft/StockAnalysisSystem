@@ -12,7 +12,7 @@ from StockAnalysisSystem.ui.data_hub_ui import *
 from StockAnalysisSystem.ui.analyzer_ui import *
 from StockAnalysisSystem.ui.data_update_ui import *
 from StockAnalysisSystem.ui.task_queue_ui import *
-from StockAnalysisSystem.core.Utiltity.plugin_manager import PluginManager
+from StockAnalysisSystem.core.Utility.plugin_manager import PluginManager
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 
 
@@ -66,7 +66,7 @@ class MainWindow(CommonMainWindow):
         # self.modules_init()
         # self.modules_ui_init()
 
-        self.extension_window_init()
+        self.init_extension_window()
 
     # ----------------------------- Setup and UI -----------------------------
 
@@ -190,8 +190,8 @@ class MainWindow(CommonMainWindow):
     #     pass
     #     self.__alias_table_ui.Init()
 
-    def extension_window_init(self):
-        widgets_config = self.__extension_manager.create_extensions_widgets(self)
+    def init_extension_window(self):
+        widgets_config = self.__extension_manager.create_extensions_widgets(self, ui_context=self.__context)
         for widget, _config in widgets_config:
             self.add_sub_window(widget, _config.get('name'), {
                 'DockFloat': True,

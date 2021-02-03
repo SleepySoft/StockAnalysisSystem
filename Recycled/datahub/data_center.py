@@ -23,7 +23,7 @@ class DataWeb:
         return True
 
     # Return: map(), not None
-    #   Key: str -> Utiltity.constant.ANNUAL_REPORT_TYPES
+    #   Key: str -> Utility.constant.ANNUAL_REPORT_TYPES
     #   Value: DataFrame -> Columns: ......; Index: Year/Date; Cell: Currency unit in CNY Yuan
     @staticmethod
     def DownloadStockAnnualFinaData(stock_code: str, annual_report_type: str) -> {str: pd.DataFrame}:
@@ -487,7 +487,7 @@ class DataCenter:
     #     for stock in stock_codes:
     #         self.__cache_annual_report[stock] = \
     #             self.__core.GetStockAnnualReportData(
-    #             stock, 0, 0, Utiltity.constant.ANNUAL_REPORT_TYPES)
+    #             stock, 0, 0, Utility.constant.ANNUAL_REPORT_TYPES)
 
 
 
@@ -502,7 +502,7 @@ class DataCenter:
     # def __get_cached_stock_data(self, stock_code: str) -> {str: pd.DataFrame}:
     #     return self.__cache_annual_report.get(stock_code, None)
     #
-    # # report_type -> Utiltity.constant.ANNUAL_REPORT_TYPES
+    # # report_type -> Utility.constant.ANNUAL_REPORT_TYPES
     # def __get_cached_stock_annual_report(self, stock_code: str, report_type: str) -> pd.DataFrame:
     #     tables = self.__cache_annual_report.get(stock_code, None)
     #     if tables is None:

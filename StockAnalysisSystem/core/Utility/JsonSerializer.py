@@ -4,7 +4,7 @@ import json
 # ----------------------------------------------------------------------------------------------------------------------
 
 # Note that if you import * from common, the datetime importing will be conflict
-from StockAnalysisSystem.core.Utiltity.common import ProgressRate
+from StockAnalysisSystem.core.Utility.common import ProgressRate
 
 
 # ----------------------------------------------------------------------------------------------------------------------

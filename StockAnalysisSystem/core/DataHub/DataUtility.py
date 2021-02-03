@@ -1,5 +1,5 @@
-from ..Utiltity.common import *
-from ..Utiltity.time_utility import *
+from ..Utility.common import *
+from ..Utility.time_utility import *
 from .UniversalDataCenter import UniversalDataCenter
 
 

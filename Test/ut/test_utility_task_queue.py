@@ -3,7 +3,7 @@ from os import sys, path
 root_path = path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
 sys.path.append(root_path)
 
-from StockAnalysisSystem.core.Utiltity.task_queue import test_entry as test_entry_task_queue
+from StockAnalysisSystem.core.Utility.task_queue import test_entry as test_entry_task_queue
 
 
 def test_entry():

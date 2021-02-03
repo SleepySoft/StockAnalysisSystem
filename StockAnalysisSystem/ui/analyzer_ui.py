@@ -12,13 +12,13 @@ import os
 
 from PyQt5.QtWidgets import QLineEdit, QFileDialog, QCheckBox, QDateTimeEdit, QGridLayout
 
-from StockAnalysisSystem.core.Utiltity.common import ProgressRate
-from StockAnalysisSystem.core.Utiltity.ui_utility import *
-from StockAnalysisSystem.core.Utiltity.TableViewEx import *
-from StockAnalysisSystem.core.Utiltity.time_utility import *
+from StockAnalysisSystem.core.Utility.common import ProgressRate
+from StockAnalysisSystem.core.Utility.ui_utility import *
+from StockAnalysisSystem.core.Utility.TableViewEx import *
+from StockAnalysisSystem.core.Utility.time_utility import *
 
 from StockAnalysisSystem.ui.Utility.ui_context import UiContext
-from StockAnalysisSystem.core.Utiltity.resource_sync import ResourceTagUpdater, ResourceUpdateTask
+from StockAnalysisSystem.core.Utility.resource_sync import ResourceTagUpdater, ResourceUpdateTask
 
 
 # # ------------------------- Analysis Task -------------------------

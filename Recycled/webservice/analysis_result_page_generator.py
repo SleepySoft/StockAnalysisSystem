@@ -2,7 +2,7 @@ import json
 import traceback
 
 from StockAnalysisSystem.core.config import Config
-import StockAnalysisSystem.core.Utiltity.AnalyzerUtility as analyzer_util
+import StockAnalysisSystem.core.Utility.AnalyzerUtility as analyzer_util
 
 
 def generate_result_page(result_path: str, name_dict_path: str, generate_sample: bool = False):

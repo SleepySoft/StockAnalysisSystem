@@ -10,8 +10,8 @@ from PyQt5.QtWidgets import QButtonGroup, QDateTimeEdit, QApplication, QLabel, Q
     QMessageBox, QWidget, QComboBox, QCheckBox, QRadioButton, QLineEdit, QAbstractItemView, QFileDialog, QDialog
 from pyqtgraph.GraphicsScene.mouseEvents import MouseClickEvent
 
-from StockAnalysisSystem.core.Utiltity.common import *
-from StockAnalysisSystem.core.Utiltity.ui_utility import *
+from StockAnalysisSystem.core.Utility.common import *
+from StockAnalysisSystem.core.Utility.ui_utility import *
 
 
 class WaitingWindow(QDialog):
