@@ -1,4 +1,6 @@
 import logging
+import traceback
+
 import matplotlib as mpl
 from os import sys, path
 from PyQt5.QtCore import pyqtSignal, QProcess
@@ -7,6 +9,9 @@ from PyQt5.QtWidgets import QWidget, QPushButton, QGridLayout, QLineEdit, QFileD
 
 # https://stackoverflow.com/a/50286101
 import matplotlib
+
+from StockAnalysisSystem.core.Utiltity.securities_selector import SecuritiesSelector
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
@@ -14,13 +19,16 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 root_path = path.dirname(path.dirname(path.abspath(__file__)))
 
-from StockAnalysisSystem.core.FactorEntry import FactorCenter
-from StockAnalysisSystem.core.DataHubEntry import DataHubEntry
+# from StockAnalysisSystem.core.FactorEntry import FactorCenter
+# from StockAnalysisSystem.core.DataHubEntry import DataHubEntry
+# from StockAnalysisSystem.core.Utiltity.AnalyzerUtility import *
+# from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
+
+from StockAnalysisSystem.core.Utiltity.common import *
 from StockAnalysisSystem.core.Utiltity.ui_utility import *
 from StockAnalysisSystem.core.Utiltity.time_utility import *
-from StockAnalysisSystem.core.Utiltity.AnalyzerUtility import *
 from StockAnalysisSystem.core.Utiltity.securities_selector import *
-from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
+from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -42,16 +50,12 @@ TIP_BUTTON_SHOW = '''显示当然绘制的图表所依赖的数据'''
 
 
 class ChartLab(QWidget):
-    def __init__(self, datahub_entry: DataHubEntry, factor_center: FactorCenter):
+    def __init__(self, sas_if: sasIF):
         super(ChartLab, self).__init__()
 
         # ---------------- ext var ----------------
 
-        self.__data_hub = datahub_entry
-        self.__factor_center = factor_center
-        self.__data_center = self.__data_hub.get_data_center() if self.__data_hub is not None else None
-        self.__data_utility = self.__data_hub.get_data_utility() if self.__data_hub is not None else None
-
+        self.__sas_if = sas_if
         self.__inited = False
         self.__plot_table = {}
         self.__paint_data = None
@@ -76,7 +80,7 @@ class ChartLab(QWidget):
 
         # Longitudinal comparison
         self.__radio_longitudinal_comparison = QRadioButton('纵向比较')
-        self.__combo_stock = SecuritiesSelector(self.__data_utility)
+        self.__combo_stock = SecuritiesSelector(self.__sas_if)
 
         # Limitation
         self.__line_lower = QLineEdit('')
@@ -153,12 +157,12 @@ class ChartLab(QWidget):
         self.__combo_quarter.setCurrentIndex(3)
 
         self.__combo_industry.addItem('全部', '全部')
-        identities = self.__data_utility.get_all_industries()
+        identities = self.__sas_if.sas_get_all_industries()
         for identity in identities:
             self.__combo_industry.addItem(identity, identity)
 
-        if self.__factor_center is not None:
-            factors = self.__factor_center.get_all_factors()
+        if self.__sas_if is not None:
+            factors = self.__sas_if.sas_get_all_factors()
             for fct in factors:
                 self.__combo_factor.addItem(fct, fct)
         self.on_factor_updated(0)
@@ -186,7 +190,7 @@ class ChartLab(QWidget):
         self.__line_lower.setText('')
         self.__line_upper.setText('')
         factor = self.__combo_factor.itemData(value)
-        comments = self.__factor_center.get_factor_comments(factor)
+        comments = self.__sas_if.sas_get_factor_comments(factor)
         self.__label_comments.setText(comments)
 
     def on_button_draw(self):
@@ -232,9 +236,11 @@ class ChartLab(QWidget):
                                         lower: float, upper: float):
         identities = ''
         if industry != '全部':
-            identities = self.__data_utility.get_industry_stocks(industry)
-        df = self.__data_center.query_from_factor('Factor.Finance', identities, (period, period),
-                                                  fields=[factor], readable=True)
+            identities = self.__sas_if.sas_get_industry_stocks(industry)
+        df = self.__sas_if.sas_factor_query(identities, [factor], (period, period), {}, readable=True)
+
+        if df is None or df.empty:
+            return
 
         s1 = df[factor]
         if lower is not None and upper is not None:
@@ -256,8 +262,7 @@ class ChartLab(QWidget):
         self.__paint_data.sort_values(factor, inplace=True)
 
     def plot_factor_longitudinal_comparison(self, factor: str, securities: str):
-        df = self.__data_center.query_from_factor('Factor.Finance', securities, None,
-                                                  fields=[factor], readable=True)
+        df = self.__sas_if.sas_factor_query(securities, [factor], None, {}, readable=True)
         # Only for annual report
         df = df[df['period'].dt.month == 12]
         df['报告期'] = df['period']
@@ -340,10 +345,10 @@ class ChartLab(QWidget):
         # df['财务费用正'] = df['减:财务费用'].apply(lambda x: x if x > 0 else 0)
         # df['三费'] = df['减:销售费用'] + df['减:管理费用'] + df['财务费用正']
 
-        df = self.__data_utility.auto_query('', period,
-                                            ['减:财务费用', '减:销售费用', '减:管理费用',
-                                             '营业总收入', '营业收入', '减:营业成本'],
-                                            ['stock_identity', 'period'])
+        df = self.__sas_if.sas_auto_query('', period,
+                                          ['减:财务费用', '减:销售费用', '减:管理费用',
+                                           '营业总收入', '营业收入', '减:营业成本'],
+                                          ['stock_identity', 'period'])
 
         df['毛利润'] = df['营业收入'] - df['减:营业成本']
         df['财务费用正'] = df['减:财务费用'].apply(lambda x: x if x > 0 else 0)
@@ -464,7 +469,7 @@ class ChartLab(QWidget):
             fields.append(plot_item.numerator)
             fields.append(plot_item.denominator)
         fields = list(set(fields))
-        return self.__data_utility.auto_query(
+        return self.__sas_if.sas_auto_query(
             '', (period - datetime.timedelta(days=1), period), fields, ['stock_identity', 'period'])
 
 
@@ -494,13 +499,13 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-sasEntry = None
+sasInterface: sasIF = None
 
 
-def init(sas: StockAnalysisSystem) -> bool:
+def init(sas_if: sasIF) -> bool:
     try:
-        global sasEntry
-        sasEntry = sas
+        global sasInterface
+        sasInterface = sas_if
     except Exception as e:
         pass
     finally:
@@ -509,8 +514,7 @@ def init(sas: StockAnalysisSystem) -> bool:
 
 
 def widget(parent: QWidget) -> (QWidget, dict):
-    sasEntry.get_factor_center()
-    return ChartLab(sasEntry.get_data_hub_entry(), sasEntry.get_factor_center()), {'name': '因子图表', 'show': False}
+    return ChartLab(sasInterface), {'name': '因子图表', 'show': False}
 
 
 # ------------------------------------------------ File Entry : main() -------------------------------------------------

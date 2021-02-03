@@ -20,7 +20,8 @@ from StockAnalysisSystem.core.Utiltity.df_utility import *
 from StockAnalysisSystem.core.Utiltity.ui_utility import *
 from StockAnalysisSystem.core.Utiltity.TableViewEx import *
 from StockAnalysisSystem.core.Utiltity.time_utility import *
-from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
+# from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
+from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 from StockAnalysisSystem.core.Utiltity.securities_selector import SecuritiesSelector
 
 try:
@@ -393,7 +394,7 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-sasEntry = None
+sasInterface: sasIF = None
 memoData: StockMemoData = None
 
 
@@ -429,12 +430,12 @@ def __register_extra_data():
     sasEntry.get_data_hub_entry().reg_data_extra('black_list', memoData.get_data('black_list'))
 
 
-def init(sas: StockAnalysisSystem) -> bool:
+def init(sas_if: sasIF) -> bool:
     try:
-        global sasEntry
-        sasEntry = sas
+        global sasInterface
+        sasInterface = sas_if
         global memoData
-        memoData = StockMemoData(sasEntry)
+        memoData = StockMemoData(sasInterface)
     except Exception as e:
         print(e)
         print(traceback.format_exc())

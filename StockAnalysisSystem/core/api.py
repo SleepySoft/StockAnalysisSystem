@@ -6,6 +6,7 @@ from .api_util import *
 from .Utiltity.common import *
 from .DataHub.DataAgent import *
 from .Utiltity.resource_task import *
+from .FactorEntry import FactorCenter
 from .DataHubEntry import DataHubEntry
 from .AnalyzerEntry import StrategyEntry
 from .DataHub.DataUtility import DataUtility
@@ -42,6 +43,10 @@ def database_entry() -> DatabaseEntry:
 
 def update_table() -> UpdateTableEx:
     return database_entry().get_update_table()
+
+
+def factor_center() -> FactorCenter:
+    return sas().get_factor_center()
 
 
 def init(project_path: str = None, config=None, not_load_config: bool = False) -> bool:
@@ -149,7 +154,13 @@ def get_analyzer_info() -> [str]:
     return analyzer_info
 
 
-# ------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------- Data Utility ----------------------------------------------------
+
+def auto_query(identity: str or [str], time_serial: tuple, fields: [str],
+               join_on: [str] = None) -> pd.DataFrame or [pd.DataFrame]:
+    result = data_utility().auto_query(identity, time_serial, fields, join_on)
+    return result
+
 
 def get_stock_info_list():
     stock_list = data_utility().get_stock_list()
@@ -164,4 +175,38 @@ def get_stock_identities():
 def guess_stock_identities(text: str):
     stock_list = data_utility().guess_securities(text)
     return stock_list
+
+
+def get_all_industries() -> str:
+    industries = data_utility().get_all_industries()
+    return industries
+
+
+def get_industry_stocks(industry: str) -> [str]:
+    stock_list = data_utility().get_industry_stocks(industry)
+    return stock_list
+
+
+# ------------------------------------------------------- Factor -------------------------------------------------------
+
+def get_all_factors():
+    return factor_center().get_all_factors()
+
+
+def get_factor_depends(factor: str) -> [str]:
+    return factor_center().get_factor_depends(factor)
+
+
+def get_factor_comments(factor: str) -> str:
+    return factor_center().get_factor_comments(factor)
+
+
+def factor_query(stock_identity: str, factor_name: str or [str],
+                 time_serial: tuple, mapping: dict, **extra) -> pd.DataFrame or None:
+    return factor_center().query(stock_identity, factor_name, time_serial, mapping, extra)
+
+
+
+
+
 

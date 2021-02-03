@@ -1,6 +1,5 @@
 from PyQt5.QtWidgets import QWidget
-
-from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
+from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -29,18 +28,18 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-sasEntry = None
+sasInterface: sasIF = None
 
 
-def init(sas: StockAnalysisSystem) -> bool:
+def init(sas_if: sasIF) -> bool:
     """
     System will invoke this function at startup once.
-    :param sas: The instance of StockAnalysisSystem
+    :param sas_if: The instance of SasInterface (mot matter local or remote)
     :return: True if successful else False
     """
     try:
-        global sasEntry
-        sasEntry = sas
+        global sasInterface
+        sasInterface = sas_if
     except Exception as e:
         pass
     finally:

@@ -66,7 +66,11 @@ class SasInterface:
     def sas_get_analyzer_probs(self) -> [str]:
         pass
 
-    # ------------------------------------------------------------------------------------------------------------------
+    # ---------------------------------------------------- Utility -----------------------------------------------------
+
+    def sas_auto_query(self, identity: str or [str], time_serial: tuple, fields: [str],
+                       join_on: [str] = None) -> pd.DataFrame or [pd.DataFrame]:
+        pass
 
     def sas_get_stock_info_list(self) -> [str]:
         pass
@@ -77,5 +81,23 @@ class SasInterface:
     def sas_guess_stock_identities(self, text: str) -> [str]:
         pass
 
+    def sas_get_all_industries(self) -> [str]:
+        pass
 
+    def sas_get_industry_stocks(self, industry: str) -> [str]:
+        pass
 
+# ------------------------------------------------------- Factor -------------------------------------------------------
+
+    def sas_get_all_factors(self):
+        pass
+
+    def sas_get_factor_depends(self, factor: str) -> [str]:
+        pass
+
+    def sas_get_factor_comments(self, factor: str) -> str:
+        pass
+
+    def sas_factor_query(self, stock_identity: str, factor_name: str or [str],
+                         time_serial: tuple, mapping: dict, **extra) -> pd.DataFrame or None:
+        pass

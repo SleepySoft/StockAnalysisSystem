@@ -2,7 +2,8 @@ import os
 import errno
 
 from StockAnalysisSystem.core.Utiltity.CsvRecord import *
-from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
+# from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
+from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 
 
 # -------------------------------------------------- Global Functions --------------------------------------------------
@@ -106,8 +107,8 @@ class StockMemoData:
         def on_data_updated(self, name: str, data: any):
             pass
 
-    def __init__(self, sas: StockAnalysisSystem):
-        self.__sas = sas
+    def __init__(self, sas_if: sasIF):
+        self.__sas_if = sas_if
 
         user_path = os.path.expanduser('~')
         # project_path = self.__sas.get_project_path() if self.__sas is not None else os.getcwd()

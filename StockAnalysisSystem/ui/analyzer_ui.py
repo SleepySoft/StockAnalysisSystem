@@ -9,13 +9,8 @@ author:Sleepy
 @modify:
 """
 import os
-import copy
-import traceback
-import threading
 
-from PyQt5.QtCore import QTimer, pyqtSignal
-from PyQt5.QtWidgets import QHeaderView, QLineEdit, QFileDialog, QCheckBox, QDateTimeEdit, QGridLayout, QRadioButton, \
-    QButtonGroup
+from PyQt5.QtWidgets import QLineEdit, QFileDialog, QCheckBox, QDateTimeEdit, QGridLayout
 
 from StockAnalysisSystem.core.Utiltity.common import ProgressRate
 from StockAnalysisSystem.core.Utiltity.ui_utility import *
@@ -23,8 +18,7 @@ from StockAnalysisSystem.core.Utiltity.TableViewEx import *
 from StockAnalysisSystem.core.Utiltity.time_utility import *
 
 from StockAnalysisSystem.ui.Utility.ui_context import UiContext
-from StockAnalysisSystem.interface.interface import SasInterface as sasIF
-from StockAnalysisSystem.ui.Utility.resource_sync import ResourceTagUpdater, ResourceUpdateTask
+from StockAnalysisSystem.core.Utiltity.resource_sync import ResourceTagUpdater, ResourceUpdateTask
 
 
 # # ------------------------- Analysis Task -------------------------
