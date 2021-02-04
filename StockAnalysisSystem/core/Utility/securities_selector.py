@@ -47,6 +47,7 @@ class SecuritiesSelector(QComboBox):
 
         self.setFocusPolicy(Qt.StrongFocus)
         self.setEditable(True)
+        self.addItem('Loading...')
 
         # add a filter model to filter matching items
         self.pFilterModel = QSortFilterProxyModel(self)
@@ -79,6 +80,7 @@ class SecuritiesSelector(QComboBox):
 
         stock_list = SecuritiesSelector.SingletonStorage().get_stock_list()
         if len(stock_list) > 0:
+            self.clear()
             for stock_identity, stock_name in stock_list:
                 self.addItem(stock_identity + ' | ' + stock_name, stock_identity)
             self.__timer.stop()
