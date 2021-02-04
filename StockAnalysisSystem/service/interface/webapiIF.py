@@ -14,7 +14,13 @@ class WebApiInterface:
     def __init__(self, provider: ServiceProvider):
         self.__provider: ServiceProvider = provider
 
-    def api_stub(self, req_args: dict) -> str:
+    def rest_interface_stub(self, req_args: dict) -> str:
+        """
+        Cooperate with RestInterface.rest_interface_proxy
+        Check and dispatch the rest call to local interface
+        :param req_args: The web request args
+        :return: Web response
+        """
         api = req_args.get('api', None)
         token = req_args.get('token', None)
         args_json = req_args.get('args', '')
@@ -77,7 +83,7 @@ def handle_request(flask_request: request) -> str:
     req_dict = json.loads(req_data)
 
     global webapi_interface
-    return webapi_interface.api_stub(req_dict)
+    return webapi_interface.rest_interface_stub(req_dict)
 
 
 # ----------------------------------------------------------------------------------------------------------------------

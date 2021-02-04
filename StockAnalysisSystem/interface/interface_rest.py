@@ -10,7 +10,7 @@ from StockAnalysisSystem.core.Utility.JsonSerializer import serialize, deseriali
 class RestInterface:
     def __init__(self):
         self.__token = None
-        self.__timeout = 9999
+        self.__timeout = 9999   # Blocking in request for debug
         self.__api_url = 'http://127.0.0.1:80/api'
 
     def if_init(self, api_uri: str = None, token: str = None, timeout=None) -> bool:
@@ -23,9 +23,16 @@ class RestInterface:
         return True
 
     def __getattr__(self, attr):
-        return partial(self.api_proxy, attr)
+        return partial(self.rest_interface_proxy, attr)
 
-    def api_proxy(self, api: str, *args, **kwargs) -> any:
+    def rest_interface_proxy(self, api: str, *args, **kwargs) -> any:
+        """
+        Cooperate with WebApiInterface.rest_interface_stub
+        :param api: The function name of interface that you want to call
+        :param args: The list args (which will be ignored in server side)
+        :param kwargs: The key-value args
+        :return: The response of server
+        """
         payload = {
             'api': api,
             'token': self.__token,

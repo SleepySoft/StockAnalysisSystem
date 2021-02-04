@@ -20,7 +20,6 @@ from StockAnalysisSystem.core.Utility.df_utility import *
 from StockAnalysisSystem.core.Utility.ui_utility import *
 from StockAnalysisSystem.core.Utility.TableViewEx import *
 from StockAnalysisSystem.core.Utility.time_utility import *
-# from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 from StockAnalysisSystem.core.Utility.securities_selector import SecuritiesSelector
 
@@ -445,7 +444,7 @@ def init(sas_if: sasIF) -> bool:
     return True
 
 
-def widget(parent: QWidget) -> (QWidget, dict):
+def widget(parent: QWidget, **kwargs) -> (QWidget, dict):
     memo_data = __build_memo_data()
     memo_extra = __build_memo_extra(memo_data)
 
