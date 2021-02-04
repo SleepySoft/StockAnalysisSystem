@@ -18,6 +18,7 @@ from StockAnalysisSystem.core.Utility.task_queue import *
 from StockAnalysisSystem.core.Utility.time_utility import *
 from StockAnalysisSystem.ui.Utility.ui_context import UiContext
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
+from StockAnalysisSystem.core.Utility.securities_selector import SecuritiesSelector
 
 
 # -------------------------------------------- class AnnouncementDownloader --------------------------------------------
@@ -273,8 +274,9 @@ class AnnouncementDownloadTask(TaskQueue.Task):
         self.__quit_flag = [False]
 
         # Modules
-        self.task_manager = None
-        self.data_utility = None
+        self.sas_if: sasIF = None
+        self.task_manager: TaskQueue = None
+        # self.data_utility = None
 
         # Parameters
         self.securities = ''
@@ -301,7 +303,7 @@ class AnnouncementDownloadTask(TaskQueue.Task):
 
     def __execute_update(self):
         if self.securities == ALL_STOCK_TEXT:
-            stock_list = self.data_utility.get_stock_list()
+            stock_list = self.sas_if.sas_get_stock_info_list()
             for stock_identity, stock_name in stock_list:
                 if self.__quit_flag is not None and self.__quit_flag[0]:
                     break
@@ -348,7 +350,7 @@ class AnnouncementDownloaderUi(QWidget):
         self.__timer.start()
 
         # Ui component
-        self.__combo_name = QComboBox()
+        self.__combo_name = SecuritiesSelector(self.__sas_if, self)
         self.__radio_annual_report = QRadioButton('年报')
         self.__radio_customize_filter = QRadioButton('自定义')
         self.__line_filter_include = QLineEdit()
@@ -381,9 +383,9 @@ class AnnouncementDownloaderUi(QWidget):
         main_layout.addWidget(self.__button_download)
 
     def __config_control(self):
-        self.__combo_name.setEditable(True)
-        self.__combo_name.addItem('所有')
-        self.__combo_name.addItem('股票列表载入中')
+        # self.__combo_name.setEditable(True)
+        # self.__combo_name.addItem('所有')
+        # self.__combo_name.addItem('股票列表载入中')
         self.__radio_annual_report.setChecked(True)
         self.__line_filter_include.setEnabled(False)
         self.__line_filter_exclude.setEnabled(False)
@@ -393,15 +395,18 @@ class AnnouncementDownloaderUi(QWidget):
         self.__button_download.clicked.connect(self.on_button_download)
 
     def on_timer(self):
-        # Check stock list ready and update combobox
-        if self.__data_utility is not None:
-            if self.__data_utility.stock_cache_ready():
-                self.__combo_name.clear()
-                self.__combo_name.addItem(ALL_STOCK_TEXT)
-                stock_list = self.__data_utility.get_stock_list()
-                for stock_identity, stock_name in stock_list:
-                    self.__combo_name.addItem(stock_identity + ' | ' + stock_name, stock_identity)
-                self.__timer.stop()
+        if self.__combo_name.count() > 1:
+            self.__combo_name.insertItem(0, ALL_STOCK_TEXT)
+            self.__combo_name.setCurrentIndex(0)
+            self.__timer.stop()
+        # # Check stock list ready and update combobox
+        # if self.__data_utility is not None:
+        #     if self.__data_utility.stock_cache_ready():
+        #         self.__combo_name.clear()
+        #         self.__combo_name.addItem(ALL_STOCK_TEXT)
+        #         stock_list = self.__data_utility.get_stock_list()
+        #         for stock_identity, stock_name in stock_list:
+        #             self.__combo_name.addItem(stock_identity + ' | ' + stock_name, stock_identity)
 
     def on_radio_report_type(self):
         if self.__radio_annual_report.isChecked():
@@ -412,11 +417,13 @@ class AnnouncementDownloaderUi(QWidget):
             self.__line_filter_exclude.setEnabled(True)
 
     def on_button_download(self):
-        input_securities = self.__combo_name.currentText()
-        if '|' in input_securities:
-            input_securities = input_securities.split('|')[0].strip()
+        # input_securities = self.__combo_name.currentText()
+        # if '|' in input_securities:
+        #     input_securities = input_securities.split('|')[0].strip()
+
+        input_securities = self.__combo_name.get_input_securities()
         if input_securities == ALL_STOCK_TEXT:
-            if self.__data_utility is None:
+            if self.__sas_if is None:
                 QMessageBox.information(self,
                                         QtCore.QCoreApplication.translate('main', '提示'),
                                         QtCore.QCoreApplication.translate('main', '无法获取股票列表'),
@@ -444,7 +451,8 @@ class AnnouncementDownloaderUi(QWidget):
             AnnouncementDownloadTask.REPORT_TYPE_NONE
 
         task.task_manager = self.__task_manager
-        task.data_utility = self.__data_utility
+        task.sas_if = self.__sas_if
+        # task.data_utility = self.__data_utility
 
         if self.__task_manager is not None:
             self.__task_manager.append_task(task)
