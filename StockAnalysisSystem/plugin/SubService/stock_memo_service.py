@@ -1,5 +1,5 @@
 import StockAnalysisSystem.core.api as sasApi
-from StockAnalysisSystem.core.Utility.sub_service_util import ServiceEvent
+from StockAnalysisSystem.core.Utility.event_queue import ServiceEvent
 
 
 # ----------------------------------------------------------------------------------------------------------------------
