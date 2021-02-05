@@ -1,5 +1,5 @@
 import StockAnalysisSystem.core.api as sasApi
-from StockAnalysisSystem.core.Utility.sub_service_util import ServiceEvent
+from StockAnalysisSystem.core.Utility.event_queue import ServiceEvent
 
 # 事件入口
 #    定时事件
@@ -30,8 +30,8 @@ def plugin_capacities() -> list:
     return []
     # return [
     #     'period',
-    #     'thread',
-    #     'on_event'
+    #     'polling',
+    #     'event_handler'
     # ]
 
 
@@ -40,7 +40,7 @@ def plugin_capacities() -> list:
 sasApiEntry: sasApi = None
 
 
-def init(sas_api: sasApi) -> bool:
+def init(sas_api: sasApi, **kwargs) -> bool:
     """
     System will invoke this function at startup once.
     :param sas_api: The sasApi entry
@@ -56,19 +56,6 @@ def init(sas_api: sasApi) -> bool:
     return True
 
 
-def period(interval_ns: int):
-    """
-    If you specify 'period' in plugin_capacities(). This function will be invoked periodically by MAIN thread,
-        the invoke interval should be more or less than 100ms.
-    Note that if this extension spends too much time on this function. The interface will be blocked.
-    And this extension will be removed from running list.
-    :param interval_ns: The interval between previous invoking and now.
-    :return: None
-    """
-    print('Period...' + str(interval_ns))
-    pass
-
-
 def thread(context: dict):
     """
     If you specify 'thread' in plugin_capacities(). This function will be invoked in a thread.
@@ -82,7 +69,19 @@ def thread(context: dict):
     pass
 
 
-def on_event(event: ServiceEvent):
+def polling(interval_ns: int):
+    """
+    If you specify 'polling' in plugin_capacities(). This function will be invoked when event queue is free.
+    Note that if this extension spends too much time on this function. The interface will be blocked.
+    And this extension will be removed from running list.
+    :param interval_ns: The interval between previous invoking and now.
+    :return: None
+    """
+    print('Period...' + str(interval_ns))
+    pass
+
+
+def event_handler(event: ServiceEvent, **kwargs):
     """
     Use this function to handle event. Includes timer and subscribed event.
     :param event: The event data

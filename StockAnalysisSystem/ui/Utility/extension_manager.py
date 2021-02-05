@@ -3,7 +3,6 @@ from threading import Thread
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QWidget
 
-# from StockAnalysisSystem.core.StockAnalysisSystem import *
 from StockAnalysisSystem.core.Utility.time_utility import *
 from StockAnalysisSystem.core.Utility.plugin_manager import *
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
