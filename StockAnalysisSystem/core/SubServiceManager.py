@@ -31,7 +31,7 @@ class SubServiceManager:
         def invoke(self, func: str, *args, **kwargs) -> any:
             try:
                 result = self.__plugin.execute_module_function(self.__extension, func, kwargs)
-                return result
+                return result[0] if result is not None and len(result) > 0 else None
             except Exception as e:
                 print('Invoke error: ' + str(e))
                 print(traceback.format_exc())
@@ -110,23 +110,23 @@ class SubServiceManager:
 
     def init_services(self) -> bool:
         fail_service = []
-        for service_wrapper in self.__service_table.keys():
+        for identity, service_wrapper in self.__service_table.items():
             result = service_wrapper.init(sas_api=self.__sas_api)
-            if len(result) == 0 or not result[0]:
-                fail_service.append(service_wrapper)
+            if not result:
+                fail_service.append((identity, service_wrapper))
                 prob = service_wrapper.plugin_prob()
                 if isinstance(prob, dict):
                     print('Fail to init extension: ' + prob.get('plugin_id', 'NO ID'))
                 else:
                     print('Fail to init extension: prob data error')
-        for fail_ext in fail_service:
-            if fail_ext in self.__period_service:
-                self.__period_service.remove(fail_ext)
-            if fail_ext in self.__thread_service:
-                self.__thread_service.remove(fail_ext)
-            if fail_ext in self.__event_handler_service:
-                self.__event_handler_service.remove(fail_ext)
-            # TODO: Delete from self.__service_table by value
+        for identity, service_wrapper in fail_service:
+            if service_wrapper in self.__period_service:
+                self.__period_service.remove(service_wrapper)
+            if service_wrapper in self.__thread_service:
+                self.__thread_service.remove(service_wrapper)
+            if service_wrapper in self.__event_handler_service:
+                self.__event_handler_service.remove(service_wrapper)
+            del self.__service_table[identity]
         return True
 
     def activate_services(self) -> bool:

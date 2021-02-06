@@ -1,5 +1,5 @@
 import StockAnalysisSystem.core.api as sasApi
-from StockAnalysisSystem.core.Utility.event_queue import ServiceEvent
+from StockAnalysisSystem.core.Utility.event_queue import Event
 
 # 事件入口
 #    定时事件
@@ -82,7 +82,7 @@ def polling(interval_ns: int):
     pass
 
 
-def event_handler(event: ServiceEvent, **kwargs):
+def event_handler(event: Event, **kwargs):
     """
     Use this function to handle event. Includes timer and subscribed event.
     :param event: The event data

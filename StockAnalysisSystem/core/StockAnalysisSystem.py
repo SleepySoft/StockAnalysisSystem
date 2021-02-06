@@ -207,6 +207,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         import StockAnalysisSystem.core.api as sasApi
         from .SubServiceManager import SubServiceManager
         self.__sub_service_manager = SubServiceManager(sasApi, sub_service_plugin)
+        self.__sub_service_manager.init()
 
         self.__task_queue.start()
 
