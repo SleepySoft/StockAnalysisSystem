@@ -11,6 +11,7 @@ from StockAnalysisSystem.core.Utility.event_queue import ServiceEvent
 
 # 注册系统调用
 
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 def plugin_prob() -> dict:

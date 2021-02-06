@@ -35,6 +35,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         self.__database_entry = None
         self.__factor_center = None
 
+        self.__sub_service_manager = None
         # self.__extension_manager = None
 
         self.__sys_call = {}
@@ -151,11 +152,13 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         strategy_plugin = PluginManager()
         collector_plugin = PluginManager()
         # extension_plugin = PluginManager()
+        sub_service_plugin = PluginManager()
 
         self.__plugin_table['Factor'] = factor_plugin
         self.__plugin_table['Analyzer'] = strategy_plugin
         self.__plugin_table['Collector'] = collector_plugin
         # self.__plugin_table['Extension'] = extension_plugin
+        self.__plugin_table['SubService'] = sub_service_plugin
 
         default_plugin_path = os.path.join(self.get_root_path(), 'plugin')
         project_plugin_path = os.path.join(self.get_project_path(), 'plugin')
@@ -167,6 +170,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
             strategy_plugin.add_plugin_path(os.path.join(default_plugin_path, 'Analyzer'))
             collector_plugin.add_plugin_path(os.path.join(default_plugin_path, 'Collector'))
             # extension_plugin.add_plugin_path(os.path.join(default_plugin_path, 'Extension'))
+            sub_service_plugin.add_plugin_path(os.path.join(default_plugin_path, 'SubService'))
         else:
             print('Default plugin not found.')
 
@@ -176,10 +180,12 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
             strategy_plugin.add_plugin_path(os.path.join(project_plugin_path, 'Analyzer'))
             collector_plugin.add_plugin_path(os.path.join(project_plugin_path, 'Collector'))
             # extension_plugin.add_plugin_path(os.path.join(project_plugin_path, 'Extension'))
+            sub_service_plugin.add_plugin_path(os.path.join(project_plugin_path, 'SubService'))
 
         factor_plugin.refresh()
         strategy_plugin.refresh()
         collector_plugin.refresh()
+        sub_service_plugin.refresh()
 
         # Because the ExtensionManager will refresh it.
         # extension_plugin.refresh()
@@ -197,6 +203,10 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         # from .ExtensionEntry import ExtensionManager
         # self.__extension_manager = ExtensionManager(self, extension_plugin)
         # self.__extension_manager.init()
+
+        import StockAnalysisSystem.core.api as sasApi
+        from .SubServiceManager import SubServiceManager
+        self.__sub_service_manager = SubServiceManager(sasApi, sub_service_plugin)
 
         self.__task_queue.start()
 

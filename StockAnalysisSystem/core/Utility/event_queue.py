@@ -4,7 +4,11 @@ from queue import Queue
 
 
 class Event:
-    TIMER_EVENT = 'timer_event'
+    EVENT_MAIL = 'mail_event'
+    EVENT_PUSH = 'push_event'
+    EVENT_TIMER = 'timer_event'
+    EVENT_INVOKE = 'invoke_event'
+    EVENT_BROADCAST = 'broadcast_event'
 
     def __init__(self):
         self.__event_data = {}
@@ -15,7 +19,7 @@ class Event:
         return ''
 
     def event_target(self) -> str or [str] or None:
-        return None
+        return ''
 
     # ---------------------------------------------------------------------
 
@@ -68,7 +72,7 @@ class EventQueue:
         while not self.__event_queue.empty():
             event = self.__event_queue.get()
             if self.__pre_process_event(event):
-                    self.__dispatch_event(event)
+                self.__dispatch_event(event)
             if (datetime.datetime.now() - polling_start).microseconds >= time_limit_ms:
                 break
         return self.__event_queue.qsize()
