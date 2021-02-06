@@ -1,5 +1,5 @@
 import StockAnalysisSystem.core.api as sasApi
-from StockAnalysisSystem.core.Utility.event_queue import ServiceEvent
+from StockAnalysisSystem.core.Utility.event_queue import Event
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -72,7 +72,7 @@ def thread(context: dict):
     pass
 
 
-def on_event(event: ServiceEvent):
+def on_event(event: Event, **kwargs):
     """
     Use this function to handle event. Includes timer and subscribed event.
     :param event: The event data
