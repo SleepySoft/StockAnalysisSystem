@@ -1,5 +1,47 @@
+import datetime
+import os
+import pandas as pd
+
+from .StockMemo.StockMemo import StockMemo
+from .StockMemo.BlackList import BlackList
+from StockAnalysisSystem.core.Utility.TagsLib import Tags
 import StockAnalysisSystem.core.api as sasApi
 from StockAnalysisSystem.core.Utility.event_queue import Event
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+class StockMemoService:
+    def __init__(self, sas_api: sasApi, root_path: str):
+        self.__sas_api: sasApi = sas_api
+        self.__root_path: str = root_path
+        self.__stock_tags = Tags(os.path.join(root_path, 'tags.json'))
+        self.__stock_memo = StockMemo(os.path.join(root_path, 'stock_memo.csv'))
+        self.__black_list = BlackList(self.__stock_memo, self.__stock_tags)
+
+    def update_root_path(self, root_path: str):
+        self.__stock_tags.load(os.path.join(root_path, 'tags.json'))
+        self.__stock_memo.raw_record().load(os.path.join(root_path, 'stock_memo.csv'))
+
+    def register_sys_call(self):
+        # Stock memo
+        self.__sas_api.register_sys_call('stock_memo_save',             self.__stock_memo.stock_memo_save,              group='stock_memo')
+        self.__sas_api.register_sys_call('stock_memo_load',             self.__stock_memo.stock_memo_load,              group='stock_memo')
+        self.__sas_api.register_sys_call('stock_memo_get_record',       self.__stock_memo.stock_memo_get_record,        group='stock_memo')
+        self.__sas_api.register_sys_call('stock_memo_add_record',       self.__stock_memo.stock_memo_add_record,        group='stock_memo')
+        self.__sas_api.register_sys_call('stock_memo_update_record',    self.__stock_memo.stock_memo_update_record,     group='stock_memo')
+        self.__sas_api.register_sys_call('stock_memo_delete_record',    self.__stock_memo.stock_memo_delete_record,     group='stock_memo')
+        self.__sas_api.register_sys_call('get_stock_memo_all_security', self.__stock_memo.get_stock_memo_all_security,  group='stock_memo')
+
+        # Black list
+        self.__sas_api.register_sys_call('save_black_list',         self.__black_list.save_black_list,          group='black_list')
+        self.__sas_api.register_sys_call('in_black_list',           self.__black_list.in_black_list,            group='black_list')
+        self.__sas_api.register_sys_call('all_black_list',          self.__black_list.all_black_list,           group='black_list')
+        self.__sas_api.register_sys_call('add_to_black_list',       self.__black_list.add_to_black_list,        group='black_list')
+        self.__sas_api.register_sys_call('remove_from_black_list',  self.__black_list.remove_from_black_list,   group='black_list')
+        self.__sas_api.register_sys_call('get_black_list_data',     self.__black_list.get_black_list_data,      group='black_list')
+        self.__sas_api.register_sys_call('save_black_list',         self.__black_list.reload_black_list_data,   group='black_list')
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -28,6 +70,7 @@ def plugin_capacities() -> list:
 # ----------------------------------------------------------------------------------------------------------------------
 
 sasApiEntry: sasApi = None
+stockMemoService: StockMemoService = None
 
 
 def init(sas_api: sasApi) -> bool:
@@ -38,7 +81,10 @@ def init(sas_api: sasApi) -> bool:
     """
     try:
         global sasApiEntry
+        global stockMemoService
+
         sasApiEntry = sas_api
+        stockMemoService = StockMemoService(sasApi)
     except Exception as e:
         pass
     finally:

@@ -9,7 +9,7 @@ from StockAnalysisSystem.core.Utility.AnalyzerUtility import *
 
 try:
     # Only for pycharm indicating imports
-    from .BlackList import *
+    from .BlackListUi import *
     from .MemoUtility import *
     from .StockChartUi import StockChartUi
     from .StockMemoEditor import StockMemoEditor
