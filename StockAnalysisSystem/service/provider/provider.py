@@ -93,7 +93,8 @@ class ServiceProvider:
     def sys_call(self, token: str, feature: str, *args, **kwargs):
         access, reason = self.check_accessible(token, feature, *args, **kwargs)
         if access:
-            pass
+            resp = sasApi.sys_call(feature, *args, **kwargs)
+            return resp
         else:
             return reason
 

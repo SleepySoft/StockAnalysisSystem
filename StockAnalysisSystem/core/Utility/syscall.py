@@ -73,7 +73,7 @@ class SysCall:
 
     # ---------------------------- Common -----------------------------
 
-    def has_sys_call(self, func_name):
+    def has_sys_call(self, func_name: str) -> bool:
         func, _ = self.__sys_call_table.get(func_name, (None, {}))
         return func is not None
 
