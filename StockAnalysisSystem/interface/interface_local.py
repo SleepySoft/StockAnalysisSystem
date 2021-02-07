@@ -330,3 +330,20 @@ class LocalInterface(sasIF):
                          time_serial: tuple, mapping: dict, **extra) -> pd.DataFrame or None:
         return sasApi.factor_query(stock_identity, factor_name, time_serial, mapping, **extra)
 
+    # ---------------------------------------------------- SysCall -----------------------------------------------------
+
+    def sys_call(self, func_name: str, *args, **kwargs):
+        return sasApi.sys_call(func_name, *args, **kwargs)
+
+    def has_sys_call(self, func_name: str) -> bool:
+        return sasApi.has_sys_call(func_name)
+
+    def get_sys_call_by_group(self, group_name: str) -> [str]:
+        return sasApi.get_sys_call_by_group(group_name)
+
+
+
+
+
+
+

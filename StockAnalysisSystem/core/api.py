@@ -206,7 +206,28 @@ def factor_query(stock_identity: str, factor_name: str or [str],
     return factor_center().query(stock_identity, factor_name, time_serial, mapping, extra)
 
 
+# ------------------------------------------------------ Sys Call ------------------------------------------------------
+
+def sys_call(func_name: str, *args, **kwargs):
+    return sas().get_sys_call().sys_call(func_name, *args, **kwargs)
 
 
+def has_sys_call(func_name: str) -> bool:
+    return sas().get_sys_call().has_sys_call(func_name)
 
+
+def register_sys_call(func_name: str, func_entry, replace: bool = False, **kwargs) -> bool:
+    return sas().get_sys_call().register_sys_call(func_name, func_entry, replace, **kwargs)
+
+
+def unregister_sys_call(func_name: str):
+    return sas().get_sys_call().unregister_sys_call(func_name)
+
+
+def get_sys_call_by_group(group_name: str) -> [str]:
+    return sas().get_sys_call().get_sys_call_by_group(group_name)
+
+
+def unregister_sys_call_by_group(group_name: str):
+    return sas().get_sys_call().unregister_sys_call_by_group(group_name)
 
