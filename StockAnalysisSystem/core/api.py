@@ -58,7 +58,7 @@ def append_task(task: TaskQueue.Task):
     sas().get_task_queue().append_task(task)
 
 
-# --------------------------------- Direct Operation ---------------------------------
+# ----------------------------------- DataHub -----------------------------------
 
 def query(uri: str, identity: str or [str] = None, time_serial: tuple = None, **extra) -> pd.DataFrame or None:
     return data_center().query(uri, identity, time_serial, **extra)
@@ -67,22 +67,6 @@ def query(uri: str, identity: str or [str] = None, time_serial: tuple = None, **
 def update(uri: str, identity: str or [str] = None,
            time_serial: tuple = None, force: bool = False, **extra) -> bool:
     return data_center().update_local_data(uri, identity, time_serial, force, **extra)
-
-
-def analysis(securities: str or [str], analyzers: [str],
-             time_serial: (datetime.datetime, datetime.datetime),
-             progress_rate: ProgressRate = None,
-             enable_from_cache: bool = True,
-             **kwargs):
-    total_result = strategy_entry().analysis_advance(
-        securities, analyzers, time_serial, progress_rate,
-        enable_from_cache=enable_from_cache,
-        enable_update_cache=kwargs.get('enable_update_cache', True),
-        debug_load_json=kwargs.get('debug_load_json', False),
-        debug_dump_json=kwargs.get('debug_dump_json', False),
-        dump_path=kwargs.get('dump_path', ''),
-    )
-    return total_result
 
 
 # ------------------------------------ Datahub ------------------------------------
@@ -143,6 +127,22 @@ def get_last_update_time_from_update_table(update_tags: [str]) -> datetime.datet
 #                            securities, analyzers, time_serial, enable_from_cache, **kwargs)
 #     append_task(task)
 #     return task
+
+
+def analysis(securities: str or [str], analyzers: [str],
+             time_serial: (datetime.datetime, datetime.datetime),
+             progress_rate: ProgressRate = None,
+             enable_from_cache: bool = True,
+             **kwargs):
+    total_result = strategy_entry().analysis_advance(
+        securities, analyzers, time_serial, progress_rate,
+        enable_from_cache=enable_from_cache,
+        enable_update_cache=kwargs.get('enable_update_cache', True),
+        debug_load_json=kwargs.get('debug_load_json', False),
+        debug_dump_json=kwargs.get('debug_dump_json', False),
+        dump_path=kwargs.get('dump_path', ''),
+    )
+    return total_result
 
 
 def get_analyzer_info() -> [str]:

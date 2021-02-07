@@ -38,7 +38,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         self.__sub_service_manager = None
         # self.__extension_manager = None
 
-        self.__sys_call = {}
+        self.__sys_call = None
 
     # ----------------------------------------- Path -----------------------------------------
 
@@ -81,6 +81,9 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
     def check_initialize(self, project_path: str = '', config=None, not_load_config: bool = False) -> bool:
         if self.__inited:
             return True
+
+        from StockAnalysisSystem.core.Utility.syscall import SysCall
+        self.__sys_call = SysCall()
 
         if str_available(project_path):
             self.__project_path = project_path
@@ -221,6 +224,9 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
 
     # -------------------------------------------- Entry --------------------------------------------
 
+    def get_sys_call(self):
+        return self.__sys_call
+
     def get_plugin_manager(self, name: str):
         if name not in self.__plugin_table:
             print('Warning: the plugin manager name should be one of: ' + str(self.__plugin_table.keys()))
@@ -242,32 +248,32 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
     def get_factor_center(self):
         return self.__factor_center if self.check_initialize() else None
 
-    # -------------------------------------------- SysCall --------------------------------------------
-
-    def sys_call(self, name: str, *args, **kwargs) -> any:
-        register_entry = self.__sys_call.get(name, None)
-        if register_entry is None:
-            print('Warning: No sys call named: ' + name)
-            return None
-        else:
-            if not isinstance(register_entry, (list, tuple)) or len(register_entry) != 3 or register_entry[0] is None:
-                return None
-            else:
-                return register_entry[0](*args, **kwargs)
-
-    def register_sys_call(self, name: str, parameters: dict, comments: str, entry, replace: bool = False) -> bool:
-        if name in self.__sys_call.keys():
-            if replace:
-                print('Sys call %s already exists - replace.' % name)
-            else:
-                print('Sys call %s already exists - ignore.' % name)
-                return False
-        self.__sys_call[name] = (entry, parameters, comments)
-        return True
-
-    def unregister_sys_call(self, name: str):
-        if name in self.__sys_call.keys():
-            del self.__sys_call[name]
+    # # -------------------------------------------- SysCall --------------------------------------------
+    #
+    # def sys_call(self, name: str, *args, **kwargs) -> any:
+    #     register_entry = self.__sys_call.get(name, None)
+    #     if register_entry is None:
+    #         print('Warning: No sys call named: ' + name)
+    #         return None
+    #     else:
+    #         if not isinstance(register_entry, (list, tuple)) or len(register_entry) != 3 or register_entry[0] is None:
+    #             return None
+    #         else:
+    #             return register_entry[0](*args, **kwargs)
+    #
+    # def register_sys_call(self, name: str, parameters: dict, comments: str, entry, replace: bool = False) -> bool:
+    #     if name in self.__sys_call.keys():
+    #         if replace:
+    #             print('Sys call %s already exists - replace.' % name)
+    #         else:
+    #             print('Sys call %s already exists - ignore.' % name)
+    #             return False
+    #     self.__sys_call[name] = (entry, parameters, comments)
+    #     return True
+    #
+    # def unregister_sys_call(self, name: str):
+    #     if name in self.__sys_call.keys():
+    #         del self.__sys_call[name]
 
 
 
