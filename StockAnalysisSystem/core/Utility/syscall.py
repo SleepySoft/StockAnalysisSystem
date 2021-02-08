@@ -50,18 +50,18 @@ class SysCall:
                         'parameters' as [(param_name, param_comments)]: The document of parameters by order
         :return:
         """
-        if func_name in self.__sys_call.keys():
+        if func_name in self.__sys_call_table.keys():
             if replace:
                 print('Sys call %s already exists - replace.' % func_name)
             else:
                 print('Sys call %s already exists - ignore.' % func_name)
                 return False
-        self.__sys_call[func_name] = (func_entry, kwargs)
+        self.__sys_call_table[func_name] = (func_entry, kwargs)
         return True
 
     def unregister_sys_call(self, func_name: str):
-        if func_name in self.__sys_call.keys():
-            del self.__sys_call[func_name]
+        if func_name in self.__sys_call_table.keys():
+            del self.__sys_call_table[func_name]
 
     # ----------------------------- Group -----------------------------
 
@@ -92,5 +92,5 @@ class SysCall:
     def unregister_sys_call_by_property(self, k: str, v: str):
         function_names = self.find_sys_call_by_property(k, v)
         for func_name in function_names:
-            del self.__sys_call[func_name]
+            del self.__sys_call_table[func_name]
 

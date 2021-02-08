@@ -30,9 +30,10 @@ def plugin_adapt(service: str) -> bool:
 def plugin_capacities() -> list:
     return []
     # return [
-    #     'period',
-    #     'polling',
-    #     'event_handler'
+    #     'api',            # Provides functions like sys call
+    #     'thread',         # SubService manager will create a thread for this service
+    #     'polling',        # polling() function will be invoked while event processing thread is free
+    #     'event_handler'   # SubService can handle events that dispatch to it
     # ]
 
 

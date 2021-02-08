@@ -76,8 +76,10 @@ class CsvRecord:
             # df['time'] = pd.to_datetime(df['time'], infer_datetime_format=True)
             df.reindex()
             self.__record_sheet = df
-            return column_includes(self.__record_sheet.columns, self.__record_columns)
+            return column_includes(self.__record_sheet, self.__record_columns)
         except Exception as e:
+            print('Error =>', e)
+            print('Error =>', traceback.format_exc())
             return False
         finally:
             pass
