@@ -275,13 +275,13 @@ class StockChartUi(QWidget):
             # But the un-canceled network (update task) will still block the main thread.
             # What the hell...
 
-            if check_update:
-                future_update: futures.Future = executor.submit(self.__update_security_data, uri, securities)
-                WaitingWindow.wait_future('检查更新数据中...\n'
-                                          '取消则使用离线数据\n'
-                                          '注意：取消更新后在网络连接超时前界面仍可能卡住，这或许是Python的机制导致\n'
-                                          '如果想禁用自动更新功能请删除StockChartUi.py中check_update相关的代码',
-                                          future_update, None)
+            # if check_update:
+            #     future_update: futures.Future = executor.submit(self.__update_security_data, uri, securities)
+            #     WaitingWindow.wait_future('检查更新数据中...\n'
+            #                               '取消则使用离线数据\n'
+            #                               '注意：取消更新后在网络连接超时前界面仍可能卡住，这或许是Python的机制导致\n'
+            #                               '如果想禁用自动更新功能请删除StockChartUi.py中check_update相关的代码',
+            #                               future_update, None)
 
             future_load_calc: futures.Future = executor.submit(
                 self.__load_calc_security_data, uri, securities, adjust_method, return_style)
@@ -301,7 +301,8 @@ class StockChartUi(QWidget):
     def load_security_memo(self) -> bool:
         self.__combo_name.select_security(self.__paint_securities, True)
 
-        memo_record = self.__memo_record.get_stock_memos(self.__paint_securities)
+        # memo_record = self.__memo_record.get_stock_memos(self.__paint_securities)
+        memo_record = self.__sas_if.stock_memo_get_record(self.__paint_securities)
         bar_manager = self.__vnpy_chart.get_bar_manager()
 
         if memo_record is None or bar_manager is None:
