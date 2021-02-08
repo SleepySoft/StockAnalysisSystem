@@ -263,7 +263,7 @@ class StockMemoDeck(QWidget):
         self.show_securities(list_securities)
 
     def __on_button_reload(self):
-        self.show_securities(self.__memo_record.get_all_security() if self.__memo_record is not None else [])
+        self.show_securities(self.__sas_if.stock_memo_get_all_security() if self.__sas_if is not None else [])
 
     def __on_check_show_black_list(self):
         self.__update_securities()
