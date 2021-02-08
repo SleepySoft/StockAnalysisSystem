@@ -11,17 +11,18 @@ from pyqtgraph.GraphicsScene.mouseEvents import MouseClickEvent
 from StockAnalysisSystem.core.Utility.common import *
 from StockAnalysisSystem.core.Utility.ui_utility import *
 from StockAnalysisSystem.core.Utility.time_utility import *
+from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 from StockAnalysisSystem.core.Utility.securities_selector import SecuritiesSelector
 
-try:
-    from .MemoUtility import *
-except Exception as e:
-    root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    os.sys.path.append(root_path)
-
-    from StockMemo.MemoUtility import *
-finally:
-    pass
+# try:
+#     from .MemoUtility import *
+# except Exception as e:
+#     root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+#     os.sys.path.append(root_path)
+#
+#     from StockMemo.MemoUtility import *
+# finally:
+#     pass
 
 
 # ----------------------------------------------- class StockMemoEditor ------------------------------------------------
@@ -36,8 +37,9 @@ class StockMemoEditor(QDialog):
     #     def on_memo_updated(self):
     #         pass
 
-    def __init__(self, memo_data: StockMemoData, parent: QWidget = None):
-        self.__memo_data = memo_data
+    def __init__(self, memo_context: dict, parent: QWidget = None):
+        self.__memo_context = memo_context
+        self.__sas_if: sasIF = self.__memo_context.get('sas_if')
         super(StockMemoEditor, self).__init__(parent)
 
         # The filter of left list
@@ -57,8 +59,8 @@ class StockMemoEditor(QDialog):
 
         self.__observers = []
 
-        self.__sas = self.__memo_data.get_sas() if self.__memo_data is not None else None
-        self.__memo_record = self.__memo_data.get_memo_record() if self.__memo_data is not None else None
+        self.__sas = self.__memo_context.get_sas() if self.__memo_context is not None else None
+        self.__memo_record = self.__memo_context.get_memo_record() if self.__memo_context is not None else None
 
         data_utility = self.__sas.get_data_hub_entry().get_data_utility() if self.__sas is not None else None
         self.__combo_stock = SecuritiesSelector(data_utility)
@@ -168,7 +170,7 @@ class StockMemoEditor(QDialog):
                 self.select_memo_by_list_index(0)
 
         # self.__trigger_memo_updated()
-        self.__memo_data.broadcast_data_updated('memo_record')
+        self.__memo_context.broadcast_data_updated('memo_record')
 
     def on_button_delete(self):
         if self.__current_index is not None:
@@ -176,7 +178,7 @@ class StockMemoEditor(QDialog):
             self.__memo_record.save()
             self.load_security_memo(self.__current_stock)
             self.update_memo_list()
-            self.__memo_data.broadcast_data_updated('memo_record')
+            self.__memo_context.broadcast_data_updated('memo_record')
 
     def on_combo_select_changed(self):
         input_securities = self.__combo_stock.get_input_securities()

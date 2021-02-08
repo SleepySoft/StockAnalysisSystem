@@ -18,17 +18,18 @@ from StockAnalysisSystem.core.Utility.AnalyzerUtility import *
 from StockAnalysisSystem.core.AnalyzerEntry import StrategyEntry
 from StockAnalysisSystem.core.DataHub.DataUtility import DataUtility
 from StockAnalysisSystem.core.Utility.TableViewEx import TableViewEx
+from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 from StockAnalysisSystem.core.Utility.securities_selector import SecuritiesSelector
 
-try:
-    from .MemoUtility import *
-except Exception as e:
-    root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    os.sys.path.append(root_path)
-
-    from StockMemo.MemoUtility import *
-finally:
-    pass
+# try:
+#     from .MemoUtility import *
+# except Exception as e:
+#     root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+#     os.sys.path.append(root_path)
+#
+#     from StockMemo.MemoUtility import *
+# finally:
+#     pass
 
 
 # ------------------------------------------------- class BlackListUi --------------------------------------------------
@@ -37,12 +38,11 @@ class BlackListUi(QWidget):
     HEADER = ['Code', 'Name', 'Reason']
 
     class BlackListEditor(QWidget):
-        def __init__(self, data_utility: DataUtility):
-            self.__data_utility = data_utility
+        def __init__(self, sas_if: sasIF):
+            self.__sas_if = sas_if
             super(BlackListUi.BlackListEditor, self).__init__()
 
-            self.__stock_selector = \
-                SecuritiesSelector(self.__data_utility) if self.__data_utility is not None else QComboBox()
+            self.__stock_selector = SecuritiesSelector(sas_if) if sas_if is not None else QComboBox()
             self.__editor_reason = QTextEdit()
 
             self.init_ui()
@@ -65,13 +65,13 @@ class BlackListUi(QWidget):
             return self.__stock_selector.get_select_securities(), \
                    self.__editor_reason.toPlainText()
 
-    def __init__(self, black_list: BlackList, sas: StockAnalysisSystem):
-        self.__black_list = black_list
-        self.__sas = sas
+    def __init__(self, memo_context: dict):
+        self.__memo_context = memo_context
+        self.__sas_if: sasIF = memo_context.get('sas_if')
         super(BlackListUi, self).__init__()
 
-        self.__data_utility: DataUtility = sas.get_data_hub_entry().get_data_utility() if sas is not None else None
-        self.__strategy_entry: StrategyEntry = sas.get_strategy_entry() if sas is not None else None
+        # self.__data_utility: DataUtility = sas.get_data_hub_entry().get_data_utility() if sas is not None else None
+        # self.__strategy_entry: StrategyEntry = sas.get_strategy_entry() if sas is not None else None
 
         self.__black_list_table = TableViewEx()
 
@@ -108,7 +108,7 @@ class BlackListUi(QWidget):
         self.__button_remove.clicked.connect(self.__on_button_remove)
 
     def __on_button_add(self):
-        dlg = WrapperQDialog(BlackListUi.BlackListEditor(self.__data_utility), True)
+        dlg = WrapperQDialog(BlackListUi.BlackListEditor(self.__sas_if), True)
         dlg.setWindowTitle('加入黑名单')
         dlg.exec()
 
@@ -160,7 +160,7 @@ class BlackListUi(QWidget):
         QMessageBox.information(self, '导入成功', '新增黑名单数量：%s' % len(new_black_list), QMessageBox.Ok)
 
     def __on_button_analysis(self):
-        if self.__data_utility is None:
+        if self.__sas_if is None:
             return
 
         progress = ProgressRate()
@@ -215,7 +215,7 @@ class BlackListUi(QWidget):
         for index, row in black_list_data.iterrows():
             self.__black_list_table.AppendRow([
                 row['security'],
-                self.__data_utility.stock_identity_to_name(row['security']),
+                self.__sas_if.sas_stock_identity_to_name(row['security']),
                 row['content'],
             ])
 
@@ -226,27 +226,29 @@ class BlackListUi(QWidget):
         header.setSectionResizeMode(2, QHeaderView.Stretch)
 
     def __analysis(self, progress: ProgressRate):
-        if self.__data_utility is None or self.__strategy_entry is None:
-            return
-        analyzers = [
-            '3b01999c-3837-11ea-b851-27d2aa2d4e7d',    # 财报非标
-            'f8f6b993-4cb0-4c93-84fd-8fd975b7977d',    # 证监会调查
-            ]
-        securities = self.__data_utility.get_stock_identities()
-
-        if progress is not None:
-            for s in securities:
-                progress.set_progress(s, 0, len(analyzers))
-
-        result = self.__strategy_entry.analysis_advance(securities, analyzers, (years_ago(5), now()),
-                                                        progress_rate=progress,
-                                                        enable_calculation=True,
-                                                        enable_from_cache=False,
-                                                        enable_update_cache=True)
-
-        fail_result = [r for r in result if r.score == AnalysisResult.SCORE_FAIL]
-        fail_result = sorted(fail_result, key=lambda x: x.period if x.period is not None else now())
-        return fail_result
+        # TODO: Invoke remote interface
+        pass
+        # if self.__data_utility is None or self.__strategy_entry is None:
+        #     return
+        # analyzers = [
+        #     '3b01999c-3837-11ea-b851-27d2aa2d4e7d',    # 财报非标
+        #     'f8f6b993-4cb0-4c93-84fd-8fd975b7977d',    # 证监会调查
+        #     ]
+        # securities = self.__data_utility.get_stock_identities()
+        #
+        # if progress is not None:
+        #     for s in securities:
+        #         progress.set_progress(s, 0, len(analyzers))
+        #
+        # result = self.__strategy_entry.analysis_advance(securities, analyzers, (years_ago(5), now()),
+        #                                                 progress_rate=progress,
+        #                                                 enable_calculation=True,
+        #                                                 enable_from_cache=False,
+        #                                                 enable_update_cache=True)
+        #
+        # fail_result = [r for r in result if r.score == AnalysisResult.SCORE_FAIL]
+        # fail_result = sorted(fail_result, key=lambda x: x.period if x.period is not None else now())
+        # return fail_result
 
 
 # ------------------------------------------------ File Entry : main() -------------------------------------------------
@@ -254,8 +256,7 @@ class BlackListUi(QWidget):
 def main():
     app = QApplication(sys.argv)
 
-    black_list = BlackList(None)
-    black_list_ui = BlackListUi(black_list, None)
+    black_list_ui = BlackListUi( None)
     black_list_ui.show()
 
     exit(app.exec_())

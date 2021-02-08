@@ -25,17 +25,11 @@ from StockAnalysisSystem.core.Utility.securities_selector import SecuritiesSelec
 
 try:
     from .StockMemo.MemoExtra import *
-    from .StockMemo.MemoUtility import *
-    from .StockMemo.StockChartUi import StockChartUi
-    from .StockMemo.StockMemoEditor import StockMemoEditor
 except Exception as e:
     root_path = os.path.dirname(os.path.abspath(__file__))
     os.sys.path.append(root_path)
 
     from StockMemo.MemoExtra import *
-    from StockMemo.MemoUtility import *
-    from StockMemo.StockChartUi import StockChartUi
-    from StockMemo.StockMemoEditor import StockMemoEditor
 finally:
     pass
 
@@ -55,23 +49,19 @@ NOTE = '''说明
 class StockMemoDeck(QWidget):
     STATIC_HEADER = ['Code', 'Name']
 
-    def __init__(self, memo_data: StockMemoData):
+    def __init__(self, memo_context: dict):
+        self.__memo_context = memo_context
+        self.__sas_if: sasIF = self.__memo_context.get('sas_if') if self.__memo_context is not None else None
         super(StockMemoDeck, self).__init__()
-        self.__memo_data = memo_data
 
-        if self.__memo_data is not None:
-            self.__memo_data.add_observer(self)
-
-            self.__sas = self.__memo_data.get_sas()
-            self.__memo_record: StockMemoRecord = self.__memo_data.get_memo_record()
-            self.__memo_editor: StockMemoEditor = self.__memo_data.get_data('editor')
-            self.__data_utility = self.__sas.get_data_hub_entry().get_data_utility() if self.__sas is not None else None
+        if self.__memo_context is not None:
+            # self.__memo_context.add_observer(self)
+            self.__sas_if: sasIF = self.__memo_context.get('sas_if')
+            self.__memo_editor: StockMemoEditor = self.__memo_context.get('editor')
         else:
             # For layout debug
-            self.__sas = None
-            self.__memo_record = None
+            self.__sas_if: sasIF = None
             self.__memo_editor = None
-            self.__data_utility = None
 
         self.__memo_extras = []
         self.__list_securities = []
@@ -97,8 +87,9 @@ class StockMemoDeck(QWidget):
 
         self.__memo_table = TableViewEx()
         self.__stock_selector = \
-            SecuritiesSelector(self.__data_utility) if self.__data_utility is not None else QComboBox()
-        self.__line_path = QLineEdit(self.__memo_data.get_root_path() if self.__memo_data is not None else root_path)
+            SecuritiesSelector(self.__sas_if) if self.__sas_if is not None else QComboBox()
+        # TODO: Path from server
+        self.__line_path = QLineEdit('')
         self.__info_panel = QLabel(NOTE)
         self.__button_new = QPushButton('New')
         self.__button_filter = QPushButton('Filter')
@@ -110,7 +101,7 @@ class StockMemoDeck(QWidget):
         self.init_ui()
         self.config_ui()
 
-        self.show_securities(self.__memo_record.get_all_security() if self.__memo_record is not None else [])
+        self.show_securities(self.__sas_if.stock_memo_get_all_security() if self.__sas_if is not None else [])
 
     def init_ui(self):
         main_layout = QVBoxLayout()
@@ -207,15 +198,15 @@ class StockMemoDeck(QWidget):
         self.__update_securities(securities)
         self.__update_memo_securities_list()
 
-    # ------------------- Interface of StockMemoData.Observer --------------------
-
-    # def on_memo_updated(self):
-    #     self.update_list()
-
-    def on_data_updated(self, name: str, data: any):
-        nop(data)
-        if name in ['memo_record', 'tags']:
-            self.update_list()
+    # # ------------------- Interface of StockMemoData.Observer --------------------
+    #
+    # # def on_memo_updated(self):
+    # #     self.update_list()
+    #
+    # def on_data_updated(self, name: str, data: any):
+    #     nop(data)
+    #     if name in ['memo_record', 'tags']:
+    #         self.update_list()
 
     # ----------------------------------------------------------------------------
 
@@ -252,13 +243,13 @@ class StockMemoDeck(QWidget):
         self.__sas.get_config().save_config()
 
         # Update new path to memo extras
-        self.__memo_data.set_root_path(folder)
+        self.__memo_context.set_root_path(folder)
 
         # TODO: Auto handle path update
-        stock_tags: Tags = self.__memo_data.get_data('tags')
+        stock_tags: Tags = self.__memo_context.get_data('tags')
         if stock_tags is not None:
             stock_tags.load(os.path.join(folder, 'tags.json'))
-        self.__memo_data.get_memo_record().load(os.path.join(folder, 'stock_memo.csv'))
+        self.__memo_context.get_memo_record().load(os.path.join(folder, 'stock_memo.csv'))
 
     def __on_button_new_clicked(self):
         security = self.__stock_selector.get_input_securities()
@@ -268,7 +259,7 @@ class StockMemoDeck(QWidget):
 
     def __on_button_filter_clicked(self):
         input_security = self.__stock_selector.get_input_securities()
-        list_securities = self.__data_utility.guess_securities(input_security)
+        list_securities = self.__sas_if.sas_guess_stock_identities(input_security)
         self.show_securities(list_securities)
 
     def __on_button_reload(self):
@@ -315,7 +306,7 @@ class StockMemoDeck(QWidget):
             self.__memo_table.SetItemData(row, col, security)
 
             col = 1
-            self.__memo_table.SetItemText(row, col, self.__data_utility.stock_identity_to_name(security))
+            self.__memo_table.SetItemText(row, col, self.__sas_if.sas_stock_identity_to_name(security))
 
             for memo_extra in self.__memo_extras:
                 if not str_available(memo_extra.title_text()):
@@ -348,9 +339,11 @@ class StockMemoDeck(QWidget):
 
         show_black_list = self.__check_show_black_list.isChecked()
         if not show_black_list:
-            black_list: BlackList = self.__memo_data.get_data('black_list')
-            if black_list is not None:
-                black_list_securities = black_list.all_black_list()
+            #     black_list: BlackList = self.__memo_context.get_data('black_list')
+            #     if black_list is not None:
+            #         black_list_securities = black_list.all_black_list()
+            if self.__sas_if is not None:
+                black_list_securities = self.__sas_if.all_black_list()
                 self.__show_securities = list(set(self.__show_securities).difference(set(black_list_securities)))
 
     def __memo_table_columns(self) -> [str]:
@@ -394,47 +387,44 @@ def plugin_capacities() -> list:
 # ----------------------------------------------------------------------------------------------------------------------
 
 sasInterface: sasIF = None
-memoData: StockMemoData = None
 
 
-def __build_memo_data() -> StockMemoData:
-    global memoData
-    memoData.set_data('tags', Tags(os.path.join(memoData.get_root_path(), 'tags.json')))
-    memoData.set_data('editor', StockMemoEditor(memoData))
-    memoData.set_data('black_list', BlackList(memoData))
-    return memoData
+def __build_memo_context() -> dict:
+    memo_context = {
+        'sas_if': sasInterface,
+    }
+    memo_context['editor'] = StockMemoEditor(memo_context)
+    return memo_context
 
 
-def __build_memo_extra(memo_data: StockMemoData) -> [MemoExtra]:
+def __build_memo_extra(memo_context: dict) -> [MemoExtra]:
     return [
-        MemoExtra_MemoContent(memo_data),
-        MemoExtra_MemoHistory(memo_data),
-        MemoExtra_StockTags(memo_data),
-        MemoExtra_Analysis(memo_data),
-        MemoExtra_BlackList(memo_data),
+        MemoExtra_MemoContent(memo_context),
+        MemoExtra_MemoHistory(memo_context),
+        MemoExtra_StockTags(memo_context),
+        MemoExtra_Analysis(memo_context),
+        MemoExtra_BlackList(memo_context),
     ]
 
 
-def __register_sys_call():
-    if sasEntry is None:
-        return
-    black_list: BlackList = memoData.get_data('black_list')
-    if black_list is not None:
-        sasEntry.register_sys_call('get_black_list_data', {}, '', black_list.get_black_list_data)
-
-
-def __register_extra_data():
-    if sasEntry is None:
-        return
-    sasEntry.get_data_hub_entry().reg_data_extra('black_list', memoData.get_data('black_list'))
+# def __register_sys_call():
+#     if sasEntry is None:
+#         return
+#     black_list: BlackList = memoData.get_data('black_list')
+#     if black_list is not None:
+#         sasEntry.register_sys_call('get_black_list_data', {}, '', black_list.get_black_list_data)
+#
+#
+# def __register_extra_data():
+#     if sasEntry is None:
+#         return
+#     sasEntry.get_data_hub_entry().reg_data_extra('black_list', memoData.get_data('black_list'))
 
 
 def init(sas_if: sasIF) -> bool:
     try:
         global sasInterface
         sasInterface = sas_if
-        global memoData
-        memoData = StockMemoData(sasInterface)
     except Exception as e:
         print(e)
         print(traceback.format_exc())
@@ -445,16 +435,13 @@ def init(sas_if: sasIF) -> bool:
 
 
 def widget(parent: QWidget, **kwargs) -> (QWidget, dict):
-    memo_data = __build_memo_data()
-    memo_extra = __build_memo_extra(memo_data)
+    memo_context = __build_memo_context()
+    memo_extra = __build_memo_extra(memo_context)
 
-    memo_ui = StockMemoDeck(memoData)
+    memo_ui = StockMemoDeck(memo_context)
     for extra in memo_extra:
         memo_ui.add_memo_extra(extra)
     memo_ui.update_list()
-
-    __register_sys_call()
-    __register_extra_data()
 
     return memo_ui, {'name': '股票笔记', 'show': False}
 

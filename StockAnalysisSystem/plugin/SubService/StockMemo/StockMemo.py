@@ -111,7 +111,7 @@ class StockMemo:
             self.__memo_record.del_records(index)
         return self.__memo_record.save() if _save else True
 
-    def get_stock_memo_all_security(self) -> [str]:
+    def stock_memo_get_all_security(self) -> [str]:
         return self.__memo_record.get_all_security()
 
 

@@ -315,6 +315,9 @@ class LocalInterface(sasIF):
     def sas_get_industry_stocks(self, industry: str) -> [str]:
         return sasApi.get_industry_stocks(industry)
 
+    def sas_stock_identity_to_name(self, stock_identities: str or [str]):
+        return sasApi.stock_identity_to_name(stock_identities)
+
 # ------------------------------------------------------- Factor -------------------------------------------------------
 
     def sas_get_all_factors(self):
