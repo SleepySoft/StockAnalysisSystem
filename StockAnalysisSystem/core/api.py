@@ -196,6 +196,10 @@ def stock_identity_to_name(stock_identities: str or [str]):
     return data_utility().stock_identity_to_name(stock_identities)
 
 
+def get_support_index() -> dict:
+    return data_utility().get_support_index()
+
+
 # ------------------------------------------------------- Factor -------------------------------------------------------
 
 def get_all_factors():

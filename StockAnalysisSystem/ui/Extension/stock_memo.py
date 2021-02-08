@@ -246,7 +246,7 @@ class StockMemoDeck(QWidget):
         self.__memo_context.set_root_path(folder)
 
         # TODO: Auto handle path update
-        stock_tags: Tags = self.__memo_context.get_data('tags')
+        stock_tags: Tags = self.__memo_context.get('tags')
         if stock_tags is not None:
             stock_tags.load(os.path.join(folder, 'tags.json'))
         self.__memo_context.get_memo_record().load(os.path.join(folder, 'stock_memo.csv'))

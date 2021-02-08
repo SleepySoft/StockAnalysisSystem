@@ -35,20 +35,30 @@ class StockMemoService:
         # Stock memo
         self.__sas_api.register_sys_call('stock_memo_save',             self.__stock_memo.stock_memo_save,              group='stock_memo')
         self.__sas_api.register_sys_call('stock_memo_load',             self.__stock_memo.stock_memo_load,              group='stock_memo')
+        self.__sas_api.register_sys_call('stock_memo_filter_record',    self.__stock_memo.stock_memo_get_record,        group='stock_memo')
         self.__sas_api.register_sys_call('stock_memo_get_record',       self.__stock_memo.stock_memo_get_record,        group='stock_memo')
         self.__sas_api.register_sys_call('stock_memo_add_record',       self.__stock_memo.stock_memo_add_record,        group='stock_memo')
         self.__sas_api.register_sys_call('stock_memo_update_record',    self.__stock_memo.stock_memo_update_record,     group='stock_memo')
         self.__sas_api.register_sys_call('stock_memo_delete_record',    self.__stock_memo.stock_memo_delete_record,     group='stock_memo')
         self.__sas_api.register_sys_call('stock_memo_get_all_security', self.__stock_memo.stock_memo_get_all_security,  group='stock_memo')
 
+        # Stock memo tags
+        self.__sas_api.register_sys_call('stock_memo_save_tags',            self.__stock_tags.save,                     group='stock_memo_tags')
+        self.__sas_api.register_sys_call('stock_memo_load_tags',            self.__stock_tags.load,                     group='stock_memo_tags')
+        self.__sas_api.register_sys_call('stock_memo_all_tags',             self.__stock_tags.all_tags,                 group='stock_memo_tags')
+        self.__sas_api.register_sys_call('stock_memo_all_securities',       self.__stock_tags.all_objs,                 group='stock_memo_tags')
+        self.__sas_api.register_sys_call('stock_memo_tags_of_securities',   self.__stock_tags.tags_of_objs,             group='stock_memo_tags')
+        self.__sas_api.register_sys_call('stock_memo_securities_from_tags', self.__stock_tags.objs_from_tags,           group='stock_memo_tags')
+        self.__sas_api.register_sys_call('stock_memo_set_security_tags',    self.__stock_tags.set_obj_tags,             group='stock_memo_tags')
+
         # Black list
-        self.__sas_api.register_sys_call('save_black_list',         self.__black_list.save_black_list,          group='black_list')
-        self.__sas_api.register_sys_call('in_black_list',           self.__black_list.in_black_list,            group='black_list')
-        self.__sas_api.register_sys_call('all_black_list',          self.__black_list.all_black_list,           group='black_list')
-        self.__sas_api.register_sys_call('add_to_black_list',       self.__black_list.add_to_black_list,        group='black_list')
-        self.__sas_api.register_sys_call('remove_from_black_list',  self.__black_list.remove_from_black_list,   group='black_list')
-        self.__sas_api.register_sys_call('get_black_list_data',     self.__black_list.get_black_list_data,      group='black_list')
-        self.__sas_api.register_sys_call('save_black_list',         self.__black_list.reload_black_list_data,   group='black_list')
+        self.__sas_api.register_sys_call('save_black_list',             self.__black_list.save_black_list,              group='black_list')
+        self.__sas_api.register_sys_call('in_black_list',               self.__black_list.in_black_list,                group='black_list')
+        self.__sas_api.register_sys_call('all_black_list',              self.__black_list.all_black_list,               group='black_list')
+        self.__sas_api.register_sys_call('add_to_black_list',           self.__black_list.add_to_black_list,            group='black_list')
+        self.__sas_api.register_sys_call('remove_from_black_list',      self.__black_list.remove_from_black_list,       group='black_list')
+        self.__sas_api.register_sys_call('get_black_list_data',         self.__black_list.get_black_list_data,          group='black_list')
+        self.__sas_api.register_sys_call('save_black_list',             self.__black_list.reload_black_list_data,       group='black_list')
 
 
 # ----------------------------------------------------------------------------------------------------------------------

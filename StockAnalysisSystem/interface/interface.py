@@ -90,6 +90,9 @@ class SasInterface:
     def sas_stock_identity_to_name(self, stock_identities: str or [str]):
         pass
 
+    def sas_get_support_index(self) -> dict:
+        pass
+
 # ------------------------------------------------------- Factor -------------------------------------------------------
 
     def sas_get_all_factors(self):

@@ -318,6 +318,9 @@ class LocalInterface(sasIF):
     def sas_stock_identity_to_name(self, stock_identities: str or [str]):
         return sasApi.stock_identity_to_name(stock_identities)
 
+    def sas_get_support_index(self) -> dict:
+        return sasApi.get_support_index()
+
 # ------------------------------------------------------- Factor -------------------------------------------------------
 
     def sas_get_all_factors(self):

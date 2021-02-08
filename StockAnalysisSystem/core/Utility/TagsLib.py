@@ -165,8 +165,7 @@ from StockAnalysisSystem.core.Utility.FlowLayout import FlowLayout
 
 
 class TagsUi(QScrollArea):
-    def __init__(self, tags: Tags):
-        self.__tags = tags
+    def __init__(self):
         super(TagsUi, self).__init__()
 
         self.__check_tags = []
@@ -177,7 +176,6 @@ class TagsUi(QScrollArea):
         self.__button_ensure = QPushButton('OK')
 
         self.init_ui()
-        self.reload_tags()
 
     def init_ui(self):
         container = QWidget()
@@ -227,9 +225,9 @@ class TagsUi(QScrollArea):
         self.__loaded_tags.clear()
         self.__line_tags.setText('')
 
-    def reload_tags(self):
+    def reload_tags(self, tags: [str]):
         self.empty_tags()
-        tags = self.__tags.all_tags()
+        # tags = self.__tags.all_tags()
         for tag in sorted(tags):
             self.__create_check_box_for_tag(tag)
         self.__loaded_tags = tags
