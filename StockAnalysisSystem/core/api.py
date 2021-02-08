@@ -192,6 +192,10 @@ def get_industry_stocks(industry: str) -> [str]:
     return stock_list
 
 
+def stock_identity_to_name(stock_identities: str or [str]):
+    return data_utility().stock_identity_to_name(stock_identities)
+
+
 # ------------------------------------------------------- Factor -------------------------------------------------------
 
 def get_all_factors():

@@ -87,6 +87,9 @@ class SasInterface:
     def sas_get_industry_stocks(self, industry: str) -> [str]:
         pass
 
+    def sas_stock_identity_to_name(self, stock_identities: str or [str]):
+        pass
+
 # ------------------------------------------------------- Factor -------------------------------------------------------
 
     def sas_get_all_factors(self):

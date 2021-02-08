@@ -10,20 +10,19 @@ from StockAnalysisSystem.core.Utility.AnalyzerUtility import *
 try:
     # Only for pycharm indicating imports
     from .BlackListUi import *
-    from .MemoUtility import *
     from .StockChartUi import StockChartUi
     from .StockMemoEditor import StockMemoEditor
 except Exception as e:
     root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     os.sys.path.append(root_path)
 
-    from StockMemo.BlackList import *
-    from StockMemo.MemoUtility import *
+    from StockMemo.BlackListUi import *
     from StockMemo.StockChartUi import StockChartUi
     from StockMemo.StockMemoEditor import StockMemoEditor
 finally:
     pass
 pass
+
 
 # ------------------------------------------------ Memo Extra Interface ------------------------------------------------
 
@@ -79,12 +78,12 @@ class DummyMemoExtra(MemoExtra):
 # --------------------------------- Editor ---------------------------------
 
 class MemoExtra_MemoContent(MemoExtra):
-    def __init__(self, memo_data: StockMemoData):
-        self.__memo_data = memo_data
-        self.__memo_editor: StockMemoEditor = self.__memo_data.get_data('editor') \
-            if self.__memo_data is not None else None
-        self.__memo_record: StockMemoRecord = self.__memo_data.get_memo_record() \
-            if self.__memo_data is not None else None
+    def __init__(self, memo_context: dict):
+        self.__memo_context = memo_context
+        self.__memo_editor: StockMemoEditor = self.__memo_context.get_data('editor') \
+            if self.__memo_context is not None else None
+        # self.__memo_record: StockMemoRecord = self.__memo_context.get_memo_record() \
+        #     if self.__memo_context is not None else None
         super(MemoExtra_MemoContent, self).__init__()
 
     def global_entry(self):
@@ -119,9 +118,9 @@ class MemoExtra_MemoContent(MemoExtra):
 # --------------------------------- History ---------------------------------
 
 class MemoExtra_MemoHistory(MemoExtra):
-    def __init__(self, memo_data: StockMemoData):
-        self.__memo_data = memo_data
-        self.__memo_history = StockChartUi(self.__memo_data)
+    def __init__(self, memo_context: dict):
+        self.__memo_context = memo_context
+        self.__memo_history = StockChartUi(self.__memo_context)
         super(MemoExtra_MemoHistory, self).__init__()
 
     def global_entry(self):
@@ -146,10 +145,10 @@ class MemoExtra_MemoHistory(MemoExtra):
 class MemoExtra_StockTags(MemoExtra):
     PRESET_TAGS = ['黑名单', '灰名单', '关注']
 
-    def __init__(self, memo_data: StockMemoData):
-        self.__memo_data = memo_data
+    def __init__(self, memo_context: dict):
+        self.__memo_context = memo_context
         super(MemoExtra_StockTags, self).__init__()
-        self.__stock_tags: Tags = self.__memo_data.get_data('tags')
+        self.__stock_tags: Tags = self.__memo_context.get_data('tags')
         self.__stock_tags_ui: TagsUi = TagsUi(self.__stock_tags)
         self.__stock_tags_ui.on_ensure(self.__on_tags_ui_ensure)
         self.__current_stock = ''
@@ -160,7 +159,7 @@ class MemoExtra_StockTags(MemoExtra):
         self.__stock_tags_ui.close()
         self.__stock_tags.set_obj_tags(self.__current_stock, tags)
         self.__stock_tags.save()
-        self.__memo_data.broadcast_data_updated('tags')
+        self.__memo_context.broadcast_data_updated('tags')
 
     def global_entry(self):
         pass
@@ -248,15 +247,15 @@ class AnalyzerSelector(QDialog):
 
 
 class MemoExtra_Analysis(MemoExtra):
-    def __init__(self, memo_data: StockMemoData):
-        self.__memo_data = memo_data
+    def __init__(self, memo_context: dict):
+        self.__memo_context = memo_context
         super(MemoExtra_Analysis, self).__init__()
 
     def global_entry(self):
         pass
 
     def security_entry(self, security: str):
-        strategy_entry = self.__memo_data.get_sas().get_strategy_entry()
+        strategy_entry = self.__memo_context.get_sas().get_strategy_entry()
 
         selector = AnalyzerSelector(strategy_entry)
         selector.exec()
@@ -304,7 +303,7 @@ class MemoExtra_Analysis(MemoExtra):
         return 'Go'
 
     def __analysis(self, security: str, analyzers: [str]) -> pd.DataFrame:
-        strategy_entry = self.__memo_data.get_sas().get_strategy_entry()
+        strategy_entry = self.__memo_context.get_sas().get_strategy_entry()
         result = strategy_entry.analysis_advance(security, analyzers, (years_ago(5), now()))
         df = analysis_result_list_to_single_stock_report(result, security)
         df = df.fillna('-')
@@ -315,13 +314,13 @@ class MemoExtra_Analysis(MemoExtra):
 # -------------------------------- Analysis --------------------------------
 
 class MemoExtra_BlackList(MemoExtra):
-    def __init__(self, memo_data: StockMemoData):
-        self.__memo_data = memo_data
+    def __init__(self, memo_context: dict):
+        self.__memo_context = memo_context
         super(MemoExtra_BlackList, self).__init__()
 
     def global_entry(self):
-        sas = self.__memo_data.get_sas()
-        black_list = self.__memo_data.get_data('black_list')
+        sas = self.__memo_context.get_sas()
+        black_list = self.__memo_context.get_data('black_list')
         black_list_ui = BlackListUi(black_list, sas)
         dlg = WrapperQDialog(black_list_ui)
         dlg.exec()

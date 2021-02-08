@@ -215,7 +215,7 @@ class DataUtility:
         else:
             return self.__stock_name_id.get(names, names)
 
-    def stock_identity_to_name(self, stock_identities: [str]) -> str or [str]:
+    def stock_identity_to_name(self, stock_identities: str or [str]) -> str or [str]:
         self.__check_refresh_stock_cache()
         if isinstance(stock_identities, list):
             return [self.__stock_id_name.get(stock_identity, stock_identity) for stock_identity in stock_identities]

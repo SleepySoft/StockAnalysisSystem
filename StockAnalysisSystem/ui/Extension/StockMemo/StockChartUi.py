@@ -13,17 +13,16 @@ from StockAnalysisSystem.core.Utility.common import *
 from StockAnalysisSystem.core.Utility.ui_utility import *
 from StockAnalysisSystem.core.Utility.time_utility import *
 from StockAnalysisSystem.core.Utility.WaitingWindow import *
+from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 from StockAnalysisSystem.core.Utility.securities_selector import SecuritiesSelector
 
 try:
     # Only for pycharm indicating imports
-    from .MemoUtility import *
     from .StockMemoEditor import StockMemoEditor
 except Exception as e:
     root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     os.sys.path.append(root_path)
 
-    from StockMemo.MemoUtility import *
     from StockMemo.StockMemoEditor import StockMemoEditor
 finally:
     pass
@@ -42,14 +41,15 @@ class StockChartUi(QWidget):
     RETURN_LOG = 3
     RETURN_SIMPLE = 4
 
-    def __init__(self, memo_data: StockMemoData):
+    def __init__(self, memo_context: dict):
         super(StockChartUi, self).__init__()
 
-        self.__memo_data = memo_data
-        self.__memo_data.add_observer(self)
+        self.__memo_context = memo_context
+        # self.__memo_context.add_observer(self)
+        self.__sas_if: sasIF = self.__memo_context.get('sas_if')
 
-        self.__sas = memo_data.get_sas()
-        self.__memo_record: StockMemoRecord = memo_data.get_memo_record()
+        self.__sas = memo_context.get_sas()
+        # self.__memo_record: StockMemoRecord = memo_context.get_memo_record()
 
         self.__in_edit_mode = True
         self.__paint_securities = ''
@@ -68,7 +68,7 @@ class StockChartUi(QWidget):
         self.__vnpy_chart = ChartWidget()
 
         # Memo editor
-        self.__memo_editor: StockMemoEditor = self.__memo_data.get_data('editor')
+        self.__memo_editor: StockMemoEditor = self.__memo_context.get_data('editor')
 
         # Timer for workaround signal fired twice
         self.__accepted = False

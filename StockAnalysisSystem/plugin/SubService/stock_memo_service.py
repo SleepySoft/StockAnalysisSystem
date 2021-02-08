@@ -39,7 +39,7 @@ class StockMemoService:
         self.__sas_api.register_sys_call('stock_memo_add_record',       self.__stock_memo.stock_memo_add_record,        group='stock_memo')
         self.__sas_api.register_sys_call('stock_memo_update_record',    self.__stock_memo.stock_memo_update_record,     group='stock_memo')
         self.__sas_api.register_sys_call('stock_memo_delete_record',    self.__stock_memo.stock_memo_delete_record,     group='stock_memo')
-        self.__sas_api.register_sys_call('get_stock_memo_all_security', self.__stock_memo.get_stock_memo_all_security,  group='stock_memo')
+        self.__sas_api.register_sys_call('stock_memo_get_all_security', self.__stock_memo.stock_memo_get_all_security,  group='stock_memo')
 
         # Black list
         self.__sas_api.register_sys_call('save_black_list',         self.__black_list.save_black_list,          group='black_list')
