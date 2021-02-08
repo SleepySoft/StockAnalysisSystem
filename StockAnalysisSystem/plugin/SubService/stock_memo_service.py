@@ -1,23 +1,30 @@
-import datetime
 import os
+import datetime
+import traceback
+
 import pandas as pd
 
-from .StockMemo.StockMemo import StockMemo
-from .StockMemo.BlackList import BlackList
-from StockAnalysisSystem.core.Utility.TagsLib import Tags
 import StockAnalysisSystem.core.api as sasApi
+from StockAnalysisSystem.core.Utility.TagsLib import Tags
 from StockAnalysisSystem.core.Utility.event_queue import Event
+
+root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+from StockMemo.StockMemo import StockMemo
+from StockMemo.BlackList import BlackList
 
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
 class StockMemoService:
-    def __init__(self, sas_api: sasApi, root_path: str):
+    def __init__(self, sas_api: sasApi, memo_path: str):
         self.__sas_api: sasApi = sas_api
-        self.__root_path: str = root_path
-        self.__stock_tags = Tags(os.path.join(root_path, 'tags.json'))
-        self.__stock_memo = StockMemo(os.path.join(root_path, 'stock_memo.csv'))
+        self.__memo_path: str = memo_path
+
+        print('==> Init stock memo with path: ' + memo_path)
+
+        self.__stock_tags = Tags(os.path.join(memo_path, 'tags.json'))
+        self.__stock_memo = StockMemo(os.path.join(memo_path, 'stock_memo.csv'))
         self.__black_list = BlackList(self.__stock_memo, self.__stock_tags)
 
     def update_root_path(self, root_path: str):
@@ -60,11 +67,7 @@ def plugin_adapt(method: str) -> bool:
 
 
 def plugin_capacities() -> list:
-    return [
-        'period',
-        'thread',
-        'on_event'
-    ]
+    return ['api']
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -84,56 +87,15 @@ def init(sas_api: sasApi) -> bool:
         global stockMemoService
 
         sasApiEntry = sas_api
-        stockMemoService = StockMemoService(sasApi)
+        memo_path = sasApi.config().get('memo_path', os.getcwd())
+
+        stockMemoService = StockMemoService(sasApi, memo_path)
+        stockMemoService.register_sys_call()
     except Exception as e:
-        pass
+        print('Error =>', e)
+        print('Error =>', traceback.format_exc())
     finally:
         pass
     return True
-
-
-def period(interval_ns: int):
-    """
-    If you specify 'period' in plugin_capacities(). This function will be invoked periodically by MAIN thread,
-        the invoke interval should be more or less than 100ms.
-    Note that if this extension spends too much time on this function. The interface will be blocked.
-    And this extension will be removed from running list.
-    :param interval_ns: The interval between previous invoking and now.
-    :return: None
-    """
-    print('Period...' + str(interval_ns))
-    pass
-
-
-def thread(context: dict):
-    """
-    If you specify 'thread' in plugin_capacities(). This function will be invoked in a thread.
-    If this function returns or has uncaught exception, the thread will be terminated and will not restart again.
-    :param context: The context from StockAnalysisSystem, includes:
-                    'quit_flag': bool - Process should be terminated and quit this function if it's True.
-                    '?????????': any  - TBD
-    :return: None
-    """
-    print('Thread...')
-    pass
-
-
-def on_event(event: Event, **kwargs):
-    """
-    Use this function to handle event. Includes timer and subscribed event.
-    :param event: The event data
-    :return:
-    """
-    print('Event')
-    pass
-
-
-
-
-
-
-
-
-
 
 

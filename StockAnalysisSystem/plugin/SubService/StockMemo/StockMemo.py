@@ -76,7 +76,7 @@ class StockMemo:
         return self.__memo_record.load()
 
     def stock_memo_set_path(self, memo_path: str):
-        self.__memo_record = StockMemoRecord(os.path.join(memo_path, 'stock_memo.csv'))
+        self.__memo_record = StockMemoRecord(memo_path)
         if not self.__memo_record.load():
             print('Load stock memo fail, maybe no memo exists.')
 

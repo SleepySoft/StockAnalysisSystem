@@ -35,7 +35,7 @@ class BlackList:
     def save_black_list(self):
         if self.__data_valid() and self.__data_loaded:
             self.__stock_tag.save()
-            self.__stock_memo.stock_memo_save()
+            self.__stock_memo.raw_record().save()
             # self.__memo_data.broadcast_data_updated('tags')
             # self.__memo_data.broadcast_data_updated('memo_record')
         else:
@@ -53,7 +53,7 @@ class BlackList:
             return
         if security in self.__black_list_securities:
             return
-        self.__memo_record.add_record({
+        self.__stock_memo.raw_record().add_record({
             'time': now(),
             'security': security,
             'brief': '加入黑名单',
@@ -69,7 +69,7 @@ class BlackList:
             return
         if security not in self.__black_list_securities:
             return
-        self.__memo_record.add_record({
+        self.__stock_memo.raw_record().add_record({
             'time': now(),
             'security': security,
             'brief': '移除黑名单',

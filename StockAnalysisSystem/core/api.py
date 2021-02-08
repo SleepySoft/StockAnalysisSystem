@@ -4,6 +4,7 @@ import pandas as pd
 
 from .api_util import *
 from .Utility.common import *
+from .config import Config
 from .DataHub.DataAgent import *
 from .Utility.resource_task import *
 from .FactorEntry import FactorCenter
@@ -19,6 +20,10 @@ from .DataHub.UniversalDataCenter import UniversalDataCenter
 
 def sas() -> StockAnalysisSystem:
     return StockAnalysisSystem()
+
+
+def config() -> Config:
+    return sas().get_config()
 
 
 def data_hub() -> DataHubEntry:
