@@ -80,7 +80,8 @@ class DummyMemoExtra(MemoExtra):
 class MemoExtra_MemoContent(MemoExtra):
     def __init__(self, memo_context: dict):
         self.__memo_context = memo_context
-        self.__memo_editor: StockMemoEditor = self.__memo_context.get_data('editor') \
+        self.__sas_if: sasIF = self.__memo_context.get('sas_if')
+        self.__memo_editor: StockMemoEditor = self.__memo_context.get('editor') \
             if self.__memo_context is not None else None
         # self.__memo_record: StockMemoRecord = self.__memo_context.get_memo_record() \
         #     if self.__memo_context is not None else None
@@ -102,9 +103,9 @@ class MemoExtra_MemoContent(MemoExtra):
         return ''
 
     def security_entry_text(self, security: str) -> str:
-        if self.__memo_record is None:
+        if self.__sas_if is None:
             return '-'
-        df = self.__memo_record.get_records({'security': security})
+        df = self.__sas_if.stock_memo_get_record({'security': security})
         if df is not None and not df.empty:
             df.sort_values('time')
             brief = df.iloc[-1]['brief']
@@ -147,27 +148,32 @@ class MemoExtra_StockTags(MemoExtra):
 
     def __init__(self, memo_context: dict):
         self.__memo_context = memo_context
+        self.__sas_if: sasIF = self.__memo_context.get('sas_if')
         super(MemoExtra_StockTags, self).__init__()
-        self.__stock_tags: Tags = self.__memo_context.get_data('tags')
-        self.__stock_tags_ui: TagsUi = TagsUi(self.__stock_tags)
+        # self.__stock_tags: Tags = self.__memo_context.get('tags')
+        self.__stock_tags_ui: TagsUi = TagsUi()
         self.__stock_tags_ui.on_ensure(self.__on_tags_ui_ensure)
         self.__current_stock = ''
-        self.__stock_tags.set_obj_tags('', MemoExtra_StockTags.PRESET_TAGS)
+        # self.__stock_tags.set_obj_tags('', MemoExtra_StockTags.PRESET_TAGS)
 
     def __on_tags_ui_ensure(self):
         tags = self.__stock_tags_ui.get_selected_tags()
         self.__stock_tags_ui.close()
-        self.__stock_tags.set_obj_tags(self.__current_stock, tags)
-        self.__stock_tags.save()
-        self.__memo_context.broadcast_data_updated('tags')
+        self.__sas_if.stock_memo_tags_of_securities(self.__current_stock, tags)
+        self.__sas_if.stock_memo_save_tags()
+        # self.__stock_tags.set_obj_tags(self.__current_stock, tags)
+        # self.__stock_tags.save()
+        # self.__memo_context.broadcast_data_updated('tags')
 
     def global_entry(self):
         pass
 
     def security_entry(self, security: str):
-        tags = self.__stock_tags.tags_of_objs(security)
-        self.__stock_tags_ui.reload_tags()
-        self.__stock_tags_ui.select_tags(tags)
+        # tags = self.__stock_tags.tags_of_objs(security)
+        all_tags = self.__sas_if.stock_memo_all_tags()
+        security_tags = self.__sas_if.stock_memo_tags_of_securities(security)
+        self.__stock_tags_ui.reload_tags(list(set(all_tags + MemoExtra_StockTags.PRESET_TAGS)))
+        self.__stock_tags_ui.select_tags(security_tags)
         self.__stock_tags_ui.setVisible(True)
         self.__current_stock = security
 
@@ -178,7 +184,8 @@ class MemoExtra_StockTags(MemoExtra):
         return ''
 
     def security_entry_text(self, security: str) -> str:
-        tags = self.__stock_tags.tags_of_objs(security)
+        # tags = self.__stock_tags.tags_of_objs(security)
+        tags = self.__sas_if.stock_memo_tags_of_securities(security)
         return Tags.tags_to_str(tags)
 
 
@@ -320,7 +327,7 @@ class MemoExtra_BlackList(MemoExtra):
 
     def global_entry(self):
         sas = self.__memo_context.get_sas()
-        black_list = self.__memo_context.get_data('black_list')
+        black_list = self.__memo_context.get('black_list')
         black_list_ui = BlackListUi(black_list, sas)
         dlg = WrapperQDialog(black_list_ui)
         dlg.exec()

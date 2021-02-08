@@ -59,11 +59,11 @@ class StockMemoEditor(QDialog):
 
         self.__observers = []
 
-        self.__sas = self.__memo_context.get_sas() if self.__memo_context is not None else None
-        self.__memo_record = self.__memo_context.get_memo_record() if self.__memo_context is not None else None
+        # self.__sas = self.__memo_context.get_sas() if self.__memo_context is not None else None
+        # self.__memo_record = self.__memo_context.get_memo_record() if self.__memo_context is not None else None
+        # data_utility = self.__sas.get_data_hub_entry().get_data_utility() if self.__sas is not None else None
 
-        data_utility = self.__sas.get_data_hub_entry().get_data_utility() if self.__sas is not None else None
-        self.__combo_stock = SecuritiesSelector(data_utility)
+        self.__combo_stock = SecuritiesSelector(self.__sas_if) if self.__sas_if is not None else QComboBox()
         self.__table_memo_index = EasyQTableWidget()
 
         self.__datetime_time = QDateTimeEdit(QDateTime().currentDateTime())
@@ -142,21 +142,12 @@ class StockMemoEditor(QDialog):
             return
 
         if self.__current_index is not None:
-            ret = self.__memo_record.update_record(self.__current_index, {
-                'time': _time,
-                'brief': brief,
-                'content': content,
-                'classify': 'memo',
-            }, True)
+            ret = self.__sas_if.stock_memo_update_record(
+                self.__current_index, self.__current_stock, _time, brief, content, True)
         else:
             if str_available(self.__current_stock):
-                ret, index = self.__memo_record.add_record({
-                    'time': _time,
-                    'security': self.__current_stock,
-                    'brief': brief,
-                    'content': content,
-                    'classify': 'memo',
-                }, True)
+                ret, index = self.__sas_if.stock_memo_add_record(
+                    self.__current_stock, _time, brief, content, True)
                 self.__current_index = index
             else:
                 ret = False
@@ -169,13 +160,15 @@ class StockMemoEditor(QDialog):
             else:
                 self.select_memo_by_list_index(0)
 
+        # TODO: Broadcast update
         # self.__trigger_memo_updated()
-        self.__memo_context.broadcast_data_updated('memo_record')
+        # self.__memo_context.broadcast_data_updated('memo_record')
 
     def on_button_delete(self):
         if self.__current_index is not None:
-            self.__memo_record.del_records(self.__current_index)
-            self.__memo_record.save()
+            # self.__memo_record.del_records(self.__current_index)
+            # self.__memo_record.save()
+            self.__sas_if.stock_memo_delete_record(self.__current_index, None)
             self.load_security_memo(self.__current_stock)
             self.update_memo_list()
             self.__memo_context.broadcast_data_updated('memo_record')
@@ -250,7 +243,8 @@ class StockMemoEditor(QDialog):
         condition = {'classify': 'memo'}
         if str_available(security):
             condition['security'] = security
-        df = self.__memo_record.get_records(condition)
+        # df = self.__memo_record.get_records(condition)
+        df = self.__sas_if.stock_memo_filter_record(condition)
 
         self.__current_memos = df
         self.__current_stock = security

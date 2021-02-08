@@ -80,6 +80,9 @@ class StockMemo:
         if not self.__memo_record.load():
             print('Load stock memo fail, maybe no memo exists.')
 
+    def stock_memo_filter_record(self, condition: dict) -> pd.DataFrame:
+        return self.__memo_record.get_records(condition)
+
     def stock_memo_get_record(self, security: str) -> pd.DataFrame:
         return self.__memo_record.get_stock_memos(security)
 

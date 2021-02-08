@@ -42,13 +42,12 @@ class StockChartUi(QWidget):
     RETURN_SIMPLE = 4
 
     def __init__(self, memo_context: dict):
-        super(StockChartUi, self).__init__()
-
         self.__memo_context = memo_context
         # self.__memo_context.add_observer(self)
         self.__sas_if: sasIF = self.__memo_context.get('sas_if')
+        super(StockChartUi, self).__init__()
 
-        self.__sas = memo_context.get_sas()
+        # self.__sas = memo_context.get_sas()
         # self.__memo_record: StockMemoRecord = memo_context.get_memo_record()
 
         self.__in_edit_mode = True
@@ -68,7 +67,7 @@ class StockChartUi(QWidget):
         self.__vnpy_chart = ChartWidget()
 
         # Memo editor
-        self.__memo_editor: StockMemoEditor = self.__memo_context.get_data('editor')
+        self.__memo_editor: StockMemoEditor = self.__memo_context.get('editor')
 
         # Timer for workaround signal fired twice
         self.__accepted = False
@@ -78,8 +77,8 @@ class StockChartUi(QWidget):
         self.__timer.start()
 
         # Ui component
-        data_utility = self.__sas.get_data_hub_entry().get_data_utility() if self.__sas is not None else None
-        self.__combo_name = SecuritiesSelector(data_utility)
+        # data_utility = self.__sas.get_data_hub_entry().get_data_utility() if self.__sas is not None else None
+        self.__combo_name = SecuritiesSelector(self.__sas_if) if self.__sas_if is not None else QComboBox()
         self.__button_ensure = QPushButton('确定')
 
         self.__check_abs = QCheckBox('固定价格范围')
@@ -127,8 +126,8 @@ class StockChartUi(QWidget):
         ]))
 
     def __config_ui(self):
-        data_utility = self.__sas.get_data_hub_entry().get_data_utility()
-        index_dict = data_utility.get_support_index()
+        # data_utility = self.__sas.get_data_hub_entry().get_data_utility()
+        index_dict = self.__sas_if.sas_get_support_index()
 
         self.__combo_name.setEditable(True)
         for key in index_dict:
@@ -261,8 +260,8 @@ class StockChartUi(QWidget):
 
     def load_security_data(self, securities: str, adjust_method: int, return_style: int,
                            check_update: bool = False) -> bool:
-        data_utility = self.__sas.get_data_hub_entry().get_data_utility()
-        index_dict = data_utility.get_support_index()
+        # data_utility = self.__sas.get_data_hub_entry().get_data_utility()
+        index_dict = self.__sas_if.sas_get_support_index()
 
         # if securities != self.__paint_securities or self.__paint_trade_data is None:
 
@@ -339,10 +338,12 @@ class StockChartUi(QWidget):
         return True
 
     def __update_security_data(self, uri: str, securities: str):
-        self.__sas.get_data_hub_entry().get_data_utility().check_update(uri, securities)
+        pass
+        # self.__sas.get_data_hub_entry().get_data_utility().check_update(uri, securities)
 
     def __load_calc_security_data(self, uri: str, securities: str, adjust_method: int, return_style: int):
-        trade_data = self.__sas.get_data_hub_entry().get_data_center().query(uri, securities)
+        # trade_data = self.__sas.get_data_hub_entry().get_data_center().query(uri, securities)
+        trade_data = self.__sas_if.sas_query(uri, securities)
 
         self.__paint_trade_data = trade_data
         self.__paint_securities = securities
