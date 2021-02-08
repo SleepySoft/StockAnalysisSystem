@@ -35,7 +35,7 @@ class StockMemoService:
         # Stock memo
         self.__sas_api.register_sys_call('stock_memo_save',             self.__stock_memo.stock_memo_save,              group='stock_memo')
         self.__sas_api.register_sys_call('stock_memo_load',             self.__stock_memo.stock_memo_load,              group='stock_memo')
-        self.__sas_api.register_sys_call('stock_memo_filter_record',    self.__stock_memo.stock_memo_get_record,        group='stock_memo')
+        self.__sas_api.register_sys_call('stock_memo_filter_record',    self.__stock_memo.stock_memo_filter_record,        group='stock_memo')
         self.__sas_api.register_sys_call('stock_memo_get_record',       self.__stock_memo.stock_memo_get_record,        group='stock_memo')
         self.__sas_api.register_sys_call('stock_memo_add_record',       self.__stock_memo.stock_memo_add_record,        group='stock_memo')
         self.__sas_api.register_sys_call('stock_memo_update_record',    self.__stock_memo.stock_memo_update_record,     group='stock_memo')

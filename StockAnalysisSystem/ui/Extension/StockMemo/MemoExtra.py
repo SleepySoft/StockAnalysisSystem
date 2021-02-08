@@ -105,7 +105,7 @@ class MemoExtra_MemoContent(MemoExtra):
     def security_entry_text(self, security: str) -> str:
         if self.__sas_if is None:
             return '-'
-        df = self.__sas_if.stock_memo_get_record({'security': security})
+        df = self.__sas_if.stock_memo_get_record(security)
         if df is not None and not df.empty:
             df.sort_values('time')
             brief = df.iloc[-1]['brief']
