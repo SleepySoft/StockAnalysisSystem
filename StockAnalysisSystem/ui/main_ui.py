@@ -208,6 +208,10 @@ class MainWindow(CommonMainWindow):
         dlg = WrapperQDialog(ConfigUi())
         dlg.exec()
 
+    def closeEvent(self, event):
+        super().closeEvent(event)
+        exit(0)
+
     # def closeEvent(self, event):
     #     if StockAnalysisSystem().can_sys_quit():
     #         StockAnalysisSystem().finalize()

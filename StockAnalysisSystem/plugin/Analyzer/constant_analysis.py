@@ -1,5 +1,6 @@
 import pandas as pd
 
+import StockAnalysisSystem.core.api as sasApi
 from StockAnalysisSystem.core.Utility.common import *
 from StockAnalysisSystem.core.Utility.df_utility import *
 from StockAnalysisSystem.core.Utility.time_utility import *
@@ -17,9 +18,10 @@ def analysis_black_list(securities: str, time_serial: tuple, data_hub: DataHubEn
     nop(time_serial)
 
     if context.cache.get('black_table', None) is None:
-        black_list_module = data_hub.get_data_extra('black_list')
-        if black_list_module is not None:
-            context.cache['black_table'] = black_list_module.get_black_list_data()
+        context.cache['black_table'] = sasApi.sys_call('get_black_list_data')
+        # black_list_module = data_hub.get_data_extra('black_list')
+        # if black_list_module is not None:
+        #     context.cache['black_table'] = black_list_module.get_black_list_data()
     black_table = context.cache.get('black_table', None)
 
     if isinstance(black_table, pd.DataFrame) and not black_table.empty:

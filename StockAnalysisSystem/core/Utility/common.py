@@ -94,9 +94,9 @@ class ProgressRate:
         for key in self.__progress_table.keys():
             total += self.__progress_table[key][ProgressRate.INDEX_TOTAL_PROGRESS]
             current += self.__progress_table[key][ProgressRate.INDEX_CURRENT_PROGRESS]
-        else:
-            total += 1
-            current += 0
+        # else:
+        #     total += 1
+        #     current += 0
         current = min(current, total)
         return abs(total - current) < 0.0001
 

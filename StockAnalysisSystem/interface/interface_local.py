@@ -1,3 +1,4 @@
+import os
 import uuid
 import datetime
 from functools import partial
@@ -163,8 +164,23 @@ class SasAnalysisTask(ResourceTask):
         resource_manager.set_resource_tags(self.res_id(), ['analysis_task'])
 
     def run(self):
+        if self.__extra_params.get('attach_basic_index', False):
+            self.progress().set_progress('attach_basic_index', 0, 100)
+        if self.__extra_params.get('generate_report', False):
+            self.progress().set_progress('generate_report', 0, 100)
+
         stock_list = self.selected_securities()
         result_list = self.analysis(stock_list)
+
+        if self.__extra_params.get('attach_basic_index', False):
+            stock_metrics = self.fetch_stock_metrics()
+            self.progress().set_progress('attach_basic_index', 100, 100)
+        else:
+            stock_metrics = None
+        if self.__extra_params.get('generate_report', False):
+            self.gen_report(result_list, stock_metrics)
+            self.progress().set_progress('generate_report', 100, 100)
+
         self.update_result(result_list)
 
     def identity(self) -> str:
@@ -179,7 +195,7 @@ class SasAnalysisTask(ResourceTask):
             enable_update_cache=self.__extra_params.get('enable_update_cache', True),
             debug_load_json=self.__extra_params.get('debug_load_json', False),
             debug_dump_json=self.__extra_params.get('debug_dump_json', False),
-            dump_path=self.__extra_params.get('dump_path', ''),
+            dump_path=self.__extra_params.get('dump_path', sasApi.root_path()),
         )
         return total_result
 
@@ -194,6 +210,59 @@ class SasAnalysisTask(ResourceTask):
         else:
             stock_list = []
         return stock_list
+
+    def fetch_stock_metrics(self) -> pd.DataFrame or None:
+        daily_metrics = None
+        # daily_metrics = self.fetch_metrics_from_web()
+        if not isinstance(daily_metrics, pd.DataFrame) or daily_metrics.empty:
+            print('Fetch daily metrics data fail, use local.')
+            daily_metrics = self.fetch_metrics_from_local()
+
+        if not isinstance(daily_metrics, pd.DataFrame) or daily_metrics.empty:
+            print('No metrics data.')
+            return None
+
+        if '_id' in daily_metrics.columns:
+            del daily_metrics['_id']
+        if 'trade_date' in daily_metrics.columns:
+            del daily_metrics['trade_date']
+
+        daily_metrics.columns = self.__data_hub.get_data_center().fields_to_readable(list(daily_metrics.columns))
+
+        return daily_metrics
+
+    def fetch_metrics_from_web(self) -> pd.DataFrame or None:
+        trade_calender = self.__data_hub.get_data_center().query_from_plugin('Market.TradeCalender', exchange='SSE',
+                                                                             trade_date=(days_ago(30), now()))
+        if not isinstance(trade_calender, pd.DataFrame) or trade_calender.empty:
+            print('Fetch trade calender from web fail.')
+            return None
+
+        trade_calender = trade_calender[trade_calender['status'] == 1]
+        trade_calender = trade_calender.sort_values('trade_date', ascending=False)
+        last_trade_date = trade_calender.iloc[1]['trade_date']
+
+        daily_metrics = self.__data_hub.get_data_center().query_from_plugin(
+            'Metrics.Stock.Daily', trade_date=(last_trade_date, last_trade_date))
+        return daily_metrics
+
+    def fetch_metrics_from_local(self) -> pd.DataFrame or None:
+        agent = self.__data_hub.get_data_center().get_data_agent('Metrics.Stock.Daily')
+        if agent is None:
+            print('No data agent for Metrics.Stock.Daily')
+            return None
+        since, until = agent.data_range('Metrics.Stock.Daily')
+        if until is None:
+            print('No local metrics data.')
+        daily_metrics = self.__data_hub.get_data_center().query_from_local('Metrics.Stock.Daily',
+                                                                           trade_date=(until, until))
+        return daily_metrics
+
+    def gen_report(self, result_list: [AnalysisResult], stock_metrics: pd.DataFrame or None):
+        clock = Clock()
+        report_path = os.path.join(sasApi.root_path(), 'analysis_report.xlsx')
+        self.__strategy.generate_report_excel_common(result_list, report_path, stock_metrics)
+        print('Generate report time spending: %ss' % str(clock.elapsed_s()))
 
 
 class LocalInterface(sasIF):

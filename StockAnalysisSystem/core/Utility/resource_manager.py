@@ -94,7 +94,7 @@ class ResourceManager:
         tags = set(tags)
         with self.__resource_lock:
             for _id, res in self.__resource_table.items():
-                if len(set(res.get_tags()) & tags) == len(tags):
+                if not set(res.get_tags()).isdisjoint(tags):
                     res_id.append(_id)
         return res_id
 
