@@ -59,6 +59,10 @@ def init(project_path: str = None, config=None, not_load_config: bool = False) -
     return sas().check_initialize(sas_path, config, not_load_config)
 
 
+def root_path() -> str:
+    return sas().get_root_path()
+
+
 def append_task(task: TaskQueue.Task):
     sas().get_task_queue().append_task(task)
 

@@ -211,11 +211,12 @@ class DataUpdateUi(QWidget):
                     'Update Estimation', 'Sub Update', 'Update', 'Status']
 
     def get_uri_sub_update(self, uri: str) -> list or None:
-        agent = self.__data_hub.get_data_center().get_data_agent(uri)
-        if agent is not None:
-            return agent.update_list()
-        else:
-            print('Error: Agent of URI %s is None.' % uri)
+        return self.__context.get_sas_interface().sas_get_data_agent_update_list(uri)
+        # agent = self.__data_hub.get_data_center().get_data_agent(uri)
+        # if agent is not None:
+        #     return agent.update_list()
+        # else:
+        #     print('Error: Agent of URI %s is None.' % uri)
 
     def __init__(self, context: UiContext):
         super(DataUpdateUi, self).__init__()
@@ -231,6 +232,11 @@ class DataUpdateUi(QWidget):
         # Page related
         self.__page = 0
         self.__item_per_page = 20
+
+        # Mark if it's first update. If yes, the update complete alarm will not be showed
+        self.__first_post_update = True
+        # Mark if we just posted the update task, if yes, it will keeping update until we get not empty update res ids
+        self.__just_post_update = False
 
         # # For processing updating
         # self.__processing_update_tasks = []
@@ -442,7 +448,17 @@ class DataUpdateUi(QWidget):
             if not total_progress.progress_done():
                 self.post_progress_updater()
             else:
-                self.__context.get_sas_interface().sas_delete_resource()
+                self.__context.get_sas_interface().sas_delete_resource(updated_res_id)
+                self.__current_update_task = None
+                if not self.__first_post_update:
+                    self.__on_update_done()
+        # --------- Just for the progress performs good ---------
+                self.__first_post_update = False
+                self.__just_post_update = False
+        elif self.__just_post_update:
+            self.post_progress_updater()
+            self.__just_post_update = False
+
         # if not total_progress.progress_done():
         #     self.__context.get_task_queue().append_task(UpdateResTask(self))
 
@@ -643,6 +659,13 @@ class DataUpdateUi(QWidget):
         update_task = ResourceUpdateTask(updater)
         self.__context.get_task_queue().append_task(update_task)
         self.__current_update_task = update_task
+        self.__just_post_update = True
+
+    def __on_update_done(self):
+        QMessageBox.information(self,
+                                QtCore.QCoreApplication.translate('main', '更新完成'),
+                                QtCore.QCoreApplication.translate('main', '数据更新完成'),
+                                QMessageBox.Ok, QMessageBox.Ok)
 
 
 # ----------------------------------------------------------------------------------------------------------------------

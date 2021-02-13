@@ -161,7 +161,7 @@ from StockAnalysisSystem.core.Utility.resource_sync import ResourceTagUpdater, R
 # # ---------------------------------------------------- AnalyzerUi ----------------------------------------------------
 
 class AnalyzerUi(QWidget):
-    task_finish_signal = pyqtSignal()
+    # task_finish_signal = pyqtSignal()
 
     TABLE_HEADER_SELECTOR = ['', 'Selector', 'Comments', 'UUID', 'Status']
     TABLE_HEADER_ANALYZER = ['', 'Strategy', 'Comments', 'UUID', 'Status']
@@ -178,7 +178,7 @@ class AnalyzerUi(QWidget):
         self.__analyzer_list = []
         self.__result_output = os.getcwd()
         self.__timing_clock = Clock()
-        self.task_finish_signal.connect(self.__on_task_done)
+        # self.task_finish_signal.connect(self.__on_task_done)
 
         # self.__task_res_id = []
         self.__current_update_task = None
@@ -368,7 +368,7 @@ class AnalyzerUi(QWidget):
         self.execute_update()
 
     def on_timer(self):
-        if self.__current_update_task is None or self.__current_update_task.working():
+        if self.__current_update_task is None or not self.__current_update_task.working():
             return
 
         total_progress = ProgressRate()
@@ -396,6 +396,8 @@ class AnalyzerUi(QWidget):
                 self.post_progress_updater()
             else:
                 self.__context.get_sas_interface().sas_delete_resource()
+                self.__current_update_task = None
+                self.__on_analysis_done()
 
     # def closeEvent(self, event):
     #     if self.__task_thread is not None:
@@ -503,6 +505,8 @@ class AnalyzerUi(QWidget):
             debug_load_json=self.__check_load_json.isChecked() or self.__check_load_dump_all.isChecked(),
             debug_dump_json=self.__check_dump_json.isChecked() or self.__check_load_dump_all.isChecked(),
             dump_path=self.__result_output,
+            attach_basic_index=self.__check_attach_basic_index.isChecked(),
+            generate_report=True,           # The report will be generated on server side.
         )
         self.post_progress_updater()
         # self.__task_res_id.append(res_id)
@@ -590,16 +594,24 @@ class AnalyzerUi(QWidget):
 
     # ---------------------------------------------------------------------------------
 
-    def notify_task_done(self):
-        self.task_finish_signal.emit()
+    # def notify_task_done(self):
+    #     self.task_finish_signal.emit()
 
-    def __on_task_done(self):
-        # StockAnalysisSystem().release_sys_quit()
+    # def __on_task_done(self):
+    #     # StockAnalysisSystem().release_sys_quit()
+    #     QMessageBox.information(self,
+    #                             QtCore.QCoreApplication.translate('main', '远行完成'),
+    #                             QtCore.QCoreApplication.translate('main', '策略运行完成，耗时' +
+    #                                                               str(self.__timing_clock.elapsed_s()) + '秒\n' +
+    #                                                               '报告生成路径：' + self.__result_output),
+    #                             QMessageBox.Ok, QMessageBox.Ok)
+        
+    def __on_analysis_done(self):
         QMessageBox.information(self,
-                                QtCore.QCoreApplication.translate('main', '远行完成'),
+                                QtCore.QCoreApplication.translate('main', '分析完成'),
                                 QtCore.QCoreApplication.translate('main', '策略运行完成，耗时' +
                                                                   str(self.__timing_clock.elapsed_s()) + '秒\n' +
-                                                                  '报告生成路径：' + self.__result_output),
+                                                                  '请到服务目录下获取analysis_report.xlsx'),
                                 QMessageBox.Ok, QMessageBox.Ok)
 
     def post_progress_updater(self):
