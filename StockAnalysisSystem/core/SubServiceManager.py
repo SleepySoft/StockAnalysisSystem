@@ -84,7 +84,7 @@ class SubServiceManager:
                 self.__event_handler_service.append(service_wrapper)
             self.__service_table[prob['plugin_id']] = service_wrapper
 
-        return self.init_services() and and self.startup_service() and self.activate_services()
+        return self.init_services() and self.startup_service() and self.activate_services()
 
     def init_services(self) -> bool:
         fail_service = []
@@ -130,13 +130,12 @@ class SubServiceManager:
         for service_wrapper in self.__event_handler_service:
             self.__event_queue.add_event_handler(
                 SubServiceManager.SubServiceEventWrapper(
-                    self.__plugin, str(uuid.uuid4()), service_wrapper.extension))
+                    str(uuid.uuid4()), service_wrapper.extension))
         return True
 
     def __run_thread_services(self) -> bool:
         for service_wrapper in self.__thread_service:
-            extension_thread = SubServiceManager.SubServiceThreadWrapper(
-                self.__plugin, service_wrapper.extension)
+            extension_thread = SubServiceManager.SubServiceThreadWrapper(service_wrapper)
             service_wrapper.set_data('extension_thread', extension_thread)
             extension_thread.start()
         return True

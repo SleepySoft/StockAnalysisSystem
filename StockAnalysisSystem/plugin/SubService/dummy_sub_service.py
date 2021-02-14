@@ -40,6 +40,8 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+subServiceContext: SubServiceContext = None
+
 
 def init(sub_service_context: SubServiceContext) -> bool:
     """
@@ -47,6 +49,15 @@ def init(sub_service_context: SubServiceContext) -> bool:
     :param sub_service_context: The instance of SubServiceContext
     :return: True if successful else False
     """
+    try:
+        global subServiceContext
+        subServiceContext = sub_service_context
+    except Exception as e:
+        import traceback
+        print('Plugin-in init error: ' + str(e))
+        print(traceback.format_exc())
+    finally:
+        pass
     return True
 
 

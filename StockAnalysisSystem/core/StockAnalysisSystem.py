@@ -216,6 +216,14 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
 
         print('Stock Analysis System Initialization Done, Time spending: ' + str(clock.elapsed_ms()) + ' ms')
         self.__inited = True
+
+        print('-' * 50)
+        print('Existing loggers: ')
+        print()
+        for name in logging.root.manager.loggerDict:
+            print(name)
+        print('-' * 50)
+
         return True
 
     def finalize(self):
