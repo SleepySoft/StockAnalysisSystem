@@ -1,8 +1,15 @@
 import psutil
+import logging
 import datetime
 from apscheduler.schedulers.blocking import BaseScheduler, BlockingScheduler
 import StockAnalysisSystem.core.api as sasApi
 from StockAnalysisSystem.core.Utility.event_queue import Event
+from StockAnalysisSystem.core.SubServiceManager import SubServiceContext
+
+
+logging.getLogger('apscheduler').setLevel(logging.WARNING)
+logging.getLogger('apscheduler.executors').setLevel(logging.WARNING)
+logging.getLogger('apscheduler.jobstores').setLevel(logging.WARNING)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -72,13 +79,20 @@ class SystemService:
         def cancel_schedule(self):
             pass
 
-    def __init__(self):
+    def __init__(self, sub_service_context: SubServiceContext):
+        self.__sub_service_context = sub_service_context
         self.__schedule = BlockingScheduler()
         self.__schedule_data = []
-        self.__schedule.add_job(func=self.__watch_dog_task(), trigger='interval', seconds=1, id='watch_dog_task')
+        self.__schedule.add_job(func=self.__watch_dog_task, trigger='interval', seconds=1, id='watch_dog_task')
 
     def run_forever(self):
         self.__schedule.start()
+        logging.getLogger('apscheduler.executors.default').propagate = False
+        logging.getLogger('apscheduler.executors.default').setLevel(logging.WARNING)
+
+    def register_sys_call(self):
+        pass
+        # self.__sas_api.register_sys_call('stock_memo_save',             self.__stock_memo.stock_memo_save,              group='stock_memo')
 
     # -----------------------------------------------------------------------
 
@@ -146,27 +160,34 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-sasApiEntry: sasApi = None
+systemService: SystemService = None
+subServiceContext: SubServiceContext = None
 
 
-def init(sas_api: sasApi, **kwargs) -> bool:
-    """
-    System will invoke this function at startup once.
-    :param sas_api: The sasApi entry
-    :return: True if successful else False
-    """
+def init(sub_service_context: SubServiceContext) -> bool:
     try:
-        global sasApiEntry
-        sasApiEntry = sas_api
+        global subServiceContext
+        subServiceContext = sub_service_context
+
+        global systemService
+        systemService = SystemService(subServiceContext)
     except Exception as e:
-        pass
+        import traceback
+        print('Plugin-in init error: ' + str(e))
+        print(traceback.format_exc())
     finally:
         pass
     return True
 
 
+def startup() -> bool:
+    return True
+
+
 def thread(context: dict):
-    pass
+    global systemService
+    systemService.run_forever()
+    print('System service quit.')
 
 
 def polling(interval_ns: int):

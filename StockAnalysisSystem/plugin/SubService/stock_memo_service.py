@@ -6,6 +6,7 @@ import pandas as pd
 import StockAnalysisSystem.core.api as sasApi
 from StockAnalysisSystem.core.Utility.TagsLib import Tags
 from StockAnalysisSystem.core.Utility.event_queue import Event
+from StockAnalysisSystem.core.SubServiceManager import SubServiceContext
 
 from StockMemo.StockMemo import StockMemo
 from StockMemo.BlackList import BlackList
@@ -79,30 +80,29 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-sasApiEntry: sasApi = None
 stockMemoService: StockMemoService = None
+subServiceContext: SubServiceContext = None
 
 
-def init(sas_api: sasApi) -> bool:
-    """
-    System will invoke this function at startup once.
-    :param sas_api: The sasApi entry
-    :return: True if successful else False
-    """
+def init(sub_service_context: SubServiceContext) -> bool:
     try:
-        global sasApiEntry
         global stockMemoService
+        global subServiceContext
 
-        sasApiEntry = sas_api
-        memo_path = sasApi.config().get('memo_path', os.getcwd())
+        subServiceContext = sub_service_context
+        memo_path = subServiceContext.sas_api.config().get('memo_path', os.getcwd())
 
-        stockMemoService = StockMemoService(sasApi, memo_path)
+        stockMemoService = StockMemoService(subServiceContext.sas_api, memo_path)
         stockMemoService.register_sys_call()
     except Exception as e:
-        print('Error =>', e)
-        print('Error =>', traceback.format_exc())
+        import traceback
+        print('Plugin-in init error: ' + str(e))
+        print(traceback.format_exc())
     finally:
         pass
     return True
 
+
+def startup() -> bool:
+    return True
 
