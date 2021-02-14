@@ -1,20 +1,17 @@
 import os
 import datetime
 import traceback
-
 import pandas as pd
 
 import StockAnalysisSystem.core.api as sasApi
 from StockAnalysisSystem.core.Utility.TagsLib import Tags
 from StockAnalysisSystem.core.Utility.event_queue import Event
 
-root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 from StockMemo.StockMemo import StockMemo
 from StockMemo.BlackList import BlackList
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-
 
 class StockMemoService:
     def __init__(self, sas_api: sasApi, memo_path: str):
@@ -35,7 +32,7 @@ class StockMemoService:
         # Stock memo
         self.__sas_api.register_sys_call('stock_memo_save',             self.__stock_memo.stock_memo_save,              group='stock_memo')
         self.__sas_api.register_sys_call('stock_memo_load',             self.__stock_memo.stock_memo_load,              group='stock_memo')
-        self.__sas_api.register_sys_call('stock_memo_filter_record',    self.__stock_memo.stock_memo_filter_record,        group='stock_memo')
+        self.__sas_api.register_sys_call('stock_memo_filter_record',    self.__stock_memo.stock_memo_filter_record,     group='stock_memo')
         self.__sas_api.register_sys_call('stock_memo_get_record',       self.__stock_memo.stock_memo_get_record,        group='stock_memo')
         self.__sas_api.register_sys_call('stock_memo_add_record',       self.__stock_memo.stock_memo_add_record,        group='stock_memo')
         self.__sas_api.register_sys_call('stock_memo_update_record',    self.__stock_memo.stock_memo_update_record,     group='stock_memo')

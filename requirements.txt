@@ -22,3 +22,5 @@ h5py
 flask
 flask-login
 xmltodict
+psutil
+APScheduler
