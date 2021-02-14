@@ -1,5 +1,6 @@
 import StockAnalysisSystem.core.api as sasApi
 from StockAnalysisSystem.core.Utility.event_queue import Event
+from StockAnalysisSystem.core.SubServiceManager import SubServiceContext
 
 # 事件入口
 #    定时事件
@@ -39,22 +40,21 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-sasApiEntry: sasApi = None
 
-
-def init(sas_api: sasApi, **kwargs) -> bool:
+def init(sub_service_context: SubServiceContext) -> bool:
     """
-    System will invoke this function at startup once.
-    :param sas_api: The sasApi entry
+    System will invoke this function before startup() once. The initialization order of service is uncertain.
+    :param sub_service_context: The instance of SubServiceContext
     :return: True if successful else False
     """
-    try:
-        global sasApiEntry
-        sasApiEntry = sas_api
-    except Exception as e:
-        pass
-    finally:
-        pass
+    return True
+
+
+def startup() -> bool:
+    """
+    System will invoke this function after all service being initialized and service before activated.
+    You and put the cross-service invoking here.
+    """
     return True
 
 

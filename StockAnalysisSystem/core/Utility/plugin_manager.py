@@ -1,5 +1,6 @@
 import os
 import traceback
+from functools import partial
 from inspect import getmembers, isfunction
 
 
@@ -96,8 +97,6 @@ class PluginManager:
                     break
         return result_list
 
-    # ---------------------------------------------------------------------------------------
-
     def __load_from_single_path(self, plugin_path) -> list:
         """
         Refresh plugin list immediately. You should call this function if any updates to the plug-in folder.
@@ -146,9 +145,47 @@ class PluginManager:
         return return_obj
 
 
+# ------------------------------------ Plug-in Wrapper ------------------------------------
+
+"""
+Plug-in wrapper
+    20200214
+    Easy invoke plug-in function.
+"""
 
 
+class PluginWrapper:
+    """
+    This wrapper and invoke plugin function directly.
+    """
+    def __init__(self, plugin: PluginManager, extension: any):
+        self.__data = dict()
+        self.__plugin = plugin
+        self.__extension = extension
 
+    def __getattr__(self, attr):
+        return partial(self.invoke, attr)
 
+    def set_data(self, k: str, v: any):
+        self.__data[k] = v
 
+    def get_data(self, k: str) -> any:
+        return self.__data.get(k, None)
+
+    def invoke(self, func: str, *args, **kwargs) -> any:
+        try:
+            result = self.plugin_manager().execute_module_function(self.__extension, func, kwargs)
+            return result[0] if result is not None and len(result) > 0 else None
+        except Exception as e:
+            print('Invoke error: ' + str(e))
+            print(traceback.format_exc())
+            return None
+        finally:
+            pass
+
+    def extension(self) -> any:
+        return self.__extension
+
+    def plugin_manager(self) -> PluginManager:
+        return self.__plugin
 
