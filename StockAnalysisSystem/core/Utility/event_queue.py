@@ -1,6 +1,6 @@
 import datetime
 import threading
-from queue import Queue
+from collections import deque
 
 
 class Event:
@@ -8,18 +8,21 @@ class Event:
     EVENT_PUSH = 'push_event'
     EVENT_TIMER = 'timer_event'
     EVENT_INVOKE = 'invoke_event'
+    EVENT_SCHEDULE = 'schedule_event'
     EVENT_BROADCAST = 'broadcast_event'
 
-    def __init__(self):
+    def __init__(self, event_type: str, event_target: str):
+        self.__event_type = event_type
+        self.__event_target = event_target
         self.__event_data = {}
         self.__post_timestamp = datetime.datetime.now()
         self.__process_timestamp = datetime.datetime.now()
 
-    def event_class(self) -> str:
-        return ''
+    def event_type(self) -> str:
+        return self.__event_type
 
     def event_target(self) -> str or [str] or None:
-        return ''
+        return self.__event_target
 
     # ---------------------------------------------------------------------
 
@@ -58,27 +61,33 @@ class EventHandler:
 class EventQueue:
     def __init__(self):
         self.__event_handler = []
-        self.__event_queue = Queue(1000)
+        self.__event_queue = deque(maxlen=1000)
         self.__lock = threading.Lock()
 
     def post_event(self, event: Event):
-        self.__event_queue.put(event)
+        self.__event_queue.append(event)
+
+    def insert_event(self, event: Event):
+        self.__event_queue.appendleft(event)
+
+    def deliver_event(self, event: Event):
+        self.__dispatch_event(event)
 
     def add_event_handler(self, event_handler: EventHandler):
         self.__event_handler.append(event_handler)
 
     def polling(self, time_limit_ms: int) -> int:
         polling_start = datetime.datetime.now()
-        while not self.__event_queue.empty():
-            event = self.__event_queue.get()
+        while len(self.__event_queue) > 0:
+            event = self.__event_queue.popleft()
             if self.__pre_process_event(event):
                 self.__dispatch_event(event)
             if (datetime.datetime.now() - polling_start).microseconds >= time_limit_ms:
                 break
-        return self.__event_queue.qsize()
+        return len(self.__event_queue)
 
     def __pre_process_event(self, event: Event):
-        pass
+        return True
 
     def __dispatch_event(self, event: Event):
         with self.__lock:
@@ -89,7 +98,7 @@ class EventQueue:
                 handler.handle_event(event)
             else:
                 targets = list(target) if isinstance(target, (list, tuple, set)) else [str(target)]
-                if handler.identity in targets:
+                if handler.identity() in targets:
                     handler.handle_event(event)
 
 
