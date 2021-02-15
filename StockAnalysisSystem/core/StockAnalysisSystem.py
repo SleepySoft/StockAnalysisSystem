@@ -213,6 +213,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         self.__sub_service_manager.init()
 
         self.__task_queue.start()
+        self.__sub_service_manager.run_service()
 
         print('Stock Analysis System Initialization Done, Time spending: ' + str(clock.elapsed_ms()) + ' ms')
         self.__inited = True

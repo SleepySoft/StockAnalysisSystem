@@ -31,9 +31,10 @@ class SubServiceManager:
             self.__context['quit_flag'] = True
 
     class SubServiceEventWrapper(EventHandler):
-        def __init__(self, identity: str, extension: PluginWrapper):
-            self.__identity = identity
+        def __init__(self, extension: PluginWrapper):
             self.__extension = extension
+            prob = extension.plugin_prob()
+            self.__identity = prob['plugin_id']
             super(SubServiceManager.SubServiceEventWrapper, self).__init__()
 
         def identity(self) -> str:
@@ -46,6 +47,7 @@ class SubServiceManager:
         self.__sas_api = sas_api
         self.__plugin = plugin
 
+        self.__prev_tick = 0
         self.__event_queue = EventQueue()
 
         self.__sub_service_context = SubServiceContext()
@@ -56,11 +58,19 @@ class SubServiceManager:
         self.__service_table = {}
 
         # Threads
+        self.__lock = threading.Lock()
+        self.__service_thread = None
         self.__service_threads = {}
 
         self.__period_service = []
         self.__thread_service = []
         self.__event_handler_service = []
+
+        # Statistics
+        self.__last_run_time = 0
+        self.__running_cycles = 0
+
+    # --------------------------------------- Init & Startup ---------------------------------------
 
     def init(self) -> bool:
         self.__plugin.refresh()
@@ -115,30 +125,44 @@ class SubServiceManager:
         ret = ret and self.__run_thread_services()
         return ret
 
-    def drive_service(self):
+    # ---------------------------------------- Functions ----------------------------------------
+
+    def run_service(self):
+        self.__service_thread = threading.Thread(target=self.run_forever)
+        self.__service_thread.start()
+
+    def run_forever(self):
+        while True:
+            self.poll_service()
+            time.sleep(0.05)
+
+    def poll_service(self):
+        with self.__lock:
+            self.__last_run_time = int(time.time() * 1000)
+            self.__running_cycles += 1
         self.__event_queue.polling(50)
         self.__poll_services()
+
+    def get_last_run_time(self) -> int:
+        with self.__lock:
+            return self.__last_run_time
+
+    def get_running_cycles(self) -> int:
+        with self.__lock:
+            return self.__running_cycles
 
     # ------------------------------------------ Event ------------------------------------------
 
     def post_event(self, event: Event):
         self.__event_queue.post_event(event)
 
-    # -------------------------------------------------------------------------------------------
+    def insert_event(self, event: Event):
+        self.__event_queue.insert_event(event)
 
-    def __register_event_handler_service(self) -> bool:
-        for service_wrapper in self.__event_handler_service:
-            self.__event_queue.add_event_handler(
-                SubServiceManager.SubServiceEventWrapper(
-                    str(uuid.uuid4()), service_wrapper.extension))
-        return True
+    def deliver_event(self, event: Event):
+        self.__event_queue.deliver_event(event)
 
-    def __run_thread_services(self) -> bool:
-        for service_wrapper in self.__thread_service:
-            extension_thread = SubServiceManager.SubServiceThreadWrapper(service_wrapper)
-            service_wrapper.set_data('extension_thread', extension_thread)
-            extension_thread.start()
-        return True
+    # ----------------------------------------- private -----------------------------------------
 
     def __poll_services(self) -> bool:
         tick_ns = time.time() * 1000000
@@ -146,7 +170,7 @@ class SubServiceManager:
             self.__prev_tick = tick_ns
         elapsed_ns = tick_ns - self.__prev_tick
         for service_wrapper in self.__period_service:
-            service_wrapper.polling(elapsed_ns)
+            service_wrapper.polling(interval_ns=elapsed_ns)
         self.__prev_tick = tick_ns
         return True
 
@@ -159,6 +183,19 @@ class SubServiceManager:
             if service_wrapper in self.__event_handler_service:
                 self.__event_handler_service.remove(service_wrapper)
             del self.__service_table[identity]
+
+    def __register_event_handler_service(self) -> bool:
+        for service_wrapper in self.__event_handler_service:
+            self.__event_queue.add_event_handler(
+                SubServiceManager.SubServiceEventWrapper(service_wrapper))
+        return True
+
+    def __run_thread_services(self) -> bool:
+        for service_wrapper in self.__thread_service:
+            extension_thread = SubServiceManager.SubServiceThreadWrapper(service_wrapper)
+            service_wrapper.set_data('extension_thread', extension_thread)
+            extension_thread.start()
+        return True
 
 
 
