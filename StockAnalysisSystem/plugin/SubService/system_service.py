@@ -8,6 +8,7 @@ import logging
 import datetime
 from apscheduler.schedulers.blocking import BaseScheduler, BlockingScheduler
 import StockAnalysisSystem.core.api as sasApi
+from StockAnalysisSystem.core.Utility.time_utility import *
 from StockAnalysisSystem.core.Utility.event_queue import Event
 from StockAnalysisSystem.core.SubServiceManager import SubServiceContext
 
@@ -120,9 +121,9 @@ class SystemService:
         # Ring buffer, see: https://stackoverflow.com/a/4151368
         self.__timer_gap_buffer = collections.deque(maxlen=10)
         self.__timer_event_expect_time = 0
-        # # For schedule monitoring
-        # self.__schedule_duration_buffer = collections.deque(maxlen=10)
-        # self.__schedule_event_expect_time = 0
+        # For schedule monitoring
+        self.__schedule_duration_buffer = collections.deque(maxlen=10)
+        self.__schedule_event_expect_time = 0
 
     def run_forever(self):
         self.__scheduler.start()
@@ -136,7 +137,7 @@ class SystemService:
             self.__timer_gap_buffer.append(time_gap)
             self.__timer_event_expect_time = now_ts + SystemService.WATCH_DOG_TIMER_INTERVAL
         elif event.event_type() == Event.EVENT_SCHEDULE:
-            pass
+            print('Receive schedule event: ' + datetime2text(now()))
 
     def register_sys_call(self):
         subServiceContext.sas_api.register_sys_call('get_system_status',        self.get_system_status,         group='system_service')
@@ -219,7 +220,10 @@ class SystemService:
                     print('Max timer gap > 10%%.')
 
     def __check_schedule_event(self):
-        pass
+        if self.__schedule_event_expect_time == 0:
+            self.__sub_service_context.sas_api.sys_call('register_schedule_event',
+                                                        '8e6e6025-c0c7-4577-b62a-dd26b925b874', 8, 0, 0)
+            self.__schedule_event_expect_time = time.time()
 
 
 # ----------------------------------------------------------------------------------------------------------------------
