@@ -106,11 +106,19 @@ class DataAgent:
     MERGE_UPSERT = 0
     MERGE_INSERT = 1
 
+    PRIORITY_HIGHEST = 100
+    PRIORITY_ABOVE_NORMAL = 75
+    PRIORITY_NORMAL = 50
+    PRIORITY_BELOW_NORMAL = 25
+    PRIORITY_LOWEST = 0
+    PRIORITY_NOT_UPDATE = -1
+
     def __init__(self,
                  uri: str, depot: DepotInterface,
                  identity_field: str or None = 'Identity',
                  datetime_field: str or None = 'DateTime',
                  merge_strategy: int = MERGE_UPSERT,
+                 update_priority: int = PRIORITY_NORMAL,
                  **kwargs):
         """
         If you specify both identity_field and datetime_field, the combination will be the primary key. Which means
@@ -127,6 +135,7 @@ class DataAgent:
         self.__identity_field = identity_field
         self.__datetime_field = datetime_field
         self.__merge_strategy = merge_strategy
+        self.__update_priority = update_priority
         self.__checker = None
         self.__extra = kwargs
 
@@ -140,6 +149,7 @@ class DataAgent:
             'depot': self.__depot,
             'identity_field': self.__identity_field if str_available(self.__identity_field) else '',
             'datetime_field': self.__datetime_field if str_available(self.__datetime_field) else '',
+            'update_priority': self.__update_priority,
         }
 
     # ------------------------------------- Constant ------------------------------------

@@ -131,6 +131,12 @@ class SasUpdateTask(ResourceTask):
         self.__clock.freeze()
         # self.__ui.task_finish_signal[UpdateTask].emit(self)
 
+        # ------------------- Put refresh process here -------------------
+
+        # Refresh data utility cache if stock list or index list update
+        if self.__agent.base_uri() in ['Market.SecuritiesInfo', 'Market.IndexInfo']:
+            self.__data_hub.get_data_utility().refresh_cache()
+
     def __execute_persistence(self, uri: str, identity: str, patch: tuple) -> bool:
         try:
             if patch is not None:
@@ -325,12 +331,7 @@ class LocalInterface(sasIF):
         :return: List of dict, dict key includes [uri, depot, identity_field, datetime_field]
         """
         probs = sasApi.get_data_agent_info()
-        return [{
-            'uri': uri,
-            'depot': depot,
-            'identity_field': identity_field,
-            'datetime_field': datetime_field,
-        } for uri, depot, identity_field, datetime_field in probs]
+        return probs
 
     def sas_get_data_agent_update_list(self, uri: str) -> [str]:
         agent: DataAgent = sasApi.data_center().get_data_agent(uri)

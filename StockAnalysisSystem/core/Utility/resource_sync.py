@@ -58,7 +58,7 @@ class ResourceUpdater:
             if self.__quit:
                 break
             res = self.__sasif.sas_get_resource(res_id, res_keys)
-            if len(res) == len(res_keys):
+            if res is not None and len(res) == len(res_keys):
                 res_table[res_id] = {k: v for k, v in zip(res_keys, res)}
         return res_table
 

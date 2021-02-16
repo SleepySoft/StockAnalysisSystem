@@ -226,6 +226,7 @@ class DataUpdateUi(QWidget):
 
         # Table content
         self.__display_uri = []
+        self.__data_agent_prob = {}
         self.__display_identities = None
         self.__display_table_lines = []
 
@@ -237,6 +238,7 @@ class DataUpdateUi(QWidget):
         self.__first_post_update = True
         # Mark if we just posted the update task, if yes, it will keeping update until we get not empty update res ids
         self.__just_post_update = False
+        self.__post_update_timeout = 10
 
         # # For processing updating
         # self.__processing_update_tasks = []
@@ -349,17 +351,27 @@ class DataUpdateUi(QWidget):
         # self.__context.get_res_sync().add_sync_resource(res_id, 'progress')
 
     def on_batch_update(self, force: bool):
+        update_uris = []
         for i in range(self.__table_main.RowCount()):
             if self.__table_main.GetItemCheckState(i, DataUpdateUi.INDEX_CHECK) == Qt.Checked:
                 item_id = self.__table_main.GetItemText(i, DataUpdateUi.INDEX_ITEM)
-                # A little ugly...To distinguish it's uri or securities ideneity
+                # A little ugly...To distinguish it's uri or securities identity
                 if self.__display_identities is None:
-                    self.__context.get_sas_interface().sas_execute_update(item_id, None, force)
+                    # For sort
+                    update_uris.append(item_id)
+                    # self.__context.get_sas_interface().sas_execute_update(item_id, None, force)
                     # self.__task_res_id.append(res_id)
                 else:
                     self.__context.get_sas_interface().sas_execute_update(self.__display_uri[0], item_id, force)
                     # self.__task_res_id.append(res_id)
-                self.post_progress_updater()
+
+        # Sort by update priority
+        sorted(update_uris, key=lambda x: self.__data_agent_prob[x]['update_priority'])
+        # Only if the update_uris has contents.
+        for uri in update_uris:
+            self.__context.get_sas_interface().sas_execute_update(uri, None, force)
+
+        self.post_progress_updater()
 
     def on_page_control(self, control: str):
         # data_utility = self.__data_hub.get_data_utility()
@@ -457,7 +469,9 @@ class DataUpdateUi(QWidget):
                 self.__just_post_update = False
         elif self.__just_post_update:
             self.post_progress_updater()
-            self.__just_post_update = False
+            self.__post_update_timeout -= 1
+            if self.__post_update_timeout == 0:
+                self.__just_post_update = False
 
         # if not total_progress.progress_done():
         #     self.__context.get_task_queue().append_task(UpdateResTask(self))
@@ -597,8 +611,13 @@ class DataUpdateUi(QWidget):
 
     def __to_top_level(self):
         # Temporary exclude Factor related data
+
+        probs = self.__context.get_sas_interface().sas_get_data_agent_probs()
+        self.__data_agent_prob = {prob['uri']: prob for prob in probs}
+
         support_uri = self.__context.get_sas_interface().sas_get_all_uri()
-        self.__display_uri = [uri for uri in support_uri if 'Factor' not in uri]
+        self.__display_uri = [uri for uri in support_uri if 'Factor' not in uri and 'Result' not in uri]
+
         self.__display_identities = None
         self.__page = 0
         self.update_table()
@@ -659,6 +678,7 @@ class DataUpdateUi(QWidget):
         update_task = ResourceUpdateTask(updater)
         self.__context.get_task_queue().append_task(update_task)
         self.__current_update_task = update_task
+        self.__post_update_timeout = 10
         self.__just_post_update = True
 
     def __on_update_done(self):
@@ -666,6 +686,7 @@ class DataUpdateUi(QWidget):
                                 QtCore.QCoreApplication.translate('main', '更新完成'),
                                 QtCore.QCoreApplication.translate('main', '数据更新完成'),
                                 QMessageBox.Ok, QMessageBox.Ok)
+        self.update_table()
 
 
 # ----------------------------------------------------------------------------------------------------------------------
