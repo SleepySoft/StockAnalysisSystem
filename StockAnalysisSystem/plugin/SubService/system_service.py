@@ -32,7 +32,8 @@ class SystemService:
     SCHEDULE_A_MARKET_TRADING_DAY = 'trading_day_a_market'
 
     class ScheduleDataBase:
-        def __init__(self, scheduler: BaseScheduler, target: str, repeat: bool):
+        def __init__(self, scheduler: BaseScheduler, target: str, repeat: bool, extra: dict):
+            self.__extra = extra
             self.__target = target
             self.__repeat = repeat
             self.__scheduler = scheduler
@@ -46,6 +47,9 @@ class SystemService:
         def get_scheduler(self) -> BaseScheduler:
             return self.__scheduler
 
+        def get_extra_data(self) -> dict:
+            return self.__extra
+
         def schedule_handler(self):
             pass
 
@@ -56,12 +60,13 @@ class SystemService:
             pass
 
     class TimerData(ScheduleDataBase):
-        def __init__(self, scheduler: BaseScheduler, target: str, duration_ms: int, repeat: bool):
+        def __init__(self, scheduler: BaseScheduler, target: str, duration_ms: int, repeat: bool, **kwargs):
             self.__duration_ms = duration_ms
-            super(SystemService.TimerData, self).__init__(scheduler, target, repeat)
+            super(SystemService.TimerData, self).__init__(scheduler, target, repeat, kwargs)
 
         def schedule_handler(self):
             timer_event = Event(Event.EVENT_TIMER, self.get_target())
+            timer_event.set_event_data(self.get_extra_data())
             subServiceContext.sub_service_manager.insert_event(timer_event)
             # if self.is_repeat():
             #     self.re_schedule()
@@ -76,16 +81,17 @@ class SystemService:
         THREAD_POOL = ThreadPoolExecutor(max_workers=5)
 
         def __init__(self, scheduler: BaseScheduler, target: str, hour: int, minute: int, second: int,
-                     repeat: bool, day_filter: str, run_thread: str):
+                     repeat: bool, day_filter: str, run_thread: str, **kwargs):
             self.__hour = hour
             self.__minute = minute
             self.__second = second
             self.__day_filter = day_filter
             self.__run_thread = run_thread
-            super(SystemService.ScheduleData, self).__init__(scheduler, target, repeat)
+            super(SystemService.ScheduleData, self).__init__(scheduler, target, repeat, kwargs)
 
         def schedule_handler(self):
             schedule_event = Event(Event.EVENT_SCHEDULE, self.get_target())
+            schedule_event.set_event_data(self.get_extra_data())
 
             if self.__run_thread:
                 # If run_thread is set, deliver this event by the thread of thread pool
@@ -168,15 +174,16 @@ class SystemService:
 
     # -----------------------------------------------------------------------
 
-    def register_timer_event(self, target: str, duration_ms: int, repeat: bool):
-        timer = SystemService.TimerData(self.__scheduler, target, duration_ms, repeat)
+    def register_timer_event(self, target: str, duration_ms: int, repeat: bool = True, **kwargs):
+        timer = SystemService.TimerData(self.__scheduler, target, duration_ms, repeat, **kwargs)
         self.__schedule_data.append(timer)
         timer.re_schedule()
 
     def register_schedule_event(self, target: str, hour: int, minute: int, second: int, repeat=True,
-                                day_filter: str = SCHEDULE_EVERY_DAY, run_thread: str = SCHEDULE_THREAD_DEFAULT):
+                                day_filter: str = SCHEDULE_EVERY_DAY,
+                                run_thread: str = SCHEDULE_THREAD_DEFAULT, **kwargs):
         schedule = SystemService.ScheduleData(self.__scheduler, target, hour, minute, second,
-                                              repeat, day_filter, run_thread)
+                                              repeat, day_filter, run_thread, **kwargs)
         self.__schedule_data.append(schedule)
         schedule.re_schedule()
 
@@ -220,7 +227,7 @@ class SystemService:
 
     def __check_schedule_event(self):
         if self.__schedule_event_expect_time == 0:
-            self.__sub_service_context.sas_if.register_schedule_event(SERVICE_ID, 8, 0, 0)
+            self.__sub_service_context.sas_if.register_schedule_event(SERVICE_ID, 8, 0, 0, True)
             self.__schedule_event_expect_time = time.time()
 
 

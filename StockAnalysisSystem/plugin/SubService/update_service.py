@@ -1,3 +1,5 @@
+import datetime
+
 import StockAnalysisSystem.core.api as sasApi
 from StockAnalysisSystem.core.Utility.event_queue import Event
 from StockAnalysisSystem.core.SubServiceManager import SubServiceContext
@@ -22,6 +24,8 @@ class UpdateService:
     # ---------------------------------------------------------------------------------------
 
     def __do_update(self):
+        self.__sub_service_context.log('%s: Do update.' %
+                                       datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         self.__update_market_data()
 
     def __update_market_data(self):
@@ -74,7 +78,7 @@ def init(sub_service_context: SubServiceContext) -> bool:
         subServiceContext = sub_service_context
 
         global updateService
-        updateService = UpdateService()
+        updateService = UpdateService(subServiceContext)
     except Exception as e:
         import traceback
         print('Plugin-in init error: ' + str(e))

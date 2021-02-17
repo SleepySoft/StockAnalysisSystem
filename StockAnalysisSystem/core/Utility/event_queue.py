@@ -30,11 +30,14 @@ class Event:
 
     # ---------------------------------------------------------------------
 
-    def get_event_data(self, key: str) -> any:
-        return self.__event_data.get(key, None)
+    def get_event_data(self) -> dict:
+        return self.__event_data
 
-    def set_event_data(self, key: str, val: any) -> any:
-        self.__event_data[key] = val
+    def set_event_data(self, _data: dict):
+        self.__event_data = _data
+
+    def update_event_data(self, k: str, v: any):
+        self.__event_data[k] = v
 
     # ---------------------------------------------------------------------
 
