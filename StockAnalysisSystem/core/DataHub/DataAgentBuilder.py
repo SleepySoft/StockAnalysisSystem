@@ -22,6 +22,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             identity_field='stock_identity',
             datetime_field=None,
             data_duration=DATA_DURATION_NONE,
+            update_priority=DataAgent.PRIORITY_HIGHEST
         ),
 
         DataAgent(
@@ -33,6 +34,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             identity_field='index_identity',
             datetime_field=None,
             data_duration=DATA_DURATION_NONE,
+            update_priority=DataAgent.PRIORITY_HIGHEST
         ),
 
         DataAgent(
@@ -45,6 +47,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             datetime_field='trade_date',
             data_duration=DATA_DURATION_DAILY,
             update_list=DataAgentUtility.support_exchange_list,
+            update_priority=DataAgent.PRIORITY_HIGHEST
         ),
 
         DataAgent(
@@ -257,6 +260,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             identity_field='stock_identity',
             datetime_field='period',
             data_duration=DATA_DURATION_QUARTER,
+            update_priority=DataAgent.PRIORITY_NOT_UPDATE
         ),
 
         # --------------------- Result Cache - Quarter ---------------------
@@ -270,6 +274,7 @@ def build_data_agent(database_entry: DatabaseEntry):
             identity_field='stock_identity',
             datetime_field='period',
             data_duration=DATA_DURATION_QUARTER,
+            update_priority=DataAgent.PRIORITY_NOT_UPDATE
         ),
     ]
 
