@@ -276,6 +276,12 @@ class LocalInterface(sasIF):
         super(LocalInterface, self).__init__()
         self.__resource_manager = ResourceManager()
 
+    def __getattr__(self, attr):
+        return partial(self.__do_sys_call, attr)
+
+    def __do_sys_call(self, api, *args, **kwargs) -> any:
+        return sasApi.sys_call(api, *args, **kwargs)
+
     # ------------------------------------------------------------------------------------------------------------------
     # ----------------------------------------------- Interface of sasIF -----------------------------------------------
     # ------------------------------------------------------------------------------------------------------------------
