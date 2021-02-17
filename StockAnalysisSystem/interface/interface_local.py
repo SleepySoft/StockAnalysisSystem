@@ -272,6 +272,13 @@ class SasAnalysisTask(ResourceTask):
 
 
 class LocalInterface(sasIF):
+    __singleton_instance = None
+
+    def __new__(cls):
+        if cls.__singleton_instance is None:
+            cls.__singleton_instance = super().__new__(cls)
+        return cls.__singleton_instance
+
     def __init__(self):
         super(LocalInterface, self).__init__()
         self.__resource_manager = ResourceManager()

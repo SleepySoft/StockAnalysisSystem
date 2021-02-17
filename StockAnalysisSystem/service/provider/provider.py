@@ -4,8 +4,8 @@ import pickle
 import traceback
 import pandas as pd
 import StockAnalysisSystem.core.api as sasApi
-from StockAnalysisSystem.interface.interface import SasInterface as sasIF
-import StockAnalysisSystem.core.Utility.time_utility as sasTimeUtil
+# from StockAnalysisSystem.interface.interface import SasInterface as sasIF
+# import StockAnalysisSystem.core.Utility.time_utility as sasTimeUtil
 from StockAnalysisSystem.core.Utility.resource_manager import ResourceManager
 from .user_manager import UserManager
 from .access_control import AccessControl
@@ -48,7 +48,7 @@ class ServiceProvider:
         try:
             self.log('Init StockAnalysisSystem...')
             from StockAnalysisSystem.interface.interface_local import LocalInterface
-            from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
+            # from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
             self.__sas_interface = LocalInterface()
             self.__sas_interface.if_init(os.getcwd(), config=self.__config)
             # if not self.__sas_interface.sas_init(project_path=os.getcwd(), config=self.__config):

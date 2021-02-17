@@ -21,6 +21,8 @@ from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 from StockAnalysisSystem.core.Utility.securities_selector import SecuritiesSelector
 
 
+# 20200217: It doesn't work anymore - Move to recycled
+
 # -------------------------------------------- class AnnouncementDownloader --------------------------------------------
 
 # -----------------------------------------------------------
