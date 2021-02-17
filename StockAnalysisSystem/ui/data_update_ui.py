@@ -238,6 +238,7 @@ class DataUpdateUi(QWidget):
         self.__first_post_update = True
         # Mark if we just posted the update task, if yes, it will keeping update until we get not empty update res ids
         self.__just_post_update = False
+        # Post update per 10 seconds
         self.__post_update_timeout = 10
 
         # # For processing updating
@@ -366,7 +367,7 @@ class DataUpdateUi(QWidget):
                     # self.__task_res_id.append(res_id)
 
         # Sort by update priority
-        sorted(update_uris, key=lambda x: self.__data_agent_prob[x]['update_priority'])
+        sorted(update_uris, key=lambda x: self.__data_agent_prob[x]['update_priority'], reverse=True)
         # Only if the update_uris has contents.
         for uri in update_uris:
             self.__context.get_sas_interface().sas_execute_update(uri, None, force)
@@ -458,20 +459,26 @@ class DataUpdateUi(QWidget):
 
         if len(updated_res_id) > 0:
             if not total_progress.progress_done():
+                # Progress not done yet, post update
                 self.post_progress_updater()
             else:
+                # Progress done, not post update
                 self.__context.get_sas_interface().sas_delete_resource(updated_res_id)
                 self.__current_update_task = None
+                # If progress done at process startup, do not pop up message box
                 if not self.__first_post_update:
                     self.__on_update_done()
         # --------- Just for the progress performs good ---------
                 self.__first_post_update = False
                 self.__just_post_update = False
         elif self.__just_post_update:
+            # If just post update, it may not get the progress at the first time, retry.
             self.post_progress_updater()
+        elif self.__post_update_timeout > 0:
             self.__post_update_timeout -= 1
-            if self.__post_update_timeout == 0:
-                self.__just_post_update = False
+        else:
+            # Check per 10s to avoid any update missing
+            self.post_progress_updater()
 
         # if not total_progress.progress_done():
         #     self.__context.get_task_queue().append_task(UpdateResTask(self))
@@ -616,7 +623,7 @@ class DataUpdateUi(QWidget):
         self.__data_agent_prob = {prob['uri']: prob for prob in probs}
 
         support_uri = self.__context.get_sas_interface().sas_get_all_uri()
-        self.__display_uri = [uri for uri in support_uri if 'Factor' not in uri and 'Result' not in uri]
+        self.__display_uri = [uri for uri in support_uri if self.__data_agent_prob[uri]['update_priority'] > 0]
 
         self.__display_identities = None
         self.__page = 0
