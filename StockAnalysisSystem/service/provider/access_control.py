@@ -10,6 +10,7 @@ class AccessControl:
         self.__access_table = {}
 
     def accessible(self, token: str, feature_name: str, **kwargs) -> (bool, str):
+        # TODO: Check access here
         access = True
         reason = ''
         return access, reason

@@ -474,6 +474,7 @@ class DataUpdateUi(QWidget):
         elif self.__just_post_update:
             # If just post update, it may not get the progress at the first time, retry.
             self.post_progress_updater()
+            self.__just_post_update = False
         elif self.__post_update_timeout > 0:
             self.__post_update_timeout -= 1
         else:
