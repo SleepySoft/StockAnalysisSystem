@@ -207,9 +207,8 @@ class SystemService:
         if self.__timer_event_expect_time == 0:
             # The first time, register a repeat timer
             self.__timer_event_expect_time = time.time() + SystemService.WATCH_DOG_TIMER_INTERVAL
-            self.__sub_service_context.sas_api.sys_call('register_timer_event',
-                                                        '8e6e6025-c0c7-4577-b62a-dd26b925b874',
-                                                        SystemService.WATCH_DOG_TIMER_INTERVAL * 1000, True)
+            self.__sub_service_context.sas_if.register_timer_event(
+                '8e6e6025-c0c7-4577-b62a-dd26b925b874', SystemService.WATCH_DOG_TIMER_INTERVAL * 1000, True)
         elif time.time() - self.__timer_event_expect_time > 5.0:
             # If the expect time hasn't being update for 5s, the timer thread may be blocked.
             print('Timer seems being blocked.')
@@ -217,12 +216,11 @@ class SystemService:
             if len(self.__timer_gap_buffer) > 0:
                 max_gap = max(self.__timer_gap_buffer)
                 if max_gap > SystemService.WATCH_DOG_TIMER_INTERVAL * 0.1:
-                    print('Max timer gap > 10%%.')
+                    print('Max timer gap > 10%.')
 
     def __check_schedule_event(self):
         if self.__schedule_event_expect_time == 0:
-            self.__sub_service_context.sas_api.sys_call('register_schedule_event',
-                                                        '8e6e6025-c0c7-4577-b62a-dd26b925b874', 8, 0, 0)
+            self.__sub_service_context.sas_if.register_schedule_event('8e6e6025-c0c7-4577-b62a-dd26b925b874', 8, 0, 0)
             self.__schedule_event_expect_time = time.time()
 
 

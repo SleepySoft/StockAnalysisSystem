@@ -11,9 +11,16 @@ from StockAnalysisSystem.core.Utility.plugin_manager import *
 
 class SubServiceContext:
     def __init__(self):
+        self.sas_if: SasInterface = None
         self.sas_api = None
         self.sub_service_manager = None
         self.extra_data = {}
+
+    def __getattr__(self, attr):
+        return partial(self.__service_call, attr)
+
+    def __service_call(self, api, *args, **kwargs) -> any:
+        return self.sas_api.sys_call(api, *args, **kwargs)
 
 
 class SubServiceManager:
@@ -50,7 +57,9 @@ class SubServiceManager:
         self.__prev_tick = 0
         self.__event_queue = EventQueue()
 
+        from StockAnalysisSystem.interface.interface_local import LocalInterface
         self.__sub_service_context = SubServiceContext()
+        self.__sub_service_context.sas_if = LocalInterface()
         self.__sub_service_context.sas_api = self.__sas_api
         self.__sub_service_context.sub_service_manager = self
 
