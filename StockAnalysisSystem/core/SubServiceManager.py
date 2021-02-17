@@ -7,20 +7,31 @@ import StockAnalysisSystem.core.api as sasApi
 from StockAnalysisSystem.core.Utility.event_queue import *
 from StockAnalysisSystem.core.Utility.time_utility import *
 from StockAnalysisSystem.core.Utility.plugin_manager import *
+from StockAnalysisSystem.interface.interface import SasInterface
 
 
 class SubServiceContext:
     def __init__(self):
         self.sas_if: SasInterface = None
-        self.sas_api = None
+        self.sas_api: sasApi = None
         self.sub_service_manager = None
         self.extra_data = {}
+
+    def log(self, text: str):
+        print(text)
 
     def __getattr__(self, attr):
         return partial(self.__service_call, attr)
 
     def __service_call(self, api, *args, **kwargs) -> any:
-        return self.sas_api.sys_call(api, *args, **kwargs)
+        try:
+            return self.sas_api.sys_call(api, *args, **kwargs)
+        except Exception as e:
+            print('Sub Service call error: ' + str(e))
+            print(traceback.format_exc())
+            return None
+        finally:
+            pass
 
 
 class SubServiceManager:

@@ -7,7 +7,6 @@ import psutil
 import logging
 import datetime
 from apscheduler.schedulers.blocking import BaseScheduler, BlockingScheduler
-import StockAnalysisSystem.core.api as sasApi
 from StockAnalysisSystem.core.Utility.time_utility import *
 from StockAnalysisSystem.core.Utility.event_queue import Event
 from StockAnalysisSystem.core.SubServiceManager import SubServiceContext
@@ -20,6 +19,7 @@ logging.getLogger('apscheduler.jobstores').setLevel(logging.WARNING)
 # ----------------------------------------------------------------------------------------------------------------------
 
 subServiceContext: SubServiceContext = None
+SERVICE_ID = '8e6e6025-c0c7-4577-b62a-dd26b925b874'
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -208,7 +208,7 @@ class SystemService:
             # The first time, register a repeat timer
             self.__timer_event_expect_time = time.time() + SystemService.WATCH_DOG_TIMER_INTERVAL
             self.__sub_service_context.sas_if.register_timer_event(
-                '8e6e6025-c0c7-4577-b62a-dd26b925b874', SystemService.WATCH_DOG_TIMER_INTERVAL * 1000, True)
+                SERVICE_ID, SystemService.WATCH_DOG_TIMER_INTERVAL * 1000, True)
         elif time.time() - self.__timer_event_expect_time > 5.0:
             # If the expect time hasn't being update for 5s, the timer thread may be blocked.
             print('Timer seems being blocked.')
@@ -220,7 +220,7 @@ class SystemService:
 
     def __check_schedule_event(self):
         if self.__schedule_event_expect_time == 0:
-            self.__sub_service_context.sas_if.register_schedule_event('8e6e6025-c0c7-4577-b62a-dd26b925b874', 8, 0, 0)
+            self.__sub_service_context.sas_if.register_schedule_event(SERVICE_ID, 8, 0, 0)
             self.__schedule_event_expect_time = time.time()
 
 
@@ -228,7 +228,7 @@ class SystemService:
 
 def plugin_prob() -> dict:
     return {
-        'plugin_id': '8e6e6025-c0c7-4577-b62a-dd26b925b874',
+        'plugin_id': SERVICE_ID,
         'plugin_name': 'SystemService',
         'plugin_version': '0.0.0.1',
         'tags': ['System', 'Sleepy'],
@@ -236,7 +236,7 @@ def plugin_prob() -> dict:
 
 
 def plugin_adapt(service: str) -> bool:
-    return service in ['8e6e6025-c0c7-4577-b62a-dd26b925b874']
+    return service == SERVICE_ID
 
 
 def plugin_capacities() -> list:

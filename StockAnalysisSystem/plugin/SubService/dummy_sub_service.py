@@ -13,11 +13,16 @@ from StockAnalysisSystem.core.SubServiceManager import SubServiceContext
 # 注册系统调用
 
 
+SERVICE_ID = '7129e9d2-4f53-4826-9161-c568ced52d02'
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 def plugin_prob() -> dict:
     return {
-        'plugin_id': '47127b1b-88d1-43a9-b4aa-94819c1a73f7',
+        'plugin_id': SERVICE_ID,
         'plugin_name': 'Dummy',
         'plugin_version': '0.0.0.1',
         'tags': ['Dummy', 'Test', 'Example', 'Sleepy'],
@@ -25,7 +30,7 @@ def plugin_prob() -> dict:
 
 
 def plugin_adapt(service: str) -> bool:
-    return service in ['47127b1b-88d1-43a9-b4aa-94819c1a73f7']
+    return service == SERVICE_ID
 
 
 def plugin_capacities() -> list:

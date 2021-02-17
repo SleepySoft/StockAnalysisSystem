@@ -11,9 +11,10 @@ class Event:
     EVENT_SCHEDULE = 'schedule_event'
     EVENT_BROADCAST = 'broadcast_event'
 
-    def __init__(self, event_type: str, event_target: str):
+    def __init__(self, event_type: str, event_target: str, event_sign: str = ''):
         self.__event_type = event_type
         self.__event_target = event_target
+        self.__event_sign = event_sign
         self.__event_data = {}
         self.__post_timestamp = datetime.datetime.now()
         self.__process_timestamp = datetime.datetime.now()
@@ -23,6 +24,9 @@ class Event:
 
     def event_target(self) -> str or [str] or None:
         return self.__event_target
+
+    def event_sign(self) -> str:
+        return self.__event_sign
 
     # ---------------------------------------------------------------------
 
