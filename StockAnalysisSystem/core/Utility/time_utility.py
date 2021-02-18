@@ -127,16 +127,32 @@ def text2datetime(text: str) -> datetime.datetime:
     return datetime.datetime.strptime(text, '%Y-%m-%d %H:%M:%S')
 
 
-def date2text(time: datetime.datetime) -> str:
-    return time.strftime('%Y-%m-%d')
+def date2text(_time: datetime.datetime) -> str:
+    return _time.strftime('%Y-%m-%d')
 
 
-def datetime2text(time: datetime.datetime) -> str:
-    return time.strftime('%Y-%m-%d %H:%M:%S')
+def datetime2text(_time: datetime.datetime) -> str:
+    return _time.strftime('%Y-%m-%d %H:%M:%S')
 
 
 def default_since() -> datetime.datetime:
     return text2date('1990-01-01')
+
+
+def now_week_days() -> int:
+    """
+    Get week day of now.
+    :return: Monday is 0 and Sunday is 6
+    """
+    return datetime.datetime.today().weekday()
+
+
+def week_day_of(_time: datetime.date or datetime.datetime) -> int:
+    """
+    Get week day of the date you specified.
+    :return: Monday is 0 and Sunday is 6
+    """
+    return _time.weekday()
 
 
 def normalize_time_serial(time_serial: tuple or list,

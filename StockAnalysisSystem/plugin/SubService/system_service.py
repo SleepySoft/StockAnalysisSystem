@@ -25,11 +25,9 @@ SERVICE_ID = '8e6e6025-c0c7-4577-b62a-dd26b925b874'
 # ----------------------------------------------------------------------------------------------------------------------
 
 class SystemService:
-    SCHEDULE_THREAD_DEFAULT = 'default_thread'
-    SCHEDULE_THREAD_NEW = 'new_thread'
 
-    SCHEDULE_EVERY_DAY = 'every_day'
-    SCHEDULE_A_MARKET_TRADING_DAY = 'trading_day_a_market'
+    SCHEDULE_THREAD_NEW = 'new_thread'
+    SCHEDULE_THREAD_DEFAULT = 'default_thread'
 
     class ScheduleDataBase:
         def __init__(self, scheduler: BaseScheduler, target: str, repeat: bool, extra: dict):
@@ -81,11 +79,10 @@ class SystemService:
         THREAD_POOL = ThreadPoolExecutor(max_workers=5)
 
         def __init__(self, scheduler: BaseScheduler, target: str, hour: int, minute: int, second: int,
-                     repeat: bool, day_filter: str, run_thread: str, **kwargs):
+                     repeat: bool, run_thread: str, **kwargs):
             self.__hour = hour
             self.__minute = minute
             self.__second = second
-            self.__day_filter = day_filter
             self.__run_thread = run_thread
             super(SystemService.ScheduleData, self).__init__(scheduler, target, repeat, kwargs)
 
@@ -180,10 +177,9 @@ class SystemService:
         timer.re_schedule()
 
     def register_schedule_event(self, target: str, hour: int, minute: int, second: int, repeat=True,
-                                day_filter: str = SCHEDULE_EVERY_DAY,
                                 run_thread: str = SCHEDULE_THREAD_DEFAULT, **kwargs):
         schedule = SystemService.ScheduleData(self.__scheduler, target, hour, minute, second,
-                                              repeat, day_filter, run_thread, **kwargs)
+                                              repeat, run_thread, **kwargs)
         self.__schedule_data.append(schedule)
         schedule.re_schedule()
 
