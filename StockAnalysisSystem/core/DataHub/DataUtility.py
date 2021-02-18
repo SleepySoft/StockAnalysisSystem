@@ -1,3 +1,4 @@
+import collections
 from ..Utility.common import *
 from ..Utility.time_utility import *
 from .UniversalDataCenter import UniversalDataCenter
@@ -127,6 +128,10 @@ class DataUtility:
         self.__index_cache_ready = False
         # self.__index_cache = IdentityNameInfoCache()
 
+        # TODO: What about different market
+        self.__trade_calendar_cache = collections.OrderedDict()             # [(datetime.datetime, bool)]
+        self.__trade_calendar_ready = False
+
     # ------------------------------- General -------------------------------
 
     def get_support_exchange(self) -> dict:
@@ -158,6 +163,30 @@ class DataUtility:
             return
         patch = self.__data_center.build_local_data_patch(uri, identity, (since, until))
         self.__data_center.apply_local_data_patch(patch)
+
+    def is_trading_day(self, _date: None or datetime.datetime or datetime.date, exchange: str = 'SSE') -> bool:
+        self.__check_refresh_trade_calendar_cache()
+
+        if _date is None:
+            _date = now().date()
+        elif isinstance(_date, datetime.datetime):
+            _date = _date.date()
+        elif isinstance(_date, datetime.date):
+            pass
+        else:
+            print('Invalid trading day: ' + str(_date))
+            return False
+
+        with self.__lock:
+            return self.__trade_calendar_cache.get(_date, False)
+        
+    def get_trading_days(self, since: datetime.date, until: datetime.date) -> [datetime.date]:
+        trading_days = []
+        with self.__lock:
+            for k, v in self.__trade_calendar_cache.items():
+                if since <= k <= until and v:
+                    trading_days.append(k)
+        return trading_days
 
     # def get_last_trading_day(self, exchange='SSE') -> datetime.datetime:
     #     trade_calender = self.__data_center.query('Market.TradeCalender', exchange=exchange,
@@ -294,10 +323,22 @@ class DataUtility:
     # --------------------------- All ---------------------------
 
     def refresh_cache(self):
-        self.__lock.acquire()
-        self.__refresh_stock_cache()
-        self.__refresh_index_cache()
-        self.__lock.release()
+        with self.__lock:
+            self.__refresh_stock_cache()
+            self.__refresh_index_cache()
+            self.__refresh_trade_calendar_cache()
+
+    def refresh_stock_cache(self):
+        with self.__lock:
+            self.__refresh_stock_cache()
+
+    def refresh_index_cache(self):
+        with self.__lock:
+            self.__refresh_index_cache()
+
+    def refresh_trade_calendar_cache(self):
+        with self.__lock:
+            self.__refresh_trade_calendar_cache()
 
     # -------------------------- Stock --------------------------
 
@@ -369,6 +410,28 @@ class DataUtility:
         self.__index_id_name = id_name_dict
         self.__index_name_id = name_id_dict
         self.__index_cache_ready = True
+
+    # --------------------- Trade Calendar ---------------------
+
+    def __check_refresh_trade_calendar_cache(self):
+        if not self.__trade_calendar_ready:
+            self.__lock.acquire()
+            if not self.__trade_calendar_ready:
+                self.__refresh_trade_calendar_cache()
+            self.__lock.release()
+
+    def __refresh_trade_calendar_cache(self):
+        df = self.__data_center.query('Market.TradeCalender')
+        try:
+            self.__trade_calendar_cache.clear()
+            for _time, _open in zip(df['trade_date'], df['status']):
+                _date = _time.date()
+                self.__trade_calendar_cache[_date] = (_open != 0)
+        except Exception as e:
+            print('Build trace calendar cache error: ' + str(e))
+            print(traceback.format_exc())
+        finally:
+            pass
 
     # --------------------------------------- Assistance ---------------------------------------
 

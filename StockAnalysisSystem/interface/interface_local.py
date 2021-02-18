@@ -131,11 +131,17 @@ class SasUpdateTask(ResourceTask):
         self.__clock.freeze()
         # self.__ui.task_finish_signal[UpdateTask].emit(self)
 
-        # ------------------- Put refresh process here -------------------
+        # ----------------------------------------------------------------
+        # ---------------- Put refresh cache process here -----------------
+        # ----------------------------------------------------------------
 
         # Refresh data utility cache if stock list or index list update
-        if self.__agent.base_uri() in ['Market.SecuritiesInfo', 'Market.IndexInfo']:
-            self.__data_hub.get_data_utility().refresh_cache()
+        if self.__agent.base_uri() == 'Market.SecuritiesInfo':
+            self.__data_hub.get_data_utility().refresh_stock_cache()
+        if self.__agent.base_uri() == 'Market.IndexInfo':
+            self.__data_hub.get_data_utility().refresh_index_cache()
+        if self.__agent.base_uri() == 'Market.TradeCalender':
+            self.__data_hub.get_data_utility().refresh_trade_calendar_cache()
 
     def __execute_persistence(self, uri: str, identity: str, patch: tuple) -> bool:
         try:
@@ -294,7 +300,10 @@ class LocalInterface(sasIF):
     # ------------------------------------------------------------------------------------------------------------------
 
     def if_init(self, project_path: str = None, config=None, not_load_config: bool = False) -> bool:
-        return sasApi.init(project_path, config, not_load_config)
+        ret = sasApi.init(project_path, config, not_load_config)
+        # Extra init - For test
+        sasApi.data_utility().refresh_cache()
+        return ret
 
     # ------------------------------- Resource --------------------------------
 
@@ -403,6 +412,9 @@ class LocalInterface(sasIF):
 
     def sas_get_support_index(self) -> dict:
         return sasApi.get_support_index()
+
+    def sas_is_trading_day(self, _date: None or datetime.datetime or datetime.date, exchange: str):
+        return sasApi.data_utility().is_trading_day(_date, exchange)
 
 # ------------------------------------------------------- Factor -------------------------------------------------------
 

@@ -93,6 +93,9 @@ class SasInterface:
     def sas_get_support_index(self) -> dict:
         pass
 
+    def sas_is_trading_day(self, _date: None or datetime.datetime or datetime.date, exchange: str):
+        pass
+
 # ------------------------------------------------------- Factor -------------------------------------------------------
 
     def sas_get_all_factors(self):

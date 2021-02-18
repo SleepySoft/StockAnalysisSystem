@@ -1,6 +1,7 @@
 import datetime
 
 import StockAnalysisSystem.core.api as sasApi
+from StockAnalysisSystem.core.Utility.time_utility import *
 from StockAnalysisSystem.core.Utility.event_queue import Event
 from StockAnalysisSystem.core.SubServiceManager import SubServiceContext
 
@@ -15,30 +16,81 @@ class UpdateService:
         self.__sub_service_context = sub_service_context
 
     def startup(self):
-        self.__sub_service_context.register_schedule_event(SERVICE_ID, 17, 0, 0)
+        self.__sub_service_context.register_schedule_event(SERVICE_ID, 17, 0, 0, period='daily')
+        self.__sub_service_context.register_schedule_event(SERVICE_ID, 21, 0, 0, period='weekly')
 
     def handle_event(self, event: Event):
         if event.event_type() == Event.EVENT_SCHEDULE:
-            self.__do_update()
+            if event.get_event_data().get('period', '') == 'daily':
+                self.__do_daily_update()
+            if event.get_event_data().get('period', '') == 'weekly':
+                # Friday
+                if now_week_days() == 6:
+                    self.__do_weekly_update()
 
     # ---------------------------------------------------------------------------------------
 
-    def __do_update(self):
-        self.__sub_service_context.log('%s: Do update.' %
+    def __do_daily_update(self):
+        self.__sub_service_context.log('%s: Do daily update.' %
                                        datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         self.__update_market_data()
+
+        if self.__sub_service_context.sas_if.sas_is_trading_day(now(), 'SSE'):
+            self.__update_daily_data_slice()
+
+    def __do_weekly_update(self):
+        pass
+
+    # --------------------------------------------------------------------------
 
     def __update_market_data(self):
         if not sasApi.update('Market.SecuritiesInfo'):
             raise Exception('Market.SecuritiesInfo update error.')
         if not sasApi.update('Market.IndexInfo'):
             raise Exception('Market.IndexInfo update error.')
+        if not sasApi.update('Market.TradeCalender'):
+            raise Exception('Market.TradeCalender update error.')
         self.__sub_service_context.log('Market data update complete.')
 
-    def update_daily_data_slice(self):
+    # --------------------------------------------------------------------------
+
+    def __check_update_daily_trade_data(self, uri: str) -> bool:
+        ret, last_update_time, update_days = \
+            self.__estimate_daily_trade_data_update_range(uri)
+
+        if update_days == 0:
+            # Newest, not need update.
+            return True
+        if update_days > 100:
+            # More than 100 days, update per each
+            ret = self.__update_daily_data_trade_per_each(uri)
+            return ret
+        else:
+            # First try to update by slice
+            ret = self.__update_daily_data_trade_by_slice(uri, last_update_time)
+            if not ret:
+                # If update by slice fail, update per each
+                ret = self.__update_daily_data_trade_per_each(uri)
+            return ret
+
+    def __estimate_daily_trade_data_update_range(self, uri: str) -> (bool, datetime.datetime, int):
+        last_update_time = self.__sub_service_context.sas_api.sas_get_last_update_time_from_update_table(uri.split('.'))
+        if isinstance(last_update_time, datetime.date):
+            last_update_date = last_update_time
+            last_update_time = datetime.datetime.combine(last_update_date, datetime.datetime.min.time())
+        elif isinstance(last_update_time, datetime.datetime):
+            last_update_date = last_update_time.date()
+        else:
+            self.__sub_service_context.log('Error last update time format: ' + str(last_update_time))
+            return False, None, 0
+
+        date_delta = now().date() - last_update_date
+        return True, last_update_time, date_delta.days
+
+    def __update_daily_data_trade_by_slice(self, uri: str, since: datetime.datetime) -> bool:
         pass
 
-    def update_daily_data_each(self):
+    def __update_daily_data_trade_per_each(self, uri: str) -> bool:
         pass
 
 
