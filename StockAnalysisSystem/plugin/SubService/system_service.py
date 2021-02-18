@@ -84,6 +84,7 @@ class SystemService:
             self.__minute = minute
             self.__second = second
             self.__run_thread = run_thread
+            self.__job = None
             super(SystemService.ScheduleData, self).__init__(scheduler, target, repeat, kwargs)
 
         def schedule_handler(self):
@@ -101,11 +102,11 @@ class SystemService:
             #     self.re_schedule()
 
         def re_schedule(self):
-            self.get_scheduler().add_job(self.schedule_handler, 'cron',
-                                         hour=self.__hour, minute=self.__minute, second=self.__second)
+            self.__job = self.get_scheduler().add_job(self.schedule_handler, 'cron',
+                                                      hour=self.__hour, minute=self.__minute, second=self.__second)
 
         def cancel_schedule(self):
-            pass
+            self.get_scheduler()
 
         def __execute_schedule_job(self, schedule_event: Event):
             subServiceContext.sub_service_manager.deliver_event(schedule_event)

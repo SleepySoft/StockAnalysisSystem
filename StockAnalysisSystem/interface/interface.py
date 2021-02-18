@@ -96,6 +96,9 @@ class SasInterface:
     def sas_is_trading_day(self, _date: None or datetime.datetime or datetime.date, exchange: str):
         pass
 
+    def sas_get_trading_days(self, since: datetime.date, until: datetime.date) -> [datetime.date]:
+        pass
+
 # ------------------------------------------------------- Factor -------------------------------------------------------
 
     def sas_get_all_factors(self):

@@ -416,6 +416,9 @@ class LocalInterface(sasIF):
     def sas_is_trading_day(self, _date: None or datetime.datetime or datetime.date, exchange: str):
         return sasApi.data_utility().is_trading_day(_date, exchange)
 
+    def sas_get_trading_days(self, since: datetime.date, until: datetime.date) -> [datetime.date]:
+        return sasApi.data_utility().get_trading_days(since, until)
+
 # ------------------------------------------------------- Factor -------------------------------------------------------
 
     def sas_get_all_factors(self):

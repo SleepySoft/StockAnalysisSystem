@@ -88,10 +88,26 @@ class UpdateService:
         return True, last_update_time, date_delta.days
 
     def __update_daily_data_trade_by_slice(self, uri: str, since: datetime.datetime) -> bool:
-        pass
+        trading_days = self.__sub_service_context.sas_api.sas_get_trading_days(since, now().date())
+        if not isinstance(trading_days, list):
+            return False
+        if len(trading_days) <= 1:
+            return True
+        trading_days.pop(0)
+
+        for trading_day in trading_days:
+            ret = sasApi.update(uri, identity=None, time_serial=trading_day)
+            if not ret:
+                return False
+        return True
 
     def __update_daily_data_trade_per_each(self, uri: str) -> bool:
-        pass
+        stock_identities = sasApi.data_utility().get_stock_identities()
+        for stock_identify in stock_identities:
+            ret = sasApi.data_utility().check_update(uri, identity=stock_identify)
+            if not ret:
+                return False
+        return True
 
 
 # ----------------------------------------------------------------------------------------------------------------------
