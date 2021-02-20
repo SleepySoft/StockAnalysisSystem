@@ -68,7 +68,8 @@ class UpdateService:
         if update_days == 0:
             # Newest, not need update.
             return True
-        if update_days > 100:
+        # DEBUG: Test slice update
+        if update_days > 1000:
             # More than 100 days, update per each
             ret = self.__update_daily_data_trade_per_each(uri)
             return ret

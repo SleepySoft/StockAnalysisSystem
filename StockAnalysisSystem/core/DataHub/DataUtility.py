@@ -165,6 +165,94 @@ class DataUtility:
         ret = self.__data_center.apply_local_data_patch(patch)
         return ret
 
+    def auto_update(self, uri: str, identity: str or [str] = None, full_update: bool = False,
+                    quit_flag: [bool] or None = None, progress: ProgressRate = None) -> bool:
+        if not str_available(uri):
+            return False
+        if quit_flag is None or len(quit_flag) == 0:
+            quit_flag = [True]
+        if identity is None:
+            # Update whole uri, auto detect update identities
+            agent = self.__data_center.get_data_agent(uri)
+            if agent is None:
+                return False
+            update_list = agent.update_list()
+        elif isinstance(identity, str):
+            # Update specified identity
+            update_list = [identity]
+        elif isinstance(identity, (list, tuple, set)):
+            update_list = identity
+        else:
+            return False
+
+        progress_count = len(update_list)
+        progress.reset()
+        progress.set_progress(uri, 0, progress_count)
+
+        for identity in update_list:
+            while (self.__patch_count - self.__apply_count > 20) and not self.__quit:
+                time.sleep(0.5)
+                continue
+            if quit_flag[0]:
+                break
+
+            print('------------------------------------------------------------------------------------')
+
+            if identity is not None:
+                # Optimise: Update not earlier than listing date.
+                listing_date = self.get_securities_listing_date(identity, default_since())
+
+                if self.__force:
+                    since, until = listing_date, now()
+                else:
+                    since, until = self.__data_center.calc_update_range(self.__agent.base_uri(), identity)
+                    since = max(listing_date, since)
+                time_serial = (since, until)
+            else:
+                time_serial = None
+
+            patch = self.__data_center.build_local_data_patch(uri, identity, time_serial, force=full_update)
+
+            self.__patch_count += 1
+            print('Patch count: ' + str(self.__patch_count))
+
+            self.__future = self.__pool.submit(self.__execute_persistence,
+                                               self.__agent.base_uri(), identity, patch)
+
+        if self.__future is not None:
+            print('Waiting for persistence task finish...')
+            self.__future.result()
+        self.__clock.freeze()
+        # self.__ui.task_finish_signal[UpdateTask].emit(self)
+
+        # ----------------------------------------------------------------
+        # ---------------- Put refresh cache process here -----------------
+        # ----------------------------------------------------------------
+
+        # Refresh data utility cache if stock list or index list update
+        if self.__agent.base_uri() == 'Market.SecuritiesInfo':
+            self.__data_hub.get_data_utility().refresh_stock_cache()
+        if self.__agent.base_uri() == 'Market.IndexInfo':
+            self.__data_hub.get_data_utility().refresh_index_cache()
+        if self.__agent.base_uri() == 'Market.TradeCalender':
+            self.__data_hub.get_data_utility().refresh_trade_calendar_cache()
+
+    def __execute_persistence(self, uri: str, identity: str, patch: tuple) -> bool:
+        try:
+            if patch is not None:
+                self.__data_center.apply_local_data_patch(patch)
+            if identity is not None:
+                self.progress().set_progress([uri, identity], 1, 1)
+            self.progress().increase_progress(uri)
+        except Exception as e:
+            print('Persistence error: ' + str(e))
+            print(traceback.format_exc())
+            return False
+        finally:
+            self.__apply_count += 1
+            print('Persistence count: ' + str(self.__apply_count))
+        return True
+
     def is_trading_day(self, _date: None or datetime.datetime or datetime.date, exchange: str = 'SSE') -> bool:
         self.__check_refresh_trade_calendar_cache()
 
