@@ -46,8 +46,30 @@ def yesterday_of(time: datetime.datetime):
     return time - datetime.timedelta(days=1)
 
 
-def date2datetime(d: datetime.date) -> datetime.datetime:
-    return datetime.datetime(year=d.year, month=d.month, day=d.day)
+def to_date(_time: datetime.date or datetime.datetime or any):
+    if type(_time) == datetime.date:
+        return _time
+    elif type(_time) == datetime.datetime:
+        return _time.date()
+    elif isinstance(_time, str):
+        # TODO: str to datetime then to date
+        pass
+    else:
+        # TODO: to py datetime then to date
+        pass
+
+
+def to_datetime(_date: datetime.date or datetime.datetime or any):
+    if type(_date) == datetime.datetime:
+        return _date
+    elif type(_date) == datetime.date:
+        return datetime.datetime.combine(_date, datetime.datetime.min.time())
+    elif isinstance(_date, str):
+        # TODO: str to datetime
+        pass
+    else:
+        # TODO: to py datetime
+        pass
 
 
 # From https://stackoverflow.com/a/16864368/12929244

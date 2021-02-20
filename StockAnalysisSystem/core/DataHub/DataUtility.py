@@ -129,7 +129,7 @@ class DataUtility:
         # self.__index_cache = IdentityNameInfoCache()
 
         # TODO: What about different market
-        self.__trade_calendar_cache = collections.OrderedDict()             # [(datetime.datetime, bool)]
+        self.__trade_calendar_cache = collections.OrderedDict()             # [(datetime.date, bool)]
         self.__trade_calendar_ready = False
 
     # ------------------------------- General -------------------------------
@@ -155,14 +155,15 @@ class DataUtility:
         return self.get_stock_listing_date(securities, default_val) if securities in self.__stock_id_name.keys() else \
                self.get_index_listing_date(securities, default_val)
 
-    def check_update(self, uri: str, identity: str or [str] = None):
+    def check_update(self, uri: str, identity: str or [str] = None) -> bool:
         listing_date = self.get_securities_listing_date(identity, default_since())
         since, until = self.__data_center.calc_update_range(uri, identity)
         since = max(listing_date, since)
         if since == until:
-            return
+            return True
         patch = self.__data_center.build_local_data_patch(uri, identity, (since, until))
-        self.__data_center.apply_local_data_patch(patch)
+        ret = self.__data_center.apply_local_data_patch(patch)
+        return ret
 
     def is_trading_day(self, _date: None or datetime.datetime or datetime.date, exchange: str = 'SSE') -> bool:
         self.__check_refresh_trade_calendar_cache()
@@ -182,6 +183,8 @@ class DataUtility:
         
     def get_trading_days(self, since: datetime.date, until: datetime.date) -> [datetime.date]:
         trading_days = []
+        since = to_date(since)
+        until = to_date(until)
         with self.__lock:
             for k, v in self.__trade_calendar_cache.items():
                 if since <= k <= until and v:
