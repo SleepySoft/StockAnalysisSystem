@@ -217,9 +217,10 @@ class UniversalDataCenter:
         # Cache the update range in Update Table
 
         # 1.Update of uri
+        # 20200221: Update uri outside after all sub-update been updated.
         update_tags = uri.split('.')
-        self.get_update_table().update_latest_update_time(update_tags)
-        self.get_update_table().update_update_range(update_tags, since, until)
+        # self.get_update_table().update_latest_update_time(update_tags)
+        # self.get_update_table().update_update_range(update_tags, since, until)
 
         # 2.Update of each identity
         if str_available(identity):
