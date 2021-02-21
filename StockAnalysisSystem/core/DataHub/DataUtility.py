@@ -1,4 +1,6 @@
 import collections
+from concurrent.futures.thread import ThreadPoolExecutor
+
 from ..Utility.common import *
 from ..Utility.time_utility import *
 from .UniversalDataCenter import UniversalDataCenter
@@ -167,10 +169,26 @@ class DataUtility:
 
     def auto_update(self, uri: str, identity: str or [str] = None, full_update: bool = False,
                     quit_flag: [bool] or None = None, progress: ProgressRate = None) -> bool:
+        """
+        Check last update time and auto increment update. Not support slice udpate.
+
+        :param uri: The uri that you want to update. MUST.
+        :param identity: The identity/identities that you want to update.
+                         If None, function will get the update list from uri data agent.
+        :param full_update: If True, function will do full volume update
+        :param quit_flag: A bool wrapped by list. If True being specified, the update will be terminated.
+                          None if you don't need it.
+        :param progress: The progress rate that shows the current process. None if you don't need it.
+        :return: True if update successfully else False
+        """
         if not str_available(uri):
             return False
+
         if quit_flag is None or len(quit_flag) == 0:
             quit_flag = [True]
+        if progress is None:
+            progress = ProgressRate()
+
         if identity is None:
             # Update whole uri, auto detect update identities
             agent = self.__data_center.get_data_agent(uri)
@@ -184,13 +202,23 @@ class DataUtility:
             update_list = identity
         else:
             return False
+        if len(update_list) == 0:
+            # Not update list, just update the uri
+            update_list = [None]
 
         progress_count = len(update_list)
         progress.reset()
         progress.set_progress(uri, 0, progress_count)
 
+        last_future = None
+        thread_pool = ThreadPoolExecutor(max_workers=1)
+
+        update_counter = [
+            0,      # patch count
+            0       # persistence count
+        ]
         for identity in update_list:
-            while (self.__patch_count - self.__apply_count > 20) and not self.__quit:
+            while (update_counter[0] - update_counter[1] > 20) and not quit_flag[0]:
                 time.sleep(0.5)
                 continue
             if quit_flag[0]:
@@ -202,10 +230,12 @@ class DataUtility:
                 # Optimise: Update not earlier than listing date.
                 listing_date = self.get_securities_listing_date(identity, default_since())
 
-                if self.__force:
+                if full_update:
+                    # Full volume update
                     since, until = listing_date, now()
                 else:
-                    since, until = self.__data_center.calc_update_range(self.__agent.base_uri(), identity)
+                    # Increment update
+                    since, until = self.__data_center.calc_update_range(uri, identity)
                     since = max(listing_date, since)
                 time_serial = (since, until)
             else:
@@ -213,44 +243,46 @@ class DataUtility:
 
             patch = self.__data_center.build_local_data_patch(uri, identity, time_serial, force=full_update)
 
-            self.__patch_count += 1
-            print('Patch count: ' + str(self.__patch_count))
+            update_counter[0] += 1
+            print('Patch count: %s' % update_counter[0])
 
-            self.__future = self.__pool.submit(self.__execute_persistence,
-                                               self.__agent.base_uri(), identity, patch)
+            last_future = thread_pool.submit(self.__execute_persistence, uri,
+                                             identity, patch, update_counter, progress)
 
-        if self.__future is not None:
+        if last_future is not None:
             print('Waiting for persistence task finish...')
-            self.__future.result()
-        self.__clock.freeze()
-        # self.__ui.task_finish_signal[UpdateTask].emit(self)
+            last_future.result()
+
+        # Update uri last update time when all update list updated.
+        self.__data_center.get_update_table().update_latest_update_time(uri.split('.'))
 
         # ----------------------------------------------------------------
         # ---------------- Put refresh cache process here -----------------
         # ----------------------------------------------------------------
 
         # Refresh data utility cache if stock list or index list update
-        if self.__agent.base_uri() == 'Market.SecuritiesInfo':
-            self.__data_hub.get_data_utility().refresh_stock_cache()
-        if self.__agent.base_uri() == 'Market.IndexInfo':
-            self.__data_hub.get_data_utility().refresh_index_cache()
-        if self.__agent.base_uri() == 'Market.TradeCalender':
-            self.__data_hub.get_data_utility().refresh_trade_calendar_cache()
+        if uri == 'Market.SecuritiesInfo':
+            self.refresh_stock_cache()
+        if uri == 'Market.IndexInfo':
+            self.refresh_index_cache()
+        if uri == 'Market.TradeCalender':
+            self.refresh_trade_calendar_cache()
 
-    def __execute_persistence(self, uri: str, identity: str, patch: tuple) -> bool:
+    def __execute_persistence(self, uri: str, identity: str, patch: tuple,
+                              update_counter: [int, int], progress: ProgressRate) -> bool:
         try:
             if patch is not None:
                 self.__data_center.apply_local_data_patch(patch)
             if identity is not None:
-                self.progress().set_progress([uri, identity], 1, 1)
-            self.progress().increase_progress(uri)
+                progress.set_progress([uri, identity], 1, 1)
+            progress.increase_progress(uri)
         except Exception as e:
             print('Persistence error: ' + str(e))
             print(traceback.format_exc())
             return False
         finally:
-            self.__apply_count += 1
-            print('Persistence count: ' + str(self.__apply_count))
+            update_counter[1] += 1
+            print('Persistence count: %s' % update_counter[1])
         return True
 
     def is_trading_day(self, _date: None or datetime.datetime or datetime.date, exchange: str = 'SSE') -> bool:
