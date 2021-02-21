@@ -107,12 +107,8 @@ class UpdateService:
         return True
 
     def __update_daily_data_trade_per_each(self, uri: str) -> bool:
-        stock_identities = sasApi.data_utility().get_stock_identities()
-        for stock_identify in stock_identities:
-            ret = sasApi.data_utility().check_update(uri, identity=stock_identify)
-            if not ret:
-                return False
-        return True
+        ret = sasApi.data_utility().auto_update(uri)
+        return ret
 
 
 # ----------------------------------------------------------------------------------------------------------------------

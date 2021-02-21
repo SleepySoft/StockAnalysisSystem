@@ -1,5 +1,6 @@
 import sys
 import string
+import bisect
 import logging
 import functools
 import collections
@@ -37,11 +38,11 @@ logging.basicConfig(
 
 # -----------------------------------------------------------------------------------------------------
 
-def local_function(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        return func(*args, **kwargs)
-    return wrapper
+def bisect_slice(array: list, left, right):
+    return array[bisect.bisect_left(array, left): bisect.bisect_left(array, right)]
+
+
+assert bisect_slice([0, 1, 1, 3, 4, 4, 5, 6], 1, 5) == [1, 1, 3, 4, 4]
 
 
 # -----------------------------------------------------------------------------------------------------
