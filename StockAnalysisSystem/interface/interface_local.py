@@ -83,6 +83,7 @@ class SasUpdateTask(ResourceTask):
 
     # ------------------------------------- Task -------------------------------------
 
+    # TODO: Use DataUtility.auto_update()
     def __execute_update(self):
         # Get identities here to ensure we can get the new list after stock info updated
         update_list = self.__identities if self.__identities is not None and len(self.__identities) > 0 else \
