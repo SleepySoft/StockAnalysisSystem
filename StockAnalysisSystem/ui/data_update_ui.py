@@ -403,7 +403,17 @@ class DataUpdateUi(QWidget):
                 self.__page = new_page
 
     def on_timer(self):
-        if self.__current_update_task is None or self.__current_update_task.working():
+        if self.__current_update_task is None:
+            if self.__post_update_timeout > 0:
+                self.__post_update_timeout -= 1
+            else:
+                # Check per 10s to avoid any update missing
+                self.post_progress_updater()
+                self.__post_update_timeout = 10
+            return
+
+        if self.__current_update_task.working():
+            # Waiting for update
             return
 
         total_progress = ProgressRate()
@@ -475,11 +485,9 @@ class DataUpdateUi(QWidget):
             # If just post update, it may not get the progress at the first time, retry.
             self.post_progress_updater()
             self.__just_post_update = False
-        elif self.__post_update_timeout > 0:
-            self.__post_update_timeout -= 1
         else:
-            # Check per 10s to avoid any update missing
-            self.post_progress_updater()
+            self.__current_update_task = None
+        self.__post_update_timeout = 10
 
         # if not total_progress.progress_done():
         #     self.__context.get_task_queue().append_task(UpdateResTask(self))
