@@ -16,9 +16,11 @@ class UpdateService:
         self.__sub_service_context = sub_service_context
 
     def startup(self):
-        event = Event('update_service_test', SERVICE_ID)
-        event.update_event_data('update_service_test_flag', 'daily')
-        self.__sub_service_context.sub_service_manager.post_event(event)
+        # DEBUG: Debug event
+        # event = Event('update_service_test', SERVICE_ID)
+        # event.update_event_data('update_service_test_flag', 'daily')
+        # self.__sub_service_context.sub_service_manager.post_event(event)
+
         self.__sub_service_context.register_schedule_event(SERVICE_ID, 17, 0, 0, period='daily')
         self.__sub_service_context.register_schedule_event(SERVICE_ID, 21, 0, 0, period='weekly')
 

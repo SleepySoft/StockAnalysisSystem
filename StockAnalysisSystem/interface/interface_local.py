@@ -30,7 +30,8 @@ class SasUpdateTask(ResourceTask):
         self.__force = force
         self.__data_hub = data_hub
         self.__data_center = data_center
-        self.__quit = False
+        # self.__quit = False
+        self.__quit_flag = [False]
 
         # Thread pool
         self.__patch_count = 0
@@ -54,6 +55,8 @@ class SasUpdateTask(ResourceTask):
             identities = [identities]
         self.__identities = identities
         self.__agent = agent
+        # Place holder, avoiding get_progress_rate() returns 100% if it hasn't been started.
+        self.progress().set_progress(self.__agent.base_uri(), 0, 1)
 
     def run(self):
         print('Update task start.')
@@ -76,89 +79,94 @@ class SasUpdateTask(ResourceTask):
         print('Update task finished.')
 
     def quit(self):
-        self.__quit = True
+        # self.__quit = True
+        self.__quit_flag[0] = True
 
     def identity(self) -> str:
         return self.__agent.base_uri() if self.__agent is not None else ''
 
     # ------------------------------------- Task -------------------------------------
 
-    # TODO: Use DataUtility.auto_update()
     def __execute_update(self):
-        # Get identities here to ensure we can get the new list after stock info updated
-        update_list = self.__identities if self.__identities is not None and len(self.__identities) > 0 else \
-                      self.__agent.update_list()
-        if update_list is None or len(update_list) == 0:
-            update_list = [None]
-        progress = len(update_list)
+        # # Get identities here to ensure we can get the new list after stock info updated
+        # update_list = self.__identities if self.__identities is not None and len(self.__identities) > 0 else \
+        #               self.__agent.update_list()
+        # if update_list is None or len(update_list) == 0:
+        #     update_list = [None]
+        # progress = len(update_list)
 
         self.__clock.reset()
-        self.progress().reset()
-        self.progress().set_progress(self.__agent.base_uri(), 0, progress)
-
-        for identity in update_list:
-            while (self.__patch_count - self.__apply_count > 20) and not self.__quit:
-                time.sleep(0.5)
-                continue
-            if self.__quit:
-                break
-
-            print('------------------------------------------------------------------------------------')
-
-            if identity is not None:
-                # Optimise: Update not earlier than listing date.
-                listing_date = self.__data_hub.get_data_utility().get_securities_listing_date(identity, default_since())
-
-                if self.__force:
-                    since, until = listing_date, now()
-                else:
-                    since, until = self.__data_center.calc_update_range(self.__agent.base_uri(), identity)
-                    since = max(listing_date, since)
-                time_serial = (since, until)
-            else:
-                time_serial = None
-
-            patch = self.__data_center.build_local_data_patch(
-                self.__agent.base_uri(), identity, time_serial, force=self.__force)
-            self.__patch_count += 1
-            print('Patch count: ' + str(self.__patch_count))
-
-            self.__future = self.__pool.submit(self.__execute_persistence,
-                                               self.__agent.base_uri(), identity, patch)
-
-        if self.__future is not None:
-            print('Waiting for persistence task finish...')
-            self.__future.result()
+        self.__data_hub.get_data_utility().auto_update(
+            uri=self.__agent.base_uri(), identity=self.__identities,
+            full_update=self.__force, quit_flag=self.__quit_flag, progress=self.progress())
         self.__clock.freeze()
-        # self.__ui.task_finish_signal[UpdateTask].emit(self)
 
-        # ----------------------------------------------------------------
-        # ---------------- Put refresh cache process here -----------------
-        # ----------------------------------------------------------------
-
-        # Refresh data utility cache if stock list or index list update
-        if self.__agent.base_uri() == 'Market.SecuritiesInfo':
-            self.__data_hub.get_data_utility().refresh_stock_cache()
-        if self.__agent.base_uri() == 'Market.IndexInfo':
-            self.__data_hub.get_data_utility().refresh_index_cache()
-        if self.__agent.base_uri() == 'Market.TradeCalender':
-            self.__data_hub.get_data_utility().refresh_trade_calendar_cache()
-
-    def __execute_persistence(self, uri: str, identity: str, patch: tuple) -> bool:
-        try:
-            if patch is not None:
-                self.__data_center.apply_local_data_patch(patch)
-            if identity is not None:
-                self.progress().set_progress([uri, identity], 1, 1)
-            self.progress().increase_progress(uri)
-        except Exception as e:
-            print('Persistence error: ' + str(e))
-            print(traceback.format_exc())
-            return False
-        finally:
-            self.__apply_count += 1
-            print('Persistence count: ' + str(self.__apply_count))
-        return True
+        # self.progress().reset()
+        # self.progress().set_progress(self.__agent.base_uri(), 0, progress)
+        #
+        # for identity in update_list:
+        #     while (self.__patch_count - self.__apply_count > 20) and not self.__quit:
+        #         time.sleep(0.5)
+        #         continue
+        #     if self.__quit:
+        #         break
+        #
+        #     print('------------------------------------------------------------------------------------')
+        #
+        #     if identity is not None:
+        #         # Optimise: Update not earlier than listing date.
+        #         listing_date = self.__data_hub.get_data_utility().get_securities_listing_date(identity, default_since())
+        #
+        #         if self.__force:
+        #             since, until = listing_date, now()
+        #         else:
+        #             since, until = self.__data_center.calc_update_range(self.__agent.base_uri(), identity)
+        #             since = max(listing_date, since)
+        #         time_serial = (since, until)
+        #     else:
+        #         time_serial = None
+        #
+        #     patch = self.__data_center.build_local_data_patch(
+        #         self.__agent.base_uri(), identity, time_serial, force=self.__force)
+        #     self.__patch_count += 1
+        #     print('Patch count: ' + str(self.__patch_count))
+        #
+        #     self.__future = self.__pool.submit(self.__execute_persistence,
+        #                                        self.__agent.base_uri(), identity, patch)
+        #
+        # if self.__future is not None:
+        #     print('Waiting for persistence task finish...')
+        #     self.__future.result()
+        # self.__clock.freeze()
+    #     # self.__ui.task_finish_signal[UpdateTask].emit(self)
+    #
+    #     # ----------------------------------------------------------------
+    #     # ---------------- Put refresh cache process here -----------------
+    #     # ----------------------------------------------------------------
+    #
+    #     # Refresh data utility cache if stock list or index list update
+    #     if self.__agent.base_uri() == 'Market.SecuritiesInfo':
+    #         self.__data_hub.get_data_utility().refresh_stock_cache()
+    #     if self.__agent.base_uri() == 'Market.IndexInfo':
+    #         self.__data_hub.get_data_utility().refresh_index_cache()
+    #     if self.__agent.base_uri() == 'Market.TradeCalender':
+    #         self.__data_hub.get_data_utility().refresh_trade_calendar_cache()
+    #
+    # def __execute_persistence(self, uri: str, identity: str, patch: tuple) -> bool:
+    #     try:
+    #         if patch is not None:
+    #             self.__data_center.apply_local_data_patch(patch)
+    #         if identity is not None:
+    #             self.progress().set_progress([uri, identity], 1, 1)
+    #         self.progress().increase_progress(uri)
+    #     except Exception as e:
+    #         print('Persistence error: ' + str(e))
+    #         print(traceback.format_exc())
+    #         return False
+    #     finally:
+    #         self.__apply_count += 1
+    #         print('Persistence count: ' + str(self.__apply_count))
+    #     return True
 
 
 class SasAnalysisTask(ResourceTask):
