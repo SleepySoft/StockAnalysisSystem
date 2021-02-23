@@ -180,9 +180,9 @@ class UniversalDataCenter:
         else:
             since, until = self.calc_update_range(uri, identity, time_serial)
             # TODO: How to be more grace?
-            if date2text(since) == date2text(until):
+            if since.date() == until.date():
                 # Does not need update.
-                return True, (uri, identity, since, until, agent), None
+                return True, (uri, identity, since, until, agent), pd.DataFrame()
         print('%s: [%s] -> Update range: %s - %s' % (uri, str(identity), date2text(since), date2text(until)))
 
         # ------------------------- Fetch -------------------------
