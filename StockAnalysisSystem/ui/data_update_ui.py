@@ -339,14 +339,14 @@ class DataUpdateUi(QWidget):
 
     def on_auto_update_button(self, uri: str, identity: str):
         print('Auto update ' + uri + ':' + str(identity))
-        self.__context.get_sas_interface().sas_execute_update(uri, identity, False)
+        self.__context.get_sas_interface().sas_execute_update(uri, identity, None, False)
         self.post_progress_updater()
         # self.__task_res_id.append(res_id)
         # self.__context.get_res_sync().add_sync_resource(res_id, 'progress')
 
     def on_force_update_button(self, uri: str, identity: str):
         print('Force update ' + uri + ' : ' + str(identity))
-        self.__context.get_sas_interface().sas_execute_update(uri, identity, True)
+        self.__context.get_sas_interface().sas_execute_update(uri, identity, None, True)
         self.post_progress_updater()
         # self.__task_res_id.append(res_id)
         # self.__context.get_res_sync().add_sync_resource(res_id, 'progress')
@@ -363,14 +363,14 @@ class DataUpdateUi(QWidget):
                     # self.__context.get_sas_interface().sas_execute_update(item_id, None, force)
                     # self.__task_res_id.append(res_id)
                 else:
-                    self.__context.get_sas_interface().sas_execute_update(self.__display_uri[0], item_id, force)
+                    self.__context.get_sas_interface().sas_execute_update(self.__display_uri[0], item_id, None, force)
                     # self.__task_res_id.append(res_id)
 
         # Sort by update priority
         sorted(update_uris, key=lambda x: self.__data_agent_prob[x]['update_priority'], reverse=True)
         # Only if the update_uris has contents.
         for uri in update_uris:
-            self.__context.get_sas_interface().sas_execute_update(uri, None, force)
+            self.__context.get_sas_interface().sas_execute_update(uri, None, None, force)
 
         self.post_progress_updater()
 

@@ -1,6 +1,5 @@
 from .DataHub.DataAgentBuilder import *
 from .DataHub.DataUtility import DataUtility
-from .DataHub.UpdateHelper import UpdateHelper
 from .Database.DatabaseEntry import DatabaseEntry
 from .Utility.plugin_manager import PluginManager
 from .DataHub.UniversalDataCenter import UniversalDataCenter
@@ -14,7 +13,6 @@ class DataHubEntry:
         self.__data_extra = {}
         self.__data_center = UniversalDataCenter(database_entry, collector_plugin)
         self.__data_utility = DataUtility(self.__data_center)
-        self.__update_helper = UpdateHelper(self.__data_center, self.__data_utility)
 
         self.__data_agents = []
         self.build_data_agent()
@@ -33,9 +31,6 @@ class DataHubEntry:
 
     def get_data_utility(self) -> DataUtility:
         return self.__data_utility
-
-    def get_update_helper(self) -> UpdateHelper:
-        return self.__update_helper
 
     # ------------------------------------------------------------------------------------------------------------------
 
