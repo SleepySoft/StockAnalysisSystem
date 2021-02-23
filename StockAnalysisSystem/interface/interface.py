@@ -21,6 +21,22 @@ class SasInterface:
         """
         pass
 
+    # ----------------------------- Check & Prob ------------------------------
+
+    def sas_service_prob(self) -> dict:
+        pass
+
+    def sas_service_check(self) -> dict:
+        pass
+
+    # --------------------------- System operation  ---------------------------
+
+    def sas_get_service_config(self) -> dict:
+        pass
+
+    def sas_set_service_config(self, config: dict) -> bool:
+        pass
+
     # ------------------------------- Resource --------------------------------
 
     def sas_get_resource(self, res_id: str, key: str or [str]) -> any or [any]:
