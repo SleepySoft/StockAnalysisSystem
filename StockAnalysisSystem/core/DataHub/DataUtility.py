@@ -167,14 +167,16 @@ class DataUtility:
     #     ret = self.__data_center.apply_local_data_patch(patch)
     #     return ret
 
-    def auto_update(self, uri: str, identity: str or [str] = None, full_update: bool = False,
-                    quit_flag: [bool] or None = None, progress: ProgressRate = None) -> bool:
+    def auto_update(self, uri: str, identity: str or [str] = None,
+                    time_serial: datetime.datetime or tuple or None = None,
+                    full_update: bool = False, quit_flag: [bool] or None = None, progress: ProgressRate = None) -> bool:
         """
         Check last update time and auto increment update. Not support slice udpate.
 
         :param uri: The uri that you want to update. MUST.
         :param identity: The identity/identities that you want to update.
                          If None, function will get the update list from uri data agent.
+         :param time_serial: Specify update time or time range. None for auto detecting update time range.
         :param full_update: If True, function will do full volume update
         :param quit_flag: A bool wrapped by list. If True being specified, the update will be terminated.
                           None if you don't need it.
@@ -226,20 +228,20 @@ class DataUtility:
 
             print('------------------------------------------------------------------------------------')
 
-            if identity is not None:
-                # Optimise: Update not earlier than listing date.
-                listing_date = self.get_securities_listing_date(identity, default_since())
+            if time_serial is None:
+                # Auto calculate securities update time range
+                if identity is not None:
+                    # Optimise: Update not earlier than listing date.
+                    listing_date = self.get_securities_listing_date(identity, default_since())
 
-                if full_update:
-                    # Full volume update
-                    since, until = listing_date, now()
-                else:
-                    # Increment update
-                    since, until = self.__data_center.calc_update_range(uri, identity)
-                    since = max(listing_date, since)
-                time_serial = (since, until)
-            else:
-                time_serial = None
+                    if full_update:
+                        # Full volume update
+                        since, until = listing_date, now()
+                    else:
+                        # Increment update
+                        since, until = self.__data_center.calc_update_range(uri, identity)
+                        since = max(listing_date, since)
+                    time_serial = (since, until)
 
             patch = self.__data_center.build_local_data_patch(uri, identity, time_serial, force=full_update)
 

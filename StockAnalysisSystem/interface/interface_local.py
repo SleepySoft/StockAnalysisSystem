@@ -43,6 +43,7 @@ class SasUpdateTask(ResourceTask):
         self.__agent = None
         self.__clock = Clock()
         self.__identities = []
+        self.__time_serial = None
 
         # Add resource tags here
         resource_manager.set_resource_tags(self.res_id(), ['update_task'])
@@ -50,11 +51,12 @@ class SasUpdateTask(ResourceTask):
     def in_work_package(self, uri: str) -> bool:
         return self.__agent.adapt(uri)
 
-    def set_work_package(self, agent: DataAgent, identities: list or str or None):
+    def set_work_package(self, agent: DataAgent, identities: list or str or None, time_serial: tuple or None):
         if isinstance(identities, str):
             identities = [identities]
         self.__identities = identities
         self.__agent = agent
+        self.__time_serial = time_serial
         # Place holder, avoiding get_progress_rate() returns 100% if it hasn't been started.
         self.progress().set_progress(self.__agent.base_uri(), 0, 1)
 
@@ -286,6 +288,10 @@ class SasAnalysisTask(ResourceTask):
         print('Generate report time spending: %ss' % str(clock.elapsed_s()))
 
 
+# ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------ class LocalInterface ------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+
 class LocalInterface(sasIF):
     __singleton_instance = None
 
@@ -339,10 +345,11 @@ class LocalInterface(sasIF):
 
     # -------------------------------- Datahub --------------------------------
 
-    def sas_execute_update(self, uri: str, identity: str or [str] = None, force: bool = False, **extra) -> str:
+    def sas_execute_update(self, uri: str, identity: str or [str] = None,
+                           time_serial: tuple = None, force: bool = False, **extra) -> str:
         agent = sasApi.data_center().get_data_agent(uri)
         task = SasUpdateTask(sasApi.data_hub(), sasApi.data_center(), self.__resource_manager, force)
-        task.set_work_package(agent, identity)
+        task.set_work_package(agent, identity, time_serial)
         sasApi.append_task(task)
         return task.res_id()
 
