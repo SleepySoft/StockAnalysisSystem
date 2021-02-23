@@ -156,6 +156,12 @@ class UniversalDataCenter:
                                time_serial: tuple = None, force: bool = False, **extra) -> tuple:
         """
         Calculate update range and fetch from plug-in, then pack for local persistence.
+        :param uri: The uri that you want to update.
+        :param identity: The identity that you want to update. None or empty if the update plug-in supports.
+        :param time_serial: The update time or time range. None for auto detection.
+        :param force: True for full volume update
+        :param extra: Extra parameters that pass to the update plug-in
+        :return: Update patch: (bool, (uri, identity, since, until, agent), result dataframe)
         """
         agent = self.get_data_agent(uri)
         checker = agent.get_field_checker() if agent is not None else None
@@ -167,12 +173,16 @@ class UniversalDataCenter:
         # ---------------- Decide update time range ----------------
         if force:
             since, until = default_since(), now()
+        elif isinstance(time_serial, datetime.date):
+            # If it's single time
+            # Note that isinstance(datetime.datetime, datetime.date) == True
+            since, until = time_serial, time_serial
         else:
             since, until = self.calc_update_range(uri, identity, time_serial)
-        # TODO: How to be more grace?
-        if date2text(since) == date2text(until):
-            # Does not need update.
-            return True, (uri, identity, since, until, agent), None
+            # TODO: How to be more grace?
+            if date2text(since) == date2text(until):
+                # Does not need update.
+                return True, (uri, identity, since, until, agent), None
         print('%s: [%s] -> Update range: %s - %s' % (uri, str(identity), date2text(since), date2text(until)))
 
         # ------------------------- Fetch -------------------------

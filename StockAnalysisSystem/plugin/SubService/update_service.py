@@ -17,9 +17,9 @@ class UpdateService:
 
     def startup(self):
         # DEBUG: Debug event
-        # event = Event('update_service_test', SERVICE_ID)
-        # event.update_event_data('update_service_test_flag', 'daily')
-        # self.__sub_service_context.sub_service_manager.post_event(event)
+        event = Event('update_service_test', SERVICE_ID)
+        event.update_event_data('update_service_test_flag', 'daily')
+        self.__sub_service_context.sub_service_manager.post_event(event)
 
         self.__sub_service_context.register_schedule_event(SERVICE_ID, 17, 0, 0, period='daily')
         self.__sub_service_context.register_schedule_event(SERVICE_ID, 21, 0, 0, period='weekly')
@@ -41,7 +41,9 @@ class UpdateService:
     def __do_daily_update(self):
         self.__sub_service_context.log('%s: Do daily update.' %
                                        datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-        self.__update_market_data()
+
+        # DEBUG: Not update this for quick debug
+        # self.__update_market_data()
 
         self.__check_update_daily_trade_data('TradeData.Stock.Daily')
         self.__check_update_daily_trade_data('TradeData.Index.Daily')
