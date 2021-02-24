@@ -1,6 +1,5 @@
 from StockAnalysisSystem.core.Utility.task_queue import *
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
-from StockAnalysisSystem.core.Utility.resource_sync import ResourceSync
 
 
 class UiContext:
@@ -8,11 +7,11 @@ class UiContext:
         self.__sas_interface = None
         self.__ui_task_queue = TaskQueue()
         self.__ui_task_queue.start()
-        self.__res_sync = ResourceSync()
-        self.__res_sync.start()
+        # self.__res_sync = ResourceSync()
+        # self.__res_sync.start()
 
-    def get_res_sync(self) -> ResourceSync:
-        return self.__res_sync
+    # def get_res_sync(self) -> ResourceSync:
+    #     return self.__res_sync
 
     def get_task_queue(self) -> TaskQueue:
         return self.__ui_task_queue

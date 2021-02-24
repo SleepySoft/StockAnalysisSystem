@@ -426,7 +426,9 @@ class DataUpdateUi(QWidget):
                 continue
             total_progress.combine_with(progress)
             if progress.progress_done():
-                self.__context.get_res_sync().remove_sync_resource(res_id)
+                # TODO:
+                pass
+                # self.__context.get_res_sync().remove_sync_resource(res_id)
 
         for i in range(self.__table_main.RowCount()):
             item_id = self.__table_main.GetItemText(i, DataUpdateUi.INDEX_ITEM)
@@ -565,8 +567,7 @@ class DataUpdateUi(QWidget):
         since, until = self.__context.get_sas_interface().sas_get_local_data_range_from_update_table(update_tags)
         
         if since is None or until is None:
-            # TODO: Workaround - because each stock storage in each table.
-            # So we cannot fetch its time range with this method.
+            # Query from DB, very slow. In theory we can get updated range from update table.
             since, until = self.__context.get_sas_interface().sas_get_data_range(uri, identity)
         if until is not None:
             update_since = min(tomorrow_of(until), now())

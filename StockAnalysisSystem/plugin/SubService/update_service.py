@@ -38,6 +38,13 @@ class UpdateService:
 
     # ---------------------------------------------------------------------------------------
 
+    def __post_daily_update(self):
+        """
+        For avoiding update conflict. Post update to system queue.
+        :return:
+        """
+        pass
+
     def __do_daily_update(self):
         self.__sub_service_context.log('%s: Do daily update.' %
                                        datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))

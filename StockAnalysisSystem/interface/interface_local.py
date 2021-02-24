@@ -322,11 +322,11 @@ class LocalInterface(sasIF):
 
     # ------------------------------- Resource --------------------------------
 
-    def sas_get_resource(self, res_id: str, key: str or [str]) -> any or [any]:
-        list_param = isinstance(key, (list, tuple))
-        res_names = key if list_param else [key]
-        res = [self.__resource_manager.get_resource(res_id, name) for name in res_names]
-        return res if list_param else res[0]
+    def sas_get_resource(self, res_desc: [(str, [str])]) -> {str: {str: any}}:
+        res_table = {}
+        for res_id, keys in res_desc:
+            res_table[res_id] = {key: self.__resource_manager.get_resource(res_id, key) for key in keys}
+        return res_table
 
     def sas_find_resource(self,  tags: str or [str]) -> [str]:
         tags = list(tags) if isinstance(tags, (list, tuple, set)) else [str(tags)]

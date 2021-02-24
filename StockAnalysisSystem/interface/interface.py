@@ -39,14 +39,13 @@ class SasInterface:
 
     # ------------------------------- Resource --------------------------------
 
-    def sas_get_resource(self, res_id: str, key: str or [str]) -> any or [any]:
+    def sas_get_resource(self, res_desc: [(str, [str])]) -> {str: {str: any}}:
         """
         Get resource from sas service. The resource can be any data that user can access and serializable.
         One resource id will have multiple key-value.
         The typical resource is ProgressRate. The client can polling the ProgressRate for updating the progress display.
-        :param res_id: The id of resource.
-        :param key: The key of the resource data that you want to retrieve.
-        :return: The resource data. If the key is list, the data list should match the key order. None if data invalid.
+        :param res_desc: The resource description as [(res_id, [key1, key2, key3, ...])]
+        :return: The resource data, as {res_id: {[key1: val1}, {key2, val2}, {key3: val3}]}
         """
         pass
 
