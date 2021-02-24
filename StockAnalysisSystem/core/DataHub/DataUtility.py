@@ -245,6 +245,9 @@ class DataUtility:
 
             patch = self.__data_center.build_local_data_patch(uri, identity, time_serial, force=full_update)
 
+            if not patch[0]:
+                return False
+
             update_counter[0] += 1
             print('Patch count: %s' % update_counter[0])
 
@@ -269,6 +272,8 @@ class DataUtility:
             self.refresh_index_cache()
         if uri == 'Market.TradeCalender':
             self.refresh_trade_calendar_cache()
+
+        return True
 
     def __execute_persistence(self, uri: str, identity: str, patch: tuple,
                               update_counter: [int, int], progress: ProgressRate) -> bool:
