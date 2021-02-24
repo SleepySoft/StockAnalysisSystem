@@ -16,7 +16,7 @@ from PyQt5.QtCore import pyqtSignal, QProcess
 from PyQt5.QtWidgets import QGridLayout, QLineEdit, QFileDialog, QComboBox
 
 from StockAnalysisSystem.core.Utility.ui_utility import *
-from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
+from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 
 
 class QStringList(object):
@@ -26,10 +26,11 @@ class QStringList(object):
 class ConfigUi(QWidget):
     check_finish_signal = pyqtSignal()
 
-    def __init__(self, inited: bool = True):
+    def __init__(self, config: dict = None):
         super(ConfigUi, self).__init__()
 
-        self.__inited = inited
+        # self.__inited = inited
+        self.__config = {} if config is None else config
 
         self.__line_ts_token = QLineEdit()
         self.__line_nosql_db_host = QLineEdit('localhost')
@@ -37,7 +38,7 @@ class ConfigUi(QWidget):
         self.__line_nosql_db_user = QLineEdit()
         self.__line_nosql_db_pass = QLineEdit()
 
-        if sys.platform=='linux':
+        if sys.platform == 'linux':
             self.__line_mongo_db_binary = QLineEdit('/bin')
         else:
             self.__line_mongo_db_binary = QLineEdit('C:\\Program Files\\MongoDB\Server\\4.0\\bin')
@@ -121,21 +122,21 @@ class ConfigUi(QWidget):
         self.__combo_web_proxy_protocol.addItem('HTTP_PROXY')
         self.__combo_web_proxy_protocol.addItem('HTTPS_PROXY')
 
-        sas = StockAnalysisSystem()
-        logs = sas.get_log_errors()
+        # sas = StockAnalysisSystem()
+        # logs = sas.get_log_errors()
 
         self.__config_to_ui()
-        self.__text_information.setText('\n'.join(logs))
+        # self.__text_information.setText('\n'.join(logs))
 
     def on_button_ok(self):
         self.__ui_to_config()
         self.close()
 
     def on_button_exit(self):
-        if not self.__inited:
-            sys.exit(0)
-        else:
-            self.close()
+        # if not self.__inited:
+        #     sys.exit(0)
+        # else:
+        self.close()
 
     def on_button_browse(self):
         folder = str(QFileDialog.getExistingDirectory(self, "Select MongoDB Binary Directory",
@@ -229,37 +230,40 @@ class ConfigUi(QWidget):
 
     # -----------------------------------------------------------------------------------
 
+    def edit_config(self, config: dict):
+        self.__config = config
+
+    def get_config(self) -> dict:
+        return self.__config
+
+    # -----------------------------------------------------------------------------------
+
     def __config_to_ui(self):
-        sas = StockAnalysisSystem()
-        config = sas.get_config()
-        if config.load_config():
-            text = config.get('TS_TOKEN')
-            self.__line_ts_token.setText(text)
+        # sas = StockAnalysisSystem()
+        # config = sas.get_config()
 
-            text = config.get('NOSQL_DB_HOST')
-            self.__line_nosql_db_host.setText(text)
-            self.__line_nosql_db_port.setText(config.get('NOSQL_DB_PORT'))
-            self.__line_nosql_db_user.setText(config.get('NOSQL_DB_USER'))
-            self.__line_nosql_db_pass.setText(config.get('NOSQL_DB_PASS'))
+        self.__line_ts_token.setText(self.__config.get('TS_TOKEN', ''))
 
-            self.__combo_web_proxy_protocol.setEditText(config.get('PROXY_PROTOCOL'))
-            self.__combo_web_proxy_protocol.setCurrentIndex(0)
-            self.__line_web_proxy_host.setText(config.get('PROXY_HOST'))
+        self.__line_nosql_db_host.setText(self.__config.get('NOSQL_DB_HOST', ''))
+        self.__line_nosql_db_port.setText(self.__config.get('NOSQL_DB_PORT', ''))
+        self.__line_nosql_db_user.setText(self.__config.get('NOSQL_DB_USER', ''))
+        self.__line_nosql_db_pass.setText(self.__config.get('NOSQL_DB_PASS', ''))
+
+        self.__combo_web_proxy_protocol.setEditText(self.__config.get('PROXY_PROTOCOL', ''))
+        self.__combo_web_proxy_protocol.setCurrentIndex(0)
+        self.__line_web_proxy_host.setText(self.__config.get('PROXY_HOST', ''))
 
     def __ui_to_config(self):
-        sas = StockAnalysisSystem()
-        config = sas.get_config()
+        config = {
+            'TS_TOKEN': self.__line_ts_token.text(),
+            'NOSQL_DB_HOST': self.__line_nosql_db_host.text(),
+            'NOSQL_DB_PORT': self.__line_nosql_db_port.text(),
+            'NOSQL_DB_USER': self.__line_nosql_db_user.text(),
+            'NOSQL_DB_PASS': self.__line_nosql_db_pass.text(),
 
-        config.set('TS_TOKEN', self.__line_ts_token.text())
-        config.set('NOSQL_DB_HOST', self.__line_nosql_db_host.text())
-        config.set('NOSQL_DB_PORT', self.__line_nosql_db_port.text())
-        config.set('NOSQL_DB_USER', self.__line_nosql_db_user.text())
-        config.set('NOSQL_DB_PASS', self.__line_nosql_db_pass.text())
-
-        config.set('PROXY_PROTOCOL', self.__combo_web_proxy_protocol.currentText())
-        config.set('PROXY_HOST',  self.__line_web_proxy_host.text())
-
-        config.save_config()
+            'PROXY_PROTOCOL': self.__combo_web_proxy_protocol.currentText(),
+            'PROXY_HOST': self.__line_web_proxy_host.text(),
+        }
 
     def __check_alarm_mongodb_config(self) -> bool:
         if self.__line_mongo_db_binary.text().strip() == '':
@@ -282,7 +286,7 @@ class ConfigUi(QWidget):
             return False
         return True
 
-    # --------------------------------------------------------------------------
+    # ------------------------------------------- Command execute -------------------------------------------
 
     def execute_commands(self, commands: [str]):
         if len(self.__pending_command) > 0:
@@ -359,38 +363,6 @@ if __name__ == "__main__":
         exit()
     finally:
         pass
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
