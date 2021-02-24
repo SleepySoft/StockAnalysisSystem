@@ -381,7 +381,9 @@ class AnalyzerUi(QWidget):
                 continue
             total_progress.combine_with(progress)
             if progress.progress_done():
-                self.__context.get_res_sync().remove_sync_resource(res_id)
+                # TODO:
+                pass
+                # self.__context.get_res_sync().remove_sync_resource(res_id)
 
         for i in range(self.__table_analyzer.RowCount()):
             uuid = self.__table_analyzer.GetItemText(i, 3)

@@ -53,13 +53,7 @@ class ResourceUpdater:
                                     ...
                                 }
         """
-        res_table = {}
-        for res_id, res_keys in update_table:
-            if self.__quit:
-                break
-            res = self.__sasif.sas_get_resource(res_id, res_keys)
-            if res is not None and len(res) == len(res_keys):
-                res_table[res_id] = {k: v for k, v in zip(res_keys, res)}
+        res_table = self.__sasif.sas_get_resource(update_table)
         return res_table
 
     def get_resource(self, res_id: str, key: str) -> any:
@@ -189,46 +183,48 @@ class ResourceUpdateTask(TaskQueue.Task):
 
 # ---------------------------------------------------- ResourceSync ----------------------------------------------------
 
-class ResourceSync(threading.Thread):
-    def __init__(self):
-        self.__quit = False
-        self.__updater_table = {}
-        self.__lock = threading.Lock()
-        super(ResourceSync, self).__init__()
+# Kind of stupid, deprecated.
 
-    def run(self):
-        while not self.__quit:
-            self.sync_resource()
-            time.sleep(1)
-
-    def stop(self):
-        self.__quit = True
-
-    def sync_resource(self):
-        with self.__lock:
-            updater_table = self.__updater_table
-
-        for _id in updater_table.keys():
-            updater: ResourceUpdater = updater_table[_id]
-            updater.update()
-
-    def get_resource(self, res_id: str, key: str) -> any:
-        with self.__lock:
-            for _id in self.__updater_table.keys():
-                updater: ResourceUpdater = self.__updater_table[_id]
-                res = updater.get_resource(res_id, key)
-                if res is not None:
-                    return res
-        return None
-
-    def add_sync_resource(self, updater: ResourceIdUpdater):
-        with self.__lock:
-            self.__updater_table[updater.identity()] = updater
-
-    def remove_sync_resource(self, updater_id: str):
-        with self.__lock:
-            if updater_id in self.__updater_table:
-                del self.__updater_table[updater_id]
+# class ResourceSync(threading.Thread):
+#     def __init__(self):
+#         self.__quit = False
+#         self.__updater_table = {}
+#         self.__lock = threading.Lock()
+#         super(ResourceSync, self).__init__()
+#
+#     def run(self):
+#         while not self.__quit:
+#             self.sync_resource()
+#             time.sleep(1)
+#
+#     def stop(self):
+#         self.__quit = True
+#
+#     def sync_resource(self):
+#         with self.__lock:
+#             updater_table = self.__updater_table
+#
+#         for _id in updater_table.keys():
+#             updater: ResourceUpdater = updater_table[_id]
+#             updater.update()
+#
+#     def get_resource(self, res_id: str, key: str) -> any:
+#         with self.__lock:
+#             for _id in self.__updater_table.keys():
+#                 updater: ResourceUpdater = self.__updater_table[_id]
+#                 res = updater.get_resource(res_id, key)
+#                 if res is not None:
+#                     return res
+#         return None
+#
+#     def add_sync_resource(self, updater: ResourceIdUpdater):
+#         with self.__lock:
+#             self.__updater_table[updater.identity()] = updater
+#
+#     def remove_sync_resource(self, updater_id: str):
+#         with self.__lock:
+#             if updater_id in self.__updater_table:
+#                 del self.__updater_table[updater_id]
 
 
 
