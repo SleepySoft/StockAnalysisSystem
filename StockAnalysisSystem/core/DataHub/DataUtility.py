@@ -185,6 +185,9 @@ class DataUtility:
         """
         if not str_available(uri):
             return False
+        agent = self.__data_center.get_data_agent(uri)
+        if agent is None:
+            return False
 
         if quit_flag is None or len(quit_flag) == 0:
             quit_flag = [True]
@@ -193,9 +196,6 @@ class DataUtility:
 
         if identity is None:
             # Update whole uri, auto detect update identities
-            agent = self.__data_center.get_data_agent(uri)
-            if agent is None:
-                return False
             update_list = agent.update_list()
         elif isinstance(identity, str):
             # Update specified identity
@@ -215,6 +215,8 @@ class DataUtility:
         last_future = None
         thread_pool = ThreadPoolExecutor(max_workers=1)
 
+        min_since = None
+        max_until = None
         update_counter = [
             0,      # patch count
             0       # persistence count
@@ -260,6 +262,8 @@ class DataUtility:
 
         # Update uri last update time when all update list updated.
         self.__data_center.get_update_table().update_latest_update_time(uri.split('.'))
+
+        # since, until = agent.data_range(uri, identity) if agent is not None else (None, None)
 
         # ----------------------------------------------------------------
         # ---------------- Put refresh cache process here -----------------

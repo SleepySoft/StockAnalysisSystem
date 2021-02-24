@@ -27,7 +27,7 @@ def root_entry():
 
 @app.route('/api', methods=['POST'])
 def webapi_entry():
-    print('-> Request /api')
+    # print('-> Request /api')
     try:
         response = webapiIF.handle_request(request)
     except Exception as e:

@@ -109,7 +109,8 @@ class ResourceManager:
         if self.__next_expired_check == 0:
             self.__next_expired_check = now_time
         elif self.__next_expired_check < now_time:
-            for k in self.__resource_table.keys():
+            keys = self.__resource_table.keys()
+            for k in keys:
                 v = self.__resource_table.get(k)
                 if v.expired_time < now_time:
                     del self.__resource_table[k]
