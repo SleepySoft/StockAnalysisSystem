@@ -21,15 +21,19 @@ class WebApiInterface:
         :param req_args: The web request args
         :return: Web response
         """
+        resp = ''
         api = req_args.get('api', None)
         token = req_args.get('token', None)
         args_json = req_args.get('args', '')
         kwargs_json = req_args.get('kwargs', '')
 
+        print('==> ' + api)
         if self.check_request(api, token, args_json, kwargs_json):
             success, args, kwargs = self.parse_request(args_json, kwargs_json)
-            return self.dispatch_request(api, token, *args, **kwargs)
-        return ''
+            resp = self.dispatch_request(api, token, *args, **kwargs)
+        print('<== ' + api)
+
+        return resp
 
     def check_request(self, api: str, token: str, args_json: str, kwargs_json: str) -> bool:
         return isinstance(api, str) and api != '' and \

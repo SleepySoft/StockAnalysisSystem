@@ -62,8 +62,9 @@ class ResourceUpdater:
             return res.get(key, None) if res is not None else None
 
     def set_resource_table(self, res_table: dict):
-        with self.__lock:
-            self.__res_table = res_table
+        if isinstance(res_table, dict):
+            with self.__lock:
+                self.__res_table = res_table
 
 
 # ------------------------------------------- Res ID Updater -------------------------------------------
