@@ -205,8 +205,28 @@ class MainWindow(CommonMainWindow):
     # ----------------------------- UI Events -----------------------------
 
     def on_action_config(self):
-        dlg = WrapperQDialog(ConfigUi())
+        config = self.__context.get_sas_interface().sas_get_service_config()
+        if not isinstance(config, dict):
+            QMessageBox.information(self,
+                                    QtCore.QCoreApplication.translate('main', 'Error'),
+                                    QtCore.QCoreApplication.translate('main', 'Config format error'),
+                                    QMessageBox.Ok, QMessageBox.Ok)
+            return
+
+        config_ui = ConfigUi()
+        config_ui.edit_config(config)
+
+        dlg = WrapperQDialog(config_ui)
         dlg.exec()
+
+        if config_ui.is_ok():
+            config = config_ui.get_config()
+            ret = self.__context.get_sas_interface().sas_set_service_config(config)
+            tip_text = 'Send config successful. Service restart required.' if ret else 'Send config fail.'
+            QMessageBox.information(self,
+                                    QtCore.QCoreApplication.translate('main', 'Config Result'),
+                                    QtCore.QCoreApplication.translate('main', tip_text),
+                                    QMessageBox.Ok, QMessageBox.Ok)
 
     # def closeEvent(self, event):
     #     if StockAnalysisSystem().can_sys_quit():
