@@ -21,6 +21,15 @@ class SasInterface:
         """
         pass
 
+    def if_prob(self) -> dict:
+        """
+        Get interface prob. Must field:
+            name: The name of the interface
+            version: The version of the interface
+        :return: Prob table as dict
+        """
+        pass
+
     # ------------------------- Check / Prob / Config -------------------------
 
     def sas_service_prob(self) -> dict:

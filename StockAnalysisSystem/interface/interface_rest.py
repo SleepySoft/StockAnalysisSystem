@@ -22,6 +22,14 @@ class RestInterface:
             self.__api_url = api_uri
         return True
 
+    def if_prob(self) -> dict:
+        return {
+            'name': 'Rest Interface',
+            'version': '1.0.0',
+        }
+
+    # ------------------------------------------------------------------------------------
+
     def __getattr__(self, attr):
         return partial(self.rest_interface_proxy, attr)
 
