@@ -566,6 +566,8 @@ class DataUtility:
 
     def __refresh_trade_calendar_cache(self):
         df = self.__data_center.query('Market.TradeCalender')
+        if df is None or df.empty:
+            return
         try:
             self.__trade_calendar_cache.clear()
             for _time, _open in zip(df['trade_date'], df['status']):
