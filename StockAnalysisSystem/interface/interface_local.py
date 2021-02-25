@@ -320,6 +320,12 @@ class LocalInterface(sasIF):
         sasApi.data_utility().refresh_cache()
         return ret
 
+    def if_prob(self) -> dict:
+        return {
+            'name': 'Local Interface',
+            'version': '1.0.0',
+        }
+
     # ------------------------- Check / Prob / Config -------------------------
 
     def sas_service_prob(self) -> dict:

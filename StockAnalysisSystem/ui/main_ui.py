@@ -76,7 +76,9 @@ class MainWindow(CommonMainWindow):
         # widget.setLayout(main_layout)
         # self.setCentralWidget(widget)
 
-        self.setWindowTitle('Stock Analysis System [%s] - Sleepy' % VERSION)
+        if_prob = self.__context.get_sas_interface().if_prob()
+        self.setWindowTitle('Stock Analysis System [%s]  |  %s [%s]  |  by Sleepy' %
+                            (VERSION, if_prob['name'], if_prob['version']))
 
     def init_menu(self):
         config_action = QAction('系统配置（需要重新启动程序）', self)
