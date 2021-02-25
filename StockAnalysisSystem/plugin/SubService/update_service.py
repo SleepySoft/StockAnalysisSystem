@@ -21,8 +21,11 @@ class UpdateService:
         # event.update_event_data('update_service_test_flag', 'daily')
         # self.__sub_service_context.sub_service_manager.post_event(event)
 
-        self.__sub_service_context.register_schedule_event(SERVICE_ID, 17, 0, 0, period='daily')
-        self.__sub_service_context.register_schedule_event(SERVICE_ID, 21, 0, 0, period='weekly')
+        # Temporary remove auto update service
+        # self.__sub_service_context.register_schedule_event(SERVICE_ID, 17, 0, 0, period='daily')
+        # self.__sub_service_context.register_schedule_event(SERVICE_ID, 21, 0, 0, period='weekly')
+
+        pass
 
     def handle_event(self, event: Event):
         if event.event_type() == Event.EVENT_SCHEDULE:

@@ -420,15 +420,14 @@ class DataUpdateUi(QWidget):
         updater: ResourceTagUpdater = self.__current_update_task.get_updater()
         updated_res_id = updater.get_resource_ids()
 
+        done_progress = []
         for res_id in updated_res_id:
             progress: ProgressRate = updater.get_resource(res_id, 'progress')
             if progress is None:
                 continue
             total_progress.combine_with(progress)
             if progress.progress_done():
-                # TODO:
-                pass
-                # self.__context.get_res_sync().remove_sync_resource(res_id)
+                done_progress.append(res_id)
 
         for i in range(self.__table_main.RowCount()):
             item_id = self.__table_main.GetItemText(i, DataUpdateUi.INDEX_ITEM)
@@ -470,12 +469,12 @@ class DataUpdateUi(QWidget):
             self.__table_main.SetItemText(i, DataUpdateUi.INDEX_STATUS, ' | '.join(text))
 
         if len(updated_res_id) > 0:
-            if not total_progress.progress_done():
+            if len(done_progress) != len(updated_res_id):
                 # Progress not done yet, post update
                 self.post_progress_updater()
             else:
                 # Progress done, not post update
-                self.__context.get_sas_interface().sas_delete_resource(updated_res_id)
+                self.__context.get_sas_interface().sas_delete_resource(done_progress)
                 self.__current_update_task = None
                 # If progress done at process startup, do not pop up message box
                 if not self.__first_post_update:
