@@ -30,6 +30,7 @@ class ConfigUi(QWidget):
         super(ConfigUi, self).__init__()
 
         # self.__inited = inited
+        self.__is_ok = False
         self.__config = {} if config is None else config
 
         self.__line_ts_token = QLineEdit()
@@ -50,7 +51,7 @@ class ConfigUi(QWidget):
         self.__line_web_proxy_host = QLineEdit('')
 
         self.__button_ok = QPushButton('OK')
-        self.__button_exit = QPushButton('Exit')
+        self.__button_cancel = QPushButton('Cancel')
         self.__text_information = QTextEdit()
         # self.__label_information = QLabel()
 
@@ -94,22 +95,25 @@ class ConfigUi(QWidget):
         mongodb_area.addWidget(self.__button_import)
         main_layout.addLayout(mongodb_area, 3, 1, 1, 3)
 
-        main_layout.addWidget(QLabel('Internet Proxy: '), 4, 0)
-        main_layout.addWidget(self.__combo_web_proxy_protocol, 4, 1)
-        main_layout.addWidget(self.__line_web_proxy_host, 4, 2, 1, 2)
+        main_layout.addWidget(
+            QLabel('Note: You are editing service config. But the path you are browsing is local.'), 4, 0, 1, 4)
 
-        main_layout.addWidget(QLabel('Status: '), 5, 0)
+        main_layout.addWidget(QLabel('Internet Proxy: '), 5, 0)
+        main_layout.addWidget(self.__combo_web_proxy_protocol, 5, 1)
+        main_layout.addWidget(self.__line_web_proxy_host, 5, 2, 1, 2)
+
+        main_layout.addWidget(QLabel('Status: '), 6, 0)
         button_area = QHBoxLayout()
         button_area.addWidget(self.__button_ok)
-        button_area.addWidget(self.__button_exit)
-        main_layout.addLayout(button_area, 5, 3)
+        button_area.addWidget(self.__button_cancel)
+        main_layout.addLayout(button_area, 6, 3)
 
-        main_layout.addWidget(self.__text_information, 6, 0, 1, 4)
+        main_layout.addWidget(self.__text_information, 7, 0, 1, 4)
 
     def __config_control(self):
         self.setWindowTitle('System Config')
         self.__button_ok.clicked.connect(self.on_button_ok)
-        self.__button_exit.clicked.connect(self.on_button_exit)
+        self.__button_cancel.clicked.connect(self.on_button_cancel)
         self.__button_browse.clicked.connect(self.on_button_browse)
         self.__button_import.clicked.connect(self.on_button_import)
         self.__button_export.clicked.connect(self.on_button_export)
@@ -130,9 +134,10 @@ class ConfigUi(QWidget):
 
     def on_button_ok(self):
         self.__ui_to_config()
+        self.__is_ok = True
         self.close()
 
-    def on_button_exit(self):
+    def on_button_cancel(self):
         # if not self.__inited:
         #     sys.exit(0)
         # else:
@@ -230,8 +235,12 @@ class ConfigUi(QWidget):
 
     # -----------------------------------------------------------------------------------
 
+    def is_ok(self) -> bool:
+        return self.__is_ok
+
     def edit_config(self, config: dict):
         self.__config = config
+        self.__config_to_ui()
 
     def get_config(self) -> dict:
         return self.__config
