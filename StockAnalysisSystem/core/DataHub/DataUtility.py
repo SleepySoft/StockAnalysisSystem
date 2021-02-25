@@ -215,12 +215,12 @@ class DataUtility:
         last_future = None
         thread_pool = ThreadPoolExecutor(max_workers=1)
 
-        min_since = None
-        max_until = None
         update_counter = [
             0,      # patch count
             0       # persistence count
         ]
+        error_identities = []
+
         for identity in update_list:
             while (update_counter[0] - update_counter[1] > 20) and not quit_flag[0]:
                 time.sleep(0.5)
@@ -248,7 +248,10 @@ class DataUtility:
             patch = self.__data_center.build_local_data_patch(uri, identity, time_serial, force=full_update)
 
             if not patch[0]:
-                return False
+                error_identities.append(identity)
+                if len(error_identities) / len(update_list) > 0.1:
+                    # More than 10% error
+                    return False
 
             update_counter[0] += 1
             print('Patch count: %s' % update_counter[0])
@@ -276,6 +279,13 @@ class DataUtility:
             self.refresh_index_cache()
         if uri == 'Market.TradeCalender':
             self.refresh_trade_calendar_cache()
+
+        if len(error_identities) != 0:
+            # DEBUG: Break point here.
+            print('Update complete. total count: %s, error count: %s.' % (len(update_list), len(error_identities)))
+            print(str(error_identities))
+        else:
+            print('Update successful.')
 
         return True
 
