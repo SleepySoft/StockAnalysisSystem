@@ -254,7 +254,7 @@ class ConfigUi(QWidget):
         self.__line_web_proxy_host.setText(self.__config.get('PROXY_HOST', ''))
 
     def __ui_to_config(self):
-        config = {
+        self.__config = {
             'TS_TOKEN': self.__line_ts_token.text(),
             'NOSQL_DB_HOST': self.__line_nosql_db_host.text(),
             'NOSQL_DB_PORT': self.__line_nosql_db_port.text(),
