@@ -81,7 +81,7 @@ class DataHubUi(QWidget):
         since = self.__datetime_since.dateTime().toPyDateTime() if self.__check_datetime_enable.isChecked() else None
         until = self.__datetime_until.dateTime().toPyDateTime() if self.__check_datetime_enable.isChecked() else None
 
-        result = self.__sasif.query(uri, identity, (since, until))
+        result = self.__context.get_sas_interface().sas_query(uri, identity, (since, until))
 
         if result is not None and '_id' in result.columns:
             del result['_id']
