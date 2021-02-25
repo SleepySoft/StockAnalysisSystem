@@ -320,6 +320,21 @@ class LocalInterface(sasIF):
         sasApi.data_utility().refresh_cache()
         return ret
 
+    # ------------------------- Check / Prob / Config -------------------------
+
+    def sas_service_prob(self) -> dict:
+        pass
+
+    def sas_service_check(self) -> dict:
+        pass
+
+    def sas_get_service_config(self) -> dict:
+        return sasApi.config().get_all_config()
+
+    def sas_set_service_config(self, config: dict) -> bool:
+        sasApi.config().set_all_config(config)
+        return True
+
     # ------------------------------- Resource --------------------------------
 
     def sas_get_resource(self, res_desc: [(str, [str])]) -> {str: {str: any}}:

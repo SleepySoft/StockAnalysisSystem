@@ -38,6 +38,9 @@ class Config:
     def get_all_config(self) -> dict:
         return self.__config_dict
 
+    def set_all_config(self, config: dict):
+        self.__config_dict = config
+
     def save_config(self, config_file: str = 'config.json') -> bool:
         try:
             with open(config_file, 'wt') as f:

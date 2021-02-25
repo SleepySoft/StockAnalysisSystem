@@ -21,15 +21,13 @@ class SasInterface:
         """
         pass
 
-    # ----------------------------- Check & Prob ------------------------------
+    # ------------------------- Check / Prob / Config -------------------------
 
     def sas_service_prob(self) -> dict:
         pass
 
     def sas_service_check(self) -> dict:
         pass
-
-    # --------------------------- System operation  ---------------------------
 
     def sas_get_service_config(self) -> dict:
         pass
