@@ -1,0 +1,19 @@
+{
+    "TS_TOKEN": "xxxxxxxxxxxxx",
+    "NOSQL_DB_HOST": "localhost",
+    "NOSQL_DB_PORT": "27017",
+    "NOSQL_DB_USER": "",
+    "NOSQL_DB_PASS": "",
+    "PROXY_PROTOCOL": "HTTP_PROXY",
+    "PROXY_HOST": "",
+    "memo_path": "C:/Code/git/StockMemo",
+
+    "wechat_token": "xxxxxxxxx",
+    "wechat_app_id": "xxxxxxxxx",
+    "wechat_app_secret": "xxxxxxxxx",
+
+    "service_port": "80",
+    "service_debug": "true",
+    "analysis_result_path": "TestData/analysis_result.json",
+    "analysis_name_dict_path": "TestData/analyzer_names.json"
+}
