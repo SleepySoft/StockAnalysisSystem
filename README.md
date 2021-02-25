@@ -7,18 +7,40 @@ https://gitee.com/SleepySoft/StockAnalysisSystem
 # Github
 https://github.com/SleepySoft/StockAnalysisSystem  
   
-# 网盘下载：
+# 网盘下载：  
 应网友要求，对于网络访问受限的用户，提供网盘下载（离线数据同样在此下载）：  
-链接: https://pan.baidu.com/s/1Xv3hq09-0-zAgJEk8dd4Gg  
-提取码: r11g  
+链接: https://pan.baidu.com/s/1LJ11m5nHkaknQXqHSzdLMA  
+提取码: 8871  
   
-# 视频讲解  
+# 最近更新内容： 
+将访问接口扩展为sasApi和sasInterface，并将界面与服务彻底分离  
+如果想使用之前一体式的版本（不会更新），请checkout One-Piece  
+  
+如何运行:  
+* 环境准备看下面  
+* 首先按需要修改doc/config_example.json，没有或不清楚的项目不需要改，更名为config.json并复制到运行目录下  
+> 由于界面和服务分离，所以无法像之前一样检测配置并弹出配置窗口（后面再做），故需要先把配置文件准备好。  
+* 运行方式1：直接运行main.py，在弹出的窗口中选择local interface  
+> 这种方式将会调用本地接口，即和之前一样，界面和服务运行在同一个进程内  
+* 运行方式2：先运行main_service.py，再运行main.py，在弹出的窗口中选择remote interface  
+> 这种方式将会调用远程接口，通过网络连接服务器，关闭界面不影响服务运行  
+  
+移除功能：
+* 年报下载插件  
+> 网站接口变化，现在已无法下载。如果有可用的库，欢迎推荐。谢谢。之前下载的年报可以在网盘下载，很大。  
+* 证监会立案调查数据  
+> 网站不再提供该服务，如果有替代数据源，欢迎推荐。谢谢。  
+  
+已知问题：  
+* 本次改动比较大（指ui和sas的接口，内部结构并未变化），而数据源也有所改变，故问题可能较多。欢迎大家提出bug，使程序更加完善。多谢。  
+* 界面对更新进度显示有误，服务器仍在更新，但界面有可能显示更新完成（我看看怎么修）。  
+* 无法获得服务器状态，故ui无法展示服务器配置错误等状态（接口预留，待加功能）。  
+* 网盘可能会被举报失效（莫名其妙）  
+  
+# 视频讲解（未更新，不过内部结构没变）  
 安装配置：https://www.bilibili.com/video/BV14z411b7AE/  
-设计与框架：https://www.bilibili.com/video/BV1nK411p7uD/
-  
-# 最近更新内容：  
-加入网络服务，从main_service.py启动即可，然而UI并未分离。  
-最近疯狂加班（真是在还年初的债啊 望天），所以更新会慢点。  
+设计与框架：https://www.bilibili.com/video/BV1nK411p7uD/  
+服务框架请看doc/design.vsd  
   
 # 运行环境  
 * 由于图表引入了pyqtgraph，导致pyinstaller打包出现问题，并且尝试py2exe也不成功，故暂停以EXE形式发布Release  
@@ -46,24 +68,6 @@ https://github.com/SleepySoft/StockAnalysisSystem
 * 以后运行只需要打开cmd并切换到代码目录（一个简单的方法，用文件管理器打开代码目录，在上方的地址栏直接输入cmd回车即可）  
 * 先运行命令：“conda activate sas”  
 * 再运行命令：“python main.py”  
-  
-# 软件配置  
-当软件没检测到配置文件，会自动弹出配置窗口，配置如下：  
-* NoSql相关  
-> 如果按默认安装，不需要改。否则根据实际情况修改mongodb配置。  
-* Ts Token  
-> 如果不需要更新可以随便乱填，需要更新的话：  
-> 注册一个tushare的账号：https://tushare.pro/register?reg=271027  
-> 想办法获取500以上的积分（如果没有，无法更新数据，但可以使用离线数据）：https://tushare.pro/document/1?doc_id=13  
-> 获取你的token并填入配置界面：https://tushare.pro/document/1?doc_id=39  
-* MongoDB Bin  
-> 只和导入导出有关，选择本机的MongoDB的bin文件目录（默认目录大同小异，一般只是版本号不同）  
-> 从度盘下载离线数据（当前代码选择2.0的数据，唯一区别就是日数据每股一个表还是全部存在一个表中）并解压  
-> 挨个选择目录导入（StockAnalysisSystem，StockDaily，SasCache；顺序无关，后两个可选）  
-> 导入时下方会显示导入进度，如果没反映，请检查MongoDB目录是否正确  
-* Proxy  
-> 只是为了我使用方便，没有的话就别管了  
-* 以上步骤都做完后，建议重新程序（非必须），或手动刷新一下列表  
   
 # 联系作者
 如果有任何意见及建议，或者对此项目感兴趣的，请联系我：  
@@ -112,8 +116,6 @@ QQ群：931499339，进群验证码：SleepySoft
 ----------------------------------------------------------------------------------------------------------------------
   
 # 开发计划：
-  
-* 将UI和服务分离  
   
 * 接入更多数据  
 > 限售股解禁: https://tushare.pro/document/2?doc_id=160  
