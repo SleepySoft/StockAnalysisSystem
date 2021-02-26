@@ -78,6 +78,18 @@ class ResourceManager:
             res: ResourceManager.Resource = self.__get_resource(res_id)
             return res.data(k) if res is not None else None
 
+    def renew_resource(self, res_id: str, sec: int):
+        with self.__resource_lock:
+            res: ResourceManager.Resource = self.__get_resource(res_id)
+            if res is not None:
+                res.renew(sec)
+
+    def set_resource_expired_after(self, res_id: str, expired_sec: int):
+        with self.__resource_lock:
+            res: ResourceManager.Resource = self.__get_resource(res_id)
+            if res is not None:
+                res.expired_time = expired_sec
+
     def set_resource_tags(self, res_id: str, tags: [str]):
         with self.__resource_lock:
             res: ResourceManager.Resource = self.__get_resource(res_id)

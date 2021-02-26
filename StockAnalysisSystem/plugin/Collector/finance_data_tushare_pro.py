@@ -346,9 +346,9 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-# For the sake of "抱歉，您每分钟最多访问该接口60次"
+# For the sake of "抱歉，您每分钟最多访问该接口50次"
 
-delayer = Delayer(1000)
+delayer = Delayer(60 * 1000 // 50)
 
 
 def __fetch_finance_data(**kwargs) -> pd.DataFrame:
@@ -372,16 +372,16 @@ def __fetch_finance_data(**kwargs) -> pd.DataFrame:
         clock = Clock()
         delayer.delay()
         if uri == 'Finance.Audit':
-            # Score 500; Update Na; No limit;
+            # 抱歉，您每分钟最多访问该接口50次
             result = pro.fina_audit(ts_code=ts_code, start_date=ts_since, end_date=ts_until, fields=field_joined)
         elif uri == 'Finance.BalanceSheet':
-            # Score 500; Update Na; No limit;
+            # 抱歉，您每分钟最多访问该接口50次
             result = pro.balancesheet(ts_code=ts_code, start_date=ts_since, end_date=ts_until, fields=field_joined)
         elif uri == 'Finance.IncomeStatement':
-            # Score 500; Update Na; No limit;
+            # 抱歉，您每分钟最多访问该接口50次
             result = pro.income(ts_code=ts_code, start_date=ts_since, end_date=ts_until, fields=field_joined)
         elif uri == 'Finance.CashFlowStatement':
-            # Score 500; Update Na; No limit;
+            # 抱歉，您每分钟最多访问该接口50次
             result = pro.cashflow(ts_code=ts_code, start_date=ts_since, end_date=ts_until, fields=field_joined)
         else:
             result = None

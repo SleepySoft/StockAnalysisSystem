@@ -195,7 +195,7 @@ def __fetch_trade_calender(**kwargs) -> pd.DataFrame or None:
     return result
 
 
-delay_naming_history = Delayer(60 * 1000 // 200)
+delay_naming_history = Delayer(60 * 1000 // 100)
 
 
 def __fetch_naming_history(**kwargs):
@@ -210,7 +210,7 @@ def __fetch_naming_history(**kwargs):
 
         pro = ts.pro_api(TS_TOKEN)
         
-        # 抱歉，您每分钟最多访问该接口200次
+        # 抱歉，您每分钟最多访问该接口100次
         delay_naming_history.delay()
         result = pro.namechange(ts_code=ts_code, start_date=ts_since, end_date=ts_until,
                                 fields='ts_code,name,start_date,end_date,ann_date,change_reason')
