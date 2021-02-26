@@ -12,6 +12,9 @@ class ResourceTask(TaskQueue.Task):
         self.__resource_id = resource_manager.allocate_resource(
             task_name, master=self, progress=self.__progress, result=None)
 
+        # A long long time for expired
+        resource_manager.renew_resource(self.__resource_id, 2 * 24 * 60 * 60)
+
         super(ResourceTask, self).__init__(task_name)
 
     def finished(self) -> bool:
@@ -31,6 +34,8 @@ class ResourceTask(TaskQueue.Task):
         self.__result = result
         self.__resource_manager.set_resource(
             self.__resource_id, ResourceManager.RESOURCE_RESULT, result)
+        # After task finished, it will be expired after 2 hours.
+        self.__resource_manager.set_resource_expired_after(2 * 60 * 60)
 
     # -------------- Must Override --------------
 
