@@ -181,6 +181,7 @@ class AnalyzerUi(QWidget):
         # self.task_finish_signal.connect(self.__on_task_done)
 
         # self.__task_res_id = []
+        self.__first_post_update = True
         self.__current_update_task = None
 
         # Timer for update status
@@ -368,22 +369,21 @@ class AnalyzerUi(QWidget):
         self.execute_update()
 
     def on_timer(self):
-        if self.__current_update_task is None or not self.__current_update_task.working():
+        if self.__current_update_task is None or self.__current_update_task.working():
             return
 
         total_progress = ProgressRate()
         updater: ResourceTagUpdater = self.__current_update_task.get_updater()
         updated_res_id = updater.get_resource_ids()
 
+        done_progress = []
         for res_id in updated_res_id:
             progress: ProgressRate = updater.get_resource(res_id, 'progress')
             if progress is None:
                 continue
             total_progress.combine_with(progress)
             if progress.progress_done():
-                # TODO:
-                pass
-                # self.__context.get_res_sync().remove_sync_resource(res_id)
+                done_progress.append(res_id)
 
         for i in range(self.__table_analyzer.RowCount()):
             uuid = self.__table_analyzer.GetItemText(i, 3)
@@ -394,12 +394,15 @@ class AnalyzerUi(QWidget):
                 self.__table_analyzer.SetItemText(i, 4, '')
 
         if len(updated_res_id) > 0:
-            if not total_progress.progress_done():
+            if len(done_progress) != len(updated_res_id):
                 self.post_progress_updater()
             else:
-                self.__context.get_sas_interface().sas_delete_resource()
+                self.__context.get_sas_interface().sas_delete_resource(done_progress)
                 self.__current_update_task = None
-                self.__on_analysis_done()
+                # If progress done at process startup, do not pop up message box
+                if not self.__first_post_update:
+                    self.__on_analysis_done()
+                self.__first_post_update = False
 
     # def closeEvent(self, event):
     #     if self.__task_thread is not None:
