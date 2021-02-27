@@ -121,16 +121,13 @@ def __fetch_securities_info(**kwargs) -> pd.DataFrame or None:
     return result
 
 
-delay_stock_concept = Delayer(60 * 1000 // 100)
-
-
 def __fetch_stock_concept(**kwargs) -> pd.DataFrame or None:
     result = check_execute_test_flag(**kwargs)
     if result is None:
         ts_code = pickup_ts_code(kwargs)
         pro = ts.pro_api(TS_TOKEN)
         # 抱歉，您每分钟最多访问该接口100次
-        delay_stock_concept.delay()
+        ts_delay('concept_detail')
         result = pro.concept_detail(ts_code=ts_code, fields=[
             'id', 'concept_name', 'ts_code', 'name', 'in_date', 'out_date'])
     check_execute_dump_flag(result, **kwargs)
@@ -195,9 +192,6 @@ def __fetch_trade_calender(**kwargs) -> pd.DataFrame or None:
     return result
 
 
-delay_naming_history = Delayer(60 * 1000 // 100)
-
-
 def __fetch_naming_history(**kwargs):
     result = check_execute_test_flag(**kwargs)
     if result is None:
@@ -211,7 +205,7 @@ def __fetch_naming_history(**kwargs):
         pro = ts.pro_api(TS_TOKEN)
         
         # 抱歉，您每分钟最多访问该接口100次
-        delay_naming_history.delay()
+        ts_delay('namechange')
         result = pro.namechange(ts_code=ts_code, start_date=ts_since, end_date=ts_until,
                                 fields='ts_code,name,start_date,end_date,ann_date,change_reason')
     check_execute_dump_flag(result, **kwargs)

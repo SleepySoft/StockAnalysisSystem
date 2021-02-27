@@ -77,9 +77,6 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-delayer = Delayer(1200)
-
-
 def __fetch_stock_holder_data(**kwargs) -> pd.DataFrame:
     uri = kwargs.get('uri')
     result = check_execute_test_flag(**kwargs)
@@ -119,10 +116,11 @@ def __fetch_stock_holder_data(**kwargs) -> pd.DataFrame:
         #             result.append(result)
 
         clock = Clock()
-        delayer.delay()
         if uri == 'Stockholder.PledgeStatus':
+            ts_delay('pledge_stat')
             result = pro.pledge_stat(ts_code=ts_code)
         elif uri == 'Stockholder.PledgeHistory':
+            ts_delay('pledge_detail')
             result = pro.pledge_detail(ts_code=ts_code)
         else:
             result = None
@@ -153,10 +151,6 @@ def __fetch_stock_holder_data(**kwargs) -> pd.DataFrame:
     return result
 
 
-# stk_holdernumber() : 100 times per 1 min
-delayer_stock_holder_statistics = Delayer(600)
-
-
 def __fetch_stock_holder_statistics_piece(**kwargs) -> pd.DataFrame or None:
     uri = kwargs.get('uri')
     result = check_execute_test_flag(**kwargs)
@@ -175,9 +169,13 @@ def __fetch_stock_holder_statistics_piece(**kwargs) -> pd.DataFrame or None:
         ts_since = since.strftime('%Y%m%d')
         ts_until = until.strftime('%Y%m%d')
 
-        delayer_stock_holder_statistics.delay()
+        ts_delay('stk_holdernumber')
         result_count = pro.stk_holdernumber(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
+
+        ts_delay('top10_holders')
         result_top10 = pro.top10_holders(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
+
+        ts_delay('top10_floatholders')
         result_top10_nt = pro.top10_floatholders(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
 
         # 002978.SZ
@@ -297,9 +295,11 @@ def __fetch_stock_holder_statistics_full(**kwargs) -> pd.DataFrame or None:
             sub_since, sub_until = time_iter.iter_years(2.4)
             ts_since = sub_since.strftime('%Y%m%d')
             ts_until = sub_until.strftime('%Y%m%d')
-            delayer.delay()
 
+            ts_delay('top10_holders')
             result_top10_part = pro.top10_holders(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
+
+            ts_delay('top10_floatholders')
             result_top10_nt_part = pro.top10_floatholders(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
 
             result_top10 = pd.concat([result_top10, result_top10_part])
@@ -337,9 +337,6 @@ def __fetch_stock_holder_statistics_full(**kwargs) -> pd.DataFrame or None:
     return result
 
 
-delayer_stock_holder_reduction_increase = Delayer(60 * 1000 / 100)
-
-
 def __fetch_stock_holder_reduction_increase_full(**kwargs) -> pd.DataFrame or None:
     uri = kwargs.get('uri')
     result = check_execute_test_flag(**kwargs)
@@ -361,7 +358,7 @@ def __fetch_stock_holder_reduction_increase_full(**kwargs) -> pd.DataFrame or No
             ts_until = sub_until.strftime('%Y%m%d')
 
             # 抱歉，您每分钟最多访问该接口100次
-            delayer_stock_holder_reduction_increase.delay()
+            ts_delay('stk_holdertrade')
             result_part = pro.stk_holdertrade(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
             result = result_part if result is None else pd.concat([result, result_part], axis=0, ignore_index=True)
             result.reindex()

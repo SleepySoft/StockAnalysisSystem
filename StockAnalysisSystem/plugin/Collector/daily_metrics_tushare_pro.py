@@ -55,9 +55,6 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-ts_daily_delay = Delayer(int(60 * 1000 / 500))
-
-
 def __fetch_stock_metrics_daily(**kwargs) -> pd.DataFrame:
     uri = kwargs.get('uri')
     result = check_execute_test_flag(**kwargs)
@@ -80,8 +77,9 @@ def __fetch_stock_metrics_daily(**kwargs) -> pd.DataFrame:
             # 500 times per 1 min, do not need delay.
             clock = Clock()
 
-            ts_daily_delay.delay()
             # Score 300; Update 15:00 ~ 17:00; No limit;
+            ts_delay('daily_basic')
+
             if str_available(ts_code):
                 result_metrics = pro.daily_basic(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
             else:
