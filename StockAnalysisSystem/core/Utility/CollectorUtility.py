@@ -4,6 +4,46 @@ from os import path
 from .common import *
 from .time_utility import *
 
+
+# Tushare access limit, as fetch times per minute.
+# If fetch data from tushare gets error message like: "抱歉，您每分钟最多访问该接口x次"
+# Fill the x to the corresponding entry of this table
+
+TS_DELAYER_TABLE = {
+    'daily_basic':          DelayerMinuteLimit(500),
+    'fina_mainbz':          DelayerMinuteLimit(60),
+
+    'fina_audit':           DelayerMinuteLimit(50),
+    'balancesheet':         DelayerMinuteLimit(50),
+    'income':               DelayerMinuteLimit(50),
+    'cashflow':             DelayerMinuteLimit(50),
+
+    'index_daily':          DelayerMinuteLimit(500),
+    'daily_index':          DelayerMinuteLimit(500),
+
+    'concept_detail':       DelayerMinuteLimit(100),
+    'namechange':           DelayerMinuteLimit(100),
+
+    'pledge_stat':          DelayerMinuteLimit(1200),
+    'pledge_detail':        DelayerMinuteLimit(1200),
+
+
+    'stk_holdernumber':     DelayerMinuteLimit(10),
+    'top10_holders':        DelayerMinuteLimit(10),
+    'top10_floatholders':   DelayerMinuteLimit(10),
+    'stk_holdertrade':      DelayerMinuteLimit(100),
+
+    'daily':                DelayerMinuteLimit(1200),
+    'adj_factor':           DelayerMinuteLimit(1200),
+}
+
+
+def ts_delay(ts_interface: str):
+    delayer = TS_DELAYER_TABLE.get(ts_interface)
+    if delayer is not None:
+        delayer.delay()
+
+
 root_path = path.dirname(path.dirname(path.abspath(__file__)))
 
 

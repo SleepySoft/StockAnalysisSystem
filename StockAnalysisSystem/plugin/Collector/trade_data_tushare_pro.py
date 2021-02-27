@@ -52,9 +52,6 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-ts_daily_delay = Delayer(int(60 * 1000 / 500))
-
-
 def __fetch_trade_data_daily_range(uri: str, ts_code: str,
                                    since: datetime.datetime, until: datetime.datetime) -> pd.DataFrame:
     pro = ts.pro_api(TS_TOKEN)
@@ -71,10 +68,11 @@ def __fetch_trade_data_daily_range(uri: str, ts_code: str,
 
         # Score: Na; Update 15:00 ~ 16:00; 500 queries per one min, 5000 data per one time;
         # Score: 5000 - No limit.
-        ts_daily_delay.delay()
+        ts_delay('daily')
         result_daily = pro.daily(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
         # Score: Na; Update: 09:30; No limit
         # Note that the adjust factor can not be fetched by slice
+        ts_delay('adj_factor')
         result_adjust = pro.adj_factor(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
         # Score 300; Update 15:00 ~ 17:00; No limit;
         # result_index = pro.daily_basic(ts_code=ts_code, start_date=ts_since, end_date=ts_until)

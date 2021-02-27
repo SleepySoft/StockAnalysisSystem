@@ -33,9 +33,12 @@ https://github.com/SleepySoft/StockAnalysisSystem
   
 已知问题：  
 * 本次改动比较大（指ui和sas的接口，内部结构并未变化），而数据源也有所改变，故问题可能较多。欢迎大家提出bug，使程序更加完善。多谢。  
-* 界面对更新进度显示有误，服务器仍在更新，但界面有可能显示更新完成（我看看怎么修）。  
 * 无法获得服务器状态，故ui无法展示服务器配置错误等状态（接口预留，待加功能）。  
-* 暂时移除每日自动更新服务（调试中）  
+* 暂时移除每日自动增量更新子服务（调试中）  
+* 暂时不发布新的离线数据，因为ts积分到期，各个接口的延时调到吐血，实在太慢了。  
+> 请大家用我的分享链接注册tushare从而可以增加我的积分：https://tushare.pro/register?reg=271027  
+> 求积分大佬分享一下token
+> 后续加入其它数据源  
 * Stock Memo功能可能还有问题（边用边调）  
 * 具体功能文档尚不完善（喘口气，慢慢完善）。  
 * 网盘可能会被举报失效（莫名其妙）。  
@@ -70,7 +73,15 @@ https://github.com/SleepySoft/StockAnalysisSystem
 ------------------------------------------------------------  
 * 以后运行只需要打开cmd并切换到代码目录（一个简单的方法，用文件管理器打开代码目录，在上方的地址栏直接输入cmd回车即可）  
 * 先运行命令：“conda activate sas”  
-* 再运行命令：“python main.py”  
+* 再运行命令：“python main_service.py”和“python main.py”  
+  
+## 如何更新数据  
+* 在配置文件中填入你的Ts Token  
+> 如果不需要更新可以随便乱填，需要更新的话：  
+> 注册一个tushare的账号：https://tushare.pro/register?reg=271027  
+> 想办法获取500以上的积分（如果没有，无法更新数据，但可以使用离线数据）：https://tushare.pro/document/1?doc_id=13  
+* 根据你的权限修改StockAnalysisSystem\core\Utility\CollectorUtility.py中的TS_DELAYER_TABLE  
+* 启动程序，勾选需要更新的数据并点击更新按钮  
   
 # 联系作者
 如果有任何意见及建议，或者对此项目感兴趣的，请联系我：  

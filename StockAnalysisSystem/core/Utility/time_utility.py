@@ -240,6 +240,14 @@ class Delayer:
         self.__clock.reset()
 
 
+class DelayerMinuteLimit(Delayer):
+    """
+    Use the class to create minute limitation delayer
+    """
+    def __init__(self, limit_per_min: int):
+        super(DelayerMinuteLimit, self).__init__(60 * 1000 // limit_per_min)
+
+
 # -------------------------------------------------- DateTimeIterator --------------------------------------------------
 
 class DateTimeIterator:

@@ -67,6 +67,7 @@ def __fetch_index_data_daily(**kwargs) -> pd.DataFrame:
             ts_until = sub_until.strftime('%Y%m%d')
 
             clock = Clock()
+            ts_delay('index_daily')
             sub_result = pro.index_daily(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
             print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
 
