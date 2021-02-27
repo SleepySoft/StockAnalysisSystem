@@ -9,12 +9,12 @@ https://github.com/SleepySoft/StockAnalysisSystem
   
 # 网盘下载：  
 应网友要求，对于网络访问受限的用户，提供网盘下载（离线数据同样在此下载）：  
-链接: https://pan.baidu.com/s/1LJ11m5nHkaknQXqHSzdLMA  
-提取码: 8871  
+链接: https://pan.baidu.com/s/10UFeRCD3j39ndNh3I3qjog  
+提取码: tcct  
   
 # 最近更新内容： 
 将访问接口扩展为sasApi和sasInterface，并将界面与服务彻底分离  
-如果想使用之前一体式的版本（不会更新），请checkout One-Piece  
+如果想使用之前一体式的版本（今后不再更新），请checkout One-Piece分支  
   
 如何运行:  
 * 环境准备看下面  
