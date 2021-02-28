@@ -88,7 +88,7 @@ class ResourceManager:
         with self.__resource_lock:
             res: ResourceManager.Resource = self.__get_resource(res_id)
             if res is not None:
-                res.expired_time = expired_sec
+                res.expired_time = self.__now() + expired_sec
 
     def set_resource_tags(self, res_id: str, tags: [str]):
         with self.__resource_lock:
@@ -121,10 +121,10 @@ class ResourceManager:
         if self.__next_expired_check == 0:
             self.__next_expired_check = now_time
         elif self.__next_expired_check < now_time:
-            keys = self.__resource_table.keys()
+            keys = list(self.__resource_table.keys())
             for k in keys:
-                v = self.__resource_table.get(k)
-                if v.expired_time < now_time:
+                v = self.__resource_table.get(k, None)
+                if v is not None and v.expired_time < now_time:
                     del self.__resource_table[k]
             self.__next_expired_check = now_time + 10
 

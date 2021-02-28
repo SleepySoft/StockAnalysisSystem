@@ -245,7 +245,8 @@ class DelayerMinuteLimit(Delayer):
     Use the class to create minute limitation delayer
     """
     def __init__(self, limit_per_min: int):
-        super(DelayerMinuteLimit, self).__init__(60 * 1000 // limit_per_min)
+        delay = 60 * 1000 // limit_per_min if limit_per_min > 0 else 0
+        super(DelayerMinuteLimit, self).__init__(delay)
 
 
 # -------------------------------------------------- DateTimeIterator --------------------------------------------------
