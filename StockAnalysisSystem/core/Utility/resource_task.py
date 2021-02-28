@@ -35,7 +35,7 @@ class ResourceTask(TaskQueue.Task):
         self.__resource_manager.set_resource(
             self.__resource_id, ResourceManager.RESOURCE_RESULT, result)
         # After task finished, it will be expired after 2 hours.
-        self.__resource_manager.set_resource_expired_after(2 * 60 * 60)
+        self.__resource_manager.set_resource_expired_after(self.__resource_id, 2 * 60 * 60)
 
     # -------------- Must Override --------------
 

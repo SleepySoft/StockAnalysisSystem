@@ -8,33 +8,34 @@ from .time_utility import *
 # Tushare access limit, as fetch times per minute.
 # If fetch data from tushare gets error message like: "抱歉，您每分钟最多访问该接口x次"
 # Fill the x to the corresponding entry of this table
+# This config is for 5000 scores. The number in comments is for 2000 or less.
 
 TS_DELAYER_TABLE = {
-    'daily_basic':          DelayerMinuteLimit(500),
-    'fina_mainbz':          DelayerMinuteLimit(60),
+    'daily_basic':          DelayerMinuteLimit(0),          # 500
+    'fina_mainbz':          DelayerMinuteLimit(0),          # 60
 
-    'fina_audit':           DelayerMinuteLimit(50),
-    'balancesheet':         DelayerMinuteLimit(50),
-    'income':               DelayerMinuteLimit(50),
-    'cashflow':             DelayerMinuteLimit(50),
+    'fina_audit':           DelayerMinuteLimit(0),          # 50
+    'balancesheet':         DelayerMinuteLimit(0),          # 50
+    'income':               DelayerMinuteLimit(0),          # 50
+    'cashflow':             DelayerMinuteLimit(0),          # 50
 
-    'index_daily':          DelayerMinuteLimit(500),
-    'daily_index':          DelayerMinuteLimit(500),
+    'index_daily':          DelayerMinuteLimit(0),          # 500
+    'daily_index':          DelayerMinuteLimit(0),          # 500
 
-    'concept_detail':       DelayerMinuteLimit(100),
-    'namechange':           DelayerMinuteLimit(100),
+    'concept_detail':       DelayerMinuteLimit(0),          # 100
+    'namechange':           DelayerMinuteLimit(0),          # 100
 
-    'pledge_stat':          DelayerMinuteLimit(1200),
-    'pledge_detail':        DelayerMinuteLimit(1200),
+    'pledge_stat':          DelayerMinuteLimit(0),          # 1200
+    'pledge_detail':        DelayerMinuteLimit(0),          # 1200
 
 
-    'stk_holdernumber':     DelayerMinuteLimit(10),
-    'top10_holders':        DelayerMinuteLimit(10),
-    'top10_floatholders':   DelayerMinuteLimit(10),
-    'stk_holdertrade':      DelayerMinuteLimit(100),
+    'stk_holdernumber':     DelayerMinuteLimit(0),          # 10
+    'top10_holders':        DelayerMinuteLimit(0),          # 10
+    'top10_floatholders':   DelayerMinuteLimit(0),          # 10
+    'stk_holdertrade':      DelayerMinuteLimit(0),          # 100
 
-    'daily':                DelayerMinuteLimit(1200),
-    'adj_factor':           DelayerMinuteLimit(1200),
+    'daily':                DelayerMinuteLimit(0),          # 1200
+    'adj_factor':           DelayerMinuteLimit(0),          # 1200
 }
 
 
