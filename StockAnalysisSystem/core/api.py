@@ -63,6 +63,10 @@ def root_path() -> str:
     return sas().get_root_path()
 
 
+def project_path() -> str:
+    return sas.get_project_path()
+
+
 def append_task(task: TaskQueue.Task):
     sas().get_task_queue().append_task(task)
 

@@ -22,8 +22,12 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         self.__quit_lock = 0
         self.__log_errors = []
 
+        # Root path is the contain folder of "core" folder
         self.__root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        self.__project_path = self.__root_path
+
+        # Project is the work path of sas service. All the file load/dump/generate operation are default in this path.
+        # Project path is the parent path of the root path by default, which is the root path of this project.
+        self.__project_path = os.path.dirname(self.__root_path)
 
         self.__config = None
         self.__task_queue = TaskQueue()
@@ -48,8 +52,13 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
     def get_project_path(self) -> str:
         return self.__project_path
 
-    def set_project_path(self, root_path: str):
-        self.__project_path = root_path
+    def set_project_path(self, project_path: str):
+        """
+        Must config project path before check_initialize()
+        :param project_path: The project path.
+        :return: None
+        """
+        self.__project_path = project_path
 
     # ---------------------------------------- Config ----------------------------------------
 
