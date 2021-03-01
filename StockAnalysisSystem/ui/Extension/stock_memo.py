@@ -344,7 +344,10 @@ class StockMemoDeck(QWidget):
             #         black_list_securities = black_list.all_black_list()
             if self.__sas_if is not None:
                 black_list_securities = self.__sas_if.all_black_list()
-                self.__show_securities = list(set(self.__show_securities).difference(set(black_list_securities)))
+                if black_list_securities is not None:
+                    self.__show_securities = list(set(self.__show_securities).difference(set(black_list_securities)))
+                else:
+                    pass
 
     def __memo_table_columns(self) -> [str]:
         return StockMemoDeck.STATIC_HEADER + [memo_extra.title_text()

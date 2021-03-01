@@ -219,10 +219,10 @@ class SasAnalysisTask(ResourceTask):
                 enable_update_cache=self.__extra_params.get('enable_update_cache', True),
                 debug_load_json=self.__extra_params.get('debug_load_json', False),
                 debug_dump_json=self.__extra_params.get('debug_dump_json', False),
-                dump_path=os.path.join(sasApi.root_path(), 'TestData'),
+                dump_path=os.path.join(sasApi.project_path(), 'TestData'),
 
                 # Note that the dump path can be specified by ui, which may have risks
-                # dump_path=self.__extra_params.get('dump_path', sasApi.root_path()),
+                # dump_path=self.__extra_params.get('dump_path', sasApi.project_path()),
             )
         except Exception as e:
             total_result = []
@@ -294,7 +294,7 @@ class SasAnalysisTask(ResourceTask):
 
     def gen_report(self, result_list: [AnalysisResult], stock_metrics: pd.DataFrame or None):
         clock = Clock()
-        report_path = os.path.join(sasApi.root_path(), 'analysis_report.xlsx')
+        report_path = os.path.join(sasApi.project_path(), 'analysis_report.xlsx')
         self.__strategy.generate_report_excel_common(result_list, report_path, stock_metrics)
         print('Generate report time spending: %ss' % str(clock.elapsed_s()))
 
