@@ -126,11 +126,18 @@ class StrategyEntry:
             if debug_load_json:
                 # DEBUG: Load result from json file
                 clock.reset()
-                with open(path.join(dump_path, analyzer + '.json'), 'rt') as f:
-                    result = analysis_results_from_json(f)
-                if result is not None and len(result) > 0:
-                    total_result.extend(result)
-                print('Analyzer %s : Load json finished, time spending: %ss' % (analyzer, clock.elapsed_s()))
+                try:
+                    with open(path.join(dump_path, analyzer + '.json'), 'rt') as f:
+                        result = analysis_results_from_json(f)
+                    if result is not None and len(result) > 0:
+                        total_result.extend(result)
+                    print('Analyzer %s : Load json finished, time spending: %ss' % (analyzer, clock.elapsed_s()))
+                except Exception as e:
+                    print('Analyzer load from json fail. Continue...')
+                    print(e)
+                    print(traceback.format_exc())
+                finally:
+                    pass
             else:
                 if enable_from_cache:
                     df = self.result_from_cache('Result.Analyzer', analyzer=analyzer,

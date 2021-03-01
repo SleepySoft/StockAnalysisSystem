@@ -507,7 +507,7 @@ class AnalyzerUi(QWidget):
             securities, self.__analyzer_list, time_serial,
             enable_from_cache=not self.__check_force_calc.isChecked(),
             enable_update_cache=self.__check_auto_cache.isChecked(),
-            debug_load_json=self.__check_load_json.isChecked() or self.__check_load_dump_all.isChecked(),
+            debug_load_json=self.__check_load_json.isChecked(),
             debug_dump_json=self.__check_dump_json.isChecked() or self.__check_load_dump_all.isChecked(),
             dump_path=self.__result_output,
             attach_basic_index=self.__check_attach_basic_index.isChecked(),
