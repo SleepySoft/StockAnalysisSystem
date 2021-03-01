@@ -212,17 +212,25 @@ class SasAnalysisTask(ResourceTask):
     # -----------------------------------------------------------------------------
 
     def analysis(self, securities_list: [str]) -> [AnalysisResult]:
-        total_result = self.__strategy.analysis_advance(
-            securities_list, self.__analyzer_list, self.__time_serial, self.progress(),
-            enable_from_cache=self.__enable_from_cache,
-            enable_update_cache=self.__extra_params.get('enable_update_cache', True),
-            debug_load_json=self.__extra_params.get('debug_load_json', False),
-            debug_dump_json=self.__extra_params.get('debug_dump_json', False),
-            dump_path=os.path.join(sasApi.root_path(), 'TestData'),
+        try:
+            total_result = self.__strategy.analysis_advance(
+                securities_list, self.__analyzer_list, self.__time_serial, self.progress(),
+                enable_from_cache=self.__enable_from_cache,
+                enable_update_cache=self.__extra_params.get('enable_update_cache', True),
+                debug_load_json=self.__extra_params.get('debug_load_json', False),
+                debug_dump_json=self.__extra_params.get('debug_dump_json', False),
+                dump_path=os.path.join(sasApi.root_path(), 'TestData'),
 
-            # Note that the dump path can be specified by ui, which may have risks
-            # dump_path=self.__extra_params.get('dump_path', sasApi.root_path()),
-        )
+                # Note that the dump path can be specified by ui, which may have risks
+                # dump_path=self.__extra_params.get('dump_path', sasApi.root_path()),
+            )
+        except Exception as e:
+            total_result = []
+            print('Analysis error: ')
+            print(e)
+            print(traceback.format_exc())
+        finally:
+            self.progress().finish_progress(self.progress().get_all_identities())
         return total_result
 
     def selected_securities(self) -> [str]:
