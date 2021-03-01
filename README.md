@@ -8,9 +8,18 @@ https://gitee.com/SleepySoft/StockAnalysisSystem
 https://github.com/SleepySoft/StockAnalysisSystem  
   
 # 网盘下载：  
-应网友要求，对于网络访问受限的用户，提供网盘下载（离线数据同样在此下载）：  
-链接: https://pan.baidu.com/s/10UFeRCD3j39ndNh3I3qjog  
-提取码: tcct  
+应网友要求，对于网络访问受限的用户，提供网盘下载：  
+* 离线数据  
+链接：https://pan.baidu.com/s/1ejiijSrFA0-ZIks_jmNgtw  
+提取码：qxj9  
+  
+* 十年年报  
+链接：https://pan.baidu.com/s/1bnjnlrwO4bekT7CpfvfteA  
+提取码：x3zt  
+  
+* 软件及工具  
+链接：https://pan.baidu.com/s/1p9psTFIdQc3nbEORTzSxyw  
+提取码：y3yv  
   
 # 最近更新内容： 
 将访问接口扩展为sasApi和sasInterface，并将界面与服务彻底分离  
@@ -35,7 +44,6 @@ https://github.com/SleepySoft/StockAnalysisSystem
 * 本次改动比较大（指ui和sas的接口，内部结构并未变化），而数据源也有所改变，故问题可能较多。欢迎大家提出bug，使程序更加完善。多谢。  
 * 无法获得服务器状态，故ui无法展示服务器配置错误等状态（接口预留，待加功能）。  
 * 暂时移除每日自动增量更新子服务（调试中）  
-* 稍后发布离线数据  
 * Stock Memo功能可能还有问题（边用边调）  
 * 具体功能文档尚不完善（喘口气，慢慢完善）。  
 * 网盘可能会被举报失效（莫名其妙）。  
@@ -79,6 +87,20 @@ https://github.com/SleepySoft/StockAnalysisSystem
 > 想办法获取500以上的积分（如果没有，无法更新数据，但可以使用离线数据）：https://tushare.pro/document/1?doc_id=13  
 * 根据你的权限修改StockAnalysisSystem\core\Utility\CollectorUtility.py中的TS_DELAYER_TABLE  
 * 启动程序，勾选需要更新的数据并点击更新按钮  
+  
+## 如何导入离线数据  
+* 下载离线数据并解压到当前目录，得到offline_data文件夹一个（约7G）  
+* 方法1：  
+> 在安装数据库的机器上打开界面，选择Config->系统配置  
+> 选择正确的MongoBin目录，如C:\Program Files\MongoDB\Server\4.x\bin  
+> 点击Import，选择offline_data下你需要导入的数据库（每个都导入一次）  
+  
+* 方法2：  
+> 使用命令行切换到offline_data目录下  
+> 运行命令："C:\Program Files\MongoDB\Server\4.2\bin\mongorestore.exe" --host 127.0.0.1 --port 27017 -d StockAnalysisSystem StockAnalysisSystem  
+> 注意：其中mongorestore.exe按实际情况选择目录；除StockAnalysisSystem外还需要分别导入SasCache和StockDaily，命令同理  
+  
+* 如果你的数据库有密码，请自行查阅命令手动导入  
   
 # 联系作者
 如果有任何意见及建议，或者对此项目感兴趣的，请联系我：  
