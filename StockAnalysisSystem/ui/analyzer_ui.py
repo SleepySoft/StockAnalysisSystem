@@ -181,7 +181,6 @@ class AnalyzerUi(QWidget):
         # self.task_finish_signal.connect(self.__on_task_done)
 
         # self.__task_res_id = []
-        self.__first_post_update = True
         self.__current_update_task = None
 
         # Timer for update status
@@ -400,9 +399,7 @@ class AnalyzerUi(QWidget):
                 self.__context.get_sas_interface().sas_delete_resource(done_progress)
                 self.__current_update_task = None
                 # If progress done at process startup, do not pop up message box
-                if not self.__first_post_update:
-                    self.__on_analysis_done()
-                self.__first_post_update = False
+                self.__on_analysis_done()
 
     # def closeEvent(self, event):
     #     if self.__task_thread is not None:
