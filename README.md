@@ -8,8 +8,13 @@ https://gitee.com/SleepySoft/StockAnalysisSystem
 https://github.com/SleepySoft/StockAnalysisSystem  
   
 # 网盘下载：  
-应网友要求，对于网络访问受限的用户，提供网盘下载：  
+应网友要求，对于网络访问受限的用户，提供网盘下载： 
+   
+* 根目录  
+链接: https://pan.baidu.com/s/1trY6GJ_ixj3ulXDA2JIGRg  
+提取码: 4d9f  
 * 离线数据  
+  
 链接：https://pan.baidu.com/s/1ejiijSrFA0-ZIks_jmNgtw  
 提取码：qxj9  
   
