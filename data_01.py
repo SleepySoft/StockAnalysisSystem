@@ -70,8 +70,6 @@ from StockAnalysisSystem.core.Utility.plugin_manager import PluginManager
 
 udc = UniversalDataCenter(DatabaseEntry(), PluginManager())
 
-
-
 # StockAnalysisSystem/core/Database/NoSqlRw.py
 from StockAnalysisSystem.core.Database import NoSqlRw
 
