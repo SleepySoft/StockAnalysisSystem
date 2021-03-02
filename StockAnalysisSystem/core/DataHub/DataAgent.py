@@ -117,8 +117,10 @@ class DataAgent:
                  uri: str, depot: DepotInterface,
                  identity_field: str or None = 'Identity',
                  datetime_field: str or None = 'DateTime',
+                 data_duration: int = DATA_DURATION_QUARTER,
                  merge_strategy: int = MERGE_UPSERT,
                  update_priority: int = PRIORITY_NORMAL,
+                 update_list=DataAgentUtility.a_stock_list,
                  **kwargs):
         """
         If you specify both identity_field and datetime_field, the combination will be the primary key. Which means
