@@ -238,7 +238,7 @@ def build_data_agent(database_entry: DatabaseEntry):
         # -------------------- Metrics and Factor - Daily --------------------
 
         DataAgent(
-            uri='Metrics.Stock.Daily',
+            uri='Metrics.Stock.Dailyyy',
             depot=DepotMongoDB(primary_keys=['stock_identity', 'trade_date'],
                                client=mongodb_client,
                                database='StockDaily',
@@ -279,14 +279,14 @@ def build_data_agent(database_entry: DatabaseEntry):
 
         DataAgent(
             uri='Example.Collector',
-            depot=DepotMongoDB(primary_keys=['id', 'time'],
+            depot=DepotMongoDB(primary_keys=['ibd', 'time2'],
                                client=mongodb_client,
                                database='TestDataBase',
                                data_table=uri_to_table('Example.Collector')),
-            identity_field='id',
-            datetime_field='time',
-            data_duration=DATA_DURATION_QUARTER,
-            update_priority=DataAgent.PRIORITY_NOT_UPDATE,
+            identity_field='ibd',
+            datetime_field='time2',
+            data_duration=DATA_DURATION_DAILY,
+            update_priority=DataAgent.PRIORITY_HIGHEST,
             update_list=lambda: ["StockA", "StockB", "StockC"],
         ),
 
