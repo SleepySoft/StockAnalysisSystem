@@ -276,6 +276,20 @@ def build_data_agent(database_entry: DatabaseEntry):
             data_duration=DATA_DURATION_QUARTER,
             update_priority=DataAgent.PRIORITY_NOT_UPDATE
         ),
+
+        DataAgent(
+            uri='Example.Collector',
+            depot=DepotMongoDB(primary_keys=['id', 'time'],
+                               client=mongodb_client,
+                               database='TestDataBase',
+                               data_table=uri_to_table('Example.Collector')),
+            identity_field='id',
+            datetime_field='time',
+            data_duration=DATA_DURATION_QUARTER,
+            update_priority=DataAgent.PRIORITY_NOT_UPDATE,
+            update_list=lambda: ["StockA", "StockB", "StockC"],
+        ),
+
     ]
 
 
