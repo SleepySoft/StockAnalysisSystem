@@ -1,6 +1,7 @@
 from .DataAgent import *
 from ..UniversalDataDepot.DepotMongoDB import *
 from ..Database.DatabaseEntry import DatabaseEntry
+from zs import data_get as dg
 
 
 def uri_to_table(uri: str) -> str:
@@ -277,18 +278,48 @@ def build_data_agent(database_entry: DatabaseEntry):
             update_priority=DataAgent.PRIORITY_NOT_UPDATE
         ),
 
+        # DataAgent(
+        #     uri='Example.Collector',
+        #     depot=DepotMongoDB(primary_keys=['id', 'time'],
+        #                        client=mongodb_client,
+        #                        database='TestDataBase',
+        #                        data_table=uri_to_table('Example.Collector')),
+        #     identity_field='id',
+        #     datetime_field='time',
+        #     data_duration=DATA_DURATION_DAILY,
+        #     update_priority=DataAgent.PRIORITY_HIGHEST,
+        #     update_list=lambda: ["StockA", "StockB", "StockC"],
+        # ),
+
         DataAgent(
-            uri='Example.Collector',
-            depot=DepotMongoDB(primary_keys=['ibd', 'time2'],
+            uri='股票回购',
+            depot=DepotMongoDB(primary_keys=[c for c in dg.TsData().repurchase_get_data()],
                                client=mongodb_client,
-                               database='TestDataBase',
-                               data_table=uri_to_table('Example.Collector')),
-            identity_field='ibd',
-            datetime_field='time2',
+                               database='股票回购',
+                               data_table=uri_to_table('股票回购')),
+            # identity_field=dg.TsData().column()[0],
+            # datetime_field=dg.TsData().column()[1],
+            identity_field=None,
+            datetime_field=None,
             data_duration=DATA_DURATION_DAILY,
             update_priority=DataAgent.PRIORITY_HIGHEST,
             update_list=lambda: ["StockA", "StockB", "StockC"],
         ),
+
+        DataAgent(
+                uri='限售股解禁',
+                depot=DepotMongoDB(primary_keys=[c for c in dg.TsData().share_float_get_data()],
+                                   client=mongodb_client,
+                                   database='限售股解禁',
+                                   data_table=uri_to_table('限售股解禁')),
+                # identity_field=dg.TsData().column()[0],
+                # datetime_field=dg.TsData().column()[1],
+                identity_field=None,
+                datetime_field=None,
+                data_duration=DATA_DURATION_DAILY,
+                update_priority=DataAgent.PRIORITY_HIGHEST,
+                update_list=lambda: ["StockA", "StockB", "StockC"],
+            ),
 
     ]
 
