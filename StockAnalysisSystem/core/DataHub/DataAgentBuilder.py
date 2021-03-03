@@ -1,7 +1,6 @@
 from .DataAgent import *
 from ..UniversalDataDepot.DepotMongoDB import *
 from ..Database.DatabaseEntry import DatabaseEntry
-from zs import data_get as dg
 
 
 def uri_to_table(uri: str) -> str:
@@ -239,7 +238,7 @@ def build_data_agent(database_entry: DatabaseEntry):
         # -------------------- Metrics and Factor - Daily --------------------
 
         DataAgent(
-            uri='Metrics.Stock.Dailyyy',
+            uri='Metrics.Stock.Daily',
             depot=DepotMongoDB(primary_keys=['stock_identity', 'trade_date'],
                                client=mongodb_client,
                                database='StockDaily',
@@ -279,7 +278,7 @@ def build_data_agent(database_entry: DatabaseEntry):
         ),
 
         DataAgent(
-            uri='Repurchase.Stock',
+            uri='Stockholder.Repurchase',
             depot=DepotMongoDB(primary_keys=['stock_identity', 'ann_date'],
                                client=mongodb_client,
                                database='StockAnalysisSystem',
@@ -292,7 +291,7 @@ def build_data_agent(database_entry: DatabaseEntry):
         ),
 
         DataAgent(
-            uri='Unlimit.Stock',
+            uri='Stockholder.Unlimit',
             depot=DepotMongoDB(primary_keys=['stock_identity', 'ann_date', 'holder_name'],
                                client=mongodb_client,
                                database='StockAnalysisSystem',

@@ -92,7 +92,7 @@ class ProgressRate:
     def progress_done(self) -> bool:
         total = 0
         current = 0
-        for key in self.__progress_table.keys():
+        for key in list(self.__progress_table.keys()):
             total += self.__progress_table[key][ProgressRate.INDEX_TOTAL_PROGRESS]
             current += self.__progress_table[key][ProgressRate.INDEX_CURRENT_PROGRESS]
         # else:
