@@ -55,18 +55,21 @@ def update_repurchase_and_stock_unlock(**kwargs) -> pd.DataFrame or None:
     while True:
         if uri == 'Stockholder.Repurchase':
             # In fact, no company can repurchase up to 2000 times
-            sub_result = pro.repurchase(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
+            sub_result: pd.DataFrame = pro.repurchase(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
         elif uri == 'Stockholder.StockUnlock':
-            sub_result = pro.share_float(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
+            sub_result: pd.DataFrame = pro.share_float(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
         else:
             break
-        result = pd.concat([result, sub_result])
+        result: pd.DataFrame = pd.concat([result, sub_result])
 
         # 如果达不到限制（repurchase - 2000， share_float - 5000，取小的），说明已经取完数据了
         if sub_result is None or len(sub_result) < 2000:
             break
 
-        # 否则拿更新到的最近日期作为开始日期再更新一次
+        # 此列数据可能为None
+        sub_result['ann_date'] = sub_result['ann_date'].fillna(method='ffill')
+
+        # 拿更新到的最近日期作为开始日期再更新一次
         last_update_day = max(sub_result['ann_date'])
         last_update_day = to_py_datetime(last_update_day)
         if last_update_day >= until:
@@ -109,66 +112,4 @@ def validate(**kwargs) -> bool:
 
 def fields() -> dict:
     return FIELDS
-
-
-# def query(**kwargs) -> pd.DataFrame or None:
-#     uri = kwargs.get('uri')
-#     if uri == flog:
-#         return pd.DataFrame({
-#             'ibd': ['300783.SZ', '1StockA', '2StockB', 'StockB', 'StockC', 'StockC'],
-#             'time2': [datetime(1995, 1, 1), datetime(1996, 1, 1),    # StockA
-#                       datetime(2002, 2, 1), datetime(2005, 5, 1),    # StockB
-#                       datetime(2020, 3, 1), datetime(2021, 1, 1)],   # StockC
-#             'field11': [100., 20., 30., 40., 500., 600.],
-#             'field22': ['A', 'B', 'C', 'D', 'E', 'F'],
-#         })
-#     else:
-#         return None
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
