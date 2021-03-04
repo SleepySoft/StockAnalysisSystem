@@ -53,6 +53,8 @@ def update_repurchase(**kwargs) -> pd.DataFrame or None:
 
     result = None
     while True:
+        # In fact, no company can repurchase back up to 2000 times
+
         sub_result = pro.repurchase(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
         result = pd.concat([result, sub_result])
         if result is None or len(sub_result) < 2000:
@@ -66,11 +68,8 @@ def update_repurchase(**kwargs) -> pd.DataFrame or None:
     print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
 
     if result is not None:
-        result['stock_identity'] = result['ts_code']
-
         result['ann_date'] = pd.to_datetime(result['ann_date'])
-        result['stock_identity'] = result['stock_identity'].str.replace('.SH', '.SSE')
-        result['stock_identity'] = result['stock_identity'].str.replace('.SZ', '.SZSE')
+        result['stock_identity'] = result['ts_code'].apply(ts_code_to_stock_identity)
 
     return result
 
@@ -90,16 +89,26 @@ def update_unlimit(**kwargs) -> pd.DataFrame or None:
     clock = Clock()
 
     # ts_delay('fina_audit')
-    result = pro.share_float(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
+
+    result = None
+    while True:
+        sub_result = pro.share_float(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
+        result = pd.concat([result, sub_result])
+        if result is not None and not result.empty:
+            print(result)
+        if result is None or len(sub_result) < 5000:
+            break
+        last_update_day = max(sub_result['ann_date'])
+        last_update_day = to_py_datetime(last_update_day)
+        if last_update_day >= until:
+            break
+        ts_since = last_update_day.strftime('%Y%m%d')
 
     print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
 
     if result is not None:
-        result['stock_identity'] = result['ts_code']
-
         result['ann_date'] = pd.to_datetime(result['ann_date'])
-        result['stock_identity'] = result['stock_identity'].str.replace('.SH', '.SSE')
-        result['stock_identity'] = result['stock_identity'].str.replace('.SZ', '.SZSE')
+        result['stock_identity'] = result['ts_code'].apply(ts_code_to_stock_identity)
 
     return result
 
@@ -108,9 +117,9 @@ def update_unlimit(**kwargs) -> pd.DataFrame or None:
 
 def query(**kwargs) -> pd.DataFrame or None:
     uri = kwargs.get('uri')
-    if uri == 'Repurchase.Stock':
+    if uri == 'Stockholder.Repurchase':
         return update_repurchase(**kwargs)
-    elif uri == 'Unlimit.Stock':
+    elif uri == 'Stockholder.Unlimit':
         return update_unlimit(**kwargs)
     else:
         return None
