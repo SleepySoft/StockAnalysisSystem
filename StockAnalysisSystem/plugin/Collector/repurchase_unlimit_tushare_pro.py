@@ -67,6 +67,7 @@ def update_repurchase_and_stock_unlock(**kwargs) -> pd.DataFrame or None:
             break
 
         # 此列数据可能为None
+        sub_result['ann_date'].replace([None, 'None'], np.nan, inplace=True)
         sub_result['ann_date'] = sub_result['ann_date'].fillna(method='ffill')
 
         # 拿更新到的最近日期作为开始日期再更新一次
@@ -74,7 +75,15 @@ def update_repurchase_and_stock_unlock(**kwargs) -> pd.DataFrame or None:
         last_update_day = to_py_datetime(last_update_day)
         if last_update_day >= until:
             break
-        ts_since = last_update_day.strftime('%Y%m%d')
+        last_update_date_str = last_update_day.strftime('%Y%m%d')
+
+        if last_update_date_str <= ts_since:
+            # tushare bug: 002939.SZ, Since 20181025, Until 20210304
+            # Get data time range less than specified, which causes dead loop.
+            print('Bug detected: %s (%s - %s).' % (ts_code, ts_since, ts_until))
+            break
+        else:
+            ts_since = last_update_date_str
 
     print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
 
