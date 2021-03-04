@@ -8,10 +8,10 @@ from StockAnalysisSystem.core.Utility.CollectorUtility import *
 
 
 FIELDS = {
-    'Repurchase.Stock': {
+    'Stockholder.Repurchase': {
 
     },
-    'Unlimit.Stock': {
+    'Stockholder.StockUnlock': {
 
     },
 }
@@ -21,21 +21,21 @@ def plugin_prob() -> dict:
     return {
         'plugin_name': 'dummy_plugin_for_test',
         'plugin_version': '0.0.0.1',
-        'tags': ['repurchase', 'unlimit', 'tushare', 'ZhangShen']
+        'tags': ['repurchase', 'unlimit', 'tushare', 'ZhangShen', 'Sleepy']
     }
 
 
 def plugin_adapt(uri: str) -> bool:
-    return True
+    return uri in FIELDS.keys()
 
 
-def plugin_capacities() -> list:  # 数据名字添加
-    return list(FIELDS)
+def plugin_capacities() -> list:
+    return list(FIELDS.keys())
 
 
 # ---------------------------------------------------------------------------------------------------
 
-def update_repurchase(**kwargs) -> pd.DataFrame or None:
+def update_repurchase_and_stock_unlock(**kwargs) -> pd.DataFrame or None:
     uri = kwargs.get('uri')
     ann_date = kwargs.get('ann_date')
 
@@ -53,12 +53,20 @@ def update_repurchase(**kwargs) -> pd.DataFrame or None:
 
     result = None
     while True:
-        # In fact, no company can repurchase back up to 2000 times
-
-        sub_result = pro.repurchase(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
-        result = pd.concat([result, sub_result])
-        if result is None or len(sub_result) < 2000:
+        if uri == 'Stockholder.Repurchase':
+            # In fact, no company can repurchase up to 2000 times
+            sub_result = pro.repurchase(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
+        elif uri == 'Stockholder.StockUnlock':
+            sub_result = pro.share_float(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
+        else:
             break
+        result = pd.concat([result, sub_result])
+
+        # 如果达不到限制（repurchase - 2000， share_float - 5000，取小的），说明已经取完数据了
+        if sub_result is None or len(sub_result) < 2000:
+            break
+
+        # 否则拿更新到的最近日期作为开始日期再更新一次
         last_update_day = max(sub_result['ann_date'])
         last_update_day = to_py_datetime(last_update_day)
         if last_update_day >= until:
@@ -67,48 +75,22 @@ def update_repurchase(**kwargs) -> pd.DataFrame or None:
 
     print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
 
-    if result is not None:
+    if result is not None and not result.empty:
+        # 将ts返回的字符串时间转化为datetime
         result['ann_date'] = pd.to_datetime(result['ann_date'])
+
+        if uri == 'Stockholder.Repurchase':
+            # 注意只有repurchase有此列
+            result['end_date'] = pd.to_datetime(result['end_date'])
+            result['exp_date'] = pd.to_datetime(result['exp_date'])
+        elif uri == 'Stockholder.StockUnlock':
+            # 将float_date列重命名为unlock_date，作为主键之一
+            result['unlock_date'] = pd.to_datetime(result['float_date'])
+        # 将ts_code转化为sas使用的identity
         result['stock_identity'] = result['ts_code'].apply(ts_code_to_stock_identity)
 
-    return result
-
-
-def update_unlimit(**kwargs) -> pd.DataFrame or None:
-    uri = kwargs.get('uri')
-    ann_date = kwargs.get('ann_date')
-
-    ts_code = pickup_ts_code(kwargs)
-    since, until = normalize_time_serial(ann_date, default_since(), today())
-
-    ts_since = since.strftime('%Y%m%d')
-    ts_until = until.strftime('%Y%m%d')
-
-    pro = ts.pro_api(TS_TOKEN)
-
-    clock = Clock()
-
-    # ts_delay('fina_audit')
-
-    result = None
-    while True:
-        sub_result = pro.share_float(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
-        result = pd.concat([result, sub_result])
-        if result is not None and not result.empty:
-            print(result)
-        if result is None or len(sub_result) < 5000:
-            break
-        last_update_day = max(sub_result['ann_date'])
-        last_update_day = to_py_datetime(last_update_day)
-        if last_update_day >= until:
-            break
-        ts_since = last_update_day.strftime('%Y%m%d')
-
-    print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
-
-    if result is not None:
-        result['ann_date'] = pd.to_datetime(result['ann_date'])
-        result['stock_identity'] = result['ts_code'].apply(ts_code_to_stock_identity)
+        # 如果空数据引发出错，考虑填充
+        # result = result.fillna(method='ffill')
 
     return result
 
@@ -116,13 +98,8 @@ def update_unlimit(**kwargs) -> pd.DataFrame or None:
 # ---------------------------------------------------------------------------------------------------
 
 def query(**kwargs) -> pd.DataFrame or None:
-    uri = kwargs.get('uri')
-    if uri == 'Stockholder.Repurchase':
-        return update_repurchase(**kwargs)
-    elif uri == 'Stockholder.Unlimit':
-        return update_unlimit(**kwargs)
-    else:
-        return None
+    # 因为这两者更新过程相仿，故放在同一个函数内更新
+    return update_repurchase_and_stock_unlock(**kwargs)
 
 
 def validate(**kwargs) -> bool:

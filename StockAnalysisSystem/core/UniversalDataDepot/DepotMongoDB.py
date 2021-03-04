@@ -201,9 +201,16 @@ class DepotMongoDB(DepotInterface):
                 print(traceback.format_exc())
             finally:
                 pass
-        if len(bulk_operations) > 0:
-            collection.bulk_write(bulk_operations)
-            bulk_operations.clear()
+        try:
+            if len(bulk_operations) > 0:
+                collection.bulk_write(bulk_operations)
+                bulk_operations.clear()
+        except Exception as e:
+            print('Error bulk update: ' + str(e))
+            print(traceback.format_exc())
+            pass
+        finally:
+            pass
         return True
 
     def __process_xsert_prarm(self, dataset: pd.DataFrame or dict or any) -> (bool, [dict]):
