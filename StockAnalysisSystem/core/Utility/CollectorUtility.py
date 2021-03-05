@@ -36,6 +36,9 @@ TS_DELAYER_TABLE = {
 
     'daily':                DelayerMinuteLimit(0),          # 1200
     'adj_factor':           DelayerMinuteLimit(0),          # 1200
+
+    'repurchase':           DelayerMinuteLimit(0),          # 20
+    'share_float':          DelayerMinuteLimit(0),          # 20
 }
 
 

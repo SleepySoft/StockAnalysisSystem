@@ -90,7 +90,8 @@ https://github.com/SleepySoft/StockAnalysisSystem
 > 如果不需要更新可以随便乱填，需要更新的话：  
 > 注册一个tushare的账号：https://tushare.pro/register?reg=271027  
 > 想办法获取500以上的积分（如果没有，无法更新数据，但可以使用离线数据）：https://tushare.pro/document/1?doc_id=13  
-* 根据你的权限修改StockAnalysisSystem\core\Utility\CollectorUtility.py中的TS_DELAYER_TABLE  
+* 重要：根据你的权限修改StockAnalysisSystem\core\Utility\CollectorUtility.py中的TS_DELAYER_TABLE  
+> 如果你不知道该你的积分的限制，可以先把注释后面的值填进去。如果出现"抱歉，您每分钟最多访问该接口x次"的错误，把x填到表中对应的接口位置  
 * 启动程序，勾选需要更新的数据并点击更新按钮  
   
 ## 如何导入离线数据  
