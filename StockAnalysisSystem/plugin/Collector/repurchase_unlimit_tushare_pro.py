@@ -55,8 +55,10 @@ def update_repurchase_and_stock_unlock(**kwargs) -> pd.DataFrame or None:
     while True:
         if uri == 'Stockholder.Repurchase':
             # In fact, no company can repurchase up to 2000 times
+            ts_delay('repurchase')
             sub_result: pd.DataFrame = pro.repurchase(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
         elif uri == 'Stockholder.StockUnlock':
+            ts_delay('share_float')
             sub_result: pd.DataFrame = pro.share_float(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
         else:
             break
