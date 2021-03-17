@@ -33,15 +33,32 @@ class SasInterface:
     # ------------------------- Check / Prob / Config -------------------------
 
     def sas_service_prob(self) -> dict:
+        """
+        Get service prob. Includes version, datetime, platform, etc...
+        :return: A dict that provides service information
+        """
         pass
 
     def sas_service_check(self) -> dict:
+        """
+        Check service status. If service fail. You can get the reason from its returns
+        :return: A dict that shows the service status
+        """
         pass
 
     def sas_get_service_config(self) -> dict:
+        """
+        Get service config which is saved as config.json
+        :return: The config data as dict.
+        """
         pass
 
     def sas_set_service_config(self, config: dict) -> bool:
+        """
+        Set service config and save config as config.json. The service setting will be overwritten
+        :param config: The config as a dict
+        :return: True if setting persists successful else False
+        """
         pass
 
     # ------------------------------- Resource --------------------------------
@@ -101,30 +118,66 @@ class SasInterface:
         pass
 
     def sas_get_all_uri(self) -> [str]:
+        """
+        Get all service supports data uri
+        :return: The list of uri
+        """
         pass
 
     def sas_get_data_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
+        """
+        Get service local data range.
+        This function will query the max and min value of datetime field (if has) by the condition of identity.
+        It may spends a lot of service resource.
+        :param uri: The uri of data
+        :param identity: The identity of data. None or empty to get the data range of the whole table
+        :return: The data range as tuple
+        """
         pass
 
     def sas_calc_update_range(self, uri: str, identity: str) -> (datetime.datetime, datetime.datetime):
+        """
+        Auto calc the update range of specified data.
+        :param uri: The uri of data
+        :param identity: The identity of data
+        :return: The update range of the data your specified as tuple
+        """
         pass
 
     def sas_get_data_agent_probs(self) -> [dict]:
         """
-        Get list of data agent prob
+        Get list of data agent prob as dict.
         :return: List of dict, dict key includes [uri, depot, identity_field, datetime_field]
         """
         pass
 
     def sas_get_data_agent_update_list(self, uri: str) -> [str]:
+        """
+        Get update list of uri.
+        For example, the update list of TradeData.Stock.Daily is all the stock identity.
+                     the update list of Market.SecuritiesInfo is Nothing
+        :param uri: The uri of data
+        :return: The update list of uri as a list of str
+        """
         pass
 
     # ----------------------------- Update Table -----------------------------
 
     def sas_get_local_data_range_from_update_table(self, update_tags: [str]) -> (datetime.datetime, datetime.datetime):
+        """
+        Get service data range from update table, which is cached data and spends less resource of service.
+        :param update_tags: The update tags. For uri, we can use `uri.split('.')` to convert to the update tags.
+        :return: The data range as tuple
+        """
         pass
 
     def sas_get_last_update_time_from_update_table(self, update_tags: [str]) -> datetime.datetime:
+        """
+        Get the last update time from update table, which is cached data and spends less resource of service.
+
+        :param update_tags:
+        :return:
+        """
         pass
 
     # -------------------------------- Analyzer --------------------------------
