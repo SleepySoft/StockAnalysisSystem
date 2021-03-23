@@ -11,7 +11,64 @@ from StockAnalysisSystem.core.Utility.ui_utility import *
 from StockAnalysisSystem.core.Utility.time_utility import *
 from StockAnalysisSystem.ui.Utility.ui_context import UiContext
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
+from StockAnalysisSystem.core.Utility.TableViewEx import TableViewEx
 from StockAnalysisSystem.core.Utility.securities_selector import SecuritiesPicker
+
+
+class ExportUi(QDialog):
+    def __init__(self, export_data: pd.DataFrame):
+        super(ExportUi, self).__init__()
+        self.__export_data = export_data
+
+        self.__button_export = QPushButton('Export')
+        self.__table_field_config = TableViewEx()
+
+        self.update_table()
+
+    def init_ui(self):
+        main_layout = QVBoxLayout()
+        self.setLayout(main_layout)
+
+        main_layout.addWidget(self.__table_field_config)
+
+        line = QHBoxLayout()
+        line.addStretch()
+        line.addWidget(self.__button_export)
+        main_layout.addLayout(line)
+
+        self.__button_export.clicked.connect(self.on_button_export)
+
+    def on_button_export(self):
+        group_by = []
+        select_name = []
+        for i in range(self.__table_field_config.RowCount()):
+            if self.__table_field_config.GetItemCheckState(i, 0) == Qt.Checked:
+                field_name = self.__table_field_config.SetItemData(i, 1)
+                check_group = self.__table_field_config.SetItemData(i, 2)
+                if check_group.isChecked():
+                    group_by.append(field_name)
+                select_name.append(field_name)
+
+        export_file_path, ok = QFileDialog.getOpenFileName(self, 'Load CSV file', '',
+                                                            'CSV Files (*.csv);;All Files (*)')
+
+    def update_table(self):
+        columns = list(self.__export_data.columns)
+        self.__table_field_config.Clear()
+        self.__table_field_config.SetColumn(['', 'Field', 'Group'])
+
+        for field_name in columns:
+            self.__table_field_config.AppendRow(['', field_name, ''])
+            index = self.__table_field_config.RowCount() - 1
+
+            check_group = QCheckBox('')
+            self.__table_field_config.SetCellWidget(index, 2, check_group)
+
+            self.__table_field_config.SetItemData(index, 1, field_name)
+            self.__table_field_config.SetItemData(index, 2, check_group)
+
+    def export_excel(self, fields: [str], group_by: [str]):
+        pass
 
 
 class DataHubUi(QWidget):
@@ -21,11 +78,12 @@ class DataHubUi(QWidget):
         self.__context = context
         self.__translate = QtCore.QCoreApplication.translate
         self.__select_list = []
+        self.__query_result = pd.DataFrame()
 
         self.__combo_uri = QComboBox()
 
         self.__text_selected = QTextEdit('')
-        self.__button_pick = QPushButton('Select')
+        self.__button_pick = QPushButton(self.__translate('', 'Select'))
 
         # self.__line_identity = QLineEdit()
         # if self.__context is not None:
@@ -37,6 +95,7 @@ class DataHubUi(QWidget):
         self.__datetime_since = QDateTimeEdit()
         self.__datetime_until = QDateTimeEdit()
         self.__button_query = QPushButton(self.__translate('', 'Query'))
+        self.__button_export = QPushButton(self.__translate('', 'Export'))
         self.__check_identity_enable = QCheckBox(self.__translate('', 'Identity'))
         self.__check_datetime_enable = QCheckBox(self.__translate('', 'Datetime'))
 
@@ -72,6 +131,7 @@ class DataHubUi(QWidget):
         line = QHBoxLayout()
         line.addWidget(QLabel(' '), 10)
         line.addWidget(self.__button_query, 1)
+        line.addWidget(self.__button_export, 1)
         main_layout.addLayout(line)
 
         main_layout.addWidget(self.__table_main)
@@ -83,8 +143,9 @@ class DataHubUi(QWidget):
         self.__datetime_since.setDateTime(default_since())
         self.__datetime_until.setDateTime(now())
 
-        self.__button_query.clicked.connect(self.on_button_query)
         self.__button_pick.clicked.connect(self.on_button_pick)
+        self.__button_query.clicked.connect(self.on_button_query)
+        self.__button_export.clicked.connect(self.on_button_export)
 
         if self.__context is not None:
             data_agents = self.__context.get_sas_interface().sas_get_data_agent_probs()
@@ -97,6 +158,17 @@ class DataHubUi(QWidget):
         text_height = font_m.lineSpacing()
         self.__text_selected.setFixedHeight(3 * text_height)
         self.__text_selected.setEnabled(False)
+
+        self.setMinimumSize(QSize(800, 600))
+
+    def on_button_pick(self):
+        if self.__context is not None:
+            dlg = SecuritiesPicker(self.__context.get_sas_interface())
+            dlg.set_selection(self.__select_list)
+            dlg.exec()
+            if dlg.is_ok():
+                self.__select_list = dlg.get_selection()
+                self.__update_selection_text()
 
     def on_button_query(self):
         uri = self.__combo_uri.currentText()
@@ -114,15 +186,10 @@ class DataHubUi(QWidget):
         if result is not None and '_id' in result.columns:
             del result['_id']
             write_df_to_qtable(result, self.__table_main)
+        self.__query_result = result
 
-    def on_button_pick(self):
-        if self.__context is not None:
-            dlg = SecuritiesPicker(self.__context.get_sas_interface())
-            dlg.set_selection(self.__select_list)
-            dlg.exec()
-            if dlg.is_ok():
-                self.__select_list = dlg.get_selection()
-                self.__update_selection_text()
+    def on_button_export(self):
+        pass
 
     def __update_selection_text(self):
         self.__text_selected.setText(', '.join(self.__select_list))
