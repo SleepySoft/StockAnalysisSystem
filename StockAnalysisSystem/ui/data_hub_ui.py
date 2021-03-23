@@ -2,6 +2,8 @@ import logging
 import traceback
 
 from os import sys, path
+
+from PyQt5.QtGui import QFontMetrics
 from PyQt5.QtWidgets import QLineEdit, QCheckBox, QWidget, QComboBox, QDateTimeEdit
 
 from StockAnalysisSystem.core.Utility.common import *
@@ -9,6 +11,7 @@ from StockAnalysisSystem.core.Utility.ui_utility import *
 from StockAnalysisSystem.core.Utility.time_utility import *
 from StockAnalysisSystem.ui.Utility.ui_context import UiContext
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
+from StockAnalysisSystem.core.Utility.securities_selector import SecuritiesPicker
 
 
 class DataHubUi(QWidget):
@@ -17,9 +20,19 @@ class DataHubUi(QWidget):
 
         self.__context = context
         self.__translate = QtCore.QCoreApplication.translate
+        self.__select_list = []
 
         self.__combo_uri = QComboBox()
-        self.__line_identity = QLineEdit()
+
+        self.__text_selected = QTextEdit('')
+        self.__button_pick = QPushButton('Select')
+
+        # self.__line_identity = QLineEdit()
+        # if self.__context is not None:
+        #     self.__combo_identity = SecuritiesSelector(context.get_sas_interface())
+        # else:
+        #     self.__combo_identity = QComboBox()
+
         self.__table_main = EasyQTableWidget()
         self.__datetime_since = QDateTimeEdit()
         self.__datetime_until = QDateTimeEdit()
@@ -46,7 +59,8 @@ class DataHubUi(QWidget):
 
         line = QHBoxLayout()
         line.addWidget(self.__check_identity_enable, 0)
-        line.addWidget(self.__line_identity, 10)
+        line.addWidget(self.__text_selected, 10)
+        line.addWidget(self.__button_pick, 0)
         main_layout.addLayout(line)
 
         line = QHBoxLayout()
@@ -68,33 +82,57 @@ class DataHubUi(QWidget):
         self.__check_datetime_enable.setChecked(True)
         self.__datetime_since.setDateTime(default_since())
         self.__datetime_until.setDateTime(now())
-        self.__button_query.clicked.connect(self.on_button_query)
 
-        data_agents = self.__context.get_sas_interface().sas_get_data_agent_probs()
-        all_uri = [da.get('uri', '') for da in data_agents]
-        for uri in all_uri:
-            self.__combo_uri.addItem(uri)
+        self.__button_query.clicked.connect(self.on_button_query)
+        self.__button_pick.clicked.connect(self.on_button_pick)
+
+        if self.__context is not None:
+            data_agents = self.__context.get_sas_interface().sas_get_data_agent_probs()
+            all_uri = [da.get('uri', '') for da in data_agents]
+            for uri in all_uri:
+                self.__combo_uri.addItem(uri)
+
+        font = self.__text_selected.font()
+        font_m = QFontMetrics(font)
+        text_height = font_m.lineSpacing()
+        self.__text_selected.setFixedHeight(3 * text_height)
+        self.__text_selected.setEnabled(False)
 
     def on_button_query(self):
         uri = self.__combo_uri.currentText()
-        identity = self.__line_identity.text() if self.__check_identity_enable.isChecked() else None
+        # identity = self.__line_identity.text() if self.__check_identity_enable.isChecked() else None
+        # identity = self.__combo_identity.get_input_securities() if self.__check_identity_enable.isChecked() else None
+
+        identity = self.__select_list if (self.__check_identity_enable.isChecked() and
+                                          len(self.__select_list) > 0) else None
         since = self.__datetime_since.dateTime().toPyDateTime() if self.__check_datetime_enable.isChecked() else None
         until = self.__datetime_until.dateTime().toPyDateTime() if self.__check_datetime_enable.isChecked() else None
 
-        result = self.__context.get_sas_interface().sas_query(uri, identity, (since, until))
+        if self.__context is not None:
+            result = self.__context.get_sas_interface().sas_query(uri, identity, (since, until))
 
         if result is not None and '_id' in result.columns:
             del result['_id']
             write_df_to_qtable(result, self.__table_main)
+
+    def on_button_pick(self):
+        if self.__context is not None:
+            dlg = SecuritiesPicker(self.__context.get_sas_interface())
+            dlg.set_selection(self.__select_list)
+            dlg.exec()
+            if dlg.is_ok():
+                self.__select_list = dlg.get_selection()
+                self.__update_selection_text()
+
+    def __update_selection_text(self):
+        self.__text_selected.setText(', '.join(self.__select_list))
 
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 def main():
     app = QApplication(sys.argv)
-    data_hub = sas.get_data_hub_entry()
-    data_center = data_hub.get_data_center()
-    dlg = WrapperQDialog(DataHubUi(data_center))
+    dlg = WrapperQDialog(DataHubUi(None))
     dlg.exec()
 
 

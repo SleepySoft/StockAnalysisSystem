@@ -1,8 +1,11 @@
+import sys
 import threading
+import traceback
 
-from PyQt5 import QtCore
-from PyQt5.QtCore import Qt, QTimer, QSortFilterProxyModel
-from PyQt5.QtWidgets import QCompleter, QComboBox
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import Qt, QTimer, QSortFilterProxyModel, QSize
+from PyQt5.QtWidgets import QCompleter, QComboBox, QDialog, QVBoxLayout, QPushButton, QTableWidget, QHBoxLayout, \
+    QApplication, QListWidget
 from StockAnalysisSystem.core.Utility.common import ThreadSafeSingleton
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 
@@ -258,5 +261,151 @@ class SecuritiesSelector(QComboBox):
 #         if '|' in input_securities:
 #             input_securities = input_securities.split('|')[0].strip()
 #         return input_securities
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+class SecuritiesPicker(QDialog):
+    def __init__(self, sas_if: sasIF, parent=None):
+        super(SecuritiesPicker, self).__init__(parent)
+
+        self.__is_ok = False
+        self.__select_list = []
+        self.__sas_if: sasIF = sas_if
+
+        self.__button_add = QPushButton('+')
+        self.__button_del = QPushButton('-')
+        self.__button_clear = QPushButton('X')
+        self.__list_selected = QListWidget()
+        if sas_if is not None:
+            self.__combo_identity = SecuritiesSelector(sas_if)
+        else:
+            self.__combo_identity = QComboBox()
+            # For test
+            self.__select_list = ['000001.SZSE', '000002.SZSE', '000003.SZSE', '000004.SZSE',
+                                  '600001.SZSE', '600002.SZSE', '600003.SZSE', '600004.SZSE']
+            self.update_list()
+        self.__button_ok = QPushButton('OK')
+        self.__button_cancel = QPushButton('Cancel')
+
+        self.init_ui()
+
+    def init_ui(self):
+        self.__layout_control()
+        self.__config_control()
+
+    def __layout_control(self):
+        main_layout = QVBoxLayout()
+        self.setLayout(main_layout)
+
+        line = QHBoxLayout()
+        line.addWidget(self.__combo_identity, 100)
+        line.addWidget(self.__button_add)
+        main_layout.addLayout(line)
+
+        line = QHBoxLayout()
+        line.addWidget(self.__list_selected, 100)
+        col = QVBoxLayout()
+        col.addStretch()
+        col.addWidget(self.__button_del)
+        col.addWidget(self.__button_clear)
+        col.addStretch()
+        line.addLayout(col)
+        main_layout.addLayout(line, 100)
+
+        line = QHBoxLayout()
+        line.addStretch()
+        line.addWidget(self.__button_ok)
+        line.addWidget(self.__button_cancel)
+        main_layout.addLayout(line)
+
+    def __config_control(self):
+        self.setWindowFlags(int(self.windowFlags()) |
+                            QtCore.Qt.WindowCloseButtonHint |
+                            QtCore.Qt.WindowSystemMenuHint)
+        self.__adjust_button_size(self.__button_add)
+        self.__adjust_button_size(self.__button_del)
+        self.__adjust_button_size(self.__button_clear)
+
+        self.__button_add.setToolTip('Add to select list')
+        self.__button_del.setToolTip('Remove select items from select list')
+        self.__button_clear.setToolTip('Clear all selection from select list')
+
+        self.__button_add.clicked.connect(self.on_button_add)
+        self.__button_del.clicked.connect(self.on_button_del)
+        self.__button_clear.clicked.connect(self.on_button_clear)
+
+        self.__button_ok.clicked.connect(self.on_button_ok)
+        self.__button_cancel.clicked.connect(self.on_button_cancel)
+
+        self.__list_selected.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+
+        self.setWindowTitle('Security Picker')
+        self.setMinimumSize(QSize(600, 500))
+
+    def __adjust_button_size(self, button: QPushButton):
+        button.setMaximumSize(QSize(20, 20))
+
+    def on_button_add(self):
+        identity = self.__combo_identity.get_input_securities()
+        if identity not in self.__select_list:
+            self.__select_list.append(identity)
+            self.update_list()
+
+    def on_button_del(self):
+        for item in self.__list_selected.selectedItems():
+            if item.text() in self.__select_list:
+                self.__select_list.remove(item.text())
+        self.update_list()
+
+    def on_button_clear(self):
+        self.__select_list.clear()
+        self.update_list()
+
+    def on_button_ok(self):
+        self.__is_ok = True
+        self.close()
+
+    def on_button_cancel(self):
+        self.__is_ok = False
+        self.close()
+
+    def update_list(self):
+        self.__list_selected.clear()
+        for identity in self.__select_list:
+            self.__list_selected.addItem(identity)
+
+    # --------------------------------------------------------------------------
+
+    def is_ok(self) -> bool:
+        return self.__is_ok
+
+    def get_selection(self) -> [str]:
+        return self.__select_list
+
+    def set_selection(self, selections: [str]):
+        self.__select_list = selections
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def main():
+    app = QApplication(sys.argv)
+    dlg = SecuritiesPicker(None)
+    dlg.exec()
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        print('Error =>', e)
+        print('Error =>', traceback.format_exc())
+        exit()
+    finally:
+        pass
+
 
 
