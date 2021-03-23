@@ -261,8 +261,9 @@ class DataAgent:
 
     def pack_conditions(self, identity: str or [str] = None, time_serial: datetime.datetime or tuple = None) -> dict:
         conditions = {}
-        if str_available(self.__identity_field) and str_available(identity):
-            conditions[self.__identity_field] = identity
+        if str_available(self.__identity_field):
+            if str_available(identity) or isinstance(identity, (list, tuple, set)):
+                conditions[self.__identity_field] = identity
         if str_available(self.__datetime_field) and time_serial is not None:
             since, until = normalize_time_serial(time_serial)
             conditions[self.__datetime_field] = (since, until)
