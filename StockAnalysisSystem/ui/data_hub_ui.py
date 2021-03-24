@@ -16,6 +16,8 @@ from StockAnalysisSystem.core.Utility.TableViewEx import TableViewEx
 from StockAnalysisSystem.core.Utility.securities_selector import SecuritiesPicker
 
 
+# ------------------------------------------------------ ExportUi ------------------------------------------------------
+
 class ExportUi(QDialog):
     TABLE_HEADER = ['', 'Field', 'Group By']
     INDEX_CHECK = 0
@@ -172,6 +174,73 @@ class ExportUi(QDialog):
         return write_row, write_col
 
 
+# ---------------------------------------------------- QueryOption -----------------------------------------------------
+
+class QueryOption(QDialog):
+    def __init__(self, tip_text: str, selection: int = 0, intersect_columns: [str] = list(), force_selection: bool = False):
+        super(QueryOption, self).__init__()
+
+        self.__is_ok = False
+        self.__tip_text = tip_text
+        self.__selection = selection
+        self.__force_selection = force_selection
+        self.__intersect_columns = intersect_columns
+
+        self.__radio_replace = QRadioButton('Replace - Clear and show new data')
+        self.__radio_concat = QRadioButton('Concat - Extend row, column alignment by name')
+        self.__radio_merge = QRadioButton('Merge - Extend column, row alignment by specified field (reserved)')
+
+        self.__button_ok = QPushButton('OK')
+        self.__button_cancel = QPushButton('Cancel')
+
+        self.init_ui()
+
+    def init_ui(self):
+        root_layout = QVBoxLayout()
+        self.setLayout(root_layout)
+
+        root_layout.addWidget(QLabel(self.__tip_text))
+        root_layout.addWidget(self.__radio_replace)
+        root_layout.addWidget(self.__radio_concat)
+        root_layout.addWidget(self.__radio_merge)
+
+        line = QHBoxLayout()
+        line.addStretch()
+        line.addWidget(self.__button_ok)
+        line.addWidget(self.__button_cancel)
+        root_layout.addLayout(line)
+
+        if self.__selection == 0:
+            self.__radio_replace.setChecked(True)
+        elif self.__selection == 1:
+            self.__radio_concat.setChecked(True)
+        else:
+            self.__radio_replace.setChecked(True)
+
+        self.__radio_replace.setEnabled(not self.__force_selection)
+        self.__radio_concat.setEnabled(not self.__force_selection)
+        self.__radio_merge.setEnabled(False)
+
+        self.__button_ok.clicked.connect(self.on_button_ok)
+        self.__button_cancel.clicked.connect(self.on_button_cancel)
+
+    def on_button_ok(self):
+        self.__is_ok = True
+        self.close()
+
+    def on_button_cancel(self):
+        self.__is_ok = False
+        self.close()
+
+    def is_ok(self) -> bool:
+        return self.__is_ok
+
+    def get_selection(self) -> [str]:
+        return self.__select_list
+
+
+# ----------------------------------------------------- DataHubUi ------------------------------------------------------
+
 class DataHubUi(QWidget):
     def __init__(self, context: UiContext):
         super(DataHubUi, self).__init__()
@@ -259,6 +328,7 @@ class DataHubUi(QWidget):
         text_height = font_m.lineSpacing()
         self.__text_selected.setFixedHeight(3 * text_height)
         self.__text_selected.setEnabled(False)
+        self.__update_selection_text()
 
         self.setMinimumSize(QSize(800, 600))
 
@@ -272,6 +342,18 @@ class DataHubUi(QWidget):
                 self.__update_selection_text()
 
     def on_button_query(self):
+        self.__do_query()
+
+    def on_button_export(self):
+        if not self.__query_result.empty:
+            dlg = ExportUi(self.__query_result)
+            dlg.exec()
+        else:
+            QMessageBox().information(self, 'Warning', 'No data to export.')
+
+    # --------------------------------------------------------------------------------------
+
+    def __do_query(self):
         uri = self.__combo_uri.currentText()
         # identity = self.__line_identity.text() if self.__check_identity_enable.isChecked() else None
         # identity = self.__combo_identity.get_input_securities() if self.__check_identity_enable.isChecked() else None
@@ -283,21 +365,53 @@ class DataHubUi(QWidget):
 
         if self.__context is not None:
             result = self.__context.get_sas_interface().sas_query(uri, identity, (since, until))
-
-        if result is not None and '_id' in result.columns:
-            del result['_id']
-            write_df_to_qtable(result, self.__table_main)
-        self.__query_result = result
-
-    def on_button_export(self):
-        if not self.__query_result.empty:
-            dlg = ExportUi(self.__query_result)
-            dlg.exec()
         else:
-            QMessageBox().information(self, 'Warning', 'No data to export.')
+            result = None
+        self.__check_merge_result(result)
+        self.__show_result(self.__query_result)
+
+    def __check_merge_result(self, result: pd.DataFrame):
+        if result is None or result.empty:
+            return
+        if '_id' in result.columns:
+            del result['_id']
+        if self.__query_result is None or self.__query_result.empty:
+            self.__query_result = result
+            return
+        intersect_columns = set(list(self.__query_result.columns) + list(result.columns))
+
+        if len(intersect_columns) / len(result.columns) > 0.9:
+            # Most columns is the same, suggest concat
+            dlg = QueryOption('Most field matched, suggest to concat.', 1)
+        elif len(intersect_columns) >= 1:
+            # Can be merged
+            dlg = QueryOption('Has same fields, concat is valid.', 0)
+        else:
+            # Cannot concat nor merge, replace
+            dlg = QueryOption('No match field. Only replace is available', 0, force_selection=True)
+        dlg.exec()
+
+        if not dlg.is_ok():
+            return
+
+        if dlg.get_selection() == 0:
+            self.__query_result = result
+        elif dlg.get_selection() == 1:
+            self.__query_result = pd.concat([self.__query_result, result])
+        else:
+            # Not support
+            assert False
+
+        # TODO: How to generate an excel that multiple stock in one sheet with the trade date aligned?
+
+    def __show_result(self, result: pd.DataFrame):
+        write_df_to_qtable(result, self.__table_main)
 
     def __update_selection_text(self):
-        self.__text_selected.setText(', '.join(self.__select_list))
+        if len(self.__select_list) > 0:
+            self.__text_selected.setText(', '.join(self.__select_list))
+        else:
+            self.__text_selected.setText('<<All Securities>>')
 
 
 # ----------------------------------------------------------------------------------------------------------------------
