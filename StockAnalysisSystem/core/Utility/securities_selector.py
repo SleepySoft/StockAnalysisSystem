@@ -385,6 +385,7 @@ class SecuritiesPicker(QDialog):
 
     def set_selection(self, selections: [str]):
         self.__select_list = selections
+        self.update_list()
 
 
 # ----------------------------------------------------------------------------------------------------------------------
