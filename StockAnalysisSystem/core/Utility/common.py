@@ -452,6 +452,10 @@ def index_to_excel_column_name(index: int) -> str:
     return column_index[::-1]
 
 
+def excel_cell(row: int, col: int) -> str:
+    return index_to_excel_column_name(col) + str(row)
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 
