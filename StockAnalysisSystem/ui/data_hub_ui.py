@@ -85,14 +85,23 @@ class ExportUi(QDialog):
                     check_align.setChecked(False)
 
     def on_button_export(self):
+        align_by = ''
         group_by = []
         select_name = []
         for i in range(self.__table_field_config.RowCount()):
+            field_name = self.__table_field_config.GetItemData(i, 1)
+            check_group = self.__table_field_config.GetItemData(i, ExportUi.INDEX_GROUP_CHECK)
+            check_align = self.__table_field_config.GetItemData(i, ExportUi.INDEX_ALIGN_CHECK)
+            selected_field = False
+            if check_group.isChecked():
+                selected_field = True
+                group_by.append(field_name)
+            if check_align.isChecked():
+                selected_field = True
+                align_by = field_name
             if self.__table_field_config.GetItemCheckState(i, 0) == Qt.Checked:
-                field_name = self.__table_field_config.GetItemData(i, 1)
-                check_group = self.__table_field_config.GetItemData(i, 2)
-                if check_group.isChecked():
-                    group_by.append(field_name)
+                selected_field = True
+            if selected_field:
                 select_name.append(field_name)
 
         if len(select_name) == 0:
@@ -102,7 +111,7 @@ class ExportUi(QDialog):
         file_path, ok = QFileDialog().getSaveFileName(self, 'Select Export Excel Path', '',
                                                       'XLSX Files (*.xlsx);;All Files (*)')
         if ok:
-            self.export_excel(file_path, self.__export_data, select_name, group_by,
+            self.export_excel(file_path, self.__export_data, select_name, group_by, align_by,
                               self.__radio_vertical.isChecked(), self.__check_readable.isChecked())
             QMessageBox().information(self, 'Information.', 'Export finished. File saved at:\n  %s' % file_path)
             self.close()
@@ -130,7 +139,7 @@ class ExportUi(QDialog):
             self.__table_field_config.SetItemCheckState(index, 0, Qt.Checked)
 
     def export_excel(self, file_path: str, df: pd.DataFrame, fields: [str], group_by: [str],
-                     vertical: bool = True, readable: bool = False):
+                     align_by: str, vertical: bool = True, readable: bool = False):
         export_data = df[fields]
         if readable:
             # TODO: Add readable interface and make field radable
@@ -140,6 +149,8 @@ class ExportUi(QDialog):
         ws = wb.active
 
         if len(group_by) > 0:
+            align_column = self.__prepare_align_columns(export_data, align_by)
+            
             write_row, write_col = 1, 1
             grouped_df = export_data.groupby(group_by)
             for group, df in grouped_df:
@@ -157,6 +168,12 @@ class ExportUi(QDialog):
                 self.__write_df_to_excel_horizon(ws, df, 1, 1)
 
         wb.save(file_path)
+
+    def __prepare_align_columns(self, df: pd.DataFrame, align_by: str):
+        align_column = df[align_by]
+        align_column = align_column.drop_duplicates()
+        align_column = align_column.sort_values()
+        return align_column
 
     def __write_df_to_excel_vertical(self, ws, df: pd.DataFrame, start_row: int, start_col: int) -> (int, int):
         write_row = start_row
