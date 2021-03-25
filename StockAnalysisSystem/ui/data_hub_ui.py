@@ -19,8 +19,10 @@ from StockAnalysisSystem.core.Utility.securities_selector import SecuritiesPicke
 # ------------------------------------------------------ ExportUi ------------------------------------------------------
 
 class ExportUi(QDialog):
-    TABLE_HEADER = ['', 'Field', 'Group By']
-    INDEX_CHECK = 0
+    TABLE_HEADER = ['', 'Field', 'Group By', 'Align By']
+    INDEX_SELECT_CHECK = 0
+    INDEX_GROUP_CHECK = 2
+    INDEX_ALIGN_CHECK = 3
 
     FILL_GROUP = openpyxl.styles.PatternFill(patternType="solid", start_color="EE1111")
 
@@ -62,10 +64,25 @@ class ExportUi(QDialog):
         self.__button_export.clicked.connect(self.on_button_export)
 
         self.__table_field_config.SetColumn(ExportUi.TABLE_HEADER)
-        self.__table_field_config.SetCheckableColumn(ExportUi.INDEX_CHECK)
+        self.__table_field_config.SetCheckableColumn(ExportUi.INDEX_SELECT_CHECK)
         self.__table_field_config.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
         self.setMinimumSize(QSize(350, 600))
+        self.setWindowTitle('Export Option')
+
+    def on_group_clicked(self, index: int):
+        check_group = self.__table_field_config.GetItemData(index, ExportUi.INDEX_GROUP_CHECK)
+        if check_group.isChecked():
+            self.__table_field_config.SetItemCheckState(index, 0, Qt.Checked)
+
+    def on_align_clicked(self, index: int):
+        check_align = self.__table_field_config.GetItemData(index, ExportUi.INDEX_ALIGN_CHECK)
+        if check_align.isChecked():
+            self.__table_field_config.SetItemCheckState(index, 0, Qt.Checked)
+            for i in range(self.__table_field_config.RowCount()):
+                if i != index:
+                    check_align = self.__table_field_config.GetItemData(i, ExportUi.INDEX_ALIGN_CHECK)
+                    check_align.setChecked(False)
 
     def on_button_export(self):
         group_by = []
@@ -96,14 +113,20 @@ class ExportUi(QDialog):
         self.__table_field_config.SetColumn(ExportUi.TABLE_HEADER)
 
         for field_name in columns:
-            self.__table_field_config.AppendRow(['', field_name, ''])
+            self.__table_field_config.AppendRow(['', field_name, '', ''])
             index = self.__table_field_config.RowCount() - 1
 
             check_group = QCheckBox('')
-            self.__table_field_config.SetCellWidget(index, 2, check_group)
+            check_group.clicked.connect(partial(self.on_group_clicked, index))
+            self.__table_field_config.SetItemData(index, ExportUi.INDEX_GROUP_CHECK, check_group)
+            self.__table_field_config.SetCellWidget(index, ExportUi.INDEX_GROUP_CHECK, check_group)
+
+            check_align = QCheckBox('')
+            check_align.clicked.connect(partial(self.on_align_clicked, index))
+            self.__table_field_config.SetItemData(index, ExportUi.INDEX_ALIGN_CHECK, check_align)
+            self.__table_field_config.SetCellWidget(index, ExportUi.INDEX_ALIGN_CHECK, check_align)
 
             self.__table_field_config.SetItemData(index, 1, field_name)
-            self.__table_field_config.SetItemData(index, 2, check_group)
             self.__table_field_config.SetItemCheckState(index, 0, Qt.Checked)
 
     def export_excel(self, file_path: str, df: pd.DataFrame, fields: [str], group_by: [str],
@@ -192,6 +215,7 @@ class QueryOption(QDialog):
 
         self.__button_ok = QPushButton('OK')
         self.__button_cancel = QPushButton('Cancel')
+        self.__table_merge_on = TableViewEx()
 
         self.init_ui()
 
@@ -224,6 +248,8 @@ class QueryOption(QDialog):
         self.__button_ok.clicked.connect(self.on_button_ok)
         self.__button_cancel.clicked.connect(self.on_button_cancel)
 
+        self.setWindowTitle('Result Option')
+
     def on_button_ok(self):
         self.__is_ok = True
         self.close()
@@ -236,7 +262,7 @@ class QueryOption(QDialog):
         return self.__is_ok
 
     def get_selection(self) -> [str]:
-        return self.__select_list
+        return self.__selection
 
 
 # ----------------------------------------------------- DataHubUi ------------------------------------------------------
@@ -382,10 +408,10 @@ class DataHubUi(QWidget):
 
         if len(intersect_columns) / len(result.columns) > 0.9:
             # Most columns is the same, suggest concat
-            dlg = QueryOption('Most field matched, suggest to concat.', 1)
+            dlg = QueryOption('Most field matched, you can do concat.', 0)
         elif len(intersect_columns) >= 1:
             # Can be merged
-            dlg = QueryOption('Has same fields, concat is valid.', 0)
+            dlg = QueryOption('Has same fields, merge is valid.', 0)
         else:
             # Cannot concat nor merge, replace
             dlg = QueryOption('No match field. Only replace is available', 0, force_selection=True)
