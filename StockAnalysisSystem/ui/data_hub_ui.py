@@ -154,6 +154,9 @@ class ExportUi(QDialog):
             write_row, write_col = 1, 1
             grouped_df = export_data.groupby(group_by)
             for group, df in grouped_df:
+                if align_column is not None:
+                    df = pd.merge(align_column, df, on=align_by, how='left')
+
                 cell = excel_cell(write_row, write_col)
                 ws[cell] = str(group)
                 ws[cell].fill = ExportUi.FILL_GROUP
@@ -170,10 +173,13 @@ class ExportUi(QDialog):
         wb.save(file_path)
 
     def __prepare_align_columns(self, df: pd.DataFrame, align_by: str):
-        align_column = df[align_by]
-        align_column = align_column.drop_duplicates()
-        align_column = align_column.sort_values()
-        return align_column
+        if str_available(align_by):
+            align_column = df[align_by]
+            align_column = align_column.drop_duplicates()
+            align_column = align_column.sort_values()
+            return align_column
+        else:
+            return None
 
     def __write_df_to_excel_vertical(self, ws, df: pd.DataFrame, start_row: int, start_col: int) -> (int, int):
         write_row = start_row
@@ -268,6 +274,14 @@ class QueryOption(QDialog):
         self.setWindowTitle('Result Option')
 
     def on_button_ok(self):
+        if self.__radio_replace.isChecked():
+            self.__selection = 0
+        elif self.__radio_concat.isChecked():
+            self.__selection = 1
+        elif self.__radio_merge.isChecked():
+            self.__selection = 2
+        else:
+            self.__selection = -1
         self.__is_ok = True
         self.close()
 
@@ -385,6 +399,10 @@ class DataHubUi(QWidget):
                 self.__update_selection_text()
 
     def on_button_query(self):
+        if len(self.__select_list) == 0:
+            if QMessageBox().question('Query', 'Query for all securities may spends a lot of time.\nAre you sure?',
+                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes) != QMessageBox.Yes:
+                return
         self.__do_query()
 
     def on_button_export(self):
