@@ -298,6 +298,20 @@ class QueryOption(QDialog):
 
 # ----------------------------------------------------- DataHubUi ------------------------------------------------------
 
+# TODO: Classify securities. Get security list by security name.
+# TODO: Need to update DataAgent parameter.
+
+SUPPORT_INDEX = collections.OrderedDict([
+    ('000001.SSE', '上证综指'),
+    ('000002.SSE', '上证A指'),
+    ('000003.SSE', '上证B指'),
+    ('000016.SSE', '上证50'),
+    ('399001.SESZ', '深证成指'),
+    ('399005.SESZ', '中小板指'),
+    ('399006.SESZ', '创业板指'),
+])
+
+
 class DataHubUi(QWidget):
     def __init__(self, context: UiContext):
         super(DataHubUi, self).__init__()
@@ -310,6 +324,7 @@ class DataHubUi(QWidget):
         self.__combo_uri = QComboBox()
 
         self.__text_selected = QTextEdit('')
+        self.__combo_index_sel = QComboBox()
         self.__button_reset = QPushButton(self.__translate('', 'Reset'))
         self.__button_select = QPushButton(self.__translate('', 'Select'))
 
@@ -348,6 +363,7 @@ class DataHubUi(QWidget):
         line = QHBoxLayout()
         line.addWidget(self.__check_identity_enable, 0)
         line.addWidget(self.__text_selected, 10)
+        line.addWidget(self.__combo_index_sel, 10)
         vline = QVBoxLayout()
         vline.addWidget(self.__button_reset)
         vline.addWidget(self.__button_select)
@@ -371,6 +387,7 @@ class DataHubUi(QWidget):
 
     def __config_control(self):
         # self.__combo_uri.setEditable(True)
+        self.__combo_index_sel.setVisible(False)
         self.__check_identity_enable.setChecked(True)
         self.__check_datetime_enable.setChecked(True)
         self.__datetime_since.setDateTime(default_since())
@@ -382,11 +399,16 @@ class DataHubUi(QWidget):
         self.__button_export.clicked.connect(self.on_button_export)
         self.__button_export.clicked.connect(self.on_button_clear)
 
+
+        for _id, name in SUPPORT_INDEX.items():
+            self.__combo_index_sel.addItem('%s | %s' % (_id, name))
+
         if self.__context is not None:
             data_agents = self.__context.get_sas_interface().sas_get_data_agent_probs()
             all_uri = [da.get('uri', '') for da in data_agents]
             for uri in all_uri:
                 self.__combo_uri.addItem(uri)
+        self.__combo_uri.currentIndexChanged.connect(self.on_uri_selection_changed)
 
         font = self.__text_selected.font()
         font_m = QFontMetrics(font)
@@ -397,6 +419,15 @@ class DataHubUi(QWidget):
 
         self.setMinimumSize(QSize(800, 600))
         self.setWindowTitle('Data Browser')
+
+    def on_uri_selection_changed(self):
+        uri = self.__combo_uri.currentText()
+        if 'Index' in uri:
+            self.__combo_index_sel.setVisible(True)
+            self.__text_selected.setVisible(False)
+        else:
+            self.__combo_index_sel.setVisible(False)
+            self.__text_selected.setVisible(True)
 
     def on_button_reset(self):
         self.__select_list.clear()
@@ -412,10 +443,6 @@ class DataHubUi(QWidget):
                 self.__update_selection_text()
 
     def on_button_query(self):
-        if len(self.__select_list) == 0:
-            if QMessageBox().question(self, 'Query', 'Query for all securities may spends a lot of time.\nAre you sure?',
-                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes) != QMessageBox.Yes:
-                return
         self.__do_query()
 
     def on_button_export(self):
@@ -436,8 +463,18 @@ class DataHubUi(QWidget):
         # identity = self.__line_identity.text() if self.__check_identity_enable.isChecked() else None
         # identity = self.__combo_identity.get_input_securities() if self.__check_identity_enable.isChecked() else None
 
-        identity = self.__select_list if (self.__check_identity_enable.isChecked() and
-                                          len(self.__select_list) > 0) else None
+        if 'Index' in uri:
+            identity = self.__combo_index_sel.currentText()
+            identity = identity.strip()
+            if '|' in identity:
+                identity = identity.split('|')[0]
+        else:
+            if len(self.__select_list) == 0:
+                if QMessageBox().question(self, 'Query', 'Query for all securities may spends a lot of time.\nAre you sure?',
+                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes) != QMessageBox.Yes:
+                    return
+            identity = self.__select_list if (self.__check_identity_enable.isChecked() and
+                                              len(self.__select_list) > 0) else None
         since = self.__datetime_since.dateTime().toPyDateTime() if self.__check_datetime_enable.isChecked() else None
         until = self.__datetime_until.dateTime().toPyDateTime() if self.__check_datetime_enable.isChecked() else None
 
