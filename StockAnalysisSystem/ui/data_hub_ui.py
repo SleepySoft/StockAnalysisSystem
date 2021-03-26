@@ -310,7 +310,8 @@ class DataHubUi(QWidget):
         self.__combo_uri = QComboBox()
 
         self.__text_selected = QTextEdit('')
-        self.__button_pick = QPushButton(self.__translate('', 'Select'))
+        self.__button_reset = QPushButton(self.__translate('', 'Reset'))
+        self.__button_select = QPushButton(self.__translate('', 'Select'))
 
         # self.__line_identity = QLineEdit()
         # if self.__context is not None:
@@ -323,6 +324,7 @@ class DataHubUi(QWidget):
         self.__datetime_until = QDateTimeEdit()
         self.__button_query = QPushButton(self.__translate('', 'Query'))
         self.__button_export = QPushButton(self.__translate('', 'Export'))
+        self.__button_clear = QPushButton(self.__translate('', 'Clear'))
         self.__check_identity_enable = QCheckBox(self.__translate('', 'Identity'))
         self.__check_datetime_enable = QCheckBox(self.__translate('', 'Datetime'))
 
@@ -346,7 +348,10 @@ class DataHubUi(QWidget):
         line = QHBoxLayout()
         line.addWidget(self.__check_identity_enable, 0)
         line.addWidget(self.__text_selected, 10)
-        line.addWidget(self.__button_pick, 0)
+        vline = QVBoxLayout()
+        vline.addWidget(self.__button_reset)
+        vline.addWidget(self.__button_select)
+        line.addLayout(vline)
         main_layout.addLayout(line)
 
         line = QHBoxLayout()
@@ -359,6 +364,7 @@ class DataHubUi(QWidget):
         line.addWidget(QLabel(' '), 10)
         line.addWidget(self.__button_query, 1)
         line.addWidget(self.__button_export, 1)
+        line.addWidget(self.__button_clear, 1)
         main_layout.addLayout(line)
 
         main_layout.addWidget(self.__table_main)
@@ -370,9 +376,11 @@ class DataHubUi(QWidget):
         self.__datetime_since.setDateTime(default_since())
         self.__datetime_until.setDateTime(now())
 
-        self.__button_pick.clicked.connect(self.on_button_pick)
+        self.__button_select.clicked.connect(self.on_button_reset)
+        self.__button_select.clicked.connect(self.on_button_select)
         self.__button_query.clicked.connect(self.on_button_query)
         self.__button_export.clicked.connect(self.on_button_export)
+        self.__button_export.clicked.connect(self.on_button_clear)
 
         if self.__context is not None:
             data_agents = self.__context.get_sas_interface().sas_get_data_agent_probs()
@@ -388,8 +396,13 @@ class DataHubUi(QWidget):
         self.__update_selection_text()
 
         self.setMinimumSize(QSize(800, 600))
+        self.setWindowTitle('Data Browser')
 
-    def on_button_pick(self):
+    def on_button_reset(self):
+        self.__select_list.clear()
+        self.__update_selection_text()
+
+    def on_button_select(self):
         if self.__context is not None:
             dlg = SecuritiesPicker(self.__context.get_sas_interface())
             dlg.set_selection(self.__select_list)
@@ -400,7 +413,7 @@ class DataHubUi(QWidget):
 
     def on_button_query(self):
         if len(self.__select_list) == 0:
-            if QMessageBox().question('Query', 'Query for all securities may spends a lot of time.\nAre you sure?',
+            if QMessageBox().question(self, 'Query', 'Query for all securities may spends a lot of time.\nAre you sure?',
                                       QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes) != QMessageBox.Yes:
                 return
         self.__do_query()
@@ -411,6 +424,10 @@ class DataHubUi(QWidget):
             dlg.exec()
         else:
             QMessageBox().information(self, 'Warning', 'No data to export.')
+
+    def on_button_clear(self):
+        self.__query_result = pd.DataFrame()
+        self.__show_result()
 
     # --------------------------------------------------------------------------------------
 
@@ -428,8 +445,12 @@ class DataHubUi(QWidget):
             result = self.__context.get_sas_interface().sas_query(uri, identity, (since, until))
         else:
             result = None
-        self.__check_merge_result(result)
-        self.__show_result(self.__query_result)
+
+        if result is not None and not result.empty:
+            self.__check_merge_result(result)
+            self.__show_result(self.__query_result)
+        else:
+            QMessageBox().information(self, 'Query Result', 'Query data empty.')
 
     def __check_merge_result(self, result: pd.DataFrame):
         if result is None or result.empty:
