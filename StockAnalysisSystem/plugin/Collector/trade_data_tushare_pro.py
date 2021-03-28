@@ -94,7 +94,7 @@ def __fetch_trade_data_daily_range(uri: str, ts_code: str,
 
 def __fetch_trade_data_daily_slice(uri: str, _time: datetime.datetime) -> pd.DataFrame:
     pro = ts.pro_api(TS_TOKEN)
-    ts_daily_delay.delay()
+    ts_delay('daily')
 
     clock = Clock()
     result = pro.daily(trade_date=_time)

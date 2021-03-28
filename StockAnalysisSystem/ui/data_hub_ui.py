@@ -18,6 +18,13 @@ from StockAnalysisSystem.core.Utility.securities_selector import SecuritiesPicke
 
 # ------------------------------------------------------ ExportUi ------------------------------------------------------
 
+README = """数据查阅和导出说明：
+* 本界面支持多次查询的结果合并，以及将不同数据的日期（或指定列）对齐并导出成excel文件。
+* 比如希望对比上证指数以及某股票，可以先选择"TradeData.Index.Daily" + "000001.SSE | 上证综指"。
+* 查询到数据后，再选择"TradeData.Stock.Daily" + 任意股票。点击查询后，选择concat方式。这样指数数据和股票数据会合且显示在同一个表格里。
+* 点击Export，"Group By"选择"stock_identity"字段，"Align by"选择"trade_date"字段。如此，导出的数据会按照股票代码分组，并按时间对齐。"""
+
+
 class ExportUi(QDialog):
     TABLE_HEADER = ['', 'Field', 'Group By', 'Align By']
     INDEX_SELECT_CHECK = 0
@@ -156,6 +163,7 @@ class ExportUi(QDialog):
             for group, df in grouped_df:
                 if align_column is not None:
                     df = pd.merge(align_column, df, on=align_by, how='left')
+                df = df.fillna('')
 
                 cell = excel_cell(write_row, write_col)
                 ws[cell] = str(group)
@@ -195,7 +203,7 @@ class ExportUi(QDialog):
             data_column = df[field]
             for item in data_column:
                 cell = excel_cell(write_row, write_col)
-                ws[cell] = str(item)
+                ws[cell] = item
                 write_row += 1
             write_col += 1
         return write_row, write_col
@@ -214,7 +222,7 @@ class ExportUi(QDialog):
             data_column = df[field]
             for item in data_column:
                 cell = excel_cell(write_row, write_col)
-                ws[cell] = str(item)
+                ws[cell] = item
                 write_col += 1
             write_row += 1
         return write_row, write_col
@@ -323,6 +331,7 @@ class DataHubUi(QWidget):
 
         self.__combo_uri = QComboBox()
 
+        self.__label_readme = QLabel(README)
         self.__text_selected = QTextEdit('')
         self.__combo_index_sel = QComboBox()
         self.__button_reset = QPushButton(self.__translate('', 'Reset'))
@@ -384,6 +393,7 @@ class DataHubUi(QWidget):
         main_layout.addLayout(line)
 
         main_layout.addWidget(self.__table_main)
+        main_layout.addWidget(self.__label_readme)
 
     def __config_control(self):
         # self.__combo_uri.setEditable(True)
@@ -397,8 +407,7 @@ class DataHubUi(QWidget):
         self.__button_select.clicked.connect(self.on_button_select)
         self.__button_query.clicked.connect(self.on_button_query)
         self.__button_export.clicked.connect(self.on_button_export)
-        self.__button_export.clicked.connect(self.on_button_clear)
-
+        self.__button_clear.clicked.connect(self.on_button_clear)
 
         for _id, name in SUPPORT_INDEX.items():
             self.__combo_index_sel.addItem('%s | %s' % (_id, name))
@@ -465,9 +474,9 @@ class DataHubUi(QWidget):
 
         if 'Index' in uri:
             identity = self.__combo_index_sel.currentText()
-            identity = identity.strip()
             if '|' in identity:
                 identity = identity.split('|')[0]
+            identity = identity.strip()
         else:
             if len(self.__select_list) == 0:
                 if QMessageBox().question(self, 'Query', 'Query for all securities may spends a lot of time.\nAre you sure?',
