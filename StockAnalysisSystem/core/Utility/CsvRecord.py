@@ -78,8 +78,8 @@ class CsvRecord:
             self.__record_sheet = df
             return column_includes(self.__record_sheet, self.__record_columns)
         except Exception as e:
-            print('Error =>', e)
-            print('Error =>', traceback.format_exc())
+            print('Csv Record Error', e)
+            print(traceback.format_exc())
             return False
         finally:
             pass
