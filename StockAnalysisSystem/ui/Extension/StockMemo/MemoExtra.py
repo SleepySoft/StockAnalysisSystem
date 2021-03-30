@@ -326,9 +326,7 @@ class MemoExtra_BlackList(MemoExtra):
         super(MemoExtra_BlackList, self).__init__()
 
     def global_entry(self):
-        sas = self.__memo_context.get_sas()
-        black_list = self.__memo_context.get('black_list')
-        black_list_ui = BlackListUi(black_list, sas)
+        black_list_ui = BlackListUi(self.__memo_context)
         dlg = WrapperQDialog(black_list_ui)
         dlg.exec()
 

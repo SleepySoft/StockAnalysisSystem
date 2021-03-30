@@ -78,7 +78,11 @@ class StockMemo:
     def stock_memo_set_path(self, memo_path: str):
         self.__memo_record = StockMemoRecord(memo_path)
         if not self.__memo_record.load():
+            print('/**********************************************************************/')
             print('Load stock memo fail, maybe no memo exists.')
+            print("Don't worry, it's not an software issue.")
+            print('You can get an shared memo here: https://gitee.com/SleepySoft/StockMemo')
+            print('/**********************************************************************/')
 
     def stock_memo_filter_record(self, condition: dict) -> pd.DataFrame:
         return self.__memo_record.get_records(condition)

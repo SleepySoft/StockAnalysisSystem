@@ -239,17 +239,19 @@ class StockMemoDeck(QWidget):
         self.__line_path.setText(folder)
 
         # Save to system config
-        self.__sas.get_config().set('memo_path', folder)
-        self.__sas.get_config().save_config()
+        config = self.__sas_if.sas_get_service_config()
+        config['memo_path'] = folder
+        self.__sas_if.sas_set_service_config(config)
 
+        # Now those setting are on server side.
+        # TODO: How to handle setting update on server side
         # Update new path to memo extras
-        self.__memo_context.set_root_path(folder)
-
-        # TODO: Auto handle path update
-        stock_tags: Tags = self.__memo_context.get('tags')
-        if stock_tags is not None:
-            stock_tags.load(os.path.join(folder, 'tags.json'))
-        self.__memo_context.get_memo_record().load(os.path.join(folder, 'stock_memo.csv'))
+        # self.__memo_context.set_root_path(folder)
+        #
+        # stock_tags: Tags = self.__memo_context.get('tags')
+        # if stock_tags is not None:
+        #     stock_tags.load(os.path.join(folder, 'tags.json'))
+        # self.__memo_context.get_memo_record().load(os.path.join(folder, 'stock_memo.csv'))
 
     def __on_button_new_clicked(self):
         security = self.__stock_selector.get_input_securities()

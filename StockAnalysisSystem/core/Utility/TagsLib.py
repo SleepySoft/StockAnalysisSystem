@@ -13,7 +13,11 @@ class Tags:
         self.__tags_path = record_path
         self.__tag_obj_dict = {}
         self.__obj_tag_dict = {}
-        self.load()
+        if not self.load():
+            print('/****************************************/')
+            print('Fail to load Stock Memo Tags.')
+            print("Don't worry, it's not an software issue.")
+            print('/****************************************/')
 
     def all_tags(self) -> [str]:
         return list(self.__tag_obj_dict.keys())
@@ -116,8 +120,7 @@ class Tags:
                 self.__build_obj_tag_dict_from_tag_obj_dict()
             return True
         except Exception as e:
-            print('Load tags fail.')
-            print(e)
+            print('Load tags fail.' + str(e))
             print(traceback.format_exc())
             return False
         finally:
