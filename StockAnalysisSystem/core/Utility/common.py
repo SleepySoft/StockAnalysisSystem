@@ -1,3 +1,4 @@
+import os
 import sys
 import string
 import bisect
@@ -35,6 +36,18 @@ logging.basicConfig(
 #
 # logging.getLogger('').addHandler(console)
 
+
+def ensure_dir(path: str) -> bool:
+    if os.path.isdir(path):
+        return True
+    try:
+        os.makedirs(path)
+    except Exception as e:
+        print('Ensure dir fail: ' + str(e))
+        return False
+    finally:
+        pass
+    return os.path.isdir(path)
 
 # -----------------------------------------------------------------------------------------------------
 
