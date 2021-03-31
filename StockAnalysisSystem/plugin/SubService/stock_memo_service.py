@@ -4,6 +4,7 @@ import traceback
 import pandas as pd
 
 import StockAnalysisSystem.core.api as sasApi
+from StockAnalysisSystem.core.api_util import ensure_dir
 from StockAnalysisSystem.core.Utility.TagsLib import Tags
 from StockAnalysisSystem.core.Utility.event_queue import Event
 from StockAnalysisSystem.core.SubServiceManager import SubServiceContext
@@ -90,8 +91,11 @@ def init(sub_service_context: SubServiceContext) -> bool:
         global subServiceContext
 
         subServiceContext = sub_service_context
-        memo_path = subServiceContext.sas_api.config().get('memo_path', os.getcwd())
-
+        default_memo_path = os.path.join(os.getcwd(), 'StockMemo')
+        memo_path = subServiceContext.sas_api.config().get('memo_path', default_memo_path)
+        if not ensure_dir(memo_path):
+            print('Check stock memo dir fail.')
+            assert False
         stockMemoService = StockMemoService(subServiceContext.sas_api, memo_path)
         stockMemoService.register_sys_call()
     except Exception as e:

@@ -119,10 +119,9 @@ class BlackListUi(QWidget):
             QMessageBox.warning(self, 'Input', '请选择股票')
             return
 
-        if self.__black_list is not None:
-            self.__black_list.add_to_black_list(security, reason)
-            self.__black_list.save_black_list()
-            self.update_table()
+        self.__sas_if.add_to_black_list(security, reason)
+        self.__sas_if.save_black_list()
+        self.update_table()
 
     def __on_button_import(self):
         QMessageBox.information(self, '格式说明', '导入的CSV文件需要包含以下两个列：\n'
@@ -137,8 +136,8 @@ class BlackListUi(QWidget):
             new_black_list = []
             df = pd.read_csv(file_path)
             for security, reason in zip(df['security'], df['reason']):
-                if not self.__black_list.in_black_list(security):
-                    self.__black_list.add_to_black_list(security, reason)
+                if not self.__sas_if.in_black_list(security):
+                    self.__sas_if.add_to_black_list(security, reason)
                     new_black_list.append((security, reason))
         except Exception as e:
             print('Load and Parse CSV fail')
@@ -154,7 +153,7 @@ class BlackListUi(QWidget):
                 print('%s - %s' % (securities, reason))
             print('|---Total: %s' % len(new_black_list))
 
-            self.__black_list.save_black_list()
+            self.__sas_if.save_black_list()
             self.update_table()
 
         QMessageBox.information(self, '导入成功', '新增黑名单数量：%s' % len(new_black_list), QMessageBox.Ok)
@@ -175,8 +174,8 @@ class BlackListUi(QWidget):
 
         new_black_list = []
         for r in fail_result:
-            if not self.__black_list.in_black_list(r.securities):
-                self.__black_list.add_to_black_list(r.securities, r.reason)
+            if not self.__sas_if.in_black_list(r.securities):
+                self.__sas_if.add_to_black_list(r.securities, r.reason)
                 new_black_list.append(r)
 
         if len(new_black_list) > 0:
@@ -185,7 +184,7 @@ class BlackListUi(QWidget):
                 print('%s - %s' % (r.securities, r.reason))
             print('|---Total: %s' % len(new_black_list))
 
-            self.__black_list.save_black_list()
+            self.__sas_if.save_black_list()
         else:
             print('No new black list.')
         self.update_table()
@@ -196,21 +195,13 @@ class BlackListUi(QWidget):
         row = self.__black_list_table.GetSelectRows()
         if len(row) > 0:
             security = self.__black_list_table.GetItemText(row[0], 0)
-            self.__black_list.remove_from_black_list(security, '手工删除')
+            self.__sas_if.remove_from_black_list(security, '手工删除')
             self.update_table()
-
-    # def showEvent(self, event: QShowEvent):
-    #     if self.__black_list is not None:
-    #         self.__black_list.reload_black_list_data()
 
     def update_table(self):
         self.__black_list_table.Clear()
         self.__black_list_table.SetColumn(BlackListUi.HEADER)
-
-        # TODO: It should update when update
-        self.__black_list.reload_black_list_data()
-
-        black_list_data = self.__black_list.get_black_list_data()
+        black_list_data = self.__sas_if.get_black_list_data()
 
         for index, row in black_list_data.iterrows():
             self.__black_list_table.AppendRow([
