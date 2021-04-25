@@ -178,6 +178,13 @@ class StrategyEntry:
                         clock.reset()
                         self.cache_analysis_result('Result.Analyzer', result)
                         print('Analyzer %s : Cache result, time spending: %ss' % (analyzer, clock.elapsed_s()))
+
+        name_dict_path = os.path.join(dump_path, 'analyzer_names.json')
+        full_dump_path = os.path.join(dump_path, 'analysis_result.json')
+
+        self.dump_analysis_report(total_result, full_dump_path)
+        self.dump_strategy_name_dict(name_dict_path)
+
         return total_result
 
     # ------------------------------------------------- Export / Import ------------------------------------------------
