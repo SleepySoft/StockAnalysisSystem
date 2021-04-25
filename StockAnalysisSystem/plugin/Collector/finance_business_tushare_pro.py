@@ -66,8 +66,10 @@ def __fetch_business_data(**kwargs) -> pd.DataFrame:
         if result is not None:
             result.fillna(0.0)
             del result['ts_code']
-            result = pd.DataFrame({'business': result.groupby('end_date').apply(
-                lambda x: x.drop('end_date', axis=1).to_dict('records'))}).reset_index()
+            # raise ValueError("If using all scalar values, you must pass an index")
+            # TODO: Fix here
+            result = pd.DataFrame.from_dict({'business': result.groupby('end_date').apply(
+                lambda x: x.drop('end_date', axis=1).to_dict('records'))}, orient='index').reset_index()
             result['ts_code'] = ts_code
 
     check_execute_dump_flag(result, **kwargs)

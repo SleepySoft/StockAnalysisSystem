@@ -32,7 +32,7 @@ TS_DELAYER_TABLE = {
     'stk_holdernumber':     DelayerMinuteLimit(0),          # 10
     'top10_holders':        DelayerMinuteLimit(0),          # 10
     'top10_floatholders':   DelayerMinuteLimit(0),          # 10
-    'stk_holdertrade':      DelayerMinuteLimit(0),          # 100
+    'stk_holdertrade':      DelayerMinuteLimit(300),        # 100
 
     'daily':                DelayerMinuteLimit(0),          # 1200
     'adj_factor':           DelayerMinuteLimit(0),          # 1200
