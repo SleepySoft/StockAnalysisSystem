@@ -24,3 +24,4 @@ flask-login
 xmltodict
 psutil
 APScheduler
+wxpy
