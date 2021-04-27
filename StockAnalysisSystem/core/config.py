@@ -35,6 +35,16 @@ class Config:
     def get(self, key: str, default_value: str = '') -> str:
         return self.__config_dict.get(key, default_value)
 
+    def update_config(self, config: dict):
+        self.__config_dict.update(config)
+
+    def remove_config(self, keys: str or [str]):
+        if isinstance(keys, str):
+            keys = [keys]
+        for key in keys:
+            if key in self.__config_dict:
+                del self.__config_dict[key]
+
     def get_all_config(self) -> dict:
         return self.__config_dict
 

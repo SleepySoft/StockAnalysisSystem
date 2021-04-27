@@ -61,6 +61,22 @@ class SasInterface:
         """
         pass
 
+    def sas_update_service_config(self, config: dict) -> bool:
+        """
+        Update service config and save config as config.json. The service setting will be overwritten
+        :param config: The config as a dict. Will be update or insert to the service config.
+        :return: True if setting persists successful else False
+        """
+        pass
+
+    def sas_remove_service_config(self, keys: [str]) -> bool:
+        """
+        Remove service config specified by keys and save config as config.json. The service setting will be overwritten
+        :param keys: The keys of setting you want to delete.
+        :return: True if setting persists successful else False
+        """
+        pass
+
     # ------------------------------- Resource --------------------------------
 
     def sas_get_resource(self, res_desc: [(str, [str])]) -> {str: {str: any}}:

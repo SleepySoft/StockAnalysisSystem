@@ -36,7 +36,7 @@ def equity_interest_pledge_too_high(securities: str, time_serial: tuple, data_hu
                 score = 0
             if pledge_rate > 20.0:
                 score = 60
-                reason.append('%s: 质押比例：%.2f%%' % (str(due_date), pledge_rate))
+                reason.append('%s: 质押比例：%.2f%%' % (str(due_date.date()), pledge_rate))
             previous_pledge_times = pledge_times
 
     if len(reason) == 0:
@@ -83,10 +83,10 @@ def analysis_dispersed_ownership(securities: str, time_serial: tuple, data_hub: 
         if largest_ratio < 0.1:
             score = 0
             reason.append('%s: 最大股东 %s 持股比例为%.2f%%，小于10%%' %
-                          (str(period), biggest_holder, largest_ratio * 100))
+                          (period.year, biggest_holder, largest_ratio * 100))
         else:
             reason.append('%s: 最大股东 %s 持股比例为%.2f%%' %
-                          (str(period), biggest_holder, largest_ratio * 100))
+                          (period.year, biggest_holder, largest_ratio * 100))
 
     if len(reason) == 0:
         reason.append('没有数据')
