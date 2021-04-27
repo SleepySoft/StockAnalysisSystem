@@ -30,7 +30,7 @@ prettytable==0.7.2
 pyecharts==1.7.1
 pyee==7.0.2
 PyExecJS==1.5.1
-Pygments==2.6.1
+Pygments==2.7.4
 pyjsparser==2.7.1
 # pylab-sdk==1.1.2
 pymongo==3.10.1
