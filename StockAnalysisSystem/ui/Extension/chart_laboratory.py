@@ -87,7 +87,7 @@ class ChartLab(QWidget):
         self.__line_upper = QLineEdit('')
 
         self.__button_draw = QPushButton('绘图')
-        self.__button_show = QPushButton('数据')
+        self.__button_show = QPushButton('查看绘图数据')
 
         self.init_ui()
 

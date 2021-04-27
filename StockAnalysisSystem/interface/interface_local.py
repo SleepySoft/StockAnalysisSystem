@@ -350,7 +350,15 @@ class LocalInterface(sasIF):
 
     def sas_set_service_config(self, config: dict) -> bool:
         sasApi.config().set_all_config(config)
-        return True
+        return sasApi.config().save_config()
+
+    def sas_update_service_config(self, config: dict) -> bool:
+        sasApi.config().update_config(config)
+        return sasApi.config().save_config()
+
+    def sas_remove_service_config(self, keys: [str]) -> bool:
+        sasApi.config().remove_config(keys)
+        return sasApi.config().save_config()
 
     # ------------------------------- Resource --------------------------------
 

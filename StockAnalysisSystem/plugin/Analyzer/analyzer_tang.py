@@ -75,7 +75,7 @@ def analyzer_stock_portrait(securities: str, time_serial: tuple, data_hub: DataH
             ('-' if can_ignore_or_negative(row['投资活动产生的现金流量净额'], net_assets, 0.1) else '+') + \
             ('-' if can_ignore_or_negative(row['筹资活动产生的现金流量净额'], net_assets, 0.1) else '+')
         results.append(AnalysisResult(securities, period, portrait_score_table.get(portrait, 0),
-                                      '%s : %s' % (portrait, portrait_comments_table.get(portrait, ''))))
+                                      '%s : [%s] %s' % (period.year, portrait, portrait_comments_table.get(portrait, ''))))
     return results
 
     # portrait_counts = len(portraits)

@@ -33,10 +33,10 @@ def analysis_finance_report_sign(securities: str, time_serial: tuple, data_hub: 
 
         if pd.isnull(conclusion):
             score = AnalysisResult.SCORE_NOT_APPLIED
-            reason.append(date2text(period) + ' : No sign data.')
+            reason.append(str(period.year) + ' : No sign data.')
         elif conclusion != '标准无保留意见':
             score = AnalysisResult.SCORE_FAIL
-            reason.append(date2text(period) + ' : ' + conclusion)
+            reason.append(str(period.year) + ' : ' + conclusion)
         else:
             score = AnalysisResult.SCORE_PASS
         results.append(AnalysisResult(securities, period, score, reason, AnalysisResult.WEIGHT_ONE_VOTE_VETO))
@@ -66,10 +66,10 @@ def analysis_consecutive_losses(securities: str, time_serial: tuple, data_hub: D
 
         if row['利润总额'] < 0:
             score -= 50
-            reason.append(date2text(period) + '：利润总额 ' + format_w(row['利润总额']))
+            reason.append(str(period.year) + '：利润总额 ' + format_w(row['利润总额']))
         if row['营业利润'] < 0:
             score -= 50
-            reason.append(date2text(period) + '：营业利润 ' + format_w(row['营业利润']))
+            reason.append(str(period.year) + '：营业利润 ' + format_w(row['营业利润']))
         results.append(AnalysisResult(securities, period, score, reason))
 
     return results
@@ -144,17 +144,17 @@ def analysis_cash_loan_both_high(securities: str, time_serial: tuple, data_hub: 
         loan = row['短期借款'] + row['长期借款'] + row['一年内到期的非流动负债'] + row['应付债券'] + row['其他流动负债']
 
         if row['资产总计'] < 1.0:
-            reason.append(str(period) + ': 资产总计为0，可能数据缺失')
+            reason.append(period.year + ': 资产总计为0，可能数据缺失')
             results.append(AnalysisResult(securities, period, AnalysisResult.SCORE_NOT_APPLIED, reason))
             continue
 
         if row['净利润(含少数股东损益)'] < 1.0:
-            reason.append(str(period) + ': 净利润(含少数股东损益) = %.2f，不适用' % row['净利润(含少数股东损益)'])
+            reason.append(period.year + ': 净利润(含少数股东损益) = %.2f，不适用' % row['净利润(含少数股东损益)'])
             results.append(AnalysisResult(securities, period, AnalysisResult.SCORE_NOT_APPLIED, reason))
             continue
 
         if loan < 0.001:
-            reason.append(str(period) + ': 流动负债合计为0，可能数据缺失')
+            reason.append(period.year + ': 流动负债合计为0，可能数据缺失')
             results.append(AnalysisResult(securities, period, AnalysisResult.SCORE_NOT_APPLIED, reason))
             continue
 
@@ -167,7 +167,7 @@ def analysis_cash_loan_both_high(securities: str, time_serial: tuple, data_hub: 
         if 1.0 < cash / loan < 1.7 and loan_vs_totol_asset > 0.3:
             score = 0
             reason.append('%s: 资金：%s万；借款：%s万。贷款总资产比：%.2f%%。利息净利润比%.2f%%' %
-                          (period, cash / 10000, loan / 10000, loan_vs_totol_asset * 100, fin_fee_vs_benefit * 100))
+                          (period.year, cash / 10000, loan / 10000, loan_vs_totol_asset * 100, fin_fee_vs_benefit * 100))
         results.append(AnalysisResult(securities, period, score, reason))
     return results
 
@@ -281,15 +281,15 @@ def analysis_current_and_quick_ratio(securities: str, time_serial: tuple, data_h
 
         if row['流动比率'] < 2.0:
             score -= 50
-            reason.append('%s: 流动比率为%.2f < 2.0' % (str(period), row['流动比率']))
+            reason.append('%s: 流动比率为%.2f < 2.0' % (period.year, row['流动比率']))
         else:
-            reason.append('%s: 流动比率为%.2f - 合格' % (str(period), row['流动比率']))
+            reason.append('%s: 流动比率为%.2f - 合格' % (period.year, row['流动比率']))
 
         if row['速动比率'] < 1.0:
             score -= 50
-            reason.append('%s: 速动比率为%.2f < 1.0' % (str(period), row['速动比率']))
+            reason.append('%s: 速动比率为%.2f < 1.0' % (period.year, row['速动比率']))
         else:
-            reason.append('%s: 速动比率为%.2f - 合格' % (str(period), row['速动比率']))
+            reason.append('%s: 速动比率为%.2f - 合格' % (period.year, row['速动比率']))
 
         results.append(AnalysisResult(securities, period,  score, reason))
     return results
@@ -321,29 +321,29 @@ def analysis_roe_roa(securities: str, time_serial: tuple, data_hub: DataHubEntry
         if row['总资产收益率'] < 0.05:
             score -= 50
             reason.append('%s: 总资产收益率为%s%% - 过低' %
-                          (str(period), format_pct(row['总资产收益率'])))
+                          (period.year, format_pct(row['总资产收益率'])))
         elif row['总资产收益率'] > 0.15:
             score -= 50
             reason.append('%s: 总资产收益率为%s%% - 偏高，需要引起注意' %
-                          (str(period), format_pct(row['总资产收益率'])))
+                          (period.year, format_pct(row['总资产收益率'])))
         else:
             # Theory: 7.5% - 13%, but we use 5% - 15% for wider tolerance.
             reason.append('%s: 总资产收益率为%s%% - 合理' %
-                          (str(period), format_pct(row['总资产收益率'])))
+                          (period.year, format_pct(row['总资产收益率'])))
             pass
 
         if row['净资产收益率'] < 0.15:
             score -= 50
             reason.append('%s: 净资产收益率为%s%% - 偏低' %
-                          (str(period), format_pct(row['净资产收益率'])))
+                          (period.year, format_pct(row['净资产收益率'])))
         elif row['净资产收益率'] > 0.40:
             score = 0
             reason.append('%s: 净资产收益率为%s%% - 过高，可能是造假或偶然因素' %
-                          (str(period), format_pct(row['净资产收益率'])))
+                          (period.year, format_pct(row['净资产收益率'])))
         else:
             # Theory: 15% - 39%.
             reason.append('%s: 净资产收益率为%s%% - 合理' %
-                          (str(period), format_pct(row['净资产收益率'])))
+                          (period.year, format_pct(row['净资产收益率'])))
 
         results.append(AnalysisResult(securities, period, score, reason))
     return results
