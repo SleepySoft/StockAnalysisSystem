@@ -94,6 +94,100 @@ def analysis_dispersed_ownership(securities: str, time_serial: tuple, data_hub: 
         AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, reason)
 
 
+def analysis_stock_unlock(securities: str, time_serial: tuple, data_hub: DataHubEntry,
+                          database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
+    nop(time_serial, database, context, kwargs)
+    df = data_hub.get_data_center().query('Stockholder.Repurchase', securities, (years_ago(2), now()),)
+    if df is None or len(df) == 0:
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_PASS, '前三个月或后半年内没有解禁数据')
+
+    reasons = []
+    for index, row in df.iterrows():
+        float_date = row['float_date']
+        float_share = row['float_share']
+        float_ratio = row['float_ratio']
+
+        if days_ago(90) < float_date < days_after(180):
+            reasons.append('%s: 解禁%s股，占总股份%s%%' % (float_date.date(), float_share, float_ratio))
+
+    return AnalysisResult(securities, None, AnalysisResult.SCORE_FAIL, reasons) if len(reasons) > 0 else \
+        AnalysisResult(securities, None, AnalysisResult.SCORE_PASS, '前三个月或后半年内没有解禁数据')
+
+
+def analysis_increase_decrease(securities: str, time_serial: tuple, data_hub: DataHubEntry,
+                               database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
+    nop(time_serial, database, context, kwargs)
+    df = data_hub.get_data_center().query('Stockholder.ReductionIncrease', securities, (years_ago(2), now()),)
+    if df is None or len(df) == 0:
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '前后一年内没有增减持数据')
+
+    volume = 0
+    reasons = []
+    for index, row in df.iterrows():
+        holder_name = row['holder_name']
+        holder_type = row['holder_type']
+        holder_type = {
+            'G': '高管',
+            'P': '个人',
+            'C': '公司',
+        }.get(holder_type, '')
+
+        increase_or_decrease = row['in_de']
+        change_vol = row['change_vol']
+        change_ratio = row['change_ratio']
+        avg_price = row['avg_price']
+
+        begin_date = row['begin_date']
+        close_date = row['close_date']
+
+        if days_ago(365) < begin_date < days_after(365) or days_ago(365) < close_date < days_after(365):
+            if increase_or_decrease == 'IN':
+                volume += change_vol
+                operation = '增持'
+            elif increase_or_decrease == 'DE':
+                volume -= change_vol
+                operation = '减持'
+            else:
+                operation = ''
+
+            if operation != '':
+                reasons.append('%s - %s: %s[%s]以平均价格%s元%s%s股，占流通股%s%%' %
+                               (begin_date.date(), close_date.date(),
+                                holder_type, holder_name,
+                                avg_price, operation, change_vol, change_ratio))
+
+    final_score = AnalysisResult.SCORE_FAIL if volume < 0 else AnalysisResult.SCORE_PASS
+    return AnalysisResult(securities, None, final_score, reasons)
+
+
+def analysis_repurchase(securities: str, time_serial: tuple, data_hub: DataHubEntry,
+                        database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
+    nop(time_serial, database, context, kwargs)
+    df = data_hub.get_data_center().query('Stockholder.Repurchase', securities, (years_ago(2), now()),)
+    if df is None or len(df) == 0:
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_FAIL, '前后一年内没有回购数据')
+
+    reasons = []
+    for index, row in df.iterrows():
+        proc = row['proc']
+
+        if proc != '股东大会通过':
+            # For multiple calculate, just count pass
+            continue
+
+        ann_date = row['ann_date']
+        end_date = row['end_date']
+
+        volume = row['vol']
+        low_limit = row['low_limit']
+        high_limit = row['high_limit']
+
+        reasons.append('%s: 股东大会通过，截止%s将以%s - %s的价格回购%s股股票' %
+                       (ann_date.date(), end_date.date(), low_limit, high_limit, volume))
+
+    return AnalysisResult(securities, None, AnalysisResult.SCORE_PASS, reasons)
+
+
 # ------------------------------------------------------ 05 - 10 -------------------------------------------------------
 
 
@@ -104,11 +198,11 @@ def analysis_dispersed_ownership(securities: str, time_serial: tuple, data_hub: 
 
 METHOD_LIST = [
     # 1 - 5
-    ('4ccedeea-b731-4b97-9681-d804838e351b', '股权质押过高',    '排除股权质押高于50%的公司',            equity_interest_pledge_too_high),
-    ('e515bd4b-db4f-49e2-ac55-1927a28d2a1c', '股权分散',       '排除最大股东持股不足10%的企业',         analysis_dispersed_ownership),
-    ('41e20665-4b1b-4423-97de-33764de09e02', '',       '',         None),
-    ('1dfe5faa-183c-4b30-aa5f-e0c55e064c31', '',       '',         None),
-    ('b646a253-33ec-4313-a5f3-7419363079a8', '',       '',         None),
+    ('4ccedeea-b731-4b97-9681-d804838e351b', '股权质押过高',      '排除股权质押高于50%的公司',              equity_interest_pledge_too_high),
+    ('e515bd4b-db4f-49e2-ac55-1927a28d2a1c', '股权分散',          '排除最大股东持股不足10%的企业',          analysis_dispersed_ownership),
+    ('41e20665-4b1b-4423-97de-33764de09e02', '非流通股解禁',      '排除最近有非流通股解禁的企业',           analysis_stock_unlock),
+    ('1dfe5faa-183c-4b30-aa5f-e0c55e064c31', '股份回购',          '选择最近有回购的企业',                   analysis_increase_decrease),
+    ('b646a253-33ec-4313-a5f3-7419363079a8', '股东增减持',        '排除最近有减持的企业，选择有增持的企业', analysis_repurchase),
 ]
 
 
