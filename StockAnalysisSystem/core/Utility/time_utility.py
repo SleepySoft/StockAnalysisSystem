@@ -7,35 +7,34 @@ def now() -> datetime.datetime:
 
 
 def today() -> datetime.datetime:
-    date_text = datetime.datetime.today().strftime('%Y-%m-%d')
-    return text2date(date_text)
-
-
-def tomorrow() -> datetime.datetime:
-    date_text = (datetime.datetime.today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-    return text2date(date_text)
-
-
-def yesterday() -> datetime.datetime:
-    date_text = (datetime.datetime.today() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-    return text2date(date_text)
+    return datetime.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 def days_ago(days: int) -> datetime.datetime:
-    now_date = datetime.datetime.today()
-    now_date -= datetime.timedelta(days=days)
-    date_text = now_date.strftime('%Y-%m-%d')
-    return text2date(date_text)
+    the_date = datetime.datetime.today() - datetime.timedelta(days=days)
+    return the_date.replace(hour=0, minute=0, second=0, microsecond=0)
+
+
+def days_after(days: int) -> datetime.datetime:
+    the_date = datetime.datetime.today() + datetime.timedelta(days=days)
+    return the_date.replace(hour=0, minute=0, second=0, microsecond=0)
+
+
+def tomorrow() -> datetime.datetime:
+    return days_after(1)
+
+
+def yesterday() -> datetime.datetime:
+    return days_ago(1)
+
+
+def years_ago_of(base: datetime.datetime, years: int):
+    the_date = base - datetime.timedelta(days=years*365)
+    return the_date.replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 def years_ago(years: int) -> datetime.datetime:
     return years_ago_of(datetime.datetime.today(), years)
-
-
-def years_ago_of(base: datetime.datetime, years: int):
-    date = base - datetime.timedelta(days=years*365)
-    date_text = date.strftime('%Y-%m-%d')
-    return text2date(date_text)
 
 
 def tomorrow_of(time: datetime.datetime):
