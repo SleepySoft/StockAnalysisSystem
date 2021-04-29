@@ -47,7 +47,7 @@ def equity_interest_pledge_too_high(securities: str, time_serial: tuple, data_hu
 def analysis_dispersed_ownership(securities: str, time_serial: tuple, data_hub: DataHubEntry,
                                  database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
     nop(database, context, kwargs)
-    df = data_hub.get_data_center().query('Stockholder.Statistics', securities, (years_ago(3), now()),)
+    df = data_hub.get_data_center().query('Stockholder.Statistics', securities, (years_ago(3), now()))
     if df is None or len(df) == 0:
         return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '没有数据')
     df = df[df['period'].dt.month == 12]
@@ -97,7 +97,7 @@ def analysis_dispersed_ownership(securities: str, time_serial: tuple, data_hub: 
 def analysis_stock_unlock(securities: str, time_serial: tuple, data_hub: DataHubEntry,
                           database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
     nop(time_serial, database, context, kwargs)
-    df = data_hub.get_data_center().query('Stockholder.Repurchase', securities, (years_ago(2), now()),)
+    df = data_hub.get_data_center().query('Stockholder.StockUnlock', securities, (years_ago(2), now()))
     if df is None or len(df) == 0:
         return AnalysisResult(securities, None, AnalysisResult.SCORE_PASS, '前三个月或后半年内没有解禁数据')
 
@@ -107,6 +107,9 @@ def analysis_stock_unlock(securities: str, time_serial: tuple, data_hub: DataHub
         float_share = row['float_share']
         float_ratio = row['float_ratio']
 
+        # Maybe have not converted to datetime but keeping str
+        if not isinstance(float_date, datetime.datetime):
+            float_date = text_auto_time(float_date)
         if days_ago(90) < float_date < days_after(180):
             reasons.append('%s: 解禁%s股，占总股份%s%%' % (float_date.date(), float_share, float_ratio))
 
@@ -117,7 +120,7 @@ def analysis_stock_unlock(securities: str, time_serial: tuple, data_hub: DataHub
 def analysis_increase_decrease(securities: str, time_serial: tuple, data_hub: DataHubEntry,
                                database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
     nop(time_serial, database, context, kwargs)
-    df = data_hub.get_data_center().query('Stockholder.ReductionIncrease', securities, (years_ago(2), now()),)
+    df = data_hub.get_data_center().query('Stockholder.ReductionIncrease', securities, (years_ago(2), now()))
     if df is None or len(df) == 0:
         return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '前后一年内没有增减持数据')
 
@@ -163,9 +166,10 @@ def analysis_increase_decrease(securities: str, time_serial: tuple, data_hub: Da
 def analysis_repurchase(securities: str, time_serial: tuple, data_hub: DataHubEntry,
                         database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
     nop(time_serial, database, context, kwargs)
-    df = data_hub.get_data_center().query('Stockholder.Repurchase', securities, (years_ago(2), now()),)
+    df = data_hub.get_data_center().query('Stockholder.Repurchase', securities, (years_ago(2), now()))
     if df is None or len(df) == 0:
         return AnalysisResult(securities, None, AnalysisResult.SCORE_FAIL, '前后一年内没有回购数据')
+    df.where(df.notnull(), None)
 
     reasons = []
     for index, row in df.iterrows():
@@ -182,8 +186,21 @@ def analysis_repurchase(securities: str, time_serial: tuple, data_hub: DataHubEn
         low_limit = row['low_limit']
         high_limit = row['high_limit']
 
-        reasons.append('%s: 股东大会通过，截止%s将以%s - %s的价格回购%s股股票' %
-                       (ann_date.date(), end_date.date(), low_limit, high_limit, volume))
+        end_date_text = ('截止%s' % end_date.date()) if isinstance(end_date, datetime.datetime) else ''
+
+        if low_limit is not None and high_limit is not None:
+            price_text = '将以%s - %s的价格' % (low_limit, high_limit)
+        elif low_limit is not None:
+            price_text = '将以最低价格%s' % low_limit
+        elif high_limit is not None:
+            price_text = '将以最高价格%s' % high_limit
+        else:
+            price_text = ''
+
+        volume_text = ('%s股' % volume) if volume is not None else ''
+
+        reasons.append('%s: 股东大会通过，%s%s回购%s股票' %
+                       (ann_date.date(), end_date_text, price_text, volume_text))
 
     return AnalysisResult(securities, None, AnalysisResult.SCORE_PASS, reasons)
 
@@ -201,8 +218,8 @@ METHOD_LIST = [
     ('4ccedeea-b731-4b97-9681-d804838e351b', '股权质押过高',      '排除股权质押高于50%的公司',              equity_interest_pledge_too_high),
     ('e515bd4b-db4f-49e2-ac55-1927a28d2a1c', '股权分散',          '排除最大股东持股不足10%的企业',          analysis_dispersed_ownership),
     ('41e20665-4b1b-4423-97de-33764de09e02', '非流通股解禁',      '排除最近有非流通股解禁的企业',           analysis_stock_unlock),
-    ('1dfe5faa-183c-4b30-aa5f-e0c55e064c31', '股份回购',          '选择最近有回购的企业',                   analysis_increase_decrease),
-    ('b646a253-33ec-4313-a5f3-7419363079a8', '股东增减持',        '排除最近有减持的企业，选择有增持的企业', analysis_repurchase),
+    ('1dfe5faa-183c-4b30-aa5f-e0c55e064c31', '股份回购',          '选择最近有回购的企业',                   analysis_repurchase),
+    ('b646a253-33ec-4313-a5f3-7419363079a8', '股东增减持',        '排除最近有减持的企业，选择有增持的企业', analysis_increase_decrease),
 ]
 
 
