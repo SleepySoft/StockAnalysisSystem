@@ -189,9 +189,11 @@ def analysis_repurchase(securities: str, time_serial: tuple, data_hub: DataHubEn
 def analysis_increase_decrease(securities: str, time_serial: tuple, data_hub: DataHubEntry,
                                database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
     nop(time_serial, database, context, kwargs)
+    no_data_result = AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '前后一年内没有增减持数据')
+
     df = data_hub.get_data_center().query('Stockholder.ReductionIncrease', securities, (years_ago(2), now()))
     if df is None or len(df) == 0:
-        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '前后一年内没有增减持数据')
+        return no_data_result
 
     volume = 0
     reasons = []
@@ -229,7 +231,18 @@ def analysis_increase_decrease(securities: str, time_serial: tuple, data_hub: Da
                                 close_date.date() if close_date is not None else '?',
                                 holder_type, stock_holder, avg_price, operation, change_vol, change_ratio))
 
+    if len(reasons) == 0:
+        return no_data_result
+
+    if volume > 0:
+        conclusion = '此期间净增持%s股' % volume
+    elif volume < 0:
+        conclusion = '此期间净减持%s股' % -volume
+    else:
+        conclusion = '此期间增持减持持平'
+    reasons.append(conclusion)
     final_score = AnalysisResult.SCORE_FAIL if volume < 0 else AnalysisResult.SCORE_PASS
+
     return AnalysisResult(securities, None, final_score, reasons)
 
 
