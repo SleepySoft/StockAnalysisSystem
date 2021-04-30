@@ -188,9 +188,9 @@ class SasAnalysisTask(ResourceTask):
 
     def run(self):
         if self.__extra_params.get('attach_basic_index', False):
-            self.progress().set_progress('attach_basic_index', 0, 100)
+            self.progress().set_progress('attach_basic_index', 0, len(self.__securities))
         if self.__extra_params.get('generate_report', False):
-            self.progress().set_progress('generate_report', 0, 100)
+            self.progress().set_progress('generate_report', 0, len(self.__securities))
 
         stock_list = self.selected_securities()
         result_list = self.analysis(stock_list)
