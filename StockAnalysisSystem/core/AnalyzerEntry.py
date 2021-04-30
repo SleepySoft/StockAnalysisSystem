@@ -115,6 +115,8 @@ class StrategyEntry:
         if progress_rate is not None:
             for analyzer in analyzers:
                 progress_rate.set_progress(analyzer, 0, len(securities))
+            # So the percentage of the dump progress is weight enough
+            progress_rate.set_progress('dump_result_json', 0, len(securities))
 
         # Remove microsecond to avoid mongodb query fail.
         # time_serial = [t.replace(microsecond=0)  for t in time_serial]
@@ -184,6 +186,7 @@ class StrategyEntry:
 
         self.dump_analysis_report(total_result, full_dump_path)
         self.dump_strategy_name_dict(name_dict_path)
+        progress_rate.finish_progress('dump_result_json')
 
         return total_result
 

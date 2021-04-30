@@ -97,24 +97,93 @@ def analysis_dispersed_ownership(securities: str, time_serial: tuple, data_hub: 
 def analysis_stock_unlock(securities: str, time_serial: tuple, data_hub: DataHubEntry,
                           database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
     nop(time_serial, database, context, kwargs)
-    df = data_hub.get_data_center().query('Stockholder.StockUnlock', securities, (years_ago(2), now()))
-    if df is None or len(df) == 0:
-        return AnalysisResult(securities, None, AnalysisResult.SCORE_PASS, '前三个月或后半年内没有解禁数据')
+    no_data_result = AnalysisResult(securities, None, AnalysisResult.SCORE_PASS, '前三个月或后半年内没有解禁数据')
+
+    df: pd.DataFrame = data_hub.get_data_center().query('Stockholder.StockUnlock', securities, (years_ago(2), now()))
+    if df is None or df.empty:
+        return no_data_result
+
+    df = df[df['float_date'].notna()]
+    df['float_date'] = df['float_date'].apply(text_auto_time)
+    mask = (df['float_date'] > days_ago(90)) & (df['float_date'] <= days_after(180))
+    df = df.loc[mask]
+    if df is None or df.empty:
+        return no_data_result
+
+    df_group = df.groupby('float_date')
 
     reasons = []
-    for index, row in df.iterrows():
-        float_date = row['float_date']
-        float_share = row['float_share']
-        float_ratio = row['float_ratio']
+    for g, df in df_group:
+        float_date = g
+        float_share = sum(df['float_share'])
+        float_ratio = sum(df['float_ratio'])
 
-        # Maybe have not converted to datetime but keeping str
-        if not isinstance(float_date, datetime.datetime):
-            float_date = text_auto_time(float_date)
-        if days_ago(90) < float_date < days_after(180):
-            reasons.append('%s: 解禁%s股，占总股份%s%%' % (float_date.date(), float_share, float_ratio))
+        reasons.append('%s: 解禁%s股，占总股份%s%%' % (float_date.date(), float_share, float_ratio))
+
+    # for index, row in df.iterrows():
+    #     float_date = row['float_date']
+    #     float_share = row['float_share']
+    #     float_ratio = row['float_ratio']
+    #
+    #     # Maybe have not converted to datetime but keeping str
+    #     # Maybe there're a lot of unlock in one day
+    #
+    #     if not isinstance(float_date, datetime.datetime):
+    #         float_date = text_auto_time(float_date)
+    #     if days_ago(90) < float_date < days_after(180):
+    #         reasons.append('%s: 解禁%s股，占总股份%s%%' % (float_date.date(), float_share, float_ratio))
 
     return AnalysisResult(securities, None, AnalysisResult.SCORE_FAIL, reasons) if len(reasons) > 0 else \
         AnalysisResult(securities, None, AnalysisResult.SCORE_PASS, '前三个月或后半年内没有解禁数据')
+
+
+def analysis_repurchase(securities: str, time_serial: tuple, data_hub: DataHubEntry,
+                        database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
+    nop(time_serial, database, context, kwargs)
+    df = data_hub.get_data_center().query('Stockholder.Repurchase', securities, (years_ago(1), now()))
+    if df is None or len(df) == 0:
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_FAIL, '前后一年内没有回购数据')
+    # df = df.where(df.notnull(), None)
+
+    reasons = []
+    for index, row in df.iterrows():
+        proc = row['proc']
+
+        if proc != '股东大会通过':
+            # For multiple calculate, just count pass
+            continue
+
+        ann_date = row['ann_date']
+
+        # TS_ISSUE: Some fields may miss
+        end_date = row['end_date'] if 'end_date' in df.columns else None
+
+        volume = row['vol'] if 'vol' in df.columns else None
+        low_limit = row['low_limit'] if 'low_limit' in df.columns else None
+        high_limit = row['high_limit'] if 'high_limit' in df.columns else None
+
+        end_date_text = ('截止%s' % end_date.date()) if \
+            isinstance(end_date, datetime.datetime) and end_date is not pd.NaT else ''
+
+        if not pd.isnull(low_limit) and not pd.isnull(high_limit):
+            if low_limit == high_limit:
+                price_text = '将以%s元的价格' % low_limit
+            else:
+                price_text = '将以%s - %s元的价格' % (low_limit, high_limit)
+        elif not pd.isnull(low_limit):
+            price_text = '将以最低%s元的价格' % low_limit
+        elif not pd.isnull(high_limit):
+            price_text = '将以最高%s元的价格' % high_limit
+        else:
+            price_text = ''
+
+        volume_text = ('%s股' % volume) if not pd.isnull(volume) else ''
+
+        reasons.append('%s: 股东大会通过，%s%s回购%s股票' %
+                       (ann_date.date(), end_date_text, price_text, volume_text))
+
+    return AnalysisResult(securities, None, AnalysisResult.SCORE_PASS, reasons) if len(reasons) > 0 else \
+        AnalysisResult(securities, None, AnalysisResult.SCORE_FAIL, '前后一年内没有回购数据')
 
 
 def analysis_increase_decrease(securities: str, time_serial: tuple, data_hub: DataHubEntry,
@@ -161,48 +230,6 @@ def analysis_increase_decrease(securities: str, time_serial: tuple, data_hub: Da
 
     final_score = AnalysisResult.SCORE_FAIL if volume < 0 else AnalysisResult.SCORE_PASS
     return AnalysisResult(securities, None, final_score, reasons)
-
-
-def analysis_repurchase(securities: str, time_serial: tuple, data_hub: DataHubEntry,
-                        database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
-    nop(time_serial, database, context, kwargs)
-    df = data_hub.get_data_center().query('Stockholder.Repurchase', securities, (years_ago(2), now()))
-    if df is None or len(df) == 0:
-        return AnalysisResult(securities, None, AnalysisResult.SCORE_FAIL, '前后一年内没有回购数据')
-    df.where(df.notnull(), None)
-
-    reasons = []
-    for index, row in df.iterrows():
-        proc = row['proc']
-
-        if proc != '股东大会通过':
-            # For multiple calculate, just count pass
-            continue
-
-        ann_date = row['ann_date']
-        end_date = row['end_date']
-
-        volume = row['vol']
-        low_limit = row['low_limit']
-        high_limit = row['high_limit']
-
-        end_date_text = ('截止%s' % end_date.date()) if isinstance(end_date, datetime.datetime) else ''
-
-        if low_limit is not None and high_limit is not None:
-            price_text = '将以%s - %s的价格' % (low_limit, high_limit)
-        elif low_limit is not None:
-            price_text = '将以最低价格%s' % low_limit
-        elif high_limit is not None:
-            price_text = '将以最高价格%s' % high_limit
-        else:
-            price_text = ''
-
-        volume_text = ('%s股' % volume) if volume is not None else ''
-
-        reasons.append('%s: 股东大会通过，%s%s回购%s股票' %
-                       (ann_date.date(), end_date_text, price_text, volume_text))
-
-    return AnalysisResult(securities, None, AnalysisResult.SCORE_PASS, reasons)
 
 
 # ------------------------------------------------------ 05 - 10 -------------------------------------------------------
