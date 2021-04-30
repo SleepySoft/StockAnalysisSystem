@@ -219,8 +219,11 @@ class UniversalDataCenter:
         # ------------------------- Merge --------------------------
 
         clock = Clock()
-        table.merge(uri, identity, result)
-        print('%s: [%s] - Persistence finished, time spending: %sms' % (uri, str(identity), clock.elapsed_ms()))
+        ret = table.merge(uri, identity, result)
+        if ret:
+            print('%s: [%s] - Persistence finished, time spending: %sms' % (uri, str(identity), clock.elapsed_ms()))
+        else:
+            print('%s: [%s] - Persistence fail' % (uri, str(identity)))
 
         # ----------------------- Update Table ----------------------
 

@@ -359,7 +359,9 @@ def __fetch_stock_holder_reduction_increase_full(**kwargs) -> pd.DataFrame or No
 
             # 抱歉，您每分钟最多访问该接口100次
             ts_delay('stk_holdertrade')
-            result_part = pro.stk_holdertrade(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
+            # If not specify fields, begin_date and close_date will be missing.
+            result_part = pro.stk_holdertrade(ts_code=ts_code, start_date=ts_since, end_date=ts_until,
+                                              fields=list(FIELDS['Stockholder.ReductionIncrease'].keys()))
             result = result_part if result is None else pd.concat([result, result_part], axis=0, ignore_index=True)
             result.reindex()
 
@@ -369,9 +371,11 @@ def __fetch_stock_holder_reduction_increase_full(**kwargs) -> pd.DataFrame or No
 
     if result is not None:
         result.fillna('')
-        result['stock_identity'] = result['ts_code']
-        result['stock_identity'] = result['stock_identity'].str.replace('.SH', '.SSE')
-        result['stock_identity'] = result['stock_identity'].str.replace('.SZ', '.SZSE')
+        result['stock_identity'] = result['ts_code'].apply(ts_code_to_stock_identity)
+        result['ann_date'] = pd.to_datetime(result['ann_date'])
+        result['stock_holder'] = result['holder_name']
+
+        del result['holder_name']
 
     return result
 

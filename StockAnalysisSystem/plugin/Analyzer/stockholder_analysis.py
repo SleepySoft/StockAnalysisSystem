@@ -196,7 +196,7 @@ def analysis_increase_decrease(securities: str, time_serial: tuple, data_hub: Da
     volume = 0
     reasons = []
     for index, row in df.iterrows():
-        holder_name = row['holder_name']
+        stock_holder = row['stock_holder']
         holder_type = row['holder_type']
         holder_type = {
             'G': '高管',
@@ -205,14 +205,15 @@ def analysis_increase_decrease(securities: str, time_serial: tuple, data_hub: Da
         }.get(holder_type, '')
 
         increase_or_decrease = row['in_de']
-        change_vol = row['change_vol']
-        change_ratio = row['change_ratio']
-        avg_price = row['avg_price']
+        change_vol = row['change_vol'] if 'change_vol' in df.columns else '?'
+        change_ratio = row['change_ratio'] if 'change_ratio' in df.columns else '?'
+        avg_price = row['avg_price'] if 'avg_price' in df.columns else '?'
 
-        begin_date = row['begin_date']
-        close_date = row['close_date']
+        begin_date = text_auto_time(row['begin_date'])
+        close_date = text_auto_time(row['close_date'])
 
-        if days_ago(365) < begin_date < days_after(365) or days_ago(365) < close_date < days_after(365):
+        if (begin_date is not None and days_ago(365) < begin_date < days_after(365)) or \
+           (close_date is not None and days_ago(365) < close_date < days_after(365)):
             if increase_or_decrease == 'IN':
                 volume += change_vol
                 operation = '增持'
@@ -224,9 +225,9 @@ def analysis_increase_decrease(securities: str, time_serial: tuple, data_hub: Da
 
             if operation != '':
                 reasons.append('%s - %s: %s[%s]以平均价格%s元%s%s股，占流通股%s%%' %
-                               (begin_date.date(), close_date.date(),
-                                holder_type, holder_name,
-                                avg_price, operation, change_vol, change_ratio))
+                               (begin_date.date() if begin_date is not None else '?',
+                                close_date.date() if close_date is not None else '?',
+                                holder_type, stock_holder, avg_price, operation, change_vol, change_ratio))
 
     final_score = AnalysisResult.SCORE_FAIL if volume < 0 else AnalysisResult.SCORE_PASS
     return AnalysisResult(securities, None, final_score, reasons)

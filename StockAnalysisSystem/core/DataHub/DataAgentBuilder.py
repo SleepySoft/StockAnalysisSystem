@@ -199,7 +199,7 @@ def build_data_agent(database_entry: DatabaseEntry):
 
         DataAgent(
             uri='Stockholder.ReductionIncrease',
-            depot=DepotMongoDB(primary_keys=['stock_identity', 'ann_date', 'stock_holder'],
+            depot=DepotMongoDB(primary_keys=['stock_identity', 'ann_date', 'stock_holder', 'in_de'],    # in_de follows ts.
                                client=mongodb_client,
                                database='StockAnalysisSystem',
                                data_table=uri_to_table('Stockholder.ReductionIncrease')),
