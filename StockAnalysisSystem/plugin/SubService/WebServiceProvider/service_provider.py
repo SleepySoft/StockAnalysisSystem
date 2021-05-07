@@ -2,68 +2,77 @@ import os
 import base64
 import pickle
 import traceback
+import threading
 import pandas as pd
-import StockAnalysisSystem.core.api as sasApi
-# from StockAnalysisSystem.interface.interface import SasInterface as sasIF
-# import StockAnalysisSystem.core.Utility.time_utility as sasTimeUtil
-from StockAnalysisSystem.core.Utility.resource_manager import ResourceManager
-from .user_manager import UserManager
-from .access_control import AccessControl
-from ..render.common_render import generate_display_page
+
+try:
+    from user_manager import UserManager
+    from access_control import AccessControl
+    from common_render import generate_display_page
+except Exception as e:
+    root_path = os.path.dirname(os.path.abspath(__file__))
+    os.sys.path.append(root_path)
+
+    from user_manager import UserManager
+    from access_control import AccessControl
+    from common_render import generate_display_page
+finally:
+    pass
 
 
 class ServiceProvider:
-    SERVICE_LIST = ['stock_analysis_system', 'offline_analysis_result']
+    def __init__(self):
+        self.__init = False
+        self.__lock = threading.Lock()
 
-    def __init__(self, service_table: dict):
-        self.__service_table = service_table
-        self.__sas_interface = None
+        self.__sas_if = None
         self.__sas_api = None
 
         self.__config = None
         self.__logger = print
         self.__user_manager = UserManager()
         self.__access_control = AccessControl()
-        self.__resource_manager = ResourceManager()
 
         self.__offline_analysis_result = None
 
     def init(self, config) -> bool:
         final_ret = True
+        with self.__lock:
+            if self.__init:
+                return True
 
-        from StockAnalysisSystem.core.config import Config
-        self.__config = config if config is not None else Config()
+            from StockAnalysisSystem.core.config import Config
+            self.__config = config if config is not None else Config()
 
-        if self.__service_table.get('stock_analysis_system', False):
-            ret = self.__init_sas()
-            final_ret = ret and final_ret
+            # ret = self.__init_sas()
+            # final_ret = ret and final_ret
 
-        if self.__service_table.get('offline_analysis_result'):
             ret = self.__init_offline_analysis_result()
             final_ret = ret and final_ret
 
+            self.__init = final_ret
         return final_ret
 
-    def __init_sas(self) -> bool:
-        try:
-            self.log('Init StockAnalysisSystem...')
-            from StockAnalysisSystem.interface.interface_local import LocalInterface
-            # from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
-            self.__sas_interface = LocalInterface()
-            self.__sas_interface.if_init(os.getcwd(), config=self.__config)
-            # if not self.__sas_interface.sas_init(project_path=os.getcwd(), config=self.__config):
-            #     raise Exception(sasIF.__sas().get_log_errors())
-            self.__sas_api = sasApi
-            self.log('Init StockAnalysisSystem Complete.')
-            return True
-        except Exception as e:
-            self.__sas = None
-            self.log(str(e))
-            self.log(str(traceback.format_exc()))
-            self.log('Init StockAnalysisSystem Fail')
-            return False
-        finally:
-            pass
+    # def __init_sas(self) -> bool:
+    #     try:
+    #         self.log('Init StockAnalysisSystem...')
+    #         from StockAnalysisSystem.interface.interface_local import LocalInterface
+    #         # from StockAnalysisSystem.core.StockAnalysisSystem import StockAnalysisSystem
+    #         self.__sas_interface = LocalInterface()
+    #         self.__sas_interface.if_init(os.getcwd(), config=self.__config)
+    #         # if not self.__sas_interface.sas_init(project_path=os.getcwd(), config=self.__config):
+    #         #     raise Exception(sasIF.__sas().get_log_errors())
+    #         self.__sas_api = sasApi
+    #         self.log('Init StockAnalysisSystem Complete.')
+    #         return True
+    #     except Exception as e:
+    #         self.__sas = None
+    #         self.log(str(e))
+    #         self.log(str(traceback.format_exc()))
+    #         self.log('Init StockAnalysisSystem Fail')
+    #         return False
+    #     finally:
+    #         pass
 
     def __init_offline_analysis_result(self) -> bool:
         self.log('Init OfflineAnalysisResult...')
@@ -93,7 +102,7 @@ class ServiceProvider:
     def sys_call(self, token: str, feature: str, *args, **kwargs):
         access, reason = self.check_accessible(token, feature, *args, **kwargs)
         if access:
-            resp = sasApi.sys_call(feature, *args, **kwargs)
+            resp = self.__sas_api.sys_call(feature, *args, **kwargs)
             return resp
         else:
             return reason
@@ -101,7 +110,7 @@ class ServiceProvider:
     def interface_call(self, token: str, feature: str, *args, **kwargs) -> (bool, any):
         access, reason = self.check_accessible(token, feature, *args, **kwargs)
         if access:
-            func = getattr(self.__sas_interface, feature, None)
+            func = getattr(self.__sas_if, feature, None)
             resp = func(*args, **kwargs) if func is not None else None
             return resp
         else:

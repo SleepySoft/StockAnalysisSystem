@@ -1,10 +1,20 @@
+import os
 import json
 import traceback
 import pandas as pd
 
-from ..render.common_render import data_frame_to_html
 from StockAnalysisSystem.core.config import Config
 import StockAnalysisSystem.core.Utility.AnalyzerUtility as analyzer_util
+
+try:
+    from common_render import data_frame_to_html
+except Exception as e:
+    root_path = os.path.dirname(os.path.abspath(__file__))
+    os.sys.path.append(root_path)
+
+    from common_render import data_frame_to_html
+finally:
+    pass
 
 
 class OfflineAnalysisResult:

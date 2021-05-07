@@ -1,28 +1,38 @@
+import uuid
 import datetime
 import threading
 from collections import deque
 
 
 class Event:
-    EVENT_MAIL = 'mail_event'
-    EVENT_PUSH = 'push_event'
-    EVENT_TIMER = 'timer_event'
-    EVENT_INVOKE = 'invoke_event'
-    EVENT_SCHEDULE = 'schedule_event'
-    EVENT_BROADCAST = 'broadcast_event'
+    EVENT_ACK = 'ack_event'                 # The reply event of EVENT_INVOKE
+    EVENT_MAIL = 'mail_event'               # Communication between sub-service
+    EVENT_PUSH = 'push_event'               # Push message, push service can handle this kind of message
+    EVENT_TIMER = 'timer_event'             # Period timer event
+    EVENT_INVOKE = 'invoke_event'           # The event to invoke other sub-service feature
+    EVENT_SCHEDULE = 'schedule_event'       # Triggered by system service scheduler
+    EVENT_BROADCAST = 'broadcast_event'     # The event that can be received by all service
 
-    def __init__(self, event_type: str, event_target: str):
+    def __init__(self, event_type: str, event_target: str, event_source: str = None):
+        self.__id = str(uuid.uuid4())
         self.__event_type = event_type
         self.__event_target = event_target
+        self.__event_source = event_source
         self.__event_data = {}
         self.__post_timestamp = datetime.datetime.now()
         self.__process_timestamp = datetime.datetime.now()
+
+    def event_id(self) -> str:
+        return self.__id
 
     def event_type(self) -> str:
         return self.__event_type
 
     def event_target(self) -> str or [str] or None:
         return self.__event_target
+
+    def event_source(self) -> str:
+        return self.__event_source
 
     # ---------------------------------------------------------------------
 
@@ -49,6 +59,36 @@ class Event:
     def update_process_timestamp(self):
         self.__process_timestamp = datetime.datetime.now()
 
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+class EventAck(Event):
+    def __init__(self, event_source: str, ack_event: Event, invoke_result: any):
+        self.update_event_data('ack_event', ack_event)
+        self.update_event_data('invoke_result', invoke_result)
+        super(EventAck, self).__init__(Event.EVENT_ACK, ack_event.event_source(), event_source)
+
+    def get_ack_event(self) -> Event:
+        return self.get_event_data().get('ack_event')
+
+    def get_invoke_result(self) -> any:
+        return self.get_event_data().get('invoke_result')
+
+
+class EventInvoke(Event):
+    def __init__(self, event_target: str, event_source: str, invoke_function: str, **kwargs):
+        self.set_event_data('invoke_function', invoke_function)
+        self.set_event_data('invoke_parameters', kwargs)
+        super(EventInvoke, self).__init__(Event.EVENT_INVOKE, event_target, event_source)
+
+    def get_invoke_function(self) -> str:
+        return self.get_event_data().get('invoke_function')
+
+    def get_invoke_parameters(self) -> dict:
+        return self.get_event_data().get('invoke_parameters')
+
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 class EventHandler:
     def __init__(self):
