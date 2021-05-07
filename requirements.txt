@@ -19,9 +19,14 @@ tornado
 py2exe
 baostock
 h5py
-flask
+# flask
 flask-login
 xmltodict
 psutil
 APScheduler
-wxpy
+protobuf==3.11.3
+
+# PyWeChatSpy
+Flask==1.1.2
+zmq
+pywin32
