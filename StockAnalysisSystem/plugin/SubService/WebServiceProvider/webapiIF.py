@@ -5,6 +5,7 @@ from flask import request
 from StockAnalysisSystem.core.config import Config
 from StockAnalysisSystem.core.Utility.relative_import import RelativeImport
 from StockAnalysisSystem.core.Utility.JsonSerializer import serialize, deserialize
+import StockAnalysisSystem.core.Utility.JsonSerializerImpl
 
 with RelativeImport(__file__):
     from service_provider import ServiceProvider

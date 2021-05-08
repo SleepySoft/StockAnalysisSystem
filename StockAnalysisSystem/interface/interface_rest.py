@@ -3,8 +3,14 @@ import datetime
 import traceback
 import pandas as pd
 from functools import partial
-import StockAnalysisSystem.core.Utility.JsonSerializerImpl
 from StockAnalysisSystem.core.Utility.JsonSerializer import serialize, deserialize
+import StockAnalysisSystem.core.Utility.JsonSerializerImpl
+
+# --------------------------------------------------------------------------------------
+# Just porting THIS FILE and JsonSerializerImpl.py, JsonSerializer.py into your project.
+#     Then you can access StockAnalysisSystem (sas) data by REST interface
+#         without porting the whole sas project into your code.
+# --------------------------------------------------------------------------------------
 
 
 class RestInterface:
