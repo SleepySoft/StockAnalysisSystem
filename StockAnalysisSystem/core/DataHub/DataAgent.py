@@ -247,6 +247,15 @@ class DataAgent:
         return self.__depot.upsert(df) if self.__merge_strategy == DataAgent.MERGE_UPSERT else \
                self.__depot.insert(df)
 
+    def delete(self, uri: str, identity: str or [str] = None, time_serial: tuple = None, **extra) -> bool:
+        conditions = self.pack_conditions(identity, time_serial)
+        # TODO: Process and Remove not condition params
+        conditions.update(extra)
+        depot = self.data_depot_of(uri, identity, time_serial, extra)
+        ret = depot.delete(uri, identity, time_serial, extra)
+        return ret
+
+
     def data_range(self, uri: str, identity: str = None) -> (datetime.datetime, datetime.datetime):
         nop(uri)
         if str_available(self.datetime_field()):
