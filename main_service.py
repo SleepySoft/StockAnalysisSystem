@@ -1,103 +1,42 @@
 import os
+import time
 import traceback
 
-from flask import Flask, request
-from StockAnalysisSystem.core.config import Config
 import StockAnalysisSystem.core.api as sasApi
-from StockAnalysisSystem.interface.interface import SasInterface as sasIF
-import StockAnalysisSystem.service.interface.restIF as restIF
-import StockAnalysisSystem.service.interface.wechatIF as wechatIF
-import StockAnalysisSystem.service.interface.webapiIF as webapiIF
-from StockAnalysisSystem.interface.interface_local import LocalInterface
-from StockAnalysisSystem.service.provider.provider import ServiceProvider
+from StockAnalysisSystem.core.config import Config
 
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-app = Flask(__name__)
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-@app.route('/', methods=['GET', 'POST'])
-def root_entry():
-    print('-> Request /')
-    return ''
-
-
-@app.route('/api', methods=['POST'])
-def webapi_entry():
-    # print('-> Request /api')
+def init_sas(work_path: str, config: Config or None) -> bool:
     try:
-        response = webapiIF.handle_request(request)
+        print('Init StockAnalysisSystem...')
+        from StockAnalysisSystem.interface.interface_local import LocalInterface
+        __sas_interface = LocalInterface()
+        __sas_interface.if_init(project_path=work_path, config=config)
+        print('Init StockAnalysisSystem Complete.')
+        return True
     except Exception as e:
-        print('/api Error', e)
-        print(traceback.format_exc())
-        response = ''
+        print(str(e))
+        print(str(traceback.format_exc()))
+        print('Init StockAnalysisSystem Fail')
+        return False
     finally:
         pass
-    return response
-
-
-@app.route('/analysis', methods=['GET', 'POST'])
-def analysis_entry():
-    print('-> Request /analysis')
-    return restIF.analysis(request)
-
-
-# @app.route('/query', methods=['GET'])
-# def query_entry():
-#     print('-> Request /query')
-#     try:
-#         response = restIF.query(request)
-#     except Exception as e:
-#         print('/wx Error', e)
-#         print(traceback.format_exc())
-#         response = ''
-#     finally:
-#         pass
-#     return response
-
-
-@app.route('/wx', methods=['GET', 'POST'])
-def wechat_entry():
-    print('-> Request /wx')
-    try:
-        response = wechatIF.handle_request(request)
-    except Exception as e:
-        print('/wx Error', e)
-        print(traceback.format_exc())
-        response = ''
-    finally:
-        pass
-    return response
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-def init(provider: ServiceProvider, config: Config):
-    config.load_config()
-    provider.init(config)
-    restIF.init(provider, config)
-    wechatIF.init(provider, config)
-    webapiIF.init(provider, config)
 
 
 def main():
-    provider = ServiceProvider({
-        'stock_analysis_system': True,
-        # 'offline_analysis_result': True,
-    })
+    if not init_sas(os.getcwd(), None):
+        exit(1)
 
-    config = Config()
-    config.load_config()
-    init(provider, config)
+    config = sasApi.config()
     port = config.get('service_port', '80')
     debug = config.get('service_debug', 'true')
     print('Start service: port = %s, debug = %s.' % (port, debug))
 
-    # https://stackoverflow.com/a/9476701/12929244
-    app.run(host='0.0.0.0', port=str(port), debug=(debug == 'true'), use_reloader=False)
+    while True:
+        # TODO: Add something?
+        time.sleep(1)
 
 
 if __name__ == '__main__':
@@ -109,5 +48,3 @@ if __name__ == '__main__':
         exit()
     finally:
         pass
-
-

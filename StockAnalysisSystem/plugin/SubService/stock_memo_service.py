@@ -8,9 +8,23 @@ from StockAnalysisSystem.core.api_util import ensure_dir
 from StockAnalysisSystem.core.Utility.TagsLib import Tags
 from StockAnalysisSystem.core.Utility.event_queue import Event
 from StockAnalysisSystem.core.SubServiceManager import SubServiceContext
+from StockAnalysisSystem.core.Utility.relative_import import RelativeImport
 
-from StockMemo.StockMemo import StockMemo
-from StockMemo.BlackList import BlackList
+with RelativeImport(__file__):
+    from StockMemo.StockMemo import StockMemo
+    from StockMemo.BlackList import BlackList
+
+# try:
+#     from StockMemo.StockMemo import StockMemo
+#     from StockMemo.BlackList import BlackList
+# except Exception as e:
+#     root_path = os.path.dirname(os.path.abspath(__file__))
+#     os.sys.path.append(root_path)
+#
+#     from StockMemo.StockMemo import StockMemo
+#     from StockMemo.BlackList import BlackList
+# finally:
+#     pass
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -57,7 +71,7 @@ class StockMemoService:
         self.__sas_api.register_sys_call('add_to_black_list',           self.__black_list.add_to_black_list,            group='black_list')
         self.__sas_api.register_sys_call('remove_from_black_list',      self.__black_list.remove_from_black_list,       group='black_list')
         self.__sas_api.register_sys_call('get_black_list_data',         self.__black_list.get_black_list_data,          group='black_list')
-        self.__sas_api.register_sys_call('save_black_list',             self.__black_list.reload_black_list_data,       group='black_list')
+        self.__sas_api.register_sys_call('reload_black_list_data',      self.__black_list.reload_black_list_data,       group='black_list')
 
 
 # ----------------------------------------------------------------------------------------------------------------------
