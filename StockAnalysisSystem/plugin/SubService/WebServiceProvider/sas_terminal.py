@@ -55,3 +55,34 @@ class SasTerminal:
             pass
         else:
             return '你输入的股票不存在'
+
+        df = self.__sas_api.data_center().query('Result.Analyzer')
+
+        # # Warning: Advanced operation - Directly operate database collection
+        #
+        # from StockAnalysisSystem.core.DataHub.DataAgent import DataAgent
+        # from StockAnalysisSystem.core.UniversalDataDepot.DepotMongoDB import DepotMongoDB
+        #
+        # agent: DataAgent = self.__sas_api.data_center().get_data_agent('Result.Analyzer')
+        # if agent is None:
+        #     return '数据不支持'
+        #
+        # prob = agent.prob()
+        # depot: DepotMongoDB = prob.get('depot', None)
+        # if not isinstance(depot, DepotMongoDB):
+        #     return '数据不支持'
+        #
+        # collection = depot.raw()
+        # if collection is None:
+        #     return '数据不支持'
+        #
+        # result = collection.aggregate([
+        #     {'$match': {'stock_identity': securities[0]}},
+        #     {'$sort': {'period': -1, 'analyzer': -1}},
+        #     {'$group': {
+        #         '_id': None,
+        #         'period': {'$last': '$period'},
+        #         'analyzer': {'$first': '$analyzer'}
+        #     }}
+        # ])
+        # result_l = list(result)

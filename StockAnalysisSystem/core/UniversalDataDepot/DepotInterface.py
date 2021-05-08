@@ -68,6 +68,9 @@ class DepotInterface:
     def drop(self) -> bool:
         pass
 
+    def raw(self) -> any:
+        pass
+
     # ----------------------------- Advanced Operation ------------------------------
 
     def range_of(self, field, *args, conditions: dict = None, **kwargs) -> (any, any):
