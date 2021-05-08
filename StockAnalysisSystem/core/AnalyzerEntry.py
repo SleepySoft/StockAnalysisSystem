@@ -81,14 +81,14 @@ class StrategyEntry:
             if r.period is None:
                 # This kind of result comes from real-time analyzer
                 # We should delete the old result then update with current time
-                r.period = now()
+                r.period = now().replace(microsecond=0)
                 if str_available(r.method) and r.method not in delete_analyzer_cache:
                     delete_analyzer_cache.append(r.method)
             p = r.pack()
             p['period'] = text_auto_time(p['period'])
             analysis_result_packs.append(p)
         for analyzer in delete_analyzer_cache:
-            self.__data_hub.get_data_center().delete_local_data(uri, identity=analyzer)
+            self.__data_hub.get_data_center().delete_local_data(uri, analyzer=analyzer)
         self.__data_hub.get_data_center().merge_local_data(uri, '', analysis_result_packs)
 
     def result_from_cache(self, uri: str, analyzer: str or [str] = None, identity: str or [str] = None,

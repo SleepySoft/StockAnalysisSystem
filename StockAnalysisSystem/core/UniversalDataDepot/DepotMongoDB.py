@@ -238,7 +238,9 @@ class DepotMongoDB(DepotInterface):
         full_conditions = self.full_conditions(*args, conditions=conditions)
         spec = {}
         for k, v in full_conditions.items():
-            if isinstance(v, tuple):
+            if v is None:
+                continue
+            elif isinstance(v, tuple):
                 # Range
                 sub_cond = {}
                 if len(v) >= 1 and v[0] is not None:

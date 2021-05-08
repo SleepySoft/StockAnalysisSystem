@@ -151,7 +151,12 @@ class UniversalDataCenter:
         agent = self.get_data_agent(uri)
         if agent is None:
             return False
-        agent.delete(uri, identity, time_serial, **extra)
+        if 'fields' in extra:
+            fields = extra.get('fields')
+            del extra['fields']
+        else:
+            fields = None
+        agent.delete(uri, identity, time_serial, extra, fields)
         return True
 
     def update_local_data(self, uri: str, identity: str or [str] = None,
