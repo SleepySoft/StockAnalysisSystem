@@ -52,9 +52,9 @@ class SysCall:
         """
         if func_name in self.__sys_call_table.keys():
             if replace:
-                print('Sys call %s already exists - replace.' % func_name)
+                print('Sys call [%s] already exists - replace.' % func_name)
             else:
-                print('Sys call %s already exists - ignore.' % func_name)
+                print('Sys call [%s] already exists - ignore.' % func_name)
                 return False
         self.__sys_call_table[func_name] = (func_entry, kwargs)
         return True

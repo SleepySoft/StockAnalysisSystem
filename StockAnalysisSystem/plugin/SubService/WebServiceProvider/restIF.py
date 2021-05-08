@@ -1,6 +1,10 @@
+import os
 from flask import request
-from ..provider.provider import ServiceProvider
 from StockAnalysisSystem.core.config import Config
+from StockAnalysisSystem.core.Utility.relative_import import RelativeImport
+
+with RelativeImport(__file__):
+    from service_provider import ServiceProvider
 
 
 service_provider: ServiceProvider = None

@@ -1,10 +1,14 @@
+import os
 import time
 import hashlib
 from flask import request
 
-from .wechat import WeChat
-from ..provider.provider import ServiceProvider
 from StockAnalysisSystem.core.config import Config
+from StockAnalysisSystem.core.Utility.relative_import import RelativeImport
+
+with RelativeImport(__file__):
+    from wechat import WeChat
+    from service_provider import ServiceProvider
 
 
 wechat: WeChat = None

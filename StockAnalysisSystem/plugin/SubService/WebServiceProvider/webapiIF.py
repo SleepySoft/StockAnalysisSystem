@@ -1,11 +1,13 @@
+import os
 import json
-import pandas as pd
+import traceback
 from flask import request
-from StockAnalysisSystem.interface.interface_local import LocalInterface, traceback
-from StockAnalysisSystem.service.provider.provider import ServiceProvider
 from StockAnalysisSystem.core.config import Config
-import StockAnalysisSystem.core.Utility.JsonSerializerImpl
+from StockAnalysisSystem.core.Utility.relative_import import RelativeImport
 from StockAnalysisSystem.core.Utility.JsonSerializer import serialize, deserialize
+
+with RelativeImport(__file__):
+    from service_provider import ServiceProvider
 
 
 # ----------------------------------------------------------------------------------------------------------------------

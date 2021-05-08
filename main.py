@@ -34,6 +34,9 @@ def main():
     dlg = WrapperQDialog(if_sel_ui)
     dlg.exec()
 
+    if not dlg.is_ok():
+        exit(0)
+
     is_local = if_sel_ui.is_local()
     url, port = if_sel_ui.get_remote_host_config()
     user, passwd, token = if_sel_ui.get_remote_host_authentication()
