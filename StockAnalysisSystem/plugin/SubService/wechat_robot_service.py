@@ -6,28 +6,18 @@ import os
 import sys
 import time
 import shutil
-import logging
 import traceback
 from lxml import etree
 from queue import Queue
-from logging.handlers import TimedRotatingFileHandler
+from StockAnalysisSystem.core.Utility.relative_import import RelativeImport
 
-try:
+with RelativeImport(__file__):
     from PyWeChatSpy import WeChatSpy
     from PyWeChatSpy.command import *
     from PyWeChatSpy.proto import spy_pb2
-    from PyWeChatSpy.games.truth_or_dare import TruthOrDare
-except Exception as e:
-    root_path = os.path.dirname(os.path.abspath(__file__))
-    os.sys.path.append(root_path)
 
-    from PyWeChatSpy import WeChatSpy
-    from PyWeChatSpy.command import *
-    from PyWeChatSpy.proto import spy_pb2
-    from PyWeChatSpy.games.truth_or_dare import TruthOrDare
-finally:
-    pass
 
+# ----------------------------------------------------------------------------------------------------------------------
 
 SERVICE_ID = '12d59df4-c218-45af-9a3e-a0b99526c291'
 

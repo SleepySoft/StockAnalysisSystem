@@ -43,7 +43,7 @@ def main():
 
     sasif = init_if(is_local, remote_url=url, remote_token=token)
 
-    prob = sasif.if_prob()
+    prob = sasif.sas_service_prob()
     if prob is None:
         print('Interface access FAIL. Quit.')
         exit(1)
