@@ -76,6 +76,11 @@ class DepotMongoDB(DepotInterface):
         collection.drop()
         return True
 
+    def raw(self) -> any:
+        return self.__get_collection()
+
+    # ----------------------------- Advanced Operation ------------------------------
+
     def range_of(self, field: str, *args, conditions: dict = None, **kwargs) -> (any, any):
         collection = self.__get_collection()
         if collection is None:
