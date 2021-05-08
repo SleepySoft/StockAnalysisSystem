@@ -83,7 +83,7 @@ class StrategyEntry:
                 # We should delete the old result then update with current time
                 r.period = now()
                 if str_available(r.method) and r.method not in delete_analyzer_cache:
-                    delete_analyzer_cache.append(r.period)
+                    delete_analyzer_cache.append(r.method)
             p = r.pack()
             p['period'] = text_auto_time(p['period'])
             analysis_result_packs.append(p)

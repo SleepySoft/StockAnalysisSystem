@@ -340,10 +340,10 @@ class LocalInterface(sasIF):
     # ------------------------- Check / Prob / Config -------------------------
 
     def sas_service_prob(self) -> dict:
-        pass
+        return {}
 
     def sas_service_check(self) -> dict:
-        pass
+        return {}
 
     def sas_get_service_config(self) -> dict:
         return sasApi.config().get_all_config()
