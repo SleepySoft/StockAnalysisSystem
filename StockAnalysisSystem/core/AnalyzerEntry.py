@@ -75,15 +75,20 @@ class StrategyEntry:
         # return result_table
 
     def cache_analysis_result(self, uri: str, result_list: list):
+        delete_analyzer_cache = []
         analysis_result_packs = []
         for r in result_list:
             if r.period is None:
-                # Storage with the latest quarter
-                r.period = previous_quarter(now())
+                # This kind of result comes from real-time analyzer
+                # We should delete the old result then update with current time
+                r.period = now()
+                if str_available(r.method) and r.method not in delete_analyzer_cache:
+                    delete_analyzer_cache.append(r.period)
             p = r.pack()
             p['period'] = text_auto_time(p['period'])
             analysis_result_packs.append(p)
-        # analysis_result_packs = [r.pack() for r in result_list if r.period is not None]
+        for analyzer in delete_analyzer_cache:
+            self.__data_hub.get_data_center().delete_local_data(uri, identity=analyzer)
         self.__data_hub.get_data_center().merge_local_data(uri, '', analysis_result_packs)
 
     def result_from_cache(self, uri: str, analyzer: str or [str] = None, identity: str or [str] = None,
@@ -103,6 +108,20 @@ class StrategyEntry:
                          enable_from_cache: bool = True, enable_update_cache: bool = True,
                          debug_load_json: bool = False, debug_dump_json: bool = False,
                          dump_path: str = '') -> [AnalysisResult]:
+        """
+        Execute analysis and do extra job specified by param. And dump offline analysis result.
+        :param securities: The securities that you want to analysis
+        :param analyzers: The analyzer that you want to execute
+        :param time_serial: The time range as tuple that you want to analysis
+        :param progress_rate: The progress rate, None if you don't need the progress updating.
+        :param enable_calculation: If False, it will only use cached data or debug json data, not do calculation.
+        :param enable_from_cache: If True, it will get data from cache first. If not exists, than do calculation.
+        :param enable_update_cache: If True, the calculate result (if calculation executed) will be cached.
+        :param debug_load_json: If True, data will come from debug json file (not offline analysis result json).
+        :param debug_dump_json: If True, data will dump to debug json file (not offline analysis result json).
+        :param dump_path: The debug json and offline analysis result json dump directory (not file name).
+        :return: Analysis result list
+        """
         clock = Clock()
         total_result = []
 
