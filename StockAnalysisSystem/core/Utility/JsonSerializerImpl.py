@@ -5,6 +5,15 @@ import pandas as pd
 
 from .JsonSerializer import *
 
+# ----------------------------------------------------------------------------------------------------------------------
+
+# Import custom class here
+
+# Note that if you import * from common, the datetime importing will be conflict
+from StockAnalysisSystem.core.Utility.common import ProgressRate
+
+# ----------------------------------------------------------------------------------------------------------------------
+
 
 register_persist_class(pd.DataFrame,        lambda py_obj: py_obj.to_dict(orient='records'),
                                             lambda json_obj: pd.DataFrame(json_obj))

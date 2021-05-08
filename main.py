@@ -34,7 +34,7 @@ def main():
     dlg = WrapperQDialog(if_sel_ui)
     dlg.exec()
 
-    if not dlg.is_ok():
+    if not if_sel_ui.is_ok():
         exit(0)
 
     is_local = if_sel_ui.is_local()
@@ -42,6 +42,11 @@ def main():
     user, passwd, token = if_sel_ui.get_remote_host_authentication()
 
     sasif = init_if(is_local, remote_url=url, remote_token=token)
+
+    prob = sasif.if_prob()
+    if prob is None:
+        print('Interface access FAIL. Quit.')
+        exit(1)
 
     ui_ctx = UiContext()
     ui_ctx.set_sas_interface(sasif)

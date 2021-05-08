@@ -1,32 +1,20 @@
-import os
-import base64
-import pickle
-import traceback
 import threading
-import pandas as pd
 
-try:
+from StockAnalysisSystem.core.Utility.relative_import import RelativeImport
+
+with RelativeImport(__file__):
     from user_manager import UserManager
     from access_control import AccessControl
     from common_render import generate_display_page
-except Exception as e:
-    root_path = os.path.dirname(os.path.abspath(__file__))
-    os.sys.path.append(root_path)
-
-    from user_manager import UserManager
-    from access_control import AccessControl
-    from common_render import generate_display_page
-finally:
-    pass
 
 
 class ServiceProvider:
-    def __init__(self):
+    def __init__(self, sas_if, sas_api):
         self.__init = False
         self.__lock = threading.Lock()
 
-        self.__sas_if = None
-        self.__sas_api = None
+        self.__sas_if = sas_if
+        self.__sas_api = sas_api
 
         self.__config = None
         self.__logger = print

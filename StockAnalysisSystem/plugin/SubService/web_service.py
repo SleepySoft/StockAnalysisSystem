@@ -3,21 +3,14 @@ import traceback
 from flask import Flask, request
 
 from StockAnalysisSystem.core.SubServiceManager import SubServiceContext
+from StockAnalysisSystem.core.Utility.relative_import import RelativeImport
 
-try:
+with RelativeImport(__file__):
     import WebServiceProvider.restIF as restIF
-    import WebServiceProvider.wechatIF as wechatIF
     import WebServiceProvider.webapiIF as webapiIF
-except Exception as e:
-    root_path = os.path.dirname(os.path.abspath(__file__))
-    os.sys.path.append(root_path)
+    import WebServiceProvider.wechatIF as wechatIF
+    from WebServiceProvider.service_provider import ServiceProvider
 
-    from PyWeChatSpy import WeChatSpy
-    from PyWeChatSpy.command import *
-    from PyWeChatSpy.proto import spy_pb2
-    from PyWeChatSpy.games.truth_or_dare import TruthOrDare
-finally:
-    pass
 
 SERVICE_ID = 'f54e8afa-959d-44a2-8a95-545175be92a7'
 
@@ -48,6 +41,7 @@ def plugin_capacities() -> list:
 # ----------------------------------------------------------------------------------------------------------------------
 
 flaskApp: Flask = None
+serviceProvider: ServiceProvider = None
 subServiceContext: SubServiceContext = None
 
 
@@ -61,8 +55,17 @@ def init(sub_service_context: SubServiceContext) -> bool:
         global subServiceContext
         subServiceContext = sub_service_context
 
+        global serviceProvider
+        serviceProvider = ServiceProvider(subServiceContext.sas_if,
+                                          subServiceContext.sas_api)
+
         global flaskApp
         flaskApp = Flask(__name__)
+
+        config = subServiceContext.sas_api.config()
+        restIF.init(serviceProvider, config)
+        webapiIF.init(serviceProvider, config)
+        wechatIF.init(serviceProvider, config)
     except Exception as e:
         import traceback
         print('Plugin-in init error: ' + str(e))

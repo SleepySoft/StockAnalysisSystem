@@ -1,17 +1,14 @@
 import json
 
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-# Note that if you import * from common, the datetime importing will be conflict
-from StockAnalysisSystem.core.Utility.common import ProgressRate
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-
 """
+***** When you import this file. You should also import JsonSerializerImpl.py for serializer/deserializer register *****
+    
 Note:
+
     The object in DataFrame (like time stamp) will be different after serialize and deserialize (it turns to str).
+    Except you implement customer serialize/deserialize function and register to the SerializeTable.
+
+    We usually register our customer serialize/deserialize function in JsonSerializerImpl.py
 """
 
 META_PREFIX = '#class:'

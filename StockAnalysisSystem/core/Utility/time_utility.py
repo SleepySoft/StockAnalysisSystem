@@ -37,12 +37,12 @@ def years_ago(years: int) -> datetime.datetime:
     return years_ago_of(datetime.datetime.today(), years)
 
 
-def tomorrow_of(time: datetime.datetime):
-    return time + datetime.timedelta(days=1)
+def tomorrow_of(_time: datetime.datetime):
+    return _time + datetime.timedelta(days=1)
 
 
-def yesterday_of(time: datetime.datetime):
-    return time - datetime.timedelta(days=1)
+def yesterday_of(_time: datetime.datetime):
+    return _time - datetime.timedelta(days=1)
 
 
 def to_date(_time: datetime.date or datetime.datetime or any):

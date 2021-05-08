@@ -30,6 +30,7 @@ class InterfaceSelectUi(QWidget):
         self.__button_ok = QPushButton('OK')
         self.__button_exit = QPushButton('Exit')
 
+        self.__is_ok = False
         self.__is_local = True
         self.__host_uri = ''
         self.__host_port = ''
@@ -40,6 +41,9 @@ class InterfaceSelectUi(QWidget):
         self.init_ui()
 
     # ------------------------------------------------------------------------------------------------------------------
+
+    def is_ok(self) -> bool:
+        return self.__is_ok
 
     def is_local(self) -> bool:
         return self.__is_local
@@ -104,6 +108,7 @@ class InterfaceSelectUi(QWidget):
         self.__enable_host_setting(False)
 
     def __on_button_ok(self):
+        self.__is_ok = True
         self.__is_local = self.__radio_local_if.isChecked()
         self.__host_uri = self.__line_remote_if_host.text()
         self.__host_port = self.__line_remote_if_port.text()
