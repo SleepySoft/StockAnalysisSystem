@@ -43,7 +43,7 @@ def analyzer_stock_portrait(securities: str, time_serial: tuple, data_hub: DataH
     nop(kwargs)
 
     if check_industry_in(securities, ['银行', '保险', '房地产', '全国地产', '区域地产'], data_hub, database, context):
-        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业')
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业', '不适用于此行业')
 
     df_balance, result = query_readable_annual_report_pattern(data_hub, 'Finance.BalanceSheet',
                                                               securities, time_serial,
@@ -74,8 +74,10 @@ def analyzer_stock_portrait(securities: str, time_serial: tuple, data_hub: DataH
             ('-' if can_ignore_or_negative(row['经营活动产生的现金流量净额'], net_assets, 0.1) else '+') + \
             ('-' if can_ignore_or_negative(row['投资活动产生的现金流量净额'], net_assets, 0.1) else '+') + \
             ('-' if can_ignore_or_negative(row['筹资活动产生的现金流量净额'], net_assets, 0.1) else '+')
-        results.append(AnalysisResult(securities, period, portrait_score_table.get(portrait, 0),
-                                      '%s : [%s] %s' % (period.year, portrait, portrait_comments_table.get(portrait, ''))))
+
+        brief = portrait_comments_table.get(portrait, '')
+        reason = '%s : [%s] %s' % (period.year, portrait, portrait_comments_table.get(portrait, ''))
+        results.append(AnalysisResult(securities, period, portrait_score_table.get(portrait, 0), reason, brief))
     return results
 
     # portrait_counts = len(portraits)
@@ -104,7 +106,7 @@ def analyzer_check_monetary_fund(securities: str, time_serial: tuple, data_hub: 
     nop(kwargs)
 
     if check_industry_in(securities, ['银行', '保险', '房地产', '全国地产', '区域地产'], data_hub, database, context):
-        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业')
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业', '不适用于此行业')
 
     fields_balance_sheet = ['货币资金', '资产总计', '负债合计',
                             '短期借款', '一年内到期的非流动负债', '其他流动负债',
@@ -131,6 +133,7 @@ def analyzer_check_monetary_fund(securities: str, time_serial: tuple, data_hub: 
     results = []
     for index, row in df.iterrows():
         score = []
+        brief = []
         reason = []
         period = row['period']
 
@@ -139,29 +142,38 @@ def analyzer_check_monetary_fund(securities: str, time_serial: tuple, data_hub: 
         else:
             if row['货币资金/有息负债'] < 2.0:
                 score.append(0)
+                brief.append('货币资金/有息负债 < 2')
+                reason.append('%s : 货币资金/有息负债 = %s, 小于2倍' % (period.year, format_pct(row['货币资金/有息负债'])))
             elif row['货币资金/有息负债'] < 3.0:
                 score.append(60)
-            reason.append('%s : 货币资金/有息负债 = %s' % (period.year, format_pct(row['货币资金/有息负债'])))
+                brief.append('货币资金/有息负债 < 3')
+                reason.append('%s : 货币资金/有息负债 = %s, 小于3倍' % (period.year, format_pct(row['货币资金/有息负债'])))
 
         if row['货币资金/短期负债'] < 1.0:
             score.append(0)
+            brief.append('货币资金/短期负债 < 1')
             reason.append('%s : 货币资金/短期负债 = %s, 小于1' % (period.year, format_pct(row['货币资金/短期负债'])))
         else:
             score.append(100)
 
         if row['有息负债/资产总计'] > 0.6:
             score.append(0)
+            brief.append('有息负债/资产总计 > 60%%')
             reason.append('%s 有息负债/资产总计 = %s, 大于 60%%' % (period.year, format_pct(row['有息负债/资产总计'])))
         else:
             score.append(100)
 
         if row['货币资金+金融资产'] < row['有息负债']:
             score.append(0)
+            brief.append('货币资金+金融资产 < 有息负债')
             reason.append('%s : 货币资金+金融资产 = %s 小于 有息负债 %s' %
                           (period.year, format_w(row['货币资金+金融资产']), format_w(row['有息负债'])))
         else:
             score.append(100)
-        results.append(AnalysisResult(securities, period, int(float(sum(score)) / float(len(score))), reason))
+
+        avg_score = int(float(sum(score)) / float(len(score)))
+        brief = '; '.join(brief) if len(brief) > 0 else '正常'
+        results.append(AnalysisResult(securities, period, avg_score, reason, brief))
 
     return results
 
@@ -181,7 +193,7 @@ def analyzer_check_receivable_and_prepaid(
     nop(kwargs)
 
     if check_industry_in(securities, ['银行', '保险', '房地产', '全国地产', '区域地产'], data_hub, database, context):
-        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业')
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业', '不适用于此行业')
 
     fields_balance_sheet = ['应收账款', '应收票据', '其他应收款', '长期应收款', '应收款项', '预付款项']
     fields_income_statement = ['营业收入', '营业总收入', '减:营业成本']
@@ -211,6 +223,7 @@ def analyzer_check_receivable_and_prepaid(
     previous = None
     for index, row in df.iterrows():
         score = []
+        brief = []
         reason = []
         period = row['period']
 
@@ -218,12 +231,14 @@ def analyzer_check_receivable_and_prepaid(
 
         if row['应收款/营业收入'] > 0.6:
             score.append(0)
+            brief.append('应收款占比营业收入过大')
             reason.append('%s : 应收款/营业收入 = %s 大于 60%%' %
                           (period.year, format_pct(row['应收款/营业收入'])))
         else:
             score.append(100)
 
         if row['其他应收款/营业收入'] > 0.1:
+            brief.append('其他应收款占比营业收入过大')
             reason.append('%s : 其他应收款/营业收入 = %s 大于 10%%' %
                           (period.year, format_pct(row['其他应收款/营业收入'])))
             score.append(0)
@@ -234,11 +249,13 @@ def analyzer_check_receivable_and_prepaid(
 
         if row['应收款同比增长'] >= 10.0:
             score.append(0)
+            brief.append('应收款同比大幅上升')
             reason.append('%s : 应收款同比大幅上升 %s (%s -> %s)' %
                           (period.year, format_pct(row['应收款同比增长']),
                            format_w(previous['应收款']), format_w(row['应收款'])))
         elif row['应收款同比增长'] <= -0.9:
             score.append(0)
+            brief.append('应收款同比大幅下降')
             reason.append('%s : 应收款同比大幅下降 %s (%s -> %s)' %
                           (period.year, format_pct(row['应收款同比增长']),
                            format_w(previous['应收款']), format_w(row['应收款'])))
@@ -247,6 +264,7 @@ def analyzer_check_receivable_and_prepaid(
 
         if row['应收款/营业收入'] > 0.1 and row['应收增长/营业收入增长'] > 2.0:
             score.append(0)
+            brief.append('应收增长大于营业收入增长两倍以上')
             reason.append('%s : 应收增长（%s）大于 营业收入增长（%s）两倍以上' %
                           (period.year, format_pct(row['应收款同比增长']), format_pct(row['营业收入同比增长'])))
 
@@ -254,6 +272,7 @@ def analyzer_check_receivable_and_prepaid(
 
         if row['预付款项/营业成本'] > 0.1:
             score.append(0)
+            brief.append('预付款项/营业成本 > 10%%')
             reason.append('%s : 预付款项/营业成本 = %s 大于 10%%' %
                           (period.year, format_pct(row['预付款项/营业成本'])))
         else:
@@ -262,12 +281,16 @@ def analyzer_check_receivable_and_prepaid(
         if row['预付款项/营业成本'] > 0.05:
             if row['预付增长/营业成本增长'] > 1.5:
                 score.append(0)
+                brief.append('预付款项增长大于营业成本增长1.5倍以上')
                 reason.append('%s : 预付款项增长(%s)大于营业成本增长(%s)1.5倍以上' %
                               (period.year, format_pct(row['预付款项同比增长']), format_pct(row['营业成本同比增长'])))
         else:
             score.append(100)
         previous = row
-        results.append(AnalysisResult(securities, period, int(float(sum(score)) / float(len(score))), reason))
+
+        avg_score = int(float(sum(score)) / float(len(score)))
+        brief = '; '.join(brief) if len(brief) > 0 else '正常'
+        results.append(AnalysisResult(securities, period, avg_score, reason, brief))
 
     return results
 
@@ -303,6 +326,7 @@ def analyzer_asset_composition(securities: str, time_serial: tuple, data_hub: Da
     results = []
     for index, row in df.iterrows():
         score = []
+        brief = []
         reason = []
         period = row['period']
 
@@ -310,15 +334,18 @@ def analyzer_asset_composition(securities: str, time_serial: tuple, data_hub: Da
 
         if row['净资产'] < 10000.0:
             score.append(0)
+            brief.append('资不抵债')
             reason.append('%s : 净资产（%s）为负或过低（资不抵债）' % (period.year, row['净资产']))
 
         if row['商誉/净资产'] > 0.2 or row['商誉/总资产'] > 0.1:
             score.append(0)
+            brief.append('商誉过高')
             reason.append('%s : 商誉/净资产 = %s，商誉/总资产 = %s - 占比过高' %
                           (period.year, format_pct(row['商誉/净资产']), format_pct(row['商誉/总资产'])))
 
         if row['在建工程/总资产'] > 0.1:
             score.append(0)
+            brief.append('在建工程占比过高')
             reason.append('%s : 在建工程/总资产 = %s - 占比过高' % (period.year, format_pct(row['在建工程/总资产'])))
 
         judgement = ''
@@ -343,7 +370,9 @@ def analyzer_asset_composition(securities: str, time_serial: tuple, data_hub: Da
         #     reason.append('%s : 税前利润/固定资产 = %s - 小于平均社会平均资本回报率' %
         #                   (period.year, format_pct(row['税前利润/固定资产'])))
 
-        results.append(AnalysisResult(securities, period, int(float(sum(score)) / float(len(score))), reason))
+        score = int(float(sum(score)) / float(len(score)))
+        brief = '; '.join(brief) if len(brief) > 0 else '正常'
+        results.append(AnalysisResult(securities, period, score, reason, brief))
 
     return results
 
@@ -360,7 +389,7 @@ def analyzer_income_statement(securities: str, time_serial: tuple, data_hub: Dat
                               database: DatabaseEntry, context: AnalysisContext, **kwargs) -> [AnalysisResult]:
 
     if check_industry_in(securities, ['银行', '保险', '房地产', '全国地产', '区域地产'], data_hub, database, context):
-        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业')
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '不适用于此行业', '不适用于此行业')
 
     fields_balance_sheet = ['商誉', '在建工程', '固定资产', '资产总计', '负债合计']
     fields_income_statement = ['营业利润', '营业收入', '营业总收入', '净利润(含少数股东损益)',

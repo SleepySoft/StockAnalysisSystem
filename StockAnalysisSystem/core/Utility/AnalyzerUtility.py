@@ -55,7 +55,8 @@ class AnalysisResult:
     WEIGHT_ONE_VOTE_VETO = 999999
 
     def __init__(self, securities: str = '', period: datetime.datetime or None = None,
-                 score: int or bool = False, reason: str or [str] = '', weight: int = WEIGHT_NORMAL):
+                 score: int or bool = False, reason: str or [str] = '', brief:  str = '',
+                 weight: int = WEIGHT_NORMAL):
         self.method = ''
         self.period = to_py_datetime(period) if period is not None else None
         self.securities = securities
@@ -69,12 +70,19 @@ class AnalysisResult:
         else:
             self.score = score
 
+        if brief is None:
+            self.brief = ''
+        elif not str_available(brief):
+            self.brief = str(brief)
+        else:
+            self.brief = ''
+
         if reason is None:
-            self.reason = ''
+            self.reason = brief
         elif isinstance(reason, (list, tuple)):
             self.reason = '\n'.join(reason)
         else:
-            self.reason = reason
+            self.reason = str(reason)
 
         self.weight = weight
 
@@ -86,6 +94,7 @@ class AnalysisResult:
             'stock_identity': str(self.securities) if to_str else self.securities,
             
             'score': str(self.score) if to_str else self.score,
+            'brief': str(self.brief) if to_str else self.brief,
             'reason': str(self.reason) if to_str else self.reason,
             'weight': str(self.weight) if to_str else self.weight,
         }
@@ -100,6 +109,7 @@ class AnalysisResult:
         score = data.get('score', AnalysisResult.SCORE_NOT_APPLIED)
         self.score = str2float_safe(score, AnalysisResult.SCORE_NOT_APPLIED)
 
+        self.brief = data.get('brief', '')
         self.reason = data.get('reason', [])
         self.weight = float(data.get('weight', AnalysisResult.WEIGHT_NORMAL))
 
@@ -114,6 +124,7 @@ class AnalysisResult:
                sys.getsizeof(self.method) + \
                sys.getsizeof(self.securities) + \
                sys.getsizeof(self.score) +  \
+               sys.getsizeof(self.brief) +  \
                sys.getsizeof(self.reason) +  \
                sys.getsizeof(self.weight)
 
