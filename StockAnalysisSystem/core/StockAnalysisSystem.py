@@ -221,11 +221,13 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         self.__sub_service_manager = SubServiceManager(sasApi, sub_service_plugin)
         self.__sub_service_manager.init()
 
-        self.__task_queue.start()
-        self.__sub_service_manager.run_service()
-
         print('Stock Analysis System Initialization Done, Time spending: ' + str(clock.elapsed_ms()) + ' ms')
         self.__inited = True
+
+        # ------------------------------------------------------------------------------------
+        # Debug: Print loggers
+        # Note that service threads may add new loggers
+        # ------------------------------------------------------------------------------------
 
         print('-' * 50)
         print('Existing loggers: ')
@@ -233,6 +235,14 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         for name in logging.root.manager.loggerDict:
             print(name)
         print('-' * 50)
+
+        # ------------------------------------------------------------------------------------
+        # Mark init as finished, then we can start threads.
+        # Because thread may reference this singleton, which may trigger init() again.
+        # ------------------------------------------------------------------------------------
+
+        self.__task_queue.start()
+        self.__sub_service_manager.run_service()
 
         return True
 
