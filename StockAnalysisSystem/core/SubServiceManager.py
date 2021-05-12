@@ -93,6 +93,9 @@ class SubServiceManager:
     # --------------------------------------- Init & Startup ---------------------------------------
 
     def init(self) -> bool:
+        config = self.__sas_api.config()
+        disable_service = config.get('DISABLE_SERVICES', [])
+
         self.__plugin.refresh()
         modules = self.__plugin.all_modules()
         for module in modules:
@@ -100,6 +103,10 @@ class SubServiceManager:
 
             prob = service_wrapper.plugin_prob()
             if prob is None or 'plugin_id' not in prob or 'plugin_name' not in prob:
+                continue
+
+            if prob['plugin_id'] in disable_service:
+                print('Service %s disabled' % prob['plugin_name'])
                 continue
 
             capacities = service_wrapper.plugin_capacities()

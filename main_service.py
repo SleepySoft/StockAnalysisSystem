@@ -29,11 +29,6 @@ def main():
     if not init_sas(os.getcwd(), None):
         exit(1)
 
-    config = sasApi.config()
-    port = config.get('service_port', '80')
-    debug = config.get('service_debug', 'true')
-    print('Start service: port = %s, debug = %s.' % (port, debug))
-
     while True:
         # TODO: Add something?
         time.sleep(1)
