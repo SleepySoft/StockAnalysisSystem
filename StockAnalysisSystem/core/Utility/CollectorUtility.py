@@ -9,41 +9,66 @@ from .time_utility import *
 # If fetch data from tushare gets error message like: "抱歉，您每分钟最多访问该接口x次"
 # Fill the x to the corresponding entry of this table
 # This config is for 5000 scores. The number in comments is for 2000 or less.
+#
+# You can put your delay config in config.json as:
+#
+#    "TS_DELAY": {
+#        "daily_basic":          "0",
+#        "fina_mainbz":          "0",
+#        ......
+#    }
+#
 
-TS_DELAYER_TABLE = {
-    'daily_basic':          DelayerMinuteLimit(0),          # 500
-    'fina_mainbz':          DelayerMinuteLimit(0),          # 60
+DEFAULT_TS_DELAYER_TABLE = {
+    'daily_basic':          DelayerMinuteLimit(500),          # 500
+    'fina_mainbz':          DelayerMinuteLimit(60),          # 60
 
-    'fina_audit':           DelayerMinuteLimit(0),          # 50
-    'balancesheet':         DelayerMinuteLimit(0),          # 50
-    'income':               DelayerMinuteLimit(0),          # 50
-    'cashflow':             DelayerMinuteLimit(0),          # 50
+    'fina_audit':           DelayerMinuteLimit(50),          # 50
+    'balancesheet':         DelayerMinuteLimit(50),          # 50
+    'income':               DelayerMinuteLimit(50),          # 50
+    'cashflow':             DelayerMinuteLimit(50),          # 50
 
-    'index_daily':          DelayerMinuteLimit(0),          # 500
-    'daily_index':          DelayerMinuteLimit(0),          # 500
+    'index_daily':          DelayerMinuteLimit(500),          # 500
+    'daily_index':          DelayerMinuteLimit(500),          # 500
 
-    'concept_detail':       DelayerMinuteLimit(0),          # 100
-    'namechange':           DelayerMinuteLimit(0),          # 100
+    'concept_detail':       DelayerMinuteLimit(100),          # 100
+    'namechange':           DelayerMinuteLimit(100),          # 100
 
-    'pledge_stat':          DelayerMinuteLimit(0),          # 1200
-    'pledge_detail':        DelayerMinuteLimit(0),          # 1200
+    'pledge_stat':          DelayerMinuteLimit(1200),          # 1200
+    'pledge_detail':        DelayerMinuteLimit(1200),          # 1200
 
 
-    'stk_holdernumber':     DelayerMinuteLimit(0),          # 10
-    'top10_holders':        DelayerMinuteLimit(0),          # 10
-    'top10_floatholders':   DelayerMinuteLimit(0),          # 10
-    'stk_holdertrade':      DelayerMinuteLimit(300),        # 100
+    'stk_holdernumber':     DelayerMinuteLimit(10),          # 10
+    'top10_holders':        DelayerMinuteLimit(10),          # 10
+    'top10_floatholders':   DelayerMinuteLimit(10),          # 10
+    'stk_holdertrade':      DelayerMinuteLimit(300),        # 300
 
-    'daily':                DelayerMinuteLimit(0),          # 1200
-    'adj_factor':           DelayerMinuteLimit(0),          # 1200
+    'daily':                DelayerMinuteLimit(1200),          # 1200
+    'adj_factor':           DelayerMinuteLimit(1200),          # 1200
 
-    'repurchase':           DelayerMinuteLimit(0),          # 20
-    'share_float':          DelayerMinuteLimit(0),          # 20
+    'repurchase':           DelayerMinuteLimit(20),          # 20
+    'share_float':          DelayerMinuteLimit(20),          # 20
 }
 
 
+delayer_table = DEFAULT_TS_DELAYER_TABLE
+
+
+def set_delay_table(table: dict):
+    global delayer_table
+    try:
+        for k, v in table.items():
+            delayer_table[k] = DelayerMinuteLimit(int(v))
+    except Exception as e:
+        delayer_table = DEFAULT_TS_DELAYER_TABLE
+        print('Set delay table fail: ' + str(e))
+        print('Use default delay table.')
+    finally:
+        pass
+
+
 def ts_delay(ts_interface: str):
-    delayer = TS_DELAYER_TABLE.get(ts_interface)
+    delayer = delayer_table.get(ts_interface)
     if delayer is not None:
         delayer.delay()
 

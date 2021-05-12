@@ -1,3 +1,4 @@
+from .config import Config
 from .DataHub.DataAgentBuilder import *
 from .DataHub.DataUtility import DataUtility
 from .Database.DatabaseEntry import DatabaseEntry
@@ -6,9 +7,15 @@ from .DataHub.UniversalDataCenter import UniversalDataCenter
 
 
 class DataHubEntry:
-    def __init__(self, database_entry: DatabaseEntry, collector_plugin: PluginManager):
+    def __init__(self, database_entry: DatabaseEntry, collector_plugin: PluginManager, config: Config):
         self.__database_entry = database_entry
         self.__collector_plugin = collector_plugin
+        self.__config = config
+
+        delay_config = config.get('TS_DELAY', None)
+        if delay_config is not None:
+            from .Utility.CollectorUtility import set_delay_table
+            set_delay_table(delay_config)
 
         self.__data_extra = {}
         self.__data_center = UniversalDataCenter(database_entry, collector_plugin)

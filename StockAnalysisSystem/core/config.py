@@ -41,7 +41,7 @@ class Config:
         config_dict[config_name] = value
         return True
 
-    def get(self, key: str, default_value: str = '') -> str:
+    def get(self, key: str, default_value: str = '') -> str or dict:
         config_dict, config_name = self.__get_config_leaf(key, False)
         return config_dict.get(config_name, default_value) if isinstance(config_dict, dict) else default_value
 

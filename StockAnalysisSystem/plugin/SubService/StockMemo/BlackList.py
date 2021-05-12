@@ -1,16 +1,10 @@
 from StockAnalysisSystem.core.Utility.TagsLib import *
 from StockAnalysisSystem.core.Utility.WaitingWindow import *
 from StockAnalysisSystem.core.Utility.AnalyzerUtility import *
+from StockAnalysisSystem.core.Utility.relative_import import RelativeImport
 
-try:
-    from .StockMemo import StockMemo
-except Exception as e:
-    root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    os.sys.path.append(root_path)
-
-    from StockMemo.StockMemo import StockMemo
-finally:
-    pass
+with RelativeImport(__file__):
+    from StockMemo import StockMemo
 
 
 # -------------------------------------------------- class BlackList ---------------------------------------------------

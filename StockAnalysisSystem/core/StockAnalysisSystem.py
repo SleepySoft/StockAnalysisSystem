@@ -202,7 +202,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         # Because the ExtensionManager will refresh it.
         # extension_plugin.refresh()
 
-        self.__data_hub_entry = DataHubEntry(self.__database_entry, collector_plugin)
+        self.__data_hub_entry = DataHubEntry(self.__database_entry, collector_plugin, self.__config)
         self.__strategy_entry = StrategyEntry(strategy_plugin, self.__data_hub_entry, self.__database_entry)
 
         from .FactorEntry import FactorCenter
