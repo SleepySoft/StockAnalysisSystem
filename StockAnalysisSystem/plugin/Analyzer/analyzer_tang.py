@@ -424,6 +424,7 @@ def analyzer_income_statement(securities: str, time_serial: tuple, data_hub: Dat
     df['销售费用/营业收入同比'] = df['销售费用/营业收入'].pct_change()
     df['管理费用/营业收入同比'] = df['管理费用/营业收入'].pct_change()
 
+    brief = []
     results = []
     previous = None
     # aset_lost = 0
@@ -436,12 +437,14 @@ def analyzer_income_statement(securities: str, time_serial: tuple, data_hub: Dat
 
         if row['营业总收入'] < 0.1:
             score.append(0)
+            brief.append('营业总收入小于0')
             reason.append('%s : 营业总收入 %s 小于0' % (period.year, format_w(row['营业总收入'])))
             previous = row
             continue
 
         if row['毛利润'] < 0.1:
             score.append(0)
+            brief.append('毛利润小于0')
             reason.append('%s : 毛利润 %s 小于0' % (period.year, format_w(row['毛利润'])))
             previous = row
             continue
@@ -450,11 +453,13 @@ def analyzer_income_statement(securities: str, time_serial: tuple, data_hub: Dat
 
         if abs(row['销售费用/营业收入同比'] > 0.4):
             score.append(0)
+            brief.append('销售费用/营业收入变化超过40%%')
             reason.append('%s : 销售费用/营业收入 变化超过40%% (%s -> %s)' %
                           (period.year, format_pct(previous['销售费用/营业收入']), format_pct(row['销售费用/营业收入'])))
 
         if abs(row['管理费用/营业收入同比'] > 0.4):
             score.append(0)
+            brief.append('管理费用/营业收入变化超过40%%')
             reason.append('%s : 管理费用/营业收入 变化超过40%% (%s -> %s)' %
                           (period.year, format_pct(previous['管理费用/营业收入']), format_pct(row['管理费用/营业收入'])))
 
@@ -463,6 +468,7 @@ def analyzer_income_statement(securities: str, time_serial: tuple, data_hub: Dat
         if row['经营现金流/净利润'] > 1.0:
             score.append(100)
         elif row['经营现金流/净利润'] > 0.8:
+            brief.append('经营现金流/净利润 < 1')
             score.append(100 * row['经营现金流/净利润'])
             reason.append('%s : 经营现金流/净利润 = %s < 1.0' %
                           (period.year, format_pct(row['经营现金流/净利润'])))
@@ -471,11 +477,13 @@ def analyzer_income_statement(securities: str, time_serial: tuple, data_hub: Dat
 
         if row['营业外收入/营业总收入'] > 0.1:
             score.append(0)
+            brief.append('营业外收入占比过高')
             reason.append('%s : 营业外收入占比%s，超过10%%' %
                           (period.year, format_pct(row['营业外收入/营业总收入'])))
 
         if abs(row['资产减值损失/营业总收入']) > 0.2:
             # aset_lost += 1
+            brief.append('资产减值损失过高')
             reason.append('%s : 资产减值损失/营业总收入 = %s，超过20%%' %
                           (period.year, format_pct(abs(row['资产减值损失/营业总收入']))))
 
@@ -492,6 +500,7 @@ def analyzer_income_statement(securities: str, time_serial: tuple, data_hub: Dat
             score.append(60)
         else:
             score.append(0)
+            brief.append('三费/营业总收入 过高')
             reason.append('%s : 三费/营业总收入 = %s，超过40%%' % (period.year, format_pct(row['三费/营业总收入'])))
 
         if row['三费/毛利润'] < 0.3:
@@ -502,13 +511,16 @@ def analyzer_income_statement(securities: str, time_serial: tuple, data_hub: Dat
                           (period.year, format_pct(row['三费/毛利润'])))
         else:
             score.append(0)
+            brief.append('三费/毛利润 过高')
             reason.append('%s : 三费/毛利润 = %s，大于70%%，差' %
                           (period.year, format_pct(row['三费/毛利润'])))
 
         # ----------------------------------------------------------------------------
 
         previous = row
-        results.append(AnalysisResult(securities, period, int(float(sum(score)) / float(len(score))), reason))
+        avg_score = int(float(sum(score)) / float(len(score)))
+        brief = '; '.join(brief) if len(brief) > 0 else '正常'
+        results.append(AnalysisResult(securities, period, avg_score, reason, brief))
 
     return results
 
@@ -528,11 +540,11 @@ def analyzer_income_statement(securities: str, time_serial: tuple, data_hub: Dat
 # ----------------------------------------------------------------------------------------------------------------------
 
 METHOD_LIST = [
-    ('3ee3a4ff-a2cf-4244-8f45-c319016ee16b', '[T001] 现金流肖像',    '根据经营现金流,投资现金流,筹资现金流的情况为企业绘制画像',       analyzer_stock_portrait),
-    ('7e132f82-a28e-4aa9-aaa6-81fa3692b10c', '[T002] 货币资金分析',  '分析货币资金，详见excel中的对应的ID行',                         analyzer_check_monetary_fund),
-    ('7b0478d3-1e15-4bce-800c-6f89ee743600', '[T003] 应收预付分析',  '分析应收款和预付款，详见excel中的对应的ID行',                   analyzer_check_receivable_and_prepaid),
-    ('fff6c3cf-a6e5-4fa2-9dce-7d0566b581a1', '[T004] 资产构成分析',  '净资产，商誉，在建工程等项目分析，详见excel中的对应的ID行',      analyzer_asset_composition),
-    ('d2ced262-7a03-4428-9220-3d4a2a8fe201', '[T005] 利润表分析',    '分析利润，费用以及它们的构成，详见excel中的对应的ID行',          analyzer_income_statement),
+    ('3ee3a4ff-a2cf-4244-8f45-c319016ee16b', '现金流肖像',    '根据经营现金流,投资现金流,筹资现金流的情况为企业绘制画像',    analyzer_stock_portrait),
+    ('7e132f82-a28e-4aa9-aaa6-81fa3692b10c', '货币资金分析',  '分析货币资金，详见excel中的对应的ID行',                   analyzer_check_monetary_fund),
+    ('7b0478d3-1e15-4bce-800c-6f89ee743600', '应收预付分析',  '分析应收款和预付款，详见excel中的对应的ID行',              analyzer_check_receivable_and_prepaid),
+    ('fff6c3cf-a6e5-4fa2-9dce-7d0566b581a1', '资产构成分析',  '净资产，商誉，在建工程等项目分析，详见excel中的对应的ID行',   analyzer_asset_composition),
+    ('d2ced262-7a03-4428-9220-3d4a2a8fe201', '利润表分析',    '分析利润，费用以及它们的构成，详见excel中的对应的ID行',      analyzer_income_statement),
 
     ('bceef7fc-20c5-4c8a-87fc-d5fb7437bc1d', '', '',       None),
     ('9777f5c1-0e79-4e04-9082-1f38891c2922', '', '',       None),
