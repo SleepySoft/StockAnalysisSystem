@@ -56,10 +56,8 @@ class SasTerminal:
         else:
             return '你输入的股票不存在'
 
-        df = self.__sas_api.data_center().query('Result.Analyzer')
+        df = self.__sas_api.data_center().query('Result.Analyzer', '000004.SZSE')
         df = df.sort_values(by="analyzer").drop_duplicates(subset=["period"], keep="last")
-
-        print(df)
 
         # # Warning: Advanced operation - Directly operate database collection
         #

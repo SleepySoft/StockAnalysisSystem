@@ -1,5 +1,8 @@
+import traceback
+
 import StockAnalysisSystem.core.api as sasApi
 from StockAnalysisSystem.core.Utility.event_queue import Event
+from StockAnalysisSystem.core.Utility.digit_utility import to_int
 from StockAnalysisSystem.core.SubServiceManager import SubServiceContext
 
 
@@ -11,10 +14,34 @@ SERVICE_ID = 'f38cbc96-3b94-4cf2-bb36-fd9d4e656025'
 # ----------------------------------------------------------------------------------------------------------------------
 
 def test_entry():
+    stock_identity = '000004.SZSE'
+
     df = subServiceContext.sas_api.data_center().query('Result.Analyzer', '000004.SZSE')
-    df = df.sort_values(by="analyzer").drop_duplicates(subset=["period"], keep="last")
+    df = df.sort_values(by="period").drop_duplicates(subset=["analyzer"], keep="last")
 
     print(df)
+
+    stock_name = subServiceContext.sas_api.data_utility().stock_identity_to_name('000004.SZSE')
+    text = '%s [%s]' % (stock_name, stock_identity)
+
+    if df.empty:
+        return text + '无分析数据'
+
+    strategy_name_dict = subServiceContext.sas_api.strategy_entry().strategy_name_dict()
+
+    text_items = []
+    for analyzer, period, reason, score in \
+            zip(df['analyzer'], df['period'], df['reason'], df['score']):
+        if score is not None and to_int(score, 999) <= 60:
+            text_items.append('> %s: %s' % (strategy_name_dict.get(analyzer), reason))
+
+    if len(text_items) == 0:
+        text += '未发现风险项目'
+    else:
+        text += '风险项目\n----------------------------\n'
+        text += '\n'.join(text_items)
+
+    print(text)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -60,6 +87,12 @@ def startup() -> bool:
 def polling(interval_ns: int):
     global once
     if once:
-        test_entry()
-        once = False
+        try:
+            test_entry()
+        except Exception as e:
+            print("Test exception")
+            print(e)
+            print(traceback.format_exc())
+        finally:
+            once = False
 

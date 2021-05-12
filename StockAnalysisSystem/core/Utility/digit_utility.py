@@ -21,5 +21,11 @@ def format_w(value: float, precision: int = 2) -> str:
     return format_f(value / 10000, precision) + '万'
 
 
-
+def to_int(value: str or any, if_fail: int = 0):
+    try:
+        return int(value)
+    except Exception as e:
+        return if_fail
+    finally:
+        pass
 
