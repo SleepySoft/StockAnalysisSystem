@@ -13,7 +13,7 @@ def analysis_inquiry(securities: str, time_serial: tuple, data_hub: DataHubEntry
 
     df = data_hub.get_data_center().query('Market.Enquiries', securities)
     if df is None or len(df) == 0:
-        return AnalysisResult(securities, None, AnalysisResult.SCORE_PASS, '四年内无问询记录（也可能是数据缺失）')
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_PASS, '四年内无问询记录（也可能是数据缺失）', '无问询')
 
     error_report = check_gen_report_when_data_missing(df, securities, 'Market.Enquiries',
                                                       ['stock_identity', 'enquiry_date', 'enquiry_topic'])
@@ -35,9 +35,12 @@ def analysis_inquiry(securities: str, time_serial: tuple, data_hub: DataHubEntry
             reason.append('%s: <<%s>> -- %s' % (date2text(enquiry_date), enquiry_topic, enquiry_title))
 
     if len(reason) == 0:
+        brief = '近四年无敏感问询'
         reason.append('近四年无敏感问询')
+    else:
+        brief = '%s次问询' % len(reason)
 
-    return AnalysisResult(securities, None, score, reason)
+    return AnalysisResult(securities, None, score, reason, brief)
 
 
 def analysis_investigation(securities: str, time_serial: tuple, data_hub: DataHubEntry,
@@ -66,10 +69,14 @@ def analysis_investigation(securities: str, time_serial: tuple, data_hub: DataHu
         investigate_topic = row['investigate_topic']
         investigate_reason = row['investigate_reason']
         reason.append('%s: <<%s>> -- %s' % (date2text(investigate_date), investigate_topic, investigate_reason))
-    if len(reason) == 0:
-        reason.append('近四年无立案调查记录')
 
-    return AnalysisResult(securities, None, score, reason, AnalysisResult.WEIGHT_ONE_VOTE_VETO)
+    if len(reason) == 0:
+        brief = '近四年无立案记录'
+        reason.append('近四年无立案调查记录')
+    else:
+        brief = '%s次立案记录' % len(reason)
+
+    return AnalysisResult(securities, None, score, reason, brief, AnalysisResult.WEIGHT_ONE_VOTE_VETO)
 
 
 # ----------------------------------------------------------------------------------------------------------------------

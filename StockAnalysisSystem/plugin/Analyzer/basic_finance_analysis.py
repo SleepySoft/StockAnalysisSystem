@@ -28,18 +28,21 @@ def analysis_finance_report_sign(securities: str, time_serial: tuple, data_hub: 
     results = []
     for index, row in df_slice.iterrows():
         reason = []
+        brief = ''
         period = row['period']
         conclusion = row['conclusion']
 
         if pd.isnull(conclusion):
+            brief = '无数据'
             score = AnalysisResult.SCORE_NOT_APPLIED
             reason.append(str(period.year) + ' : No sign data.')
         elif conclusion != '标准无保留意见':
+            brief = conclusion
             score = AnalysisResult.SCORE_FAIL
             reason.append(str(period.year) + ' : ' + conclusion)
         else:
             score = AnalysisResult.SCORE_PASS
-        results.append(AnalysisResult(securities, period, score, reason, AnalysisResult.WEIGHT_ONE_VOTE_VETO))
+        results.append(AnalysisResult(securities, period, score, reason, brief, AnalysisResult.WEIGHT_ONE_VOTE_VETO))
 
     return results
 
@@ -61,16 +64,21 @@ def analysis_consecutive_losses(securities: str, time_serial: tuple, data_hub: D
     results = []
     for index, row in df.iterrows():
         score = 100
+        brief = []
         reason = []
         period = row['period']
 
         if row['利润总额'] < 0:
             score -= 50
+            reason.append('利润总额 < 0')
             reason.append(str(period.year) + '：利润总额 ' + format_w(row['利润总额']))
         if row['营业利润'] < 0:
             score -= 50
+            reason.append('营业利润 < 0')
             reason.append(str(period.year) + '：营业利润 ' + format_w(row['营业利润']))
-        results.append(AnalysisResult(securities, period, score, reason))
+
+        brief = '; '.join(brief) if len(brief) > 0 else '正常'
+        results.append(AnalysisResult(securities, period, score, reason, brief))
 
     return results
 
@@ -97,7 +105,7 @@ def analysis_profit_structure(securities: str, time_serial: tuple, data_hub: Dat
 
         if row['营业收入'] < 0.001:
             reason.append(str(period) + ': 营业收入为0，可能数据缺失')
-            results.append(AnalysisResult(securities, period, AnalysisResult.SCORE_NOT_APPLIED, reason))
+            results.append(AnalysisResult(securities, period, AnalysisResult.SCORE_NOT_APPLIED, reason, '无数据'))
         else:
             other_operating_profit = row['其他业务收入'] / row['营业收入']
             # main_operating_profit = row['营业收入'] - row['其他业务收入']
@@ -105,9 +113,12 @@ def analysis_profit_structure(securities: str, time_serial: tuple, data_hub: Dat
 
             if other_operating_profit > 0.3:
                 score = 0
+                brief = '其它业务收入占比过高'
                 reason.append('%s: 其他业务收入：%s万；营业总收入：%s万；其它业务收入占比：%.2f%%' %
                               (period, row['其他业务收入'] / 10000, row['营业收入'] / 10000, other_operating_profit * 100))
-            results.append(AnalysisResult(securities, period, score, reason))
+            else:
+                brief = '正常'
+            results.append(AnalysisResult(securities, period, score, reason, brief))
     return results
 
     # return AnalysisResult(securities, score, reason) if applied else \
@@ -145,17 +156,17 @@ def analysis_cash_loan_both_high(securities: str, time_serial: tuple, data_hub: 
 
         if row['资产总计'] < 1.0:
             reason.append(period.year + ': 资产总计为0，可能数据缺失')
-            results.append(AnalysisResult(securities, period, AnalysisResult.SCORE_NOT_APPLIED, reason))
+            results.append(AnalysisResult(securities, period, AnalysisResult.SCORE_NOT_APPLIED, reason, '无数据'))
             continue
 
         if row['净利润(含少数股东损益)'] < 1.0:
             reason.append(period.year + ': 净利润(含少数股东损益) = %.2f，不适用' % row['净利润(含少数股东损益)'])
-            results.append(AnalysisResult(securities, period, AnalysisResult.SCORE_NOT_APPLIED, reason))
+            results.append(AnalysisResult(securities, period, AnalysisResult.SCORE_NOT_APPLIED, reason, '无数据'))
             continue
 
         if loan < 0.001:
             reason.append(period.year + ': 流动负债合计为0，可能数据缺失')
-            results.append(AnalysisResult(securities, period, AnalysisResult.SCORE_NOT_APPLIED, reason))
+            results.append(AnalysisResult(securities, period, AnalysisResult.SCORE_NOT_APPLIED, reason, '无数据'))
             continue
 
         loan_vs_totol_asset = loan / row['资产总计']
@@ -166,9 +177,12 @@ def analysis_cash_loan_both_high(securities: str, time_serial: tuple, data_hub: 
         # 利息费用与净利润比例大于30%（康美并不符合），排除
         if 1.0 < cash / loan < 1.7 and loan_vs_totol_asset > 0.3:
             score = 0
+            brief = '疑似存贷双高'
             reason.append('%s: 资金：%s万；借款：%s万。贷款总资产比：%.2f%%。利息净利润比%.2f%%' %
                           (period.year, cash / 10000, loan / 10000, loan_vs_totol_asset * 100, fin_fee_vs_benefit * 100))
-        results.append(AnalysisResult(securities, period, score, reason))
+        else:
+            brief = '正常'
+        results.append(AnalysisResult(securities, period, score, reason, brief))
     return results
 
     # if len(reason) == 0:
@@ -196,7 +210,7 @@ def goodwill_is_too_high(securities: str, time_serial: tuple, data_hub: DataHubE
 
         if row['资产总计'] < 0.001 or net_assets < 0.001:
             reason.append('资产为0，可能数据不全')
-            results.append(AnalysisResult(securities, period, AnalysisResult.SCORE_NOT_APPLIED, reason))
+            results.append(AnalysisResult(securities, period, AnalysisResult.SCORE_NOT_APPLIED, reason, '无数据'))
             continue
 
         goodwill_vs_net_assets = row['商誉'] / net_assets
@@ -204,9 +218,12 @@ def goodwill_is_too_high(securities: str, time_serial: tuple, data_hub: DataHubE
 
         if goodwill_vs_net_assets >= 0.2 or goodwill_vs_total_assets >= 0.1:
             score = 0
+            brief = '商誉过高'
             reason.append('%s: 商誉/净资产 = %.2f%% ; 商誉/资产总计 = %.2f%%' %
                           (str(period), goodwill_vs_net_assets * 100, goodwill_vs_total_assets * 100))
-        results.append(AnalysisResult(securities, period, score, reason))
+        else:
+            brief = '正常'
+        results.append(AnalysisResult(securities, period, score, reason, brief))
     return results
 
     # if len(reason) == 0:
@@ -233,24 +250,30 @@ def interest_too_high(securities: str, time_serial: tuple, data_hub: DataHubEntr
         if row['净利润(不含少数股东损益)'] <= 0:
             if row['减:利息支出'] > 10000:
                 score = 0
+                brief = '无净利润有利息'
                 reason.append('%s: 母公司净利润小于等于0，而存在利息支出 = %.2f%%' %
                               (str(period), row['减:利息支出']))
             else:
                 score = min(score, 50)
+                brief = '无净利润无利息'
                 reason.append('%s: 母公司净利润小于等于0' % str(period))
-            results.append(AnalysisResult(securities, period, score, reason))
+            results.append(AnalysisResult(securities, period, score, reason, brief))
             continue
 
         interest_income_ratio = row['减:利息支出'] / row['净利润(不含少数股东损益)']
         if interest_income_ratio >= 0.3:
             score = 0
+            brief = '利息占净利润比例过高'
             reason.append('%s: 利息支出占母公司净利润比例 = %.2f%%' %
                           (str(period), interest_income_ratio))
         elif interest_income_ratio >= 0.1:
             score = min(score, 50)
+            brief = '利息占净利润比例稍高'
             reason.append('%s: 利息支出占母公司净利润比例 = %.2f%%' %
                           (str(period), interest_income_ratio))
-        results.append(AnalysisResult(securities, period, score, reason))
+        else:
+            brief = '正常'
+        results.append(AnalysisResult(securities, period, score, reason, brief))
     return results
 
     # if len(reason) == 0:
@@ -268,7 +291,7 @@ def analysis_current_and_quick_ratio(securities: str, time_serial: tuple, data_h
     df = data_hub.get_data_center().query_from_factor(
         'Factor.Finance', securities, time_serial, fields=['流动比率', '速动比率'], readable=True)
     if df is None or len(df) == 0:
-        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '')
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '无数据', '无数据')
 
     # Annual report
     df = df[df['period'].dt.month == 12]
@@ -276,22 +299,26 @@ def analysis_current_and_quick_ratio(securities: str, time_serial: tuple, data_h
     results = []
     for index, row in df.iterrows():
         score = 100
+        brief = []
         reason = []
         period = row['period']
 
         if row['流动比率'] < 2.0:
             score -= 50
+            brief.append('流动比率过低')
             reason.append('%s: 流动比率为%.2f < 2.0' % (period.year, row['流动比率']))
         else:
             reason.append('%s: 流动比率为%.2f - 合格' % (period.year, row['流动比率']))
 
         if row['速动比率'] < 1.0:
             score -= 50
+            brief.append('速动比率过低')
             reason.append('%s: 速动比率为%.2f < 1.0' % (period.year, row['速动比率']))
         else:
             reason.append('%s: 速动比率为%.2f - 合格' % (period.year, row['速动比率']))
 
-        results.append(AnalysisResult(securities, period,  score, reason))
+        brief = '; '.join(brief) if len(brief) > 0 else '正常'
+        results.append(AnalysisResult(securities, period,  score, reason, brief))
     return results
 
     # if total > 0 and len(reason) == 0:
@@ -307,11 +334,12 @@ def analysis_roe_roa(securities: str, time_serial: tuple, data_hub: DataHubEntry
     df = data_hub.get_data_center().query_from_factor(
         'Factor.Finance', securities, time_serial, fields=['总资产收益率', '净资产收益率'], readable=True)
     if df is None or len(df) == 0:
-        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '')
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '无数据', '无数据')
 
     # Annual report
     df = df[df['period'].dt.month == 12]
 
+    brief = []
     results = []
     for index, row in df.iterrows():
         score = 100
@@ -320,32 +348,39 @@ def analysis_roe_roa(securities: str, time_serial: tuple, data_hub: DataHubEntry
 
         if row['总资产收益率'] < 0.05:
             score -= 50
+            brief.append('总资产收益率过低')
             reason.append('%s: 总资产收益率为%s%% - 过低' %
                           (period.year, format_pct(row['总资产收益率'])))
         elif row['总资产收益率'] > 0.15:
             score -= 50
+            brief.append('总资产收益率偏高')
             reason.append('%s: 总资产收益率为%s%% - 偏高，需要引起注意' %
                           (period.year, format_pct(row['总资产收益率'])))
         else:
             # Theory: 7.5% - 13%, but we use 5% - 15% for wider tolerance.
+            brief.append('总资产收益率合理')
             reason.append('%s: 总资产收益率为%s%% - 合理' %
                           (period.year, format_pct(row['总资产收益率'])))
             pass
 
         if row['净资产收益率'] < 0.15:
             score -= 50
+            brief.append('净资产收益率偏低')
             reason.append('%s: 净资产收益率为%s%% - 偏低' %
                           (period.year, format_pct(row['净资产收益率'])))
         elif row['净资产收益率'] > 0.40:
             score = 0
+            brief.append('净资产收益率过高')
             reason.append('%s: 净资产收益率为%s%% - 过高，可能是造假或偶然因素' %
                           (period.year, format_pct(row['净资产收益率'])))
         else:
             # Theory: 15% - 39%.
+            brief.append('净资产收益率合理')
             reason.append('%s: 净资产收益率为%s%% - 合理' %
                           (period.year, format_pct(row['净资产收益率'])))
 
-        results.append(AnalysisResult(securities, period, score, reason))
+        brief = '; '.join(brief) if len(brief) > 0 else '正常'
+        results.append(AnalysisResult(securities, period, score, reason, brief))
     return results
 
     # if total > 0 and len(reason) == 0:

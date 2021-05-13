@@ -15,12 +15,12 @@ def equity_interest_pledge_too_high(securities: str, time_serial: tuple, data_hu
 
     query_fields = ['质押次数', '无限售股质押数量', '限售股份质押数量', '总股本', '质押比例']
     if not data_hub.get_data_center().check_readable_name(query_fields):
-        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '无法识别的字段名')
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '无法识别的字段名', '无法识别的字段名')
 
     df = data_hub.get_data_center().query('Stockholder.PledgeStatus', securities, (years_ago(2), now()),
                                           fields=query_fields + ['stock_identity', 'due_date'], readable=True)
     if df is None or len(df) == 0:
-        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '没有数据')
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '没有数据', '没有数据')
     df = df.sort_values('due_date', ascending=False)
 
     score = 100
@@ -40,8 +40,13 @@ def equity_interest_pledge_too_high(securities: str, time_serial: tuple, data_hu
             previous_pledge_times = pledge_times
 
     if len(reason) == 0:
-        reason = '近4年没有超过20%的质押记录'
-    return AnalysisResult(securities, None, score, reason)
+        brief = '近4年没有超过20%%的质押记录'
+        reason = brief
+    else:
+        brief = '近4年有%s次超过20%%的质押记录' % len(reason)
+        reason = brief
+
+    return AnalysisResult(securities, None, score, reason, brief)
 
 
 def analysis_dispersed_ownership(securities: str, time_serial: tuple, data_hub: DataHubEntry,
@@ -49,7 +54,7 @@ def analysis_dispersed_ownership(securities: str, time_serial: tuple, data_hub: 
     nop(database, context, kwargs)
     df = data_hub.get_data_center().query('Stockholder.Statistics', securities, (years_ago(3), now()))
     if df is None or len(df) == 0:
-        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '没有数据')
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '没有数据', '没有数据')
     df = df[df['period'].dt.month == 12]
     df = df.sort_values('period', ascending=False)
 
@@ -79,7 +84,7 @@ def analysis_dispersed_ownership(securities: str, time_serial: tuple, data_hub: 
                 biggest_holder = holder_name
         if largest_ratio == 0.0:
             return AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED,
-                                  '缺少必要数据，请确保数据包含tushare pro数据源')
+                                  '缺少必要数据，请确保数据包含tushare pro数据源', '没有数据')
         if largest_ratio < 0.1:
             score = 0
             reason.append('%s: 最大股东 %s 持股比例为%.2f%%，小于10%%' %
@@ -90,14 +95,16 @@ def analysis_dispersed_ownership(securities: str, time_serial: tuple, data_hub: 
 
     if len(reason) == 0:
         reason.append('没有数据')
+    brief = '正常' if score != 0 else '最大股东持股比例 < 10%%'
+
     return AnalysisResult(securities, None, score, reason) if applied else \
-        AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, reason)
+        AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, reason, brief)
 
 
 def analysis_stock_unlock(securities: str, time_serial: tuple, data_hub: DataHubEntry,
                           database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
     nop(time_serial, database, context, kwargs)
-    no_data_result = AnalysisResult(securities, None, AnalysisResult.SCORE_PASS, '前三个月或后半年内没有解禁数据')
+    no_data_result = AnalysisResult(securities, None, AnalysisResult.SCORE_PASS, '前三个月或后半年内没有解禁数据', '无解禁数据')
 
     df: pd.DataFrame = data_hub.get_data_center().query('Stockholder.StockUnlock', securities, (years_ago(2), now()))
     if df is None or df.empty:
