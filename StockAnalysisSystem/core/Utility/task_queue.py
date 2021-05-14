@@ -58,7 +58,7 @@ class TaskQueue:
 
     # -------------------------------------- TaskQueue --------------------------------------
 
-    def __init__(self):
+    def __init__(self, logger=print):
         self.__lock = threading.Lock()
         self.__quit_flag = True
         self.__observers = []
@@ -66,6 +66,7 @@ class TaskQueue:
         self.__task_thread = None
         self.__running_task = None
         self.__will_task = None
+        self.__logger = logger
 
     def join(self, timeout: int):
         if self.__task_thread is not None:
@@ -106,14 +107,14 @@ class TaskQueue:
 
     def append_task(self, task: Task, unique: bool = True) -> bool:
         if task.identity() is None or task == '':
-            print('Task must have an identity.')
+            self.log('Task must have an identity.')
             return False
-        print('Task queue -> append : ' + str(task))
+        self.log('Task queue -> append : ' + str(task))
         self.__lock.acquire()
         if unique and (task.identity() is not None and
                        len(self.__find_adapt_tasks(None, task.identity())) > 0):
             self.__lock.release()
-            print('Task queue -> found duplicate, drop.')
+            self.log('Task queue -> found duplicate, drop.')
             return False
         self.__task_queue.append(task)
         task.update(TaskQueue.Task.STATUS_PENDING)
@@ -123,9 +124,9 @@ class TaskQueue:
 
     def insert_task(self, task: Task, index: int = 0, unique: bool = True):
         if task.identity() is None or task == '':
-            print('Task must have an identity.')
+            self.log('Task must have an identity.')
             return False
-        print('Task queue -> insert : ' + str(task))
+        self.log('Task queue -> insert : ' + str(task))
         self.__lock.acquire()
         if unique:
             self.__remove_pending_task(task.identity())
@@ -228,6 +229,10 @@ class TaskQueue:
             self.__running_task.quit()
             self.__running_task = None
 
+    def log(self, text: str):
+        if self.__logger is not None:
+            self.__logger(text)
+
     # ----------------------------------- Thread Entry -----------------------------------
 
     def __task_thread_entry(self):
@@ -245,7 +250,7 @@ class TaskQueue:
             clock = time.time()
             if task is not None:
                 try:
-                    print('Task queue -> start: ' + str(task))
+                    self.log('Task queue -> start: ' + str(task))
                     task.update(TaskQueue.Task.STATUS_RUNNING)
                     self.notify_task_updated(task, 'started')
                     task.run()
@@ -253,11 +258,11 @@ class TaskQueue:
                         if task.status() != TaskQueue.Task.STATUS_CANCELED else None
                 except Exception as e:
                     task.update(TaskQueue.Task.STATUS_EXCEPTION)
-                    print('Task queue -> ' + str(task) + ' got exception:')
-                    print(e)
-                    print(traceback.format_exc())
+                    self.log('Task queue -> ' + str(task) + ' got exception:')
+                    self.log(e)
+                    self.log(traceback.format_exc())
                 finally:
-                    print('Task queue -> finish: %s, time spending: %.2f ms' %
+                    self.log('Task queue -> finish: %s, time spending: %.2f ms' %
                           (str(task), (time.time() - clock) * 1000))
                     self.notify_task_updated(task, 'finished')
                     self.__lock.acquire()
@@ -286,13 +291,13 @@ class TestTask(TaskQueue.Task):
 
     def run(self):
         TestTask.LOG_START.append(self.__id)
-        print('Task %s started' % self.__id)
+        self.log('Task %s started' % self.__id)
         slept = 0
         while not self.__quit_flag and slept < self.__delay:
             time.sleep(0.1)
             slept += 0.1
         TestTask.LOG_FINISH.append(self.__id)
-        print('Task %s finished' % self.__id)
+        self.log('Task %s finished' % self.__id)
 
     def quit(self):
         self.__quit_flag = True

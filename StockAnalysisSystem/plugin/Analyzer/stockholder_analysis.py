@@ -120,11 +120,13 @@ def analysis_stock_unlock(securities: str, time_serial: tuple, data_hub: DataHub
     df_group = df.groupby('float_date')
 
     reasons = []
+    float_share_sum = 0
     for g, df in df_group:
         float_date = g
         float_share = sum(df['float_share'])
         float_ratio = sum(df['float_ratio'])
 
+        float_share_sum += float_share
         reasons.append('%s: 解禁%s股，占总股份%s%%' % (float_date.date(), float_share, float_ratio))
 
     # for index, row in df.iterrows():
@@ -140,8 +142,9 @@ def analysis_stock_unlock(securities: str, time_serial: tuple, data_hub: DataHub
     #     if days_ago(90) < float_date < days_after(180):
     #         reasons.append('%s: 解禁%s股，占总股份%s%%' % (float_date.date(), float_share, float_ratio))
 
-    return AnalysisResult(securities, None, AnalysisResult.SCORE_FAIL, reasons) if len(reasons) > 0 else \
-        AnalysisResult(securities, None, AnalysisResult.SCORE_PASS, '前三个月或后半年内没有解禁数据')
+    brief = '共解禁%s股' % float_share_sum
+    return AnalysisResult(securities, None, AnalysisResult.SCORE_FAIL, reasons, brief) if len(reasons) > 0 else \
+        AnalysisResult(securities, None, AnalysisResult.SCORE_PASS, '前三个月或后半年内没有解禁数据', '无解禁数据')
 
 
 def analysis_repurchase(securities: str, time_serial: tuple, data_hub: DataHubEntry,
@@ -149,9 +152,10 @@ def analysis_repurchase(securities: str, time_serial: tuple, data_hub: DataHubEn
     nop(time_serial, database, context, kwargs)
     df = data_hub.get_data_center().query('Stockholder.Repurchase', securities, (years_ago(1), now()))
     if df is None or len(df) == 0:
-        return AnalysisResult(securities, None, AnalysisResult.SCORE_FAIL, '前后一年内没有回购数据')
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_FAIL, '前后一年内没有回购数据', '无回购数据')
     # df = df.where(df.notnull(), None)
 
+    volume = 0
     reasons = []
     for index, row in df.iterrows():
         proc = row['proc']
@@ -184,19 +188,21 @@ def analysis_repurchase(securities: str, time_serial: tuple, data_hub: DataHubEn
         else:
             price_text = ''
 
+        volume += int(volume)
         volume_text = ('%s股' % volume) if not pd.isnull(volume) else ''
 
         reasons.append('%s: 股东大会通过，%s%s回购%s股票' %
                        (ann_date.date(), end_date_text, price_text, volume_text))
 
-    return AnalysisResult(securities, None, AnalysisResult.SCORE_PASS, reasons) if len(reasons) > 0 else \
-        AnalysisResult(securities, None, AnalysisResult.SCORE_FAIL, '前后一年内没有回购数据')
+    brief = '期间计划回购%s股' % volume
+    return AnalysisResult(securities, None, AnalysisResult.SCORE_PASS, reasons, brief) if len(reasons) > 0 else \
+        AnalysisResult(securities, None, AnalysisResult.SCORE_FAIL, '前后一年内没有回购数据', '近一年无数据')
 
 
 def analysis_increase_decrease(securities: str, time_serial: tuple, data_hub: DataHubEntry,
                                database: DatabaseEntry, context: AnalysisContext, **kwargs) -> AnalysisResult:
     nop(time_serial, database, context, kwargs)
-    no_data_result = AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '前后一年内没有增减持数据')
+    no_data_result = AnalysisResult(securities, None, AnalysisResult.SCORE_NOT_APPLIED, '前后一年内没有增减持数据', '近一年无数据')
 
     df = data_hub.get_data_center().query('Stockholder.ReductionIncrease', securities, (years_ago(2), now()))
     if df is None or len(df) == 0:
@@ -250,7 +256,7 @@ def analysis_increase_decrease(securities: str, time_serial: tuple, data_hub: Da
     reasons.append(conclusion)
     final_score = AnalysisResult.SCORE_FAIL if volume < 0 else AnalysisResult.SCORE_PASS
 
-    return AnalysisResult(securities, None, final_score, reasons)
+    return AnalysisResult(securities, None, final_score, reasons, conclusion.replace('此', ''))
 
 
 # ------------------------------------------------------ 05 - 10 -------------------------------------------------------

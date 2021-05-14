@@ -5,7 +5,7 @@ from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 class UiContext:
     def __init__(self):
         self.__sas_interface = None
-        self.__ui_task_queue = TaskQueue()
+        self.__ui_task_queue = TaskQueue(logger=None)
         self.__ui_task_queue.start()
         # self.__res_sync = ResourceSync()
         # self.__res_sync.start()
