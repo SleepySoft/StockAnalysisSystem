@@ -15,17 +15,10 @@ from StockAnalysisSystem.core.Utility.time_utility import *
 from StockAnalysisSystem.core.Utility.WaitingWindow import *
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 from StockAnalysisSystem.core.Utility.securities_selector import SecuritiesSelector
+from StockAnalysisSystem.core.Utility.relative_import import RelativeImport
 
-try:
-    # Only for pycharm indicating imports
-    from .StockMemoEditor import StockMemoEditor
-except Exception as e:
-    root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    os.sys.path.append(root_path)
-
-    from StockMemo.StockMemoEditor import StockMemoEditor
-finally:
-    pass
+with RelativeImport(__file__):
+    from StockMemoEditor import StockMemoEditor
 
 
 # ----------------------------------------------------------------------------------------------------------------------

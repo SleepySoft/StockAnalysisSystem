@@ -7,16 +7,10 @@ from concurrent.futures import ThreadPoolExecutor
 
 from StockAnalysisSystem.core.config import Config
 import StockAnalysisSystem.core.Utility.AnalyzerUtility as analyzer_util
+from StockAnalysisSystem.core.Utility.relative_import import RelativeImport
 
-try:
+with RelativeImport(__file__):
     from common_render import data_frame_to_html
-except Exception as e:
-    root_path = os.path.dirname(os.path.abspath(__file__))
-    os.sys.path.append(root_path)
-
-    from common_render import data_frame_to_html
-finally:
-    pass
 
 
 class OfflineAnalysisResult:

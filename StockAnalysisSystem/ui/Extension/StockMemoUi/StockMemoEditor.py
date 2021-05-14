@@ -252,6 +252,9 @@ class StockMemoEditor(QDialog):
         self.update_memo_list()
 
     def update_memo_list(self):
+        if self.__current_memos is None:
+            return
+
         self.__table_memo_index.clear()
         self.__table_memo_index.setRowCount(0)
         self.__table_memo_index.setHorizontalHeaderLabels(StockMemoEditor.LIST_HEADER)

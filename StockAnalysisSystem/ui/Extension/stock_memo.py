@@ -22,16 +22,10 @@ from StockAnalysisSystem.core.Utility.TableViewEx import *
 from StockAnalysisSystem.core.Utility.time_utility import *
 from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 from StockAnalysisSystem.core.Utility.securities_selector import SecuritiesSelector
+from StockAnalysisSystem.core.Utility.relative_import import RelativeImport
 
-try:
-    from .StockMemo.MemoExtra import *
-except Exception as e:
-    root_path = os.path.dirname(os.path.abspath(__file__))
-    os.sys.path.append(root_path)
-
-    from StockMemo.MemoExtra import *
-finally:
-    pass
+with RelativeImport(__file__):
+    from StockMemoUi.MemoExtra import *
 
 
 # ----------------------------------------------------------------------------------------------------------------------

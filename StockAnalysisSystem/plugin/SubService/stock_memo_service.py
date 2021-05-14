@@ -11,9 +11,8 @@ from StockAnalysisSystem.core.SubServiceManager import SubServiceContext
 from StockAnalysisSystem.core.Utility.relative_import import RelativeImport
 
 with RelativeImport(__file__):
-    print(os.sys.path)
-    from StockMemo.StockMemo import StockMemo
-    from StockMemo.BlackList import BlackList
+    from StockMemoService.StockMemo import StockMemo
+    from StockMemoService.BlackList import BlackList
 
 # try:
 #     from StockMemo.StockMemo import StockMemo

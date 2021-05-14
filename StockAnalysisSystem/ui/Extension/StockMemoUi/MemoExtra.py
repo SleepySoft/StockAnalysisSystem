@@ -6,22 +6,12 @@ from StockAnalysisSystem.core.Utility.df_utility import *
 from StockAnalysisSystem.core.Utility.time_utility import *
 from StockAnalysisSystem.core.Utility.WaitingWindow import *
 from StockAnalysisSystem.core.Utility.AnalyzerUtility import *
+from StockAnalysisSystem.core.Utility.relative_import import RelativeImport
 
-try:
-    # Only for pycharm indicating imports
-    from .BlackListUi import *
-    from .StockChartUi import StockChartUi
-    from .StockMemoEditor import StockMemoEditor
-except Exception as e:
-    root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    os.sys.path.append(root_path)
-
-    from StockMemo.BlackListUi import *
-    from StockMemo.StockChartUi import StockChartUi
-    from StockMemo.StockMemoEditor import StockMemoEditor
-finally:
-    pass
-pass
+with RelativeImport(__file__):
+    from BlackListUi import *
+    from StockChartUi import StockChartUi
+    from StockMemoEditor import StockMemoEditor
 
 
 # ------------------------------------------------ Memo Extra Interface ------------------------------------------------
