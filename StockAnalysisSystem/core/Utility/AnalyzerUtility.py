@@ -75,7 +75,7 @@ class AnalysisResult:
         elif not str_available(brief):
             self.brief = str(brief)
         else:
-            self.brief = ''
+            self.brief = brief
 
         if reason is None:
             self.reason = brief
@@ -85,6 +85,9 @@ class AnalysisResult:
             self.reason = str(reason)
 
         self.weight = weight
+
+        self.exception = None
+        self.traceback = None
 
     def pack(self, to_str: bool = True) -> dict:
         return {
@@ -348,7 +351,10 @@ def standard_dispatch_analysis(methods: [str], securities: [str], time_serial: t
                     print(error_info)
                     print(e)
                     print(traceback.format_exc())
+
                     result = AnalysisResult(s, None, AnalysisResult.SCORE_NOT_APPLIED, error_info)
+                    result.exception = e
+                    result.traceback = traceback.format_exc()
                 finally:
                     context.progress.increase_progress(_uuid)
                     # print('Analyzer %s progress: %.2f%%' % (_uuid, context.progress.get_progress_rate(_uuid) * 100))

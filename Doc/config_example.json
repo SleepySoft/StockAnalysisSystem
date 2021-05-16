@@ -15,7 +15,7 @@
     "service_port": "80",
     "service_debug": "true",
     "analysis_result_path": "TestData/analysis_result.json",
-    "analysis_name_dict_path": "TestData/analyzer_names.json"
+    "analysis_name_dict_path": "TestData/analyzer_names.json",
 
     "TS_DELAY": {
         "daily_basic":          "0",
@@ -60,5 +60,6 @@
     ],
 
     "DISABLE_SERVICES": [
+        "f38cbc96-3b94-4cf2-bb36-fd9d4e656025"
     ]
 }

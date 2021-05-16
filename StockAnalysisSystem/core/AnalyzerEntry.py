@@ -140,6 +140,7 @@ class StrategyEntry:
         # Remove microsecond to avoid mongodb query fail.
         # time_serial = [t.replace(microsecond=0)  for t in time_serial]
 
+        errors = []
         for analyzer in analyzers:
             result = None
             uncached = True
@@ -176,11 +177,13 @@ class StrategyEntry:
 
                 if result is None and enable_calculation:
                     clock.reset()
+                    self.__strategy_plugin.clear_error()
                     if progress_rate is not None:
                         result = self.run_strategy(securities, [analyzer],
                                                    time_serial=time_serial, progress=progress_rate)
                     else:
                         result = self.run_strategy(securities, [analyzer], time_serial=time_serial)
+                    errors.append(self.__strategy_plugin.get_last_error())
                     print('Analyzer %s : Execute analysis, time spending: %ss' % (analyzer, clock.elapsed_s()))
 
                 if result is not None and len(result) > 0:
@@ -199,6 +202,15 @@ class StrategyEntry:
                         clock.reset()
                         self.cache_analysis_result('Result.Analyzer', result)
                         print('Analyzer %s : Cache result, time spending: %ss' % (analyzer, clock.elapsed_s()))
+
+        errors = [err for err in errors if err[0] is not None]
+        if len(errors) > 0:
+            print('----------------------------- Analysis Errors -----------------------------')
+            for err in errors:
+                if err[0] is not None:
+                    print(err[0])
+                    print(err[1])
+                    print('---------------------------------------------------------------------------')
 
         name_dict_path = os.path.join(dump_path, 'analyzer_names.json')
         full_dump_path = os.path.join(dump_path, 'analysis_result.json')
@@ -236,6 +248,18 @@ class StrategyEntry:
         name_dict = self.strategy_name_dict()
         with open(export_path, 'wt') as f:
             json.dump(name_dict, f)
+
+    # ------------------------------------------------- Error Analysis -------------------------------------------------
+
+    def analysis_error_result(self, analysis_result: [AnalysisResult]) -> dict:
+        error_dict = {}
+        for result in analysis_result:
+            if result.exception is not None:
+                if result.method not in error_dict:
+                    error_dict[result.method] = 1
+                else:
+                    error_dict[result.method] += 1
+        return error_dict
 
     # ----------------------------------------------------- Report -----------------------------------------------------
 

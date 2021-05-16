@@ -188,8 +188,11 @@ def analysis_repurchase(securities: str, time_serial: tuple, data_hub: DataHubEn
         else:
             price_text = ''
 
-        volume += int(volume)
-        volume_text = ('%s股' % volume) if not pd.isnull(volume) else ''
+        if not pd.isnull(volume):
+            volume += int(volume)
+            volume_text = ('%s股' % volume)
+        else:
+            volume_text = ''
 
         reasons.append('%s: 股东大会通过，%s%s回购%s股票' %
                        (ann_date.date(), end_date_text, price_text, volume_text))
@@ -224,8 +227,8 @@ def analysis_increase_decrease(securities: str, time_serial: tuple, data_hub: Da
         change_ratio = row['change_ratio'] if 'change_ratio' in df.columns else '?'
         avg_price = row['avg_price'] if 'avg_price' in df.columns else '?'
 
-        begin_date = text_auto_time(row['begin_date'])
-        close_date = text_auto_time(row['close_date'])
+        begin_date = text_auto_time(row['begin_date']) if 'begin_date' in df.columns else None
+        close_date = text_auto_time(row['close_date']) if 'close_date' in df.columns else None
 
         if (begin_date is not None and days_ago(365) < begin_date < days_after(365)) or \
            (close_date is not None and days_ago(365) < close_date < days_after(365)):

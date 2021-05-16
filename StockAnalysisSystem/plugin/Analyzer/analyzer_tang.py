@@ -424,12 +424,12 @@ def analyzer_income_statement(securities: str, time_serial: tuple, data_hub: Dat
     df['销售费用/营业收入同比'] = df['销售费用/营业收入'].pct_change()
     df['管理费用/营业收入同比'] = df['管理费用/营业收入'].pct_change()
 
-    brief = []
     results = []
     previous = None
     # aset_lost = 0
     for index, row in df.iterrows():
         score = []
+        brief = []
         reason = []
         period = row['period']
 

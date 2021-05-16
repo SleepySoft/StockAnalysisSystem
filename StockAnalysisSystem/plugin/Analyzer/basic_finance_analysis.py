@@ -155,17 +155,17 @@ def analysis_cash_loan_both_high(securities: str, time_serial: tuple, data_hub: 
         loan = row['短期借款'] + row['长期借款'] + row['一年内到期的非流动负债'] + row['应付债券'] + row['其他流动负债']
 
         if row['资产总计'] < 1.0:
-            reason.append(period.year + ': 资产总计为0，可能数据缺失')
+            reason.append('%s: 资产总计为0，可能数据缺失' % period.year)
             results.append(AnalysisResult(securities, period, AnalysisResult.SCORE_NOT_APPLIED, reason, '无数据'))
             continue
 
         if row['净利润(含少数股东损益)'] < 1.0:
-            reason.append(period.year + ': 净利润(含少数股东损益) = %.2f，不适用' % row['净利润(含少数股东损益)'])
+            reason.append('%s: 净利润(含少数股东损益) = %.2f，不适用' % (period.year, row['净利润(含少数股东损益)']))
             results.append(AnalysisResult(securities, period, AnalysisResult.SCORE_NOT_APPLIED, reason, '无数据'))
             continue
 
         if loan < 0.001:
-            reason.append(period.year + ': 流动负债合计为0，可能数据缺失')
+            reason.append('%s: 流动负债合计为0，可能数据缺失' % period.year)
             results.append(AnalysisResult(securities, period, AnalysisResult.SCORE_NOT_APPLIED, reason, '无数据'))
             continue
 
@@ -339,10 +339,10 @@ def analysis_roe_roa(securities: str, time_serial: tuple, data_hub: DataHubEntry
     # Annual report
     df = df[df['period'].dt.month == 12]
 
-    brief = []
     results = []
     for index, row in df.iterrows():
         score = 100
+        brief = []
         reason = []
         period = row['period']
 

@@ -17,6 +17,8 @@ def test_entry():
     stock_identity = '000004.SZSE'
 
     df = subServiceContext.sas_api.data_center().query('Result.Analyzer', '000004.SZSE')
+    if df is None or df.empty:
+        return
     df = df.sort_values(by="period").drop_duplicates(subset=["analyzer"], keep="last")
 
     print(df)
@@ -30,10 +32,10 @@ def test_entry():
     strategy_name_dict = subServiceContext.sas_api.strategy_entry().strategy_name_dict()
 
     text_items = []
-    for analyzer, period, reason, score in \
-            zip(df['analyzer'], df['period'], df['reason'], df['score']):
+    for analyzer, period, brief, score in \
+            zip(df['analyzer'], df['period'], df['brief'], df['score']):
         if score is not None and to_int(score, 999) <= 60:
-            text_items.append('> %s: %s' % (strategy_name_dict.get(analyzer), reason))
+            text_items.append('> %s: %s' % (strategy_name_dict.get(analyzer), brief))
 
     if len(text_items) == 0:
         text += '未发现风险项目'

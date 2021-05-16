@@ -220,7 +220,8 @@ class SystemService:
             if len(self.__timer_gap_buffer) > 0:
                 max_gap = max(self.__timer_gap_buffer)
                 if max_gap > SystemService.WATCH_DOG_TIMER_INTERVAL * 0.1:
-                    print('Max timer gap > 10%.')
+                    pass
+                    # print('Max timer gap > 10%.')
 
     def __check_schedule_event(self):
         if self.__schedule_event_expect_time == 0:

@@ -15,6 +15,8 @@ class PluginManager:
     def __init__(self, plugin_path: str = ''):
         self.__path = []
         self.__plugins = []
+        self.__last_exception = None
+        self.__last_traceback = None
         if plugin_path != '':
             self.add_plugin_path(plugin_path)
 
@@ -32,6 +34,8 @@ class PluginManager:
                 plugin_list = self.__load_from_single_path(plugin_path)
                 all_plugin_list.extend(plugin_list)
             except Exception as e:
+                self.__last_exception = e
+                self.__last_traceback = traceback.format_exc()
                 print('Load plugin from path % Fail.', plugin_path)
                 print(str(e))
                 print('Ignore.')
@@ -60,6 +64,8 @@ class PluginManager:
         try:
             return callable(getattr(module, function))
         except Exception as e:
+            self.__last_exception = e
+            self.__last_traceback = traceback.format_exc()
             print('Check callable: ' + str(e))
             return False
         finally:
@@ -97,6 +103,13 @@ class PluginManager:
                     break
         return result_list
 
+    def clear_error(self):
+        self.__last_exception = None
+        self.__last_traceback = None
+
+    def get_last_error(self) -> (Exception, str):
+        return self.__last_exception, self.__last_traceback
+
     def __load_from_single_path(self, plugin_path) -> list:
         """
         Refresh plugin list immediately. You should call this function if any updates to the plug-in folder.
@@ -116,6 +129,8 @@ class PluginManager:
             try:
                 plugin = __import__(plugin_name)
             except Exception as e:
+                self.__last_exception = e
+                self.__last_traceback = traceback.format_exc()
                 print('Error => When import module: ' + plugin_name)
                 print('Error =>', e)
                 print('Error =>', traceback.format_exc())
@@ -136,6 +151,8 @@ class PluginManager:
             func = getattr(module, _function)
             return_obj = func(*argc, **argv)
         except Exception as e:
+            self.__last_exception = e
+            self.__last_traceback = traceback.format_exc()
             return_obj = None
             print("Function run fail.")
             print('Error =>', e)
@@ -188,4 +205,11 @@ class PluginWrapper:
 
     def plugin_manager(self) -> PluginManager:
         return self.__plugin
+
+    def clear_error(self):
+        self.plugin_manager().clear_error()
+
+    def get_last_error(self) -> (Exception, str):
+        self.plugin_manager().get_last_error()
+
 
