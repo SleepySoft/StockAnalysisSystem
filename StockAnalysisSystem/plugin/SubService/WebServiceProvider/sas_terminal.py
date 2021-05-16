@@ -1,5 +1,6 @@
 import StockAnalysisSystem.core.api as sasApi
 from StockAnalysisSystem.interface.interface import SasInterface
+from StockAnalysisSystem.core.Utility.digit_utility import to_int
 
 
 class TerminalContext:
@@ -45,8 +46,9 @@ class SasTerminal:
     # ----------------------------------------------------------------------------------------
 
     def command_help(self) -> str:
-        return '''直接输入股票名或股票代码：查看股票分析
-        '''
+        return \
+'''直接输入股票名或股票代码：查看股票分析
+'''
 
     def command_analysis(self, securities: str) -> str:
         if len(securities) > 1:
@@ -55,9 +57,34 @@ class SasTerminal:
             pass
         else:
             return '你输入的股票不存在'
+        stock_identity = securities[0]
 
-        df = self.__sas_api.data_center().query('Result.Analyzer', '000004.SZSE')
-        df = df.sort_values(by="analyzer").drop_duplicates(subset=["period"], keep="last")
+        df = self.__sas_api.data_center().query('Result.Analyzer', stock_identity)
+        if df is None or df.empty:
+            return '无数据'
+        df = df.sort_values(by="period").drop_duplicates(subset=["analyzer"], keep="last")
+
+        stock_name = self.__sas_api.data_utility().stock_identity_to_name(stock_identity)
+        text = '%s [%s]' % (stock_name, stock_identity)
+
+        if df.empty:
+            return text + '无数据'
+
+        strategy_name_dict = self.__sas_api.strategy_entry().strategy_name_dict()
+
+        text_items = []
+        for analyzer, period, brief, score in \
+                zip(df['analyzer'], df['period'], df['brief'], df['score']):
+            if score is not None and to_int(score, 999) <= 60:
+                text_items.append('> %s: %s' % (strategy_name_dict.get(analyzer), brief))
+
+        if len(text_items) == 0:
+            text += '未发现风险项目'
+        else:
+            text += '风险项目\n----------------------------\n'
+            text += '\n'.join(text_items)
+
+        return text
 
         # # Warning: Advanced operation - Directly operate database collection
         #
