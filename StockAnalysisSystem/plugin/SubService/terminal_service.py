@@ -1,4 +1,5 @@
 import StockAnalysisSystem.core.api as sasApi
+from WebServiceProvider.service_provider import ServiceProvider
 from StockAnalysisSystem.core.SubServiceManager import SubServiceContext
 from StockAnalysisSystem.core.Utility.event_queue import Event, EventInvoke, EventAck
 
@@ -39,6 +40,7 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+serviceProvider: ServiceProvider = None
 subServiceContext: SubServiceContext = None
 
 
@@ -46,6 +48,12 @@ def init(sub_service_context: SubServiceContext) -> bool:
     try:
         global subServiceContext
         subServiceContext = sub_service_context
+
+        global serviceProvider
+        serviceProvider.check_init(subServiceContext.sas_if,
+                                   subServiceContext.sas_api)
+        if not serviceProvider.is_inited():
+            return False
     except Exception as e:
         import traceback
         print('Plugin-in init error: ' + str(e))
@@ -59,16 +67,19 @@ def startup() -> bool:
     return True
 
 
-def thread(context: dict):
-    pass
+# def thread(context: dict):
+#     pass
 
 
-def polling(interval_ns: int):
-    pass
+# def polling(interval_ns: int):
+#     pass
 
 
 def event_handler(event: Event, **kwargs):
-    pass
+    if event.event_type() == Event.EVENT_INVOKE:
+        invoke_function = event.get_event_data_value('invoke_function')
+        invoke_parameters = event.get_event_data_value('invoke_parameters')
+        serviceProvider.terminal_interact(invoke_function, **invoke_parameters)
 
 
 

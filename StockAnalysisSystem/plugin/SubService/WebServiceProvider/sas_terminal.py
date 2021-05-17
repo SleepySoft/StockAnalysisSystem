@@ -46,9 +46,7 @@ class SasTerminal:
     # ----------------------------------------------------------------------------------------
 
     def command_help(self) -> str:
-        return \
-'''直接输入股票名或股票代码：查看股票分析
-'''
+        return '''直接输入股票名或股票代码：查看股票分析'''
 
     def command_analysis(self, securities: str) -> str:
         if len(securities) > 1:

@@ -42,8 +42,11 @@ class Event:
     def set_event_data(self, _data: dict):
         self.__event_data = _data
 
-    def update_event_data(self, k: str, v: any):
-        self.__event_data[k] = v
+    def get_event_data_value(self, key: str, default_val: any = None) -> any:
+        return self.__event_data.get(key, default_val)
+
+    def set_event_data_value(self, key: str, val: any):
+        self.__event_data[key] = val
 
     # ---------------------------------------------------------------------
 
@@ -64,9 +67,9 @@ class Event:
 
 class EventAck(Event):
     def __init__(self, event_source: str, ack_event: Event, invoke_result: any):
-        self.update_event_data('ack_event', ack_event)
-        self.update_event_data('invoke_result', invoke_result)
         super(EventAck, self).__init__(Event.EVENT_ACK, ack_event.event_source(), event_source)
+        self.set_event_data_value('ack_event', ack_event)
+        self.set_event_data_value('invoke_result', invoke_result)
 
     def get_ack_event(self) -> Event:
         return self.get_event_data().get('ack_event')
@@ -77,15 +80,15 @@ class EventAck(Event):
 
 class EventInvoke(Event):
     def __init__(self, event_target: str, event_source: str, invoke_function: str, **kwargs):
-        self.set_event_data('invoke_function', invoke_function)
-        self.set_event_data('invoke_parameters', kwargs)
         super(EventInvoke, self).__init__(Event.EVENT_INVOKE, event_target, event_source)
+        self.set_event_data_value('invoke_function', invoke_function)
+        self.set_event_data_value('invoke_parameters', kwargs)
 
     def get_invoke_function(self) -> str:
-        return self.get_event_data().get('invoke_function')
+        return self.get_event_data_value('invoke_function')
 
     def get_invoke_parameters(self) -> dict:
-        return self.get_event_data().get('invoke_parameters')
+        return self.get_event_data_value('invoke_parameters')
 
 
 # ----------------------------------------------------------------------------------------------------------------------

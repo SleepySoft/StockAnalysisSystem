@@ -56,8 +56,10 @@ def init(sub_service_context: SubServiceContext) -> bool:
         subServiceContext = sub_service_context
 
         global serviceProvider
-        serviceProvider = ServiceProvider(subServiceContext.sas_if,
-                                          subServiceContext.sas_api)
+        serviceProvider.check_init(subServiceContext.sas_if,
+                                   subServiceContext.sas_api)
+        if not serviceProvider.is_inited():
+            return False
 
         global flaskApp
         flaskApp = Flask(__name__)
@@ -70,6 +72,7 @@ def init(sub_service_context: SubServiceContext) -> bool:
         import traceback
         print('Plugin-in init error: ' + str(e))
         print(traceback.format_exc())
+        return False
     finally:
         pass
     return True

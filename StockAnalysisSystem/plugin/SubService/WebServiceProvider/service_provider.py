@@ -1,39 +1,50 @@
 import threading
 
+from StockAnalysisSystem.core.Utility.common import ThreadSafeSingleton
 from StockAnalysisSystem.core.Utility.relative_import import RelativeImport
 
 with RelativeImport(__file__):
+    from sas_terminal import SasTerminal
+    from sas_terminal import TerminalContext
     from user_manager import UserManager
     from access_control import AccessControl
     from common_render import generate_display_page
 
 
-class ServiceProvider:
-    def __init__(self, sas_if, sas_api):
+class ServiceProvider(metaclass=ThreadSafeSingleton):
+    def __init__(self):
         self.__init = False
         self.__lock = threading.Lock()
 
-        self.__sas_if = sas_if
-        self.__sas_api = sas_api
+        self.__sas_if = None
+        self.__sas_api = None
 
         self.__config = None
         self.__logger = print
-        self.__user_manager = UserManager()
-        self.__access_control = AccessControl()
+        self.__sas_terminal = None
+        self.__user_manager = None
+        self.__access_control = None
 
         self.__offline_analysis_result = None
 
-    def init(self, config) -> bool:
+    def is_inited(self) -> bool:
+        return self.__init
+
+    def check_init(self, sas_if, sas_api, config=None, logger=print) -> bool:
         final_ret = True
         with self.__lock:
             if self.__init:
                 return True
 
-            from StockAnalysisSystem.core.config import Config
-            self.__config = config if config is not None else Config()
+            self.__sas_if = sas_if
+            self.__sas_api = sas_api
 
-            # ret = self.__init_sas()
-            # final_ret = ret and final_ret
+            self.__config = config if config is not None else self.__sas_api.Config()
+            self.__logger = logger
+
+            self.__sas_terminal = SasTerminal(self.__sas_if, self.__sas_api)
+            self.__user_manager = UserManager()
+            self.__access_control = AccessControl()
 
             ret = self.__init_offline_analysis_result()
             final_ret = ret and final_ret
@@ -70,9 +81,29 @@ class ServiceProvider:
         self.log('Init OfflineAnalysisResult Complete.')
         return True
 
+    # ---------------------------------------------------------------------------------------------------------
+
+    def terminal_interact(self, text: str, **kwargs) -> str:
+        """
+        Interact with sas terminal.
+        :param text: The input text
+        :param kwargs: Any data that will passed to __async_terminal_interact_handler if it has async ack.
+        :return: The response text
+        """
+        if not self.__init:
+            return ''
+        ctx = TerminalContext(self.__async_terminal_interact_handler, **kwargs)
+        result = self.__sas_terminal.interact(ctx, text)
+        return result
+
+    def __async_terminal_interact_handler(self, **kwargs):
+        pass
+
     # --------------------------------------------- Offline Analysis Result --------------------------------------------
 
     def get_security_analysis_result_url(self, security: str) -> str:
+        if not self.__init:
+            return ''
         if self.__offline_analysis_result is None:
             return ''
         if not self.__offline_analysis_result.security_result_exists(security):
@@ -80,6 +111,8 @@ class ServiceProvider:
         return 'http://211.149.229.160/analysis?security=%s' % security
 
     def get_security_analysis_result_page(self, security: str) -> str:
+        if not self.__init:
+            return ''
         if self.__offline_analysis_result is None:
             return ''
         result_html = self.__offline_analysis_result.get_analysis_result_html(security)
@@ -88,6 +121,8 @@ class ServiceProvider:
     # ------------------------------------------------------------------------------------------------------------------
 
     def sys_call(self, token: str, feature: str, *args, **kwargs):
+        if not self.__init:
+            return ''
         access, reason = self.check_accessible(token, feature, *args, **kwargs)
         if access:
             resp = self.__sas_api.sys_call(feature, *args, **kwargs)
@@ -96,6 +131,8 @@ class ServiceProvider:
             return reason
 
     def interface_call(self, token: str, feature: str, *args, **kwargs) -> (bool, any):
+        if not self.__init:
+            return ''
         access, reason = self.check_accessible(token, feature, *args, **kwargs)
         if access:
             func = getattr(self.__sas_if, feature, None)
@@ -105,7 +142,8 @@ class ServiceProvider:
             return reason
 
     def check_accessible(self, token: str, feature, *args, **kwargs):
-        return self.__access_control.accessible(token, feature, **kwargs)
+        return self.__access_control.accessible(token, feature, **kwargs) \
+            if self.__access_control is not None else False, ''
 
     # @AccessControl.apply('query')
     # def query(self, uri: str, identity: str or None = None,
