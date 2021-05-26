@@ -41,7 +41,7 @@ def plugin_capacities() -> list:
 # ----------------------------------------------------------------------------------------------------------------------
 
 flaskApp: Flask = None
-serviceProvider: ServiceProvider = None
+serviceProvider = ServiceProvider()
 subServiceContext: SubServiceContext = None
 
 
@@ -55,7 +55,6 @@ def init(sub_service_context: SubServiceContext) -> bool:
         global subServiceContext
         subServiceContext = sub_service_context
 
-        global serviceProvider
         serviceProvider.check_init(subServiceContext.sas_if,
                                    subServiceContext.sas_api)
         if not serviceProvider.is_inited():

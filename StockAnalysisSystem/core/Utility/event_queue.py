@@ -2,6 +2,7 @@ import uuid
 import datetime
 import threading
 from collections import deque
+from functools import partial
 
 
 class Event:
@@ -81,8 +82,14 @@ class EventAck(Event):
 class EventInvoke(Event):
     def __init__(self, event_target: str, event_source: str, invoke_function: str, **kwargs):
         super(EventInvoke, self).__init__(Event.EVENT_INVOKE, event_target, event_source)
-        self.set_event_data_value('invoke_function', invoke_function)
-        self.set_event_data_value('invoke_parameters', kwargs)
+
+    def __getattr__(self, attr):
+        return partial(self.__async_call, attr)
+
+    def __async_call(self, func, *args, **kwargs):
+        self.set_event_data_value('invoke_function', func)
+        self.set_event_data_value('invoke_args', args)
+        self.set_event_data_value('invoke_kwargs', kwargs)
 
     def get_invoke_function(self) -> str:
         return self.get_event_data_value('invoke_function')
