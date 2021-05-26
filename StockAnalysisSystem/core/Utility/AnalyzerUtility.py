@@ -638,6 +638,12 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
     all_weight = []
     all_score = []
 
+    clock = Clock()
+    securities_list = []
+    for analyzer_uuid, analysis_result in result.items():
+        securities_list = list(set(securities_list + list(analysis_result.keys())))
+    print('Collect the stock list from results, time spending: %sms' % clock.elapsed_ms())
+
     column = 1
     for analyzer_uuid, analysis_result in result.items():
         # Note that this function will generate the report column by column
@@ -647,6 +653,7 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
 
         if len(all_score) < len(analysis_result):
             print('%s : Result buffer increased: %d -> %d' % (analyzer_uuid, len(all_score), len(analysis_result)))
+            # Extend the horizon size to fits the analyzer count
             while len(all_score) < len(analysis_result):
                 all_score.append([])
                 all_weight.append([])
@@ -663,11 +670,13 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
             #     assert False
 
             # Collect and sort securities list as the following order
-            securities_list = sorted(analysis_result.keys())
+            # securities_list = sorted(analysis_result.keys())
 
-            row = 2
+            row = ROW_OFFSET
             col = index_to_excel_column_name(column)
-            for security, results in analysis_result.items():
+
+            # Output the stock name columns
+            for security in securities_list:
                 securities_name = stock_name_dict.get(security, '')
                 display_text = (security + ' | ' + securities_name) if securities_name != '' else security
                 ws_score[col + str(row)] = display_text
@@ -686,6 +695,7 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
         row = ROW_OFFSET
         for security in securities_list:
             results = analysis_result.get(security, None)
+
             if results is not None:
                 score, weight, reason = __aggregate_single_security_results(results)
             else:
