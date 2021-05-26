@@ -237,8 +237,9 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         print('-' * 50)
 
         # ------------------------------------------------------------------------------------
-        # Mark init as finished, then we can start threads.
-        # Because thread may reference this singleton, which may trigger init() again.
+        # Mark init as finished, then we can start threads and other components that depends on sasApi
+        #    Because thread may reference this singleton, which may trigger init() again.
+        #    Or the components that depends on sasApi but gets not inited flag.
         # ------------------------------------------------------------------------------------
 
         self.__task_queue.start()

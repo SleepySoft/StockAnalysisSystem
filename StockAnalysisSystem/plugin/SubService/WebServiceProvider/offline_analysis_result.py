@@ -36,7 +36,7 @@ class OfflineAnalysisResult:
             if self.__future is None:
                 executor = ThreadPoolExecutor(1)
                 self.__future = executor.submit(self.load_offline_data, self.__name_dict_path, self.__result_path)
-                executor.shutdown()
+                executor.shutdown(wait=False)
 
     def load_offline_data(self, name_dict_path: str, result_path: str):
         analyzer_name_dict = {}

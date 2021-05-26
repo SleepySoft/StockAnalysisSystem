@@ -39,7 +39,7 @@ class ServiceProvider(metaclass=ThreadSafeSingleton):
             self.__sas_if = sas_if
             self.__sas_api = sas_api
 
-            self.__config = config if config is not None else self.__sas_api.Config()
+            self.__config = config if config is not None else self.__sas_api.config()
             self.__logger = logger
 
             self.__sas_terminal = SasTerminal(self.__sas_if, self.__sas_api)
