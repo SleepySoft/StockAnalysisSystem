@@ -152,7 +152,7 @@ def analysis_repurchase(securities: str, time_serial: tuple, data_hub: DataHubEn
     nop(time_serial, database, context, kwargs)
     df = data_hub.get_data_center().query('Stockholder.Repurchase', securities, (years_ago(1), now()))
     if df is None or len(df) == 0:
-        return AnalysisResult(securities, None, AnalysisResult.SCORE_FAIL, '前后一年内没有回购数据', '无回购数据')
+        return AnalysisResult(securities, None, AnalysisResult.SCORE_JUST, '前后一年内没有回购数据', '无回购数据')
     # df = df.where(df.notnull(), None)
 
     volume = 0
@@ -199,7 +199,7 @@ def analysis_repurchase(securities: str, time_serial: tuple, data_hub: DataHubEn
 
     brief = '期间计划回购%s股' % volume
     return AnalysisResult(securities, None, AnalysisResult.SCORE_PASS, reasons, brief) if len(reasons) > 0 else \
-        AnalysisResult(securities, None, AnalysisResult.SCORE_FAIL, '前后一年内没有回购数据', '近一年无数据')
+        AnalysisResult(securities, None, AnalysisResult.SCORE_JUST, '前后一年内没有回购数据', '近一年无数据')
 
 
 def analysis_increase_decrease(securities: str, time_serial: tuple, data_hub: DataHubEntry,

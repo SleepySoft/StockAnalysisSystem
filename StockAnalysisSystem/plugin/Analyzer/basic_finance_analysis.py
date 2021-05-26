@@ -118,6 +118,7 @@ def analysis_profit_structure(securities: str, time_serial: tuple, data_hub: Dat
                               (period, row['其他业务收入'] / 10000, row['营业收入'] / 10000, other_operating_profit * 100))
             else:
                 brief = '正常'
+                reason.append('正常')
             results.append(AnalysisResult(securities, period, score, reason, brief))
     return results
 

@@ -75,13 +75,14 @@ class StrategyEntry:
         # return result_table
 
     def cache_analysis_result(self, uri: str, result_list: list):
+        default_time = now().replace(hour=0, minute=0, second=0, microsecond=0)
         delete_analyzer_cache = []
         analysis_result_packs = []
         for r in result_list:
             if r.period is None:
                 # This kind of result comes from real-time analyzer
                 # We should delete the old result then update with current time
-                r.period = now().replace(microsecond=0)
+                r.period = default_time
                 if str_available(r.method) and r.method not in delete_analyzer_cache:
                     delete_analyzer_cache.append(r.method)
             p = r.pack()

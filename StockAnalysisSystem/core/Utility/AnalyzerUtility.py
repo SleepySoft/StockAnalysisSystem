@@ -48,6 +48,7 @@ class AnalysisResult:
     SCORE_MIN = 0
     SCORE_MAX = 100
     SCORE_PASS = SCORE_MAX
+    SCORE_JUST = 60
     SCORE_FAIL = SCORE_MIN
     SCORE_NOT_APPLIED = None
 
@@ -642,6 +643,7 @@ def generate_analysis_report(result: dict, file_path: str, analyzer_name_dict: d
     securities_list = []
     for analyzer_uuid, analysis_result in result.items():
         securities_list = list(set(securities_list + list(analysis_result.keys())))
+    securities_list.sort()
     print('Collect the stock list from results, time spending: %sms' % clock.elapsed_ms())
 
     column = 1
