@@ -13,8 +13,7 @@ https://github.com/SleepySoft/StockAnalysisSystem
 * 根目录  
 链接: https://pan.baidu.com/s/1trY6GJ_ixj3ulXDA2JIGRg  
 提取码: 4d9f  
-* 离线数据  
-  
+* 离线数据
 链接：https://pan.baidu.com/s/1ejiijSrFA0-ZIks_jmNgtw  
 提取码：qxj9  
   
@@ -25,6 +24,11 @@ https://github.com/SleepySoft/StockAnalysisSystem
 * 软件及工具  
 链接：https://pan.baidu.com/s/1p9psTFIdQc3nbEORTzSxyw  
 提取码：y3yv  
+  
+* 由于上传了大文件导致一些问题，于是彻底清理了大文件  
+  以下文件放在度盘“分析数据”目录中：
+> offline_analysis_result.zip (供服务使用)  
+> analysis_report.xlsx (程序生成的分析报告)  
   
 # 最近更新内容： 
 将访问接口扩展为sasApi和sasInterface，并将界面与服务彻底分离  
@@ -62,7 +66,7 @@ https://github.com/SleepySoft/StockAnalysisSystem
 * 由于图表引入了pyqtgraph，导致pyinstaller打包出现问题，并且尝试py2exe也不成功，故暂停以EXE形式发布Release  
   
 ## 只想看结果  
-* 打开analysis_report.xlsx  
+* 打开analysis_report.xlsx (注：已转移到了度盘“分析数据”中)  
   
 ## 大神看这里  
 * 需要安装MongoDB  
