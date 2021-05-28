@@ -58,8 +58,8 @@ class SubServiceManager:
         def identity(self) -> str:
             return self.__identity
 
-        def handle_event(self, event: Event):
-            self.__extension.event_handler(event=event)
+        def handle_event(self, event: Event, sync: bool):
+            self.__extension.event_handler(event=event, sync=sync)
 
     def __init__(self, sas_api: sasApi, plugin: PluginManager):
         self.__sas_api = sas_api
@@ -177,6 +177,25 @@ class SubServiceManager:
     def get_running_cycles(self) -> int:
         with self.__lock:
             return self.__running_cycles
+
+    # --------------------------------------- Transaction ---------------------------------------
+
+    def sync_invoke(self, dest: str or [str] or None, function: str, *args, **kwargs) -> any:
+        event = EventInvoke(dest)
+        event.invoke(function, *args, **kwargs)
+        self.__event_queue.deliver_event(event)
+        return event.result()
+
+    def async_invoke(self, dest: str or [str] or None, function: str, *args, **kwargs) -> EventInvoke:
+        event = EventInvoke(dest)
+        event.invoke(function, *args, **kwargs)
+        self.__event_queue.deliver_event(event)
+        return event
+
+    def post_message(self, message_type: str, receiver: str or [str] or None, sender: str, **kwargs):
+        event = Event(message_type, receiver, sender)
+        event.set_event_data(kwargs)
+        self.__event_queue.post_event(event)
 
     # ------------------------------------------ Event ------------------------------------------
 

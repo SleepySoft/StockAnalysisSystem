@@ -94,7 +94,7 @@ def startup() -> bool:
 #     pass
 
 
-def event_handler(event: Event, **kwargs):
+def event_handler(event: Event, sync: bool, **kwargs):
     terminalService.handle_event(event, **kwargs)
 
 

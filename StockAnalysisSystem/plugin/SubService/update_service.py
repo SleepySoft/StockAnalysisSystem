@@ -176,7 +176,7 @@ def startup() -> bool:
     return True
 
 
-def event_handler(event: Event, **kwargs):
+def event_handler(event: Event, sync: bool, **kwargs):
     updateService.handle_event(event)
 
 

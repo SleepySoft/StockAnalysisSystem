@@ -1,6 +1,6 @@
 import StockAnalysisSystem.core.api as sasApi
-from StockAnalysisSystem.core.Utility.event_queue import Event
 from StockAnalysisSystem.core.SubServiceManager import SubServiceContext
+from StockAnalysisSystem.core.Utility.event_queue import Event, EventDispatcher
 
 # 事件入口
 #    定时事件
@@ -45,6 +45,7 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+eventDispatcher: EventDispatcher = None
 subServiceContext: SubServiceContext = None
 
 
@@ -55,6 +56,8 @@ def init(sub_service_context: SubServiceContext) -> bool:
     :return: True if successful else False
     """
     try:
+        global eventDispatcher
+        eventDispatcher = EventDispatcher(in_private_thread=False, name=SERVICE_ID)
         global subServiceContext
         subServiceContext = sub_service_context
     except Exception as e:
@@ -72,6 +75,10 @@ def startup() -> bool:
     You and put the cross-service invoking here.
     """
     return True
+
+
+def teardown() -> bool:
+    pass
 
 
 def thread(context: dict):
@@ -99,14 +106,16 @@ def polling(interval_ns: int):
     pass
 
 
-def event_handler(event: Event, **kwargs):
+def event_handler(event: Event, sync: bool, **kwargs):
     """
     Use this function to handle event. Includes timer and subscribed event.
     :param event: The event data
+    :param sync: If true, it should not be handled in other thread
     :return:
     """
     print('Event')
-    pass
+    if not eventDispatcher.dispatch_event(event, sync):
+        pass
 
 
 

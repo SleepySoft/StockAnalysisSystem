@@ -288,7 +288,7 @@ def polling(interval_ns: int):
     pass
 
 
-def event_handler(event: Event, **kwargs):
+def event_handler(event: Event, sync: bool, **kwargs):
     systemService.handle_event(event)
 
 

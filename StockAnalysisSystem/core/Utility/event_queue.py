@@ -1,12 +1,12 @@
 import uuid
 import datetime
 import threading
+import traceback
 from collections import deque
 from functools import partial
 
 
 class Event:
-    EVENT_ACK = 'ack_event'                 # The reply event of EVENT_INVOKE
     EVENT_MAIL = 'mail_event'               # Communication between sub-service
     EVENT_PUSH = 'push_event'               # Push message, push service can handle this kind of message
     EVENT_TIMER = 'timer_event'             # Period timer event
@@ -66,36 +66,27 @@ class Event:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-class EventAck(Event):
-    def __init__(self, event_source: str, ack_event: Event, invoke_result: any):
-        super(EventAck, self).__init__(Event.EVENT_ACK, ack_event.event_source(), event_source)
-        self.set_event_data_value('ack_event', ack_event)
-        self.set_event_data_value('invoke_result', invoke_result)
-
-    def get_ack_event(self) -> Event:
-        return self.get_event_data().get('ack_event')
-
-    def get_invoke_result(self) -> any:
-        return self.get_event_data().get('invoke_result')
-
-
 class EventInvoke(Event):
-    def __init__(self, event_target: str, event_source: str, invoke_function: str, **kwargs):
-        super(EventInvoke, self).__init__(Event.EVENT_INVOKE, event_target, event_source)
+    def __init__(self, event_target: str):
+        super(EventInvoke, self).__init__(Event.EVENT_INVOKE, event_target, '')
 
-    def __getattr__(self, attr):
-        return partial(self.__async_call, attr)
-
-    def __async_call(self, func, *args, **kwargs):
-        self.set_event_data_value('invoke_function', func)
+    def invoke(self, function: str, *args, **kwargs):
+        self.set_event_data_value('invoke_function', function)
         self.set_event_data_value('invoke_args', args)
         self.set_event_data_value('invoke_kwargs', kwargs)
 
     def get_invoke_function(self) -> str:
         return self.get_event_data_value('invoke_function')
 
-    def get_invoke_parameters(self) -> dict:
-        return self.get_event_data_value('invoke_parameters')
+    def get_invoke_parameters(self) -> (list, dict):
+        return self.get_event_data_value('invoke_args'), \
+               self.get_event_data_value('invoke_kwargs')
+
+    def result(self) -> any:
+        return self.get_event_data_value('invoke_result')
+
+    def update_result(self, result: any):
+        self.set_event_data_value('invoke_result', result)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -107,7 +98,7 @@ class EventHandler:
     def identity(self) -> str:
         pass
 
-    def handle_event(self, event: Event):
+    def handle_event(self, event: Event, sync: bool):
         pass
 
 
@@ -118,40 +109,125 @@ class EventQueue:
         self.__lock = threading.Lock()
 
     def post_event(self, event: Event):
-        self.__event_queue.append(event)
+        with self.__lock:
+            self.__event_queue.append(event)
 
     def insert_event(self, event: Event):
-        self.__event_queue.appendleft(event)
+        with self.__lock:
+            self.__event_queue.appendleft(event)
 
     def deliver_event(self, event: Event):
-        self.__dispatch_event(event)
+        self.__dispatch_event(event, True)
 
     def add_event_handler(self, event_handler: EventHandler):
-        self.__event_handler.append(event_handler)
+        with self.__lock:
+            self.__event_handler.append(event_handler)
 
     def polling(self, time_limit_ms: int) -> int:
         polling_start = datetime.datetime.now()
         while len(self.__event_queue) > 0:
             event = self.__event_queue.popleft()
             if self.__pre_process_event(event):
-                self.__dispatch_event(event)
+                self.__dispatch_event(event, False)
             if (datetime.datetime.now() - polling_start).microseconds >= time_limit_ms:
                 break
         return len(self.__event_queue)
 
+    # ------------------------------------------------------------------------------------------
+
     def __pre_process_event(self, event: Event):
         return True
 
-    def __dispatch_event(self, event: Event):
+    def __dispatch_event(self, event: Event, sync: bool):
         with self.__lock:
             event_handler_copy = self.__event_handler.copy()
+        target = event.event_target()
         for handler in event_handler_copy:
-            target = event.event_target()
             if target is None or len(target) == 0:
-                handler.handle_event(event)
+                handler.handle_event(event, sync)
             else:
                 targets = list(target) if isinstance(target, (list, tuple, set)) else [str(target)]
-                if handler.identity() in targets:
-                    handler.handle_event(event)
+                handler.handle_event(event, sync) if handler.identity() in targets else None
 
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+class EventDispatcher(EventHandler):
+    def __init__(self, in_private_thread: bool, name: str):
+        if in_private_thread:
+            self.__private_queue = EventQueue()
+            self.__private_queue.add_event_handler(self)
+            self.__private_thread = threading.Thread(target=self.__private_queue.polling())
+        else:
+            self.__private_queue = None
+        self.__lock = threading.Lock()
+        self.__handler_name = name
+        self.__invoke_mapping = {}
+        self.__message_mapping = {}
+        super(EventDispatcher, self).__init__()
+
+    # ----------------------------------------------------------------
+
+    def dispatch_event(self, event: Event, sync: bool):
+        if self.__private_queue is not None and not sync:
+            self.__private_queue.post_event(event, sync)
+        else:
+            self.__handle_event(event)
+
+    def register_invoke_handler(self, function: str, entry):
+        with self.__lock:
+            self.__invoke_mapping[function] = entry
+
+    def register_message_handler(self, function: str, entry):
+        with self.__lock:
+            self.__message_mapping[function] = entry
+
+    # --------------- Override EventHandler Interface ---------------
+
+    def identity(self) -> str:
+        return 'EventDispatcher | ' + self.__handler_name
+
+    def handle_event(self, event: Event, sync: bool):
+        self.__handle_event(event)
+
+    # ---------------------------------------------------------------------------------------
+
+    def __handle_event(self, event: Event) -> bool:
+        if event.event_type() == Event.EVENT_INVOKE:
+            return self.__handle_invoke(event)
+        else:
+            return self.__handle_message(event)
+
+    def __handle_invoke(self, event: Event) -> bool:
+        invoke_function = event.get_event_data_value('invoke_function')
+        with self.__lock:
+            entry = self.__invoke_mapping.get(invoke_function, None)
+        if entry is None:
+            return False
+        args = event.get_event_data_value('invoke_args')
+        kwargs = event.get_event_data_value('invoke_kwargs')
+        try:
+            result = entry(*args, **kwargs)
+            event.set_event_data_value('invoke_result', result)
+            return True
+        except Exception as e:
+            print('Invoke Fail: ' + str(e))
+            print(traceback.format_exc())
+            return False
+        finally:
+            pass
+
+    def __handle_message(self, event: Event) -> bool:
+        event_type = event.event_type()
+        with self.__lock:
+            entry = self.__message_mapping.get(event_type, None)
+        if entry is None:
+            return False
+        try:
+            entry(event.event_source(), event.get_event_data())
+        except Exception as e:
+            print('Message Fail: ' + str(e))
+            print(traceback.format_exc())
+            return False
+        return True
 
