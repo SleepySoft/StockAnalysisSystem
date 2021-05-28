@@ -27,8 +27,8 @@ class SubServiceContext:
         try:
             return self.sas_api.sys_call(api, *args, **kwargs)
         except Exception as e:
-            print('Sub Service call error: ' + str(e))
-            print(traceback.format_exc())
+            self.log('Sub Service call error: ' + str(e))
+            self.log(traceback.format_exc())
             return None
         finally:
             pass
@@ -45,7 +45,7 @@ class SubServiceManager:
             ret = self.__extension.thread(context=self.__context)
             print('Sub Service thread exit, return = ' + str(ret))
 
-        def quit(self):
+        def teardown(self):
             self.__context['quit_flag'] = True
 
     class SubServiceEventWrapper(EventHandler):
@@ -77,14 +77,18 @@ class SubServiceManager:
         # All service
         self.__service_table = {}
 
-        # Threads
-        self.__lock = threading.Lock()
-        self.__service_thread = None
-        self.__service_threads = {}
-
+        # Service reference
         self.__period_service = []
         self.__thread_service = []
         self.__event_handler_service = []
+
+        # Threads
+        self.__quit = False
+        self.__lock = threading.Lock()
+        self.__service_thread = None
+
+        # SubService Threads
+        self.__sub_service_threads = []
 
         # Statistics
         self.__last_run_time = 0
@@ -105,9 +109,11 @@ class SubServiceManager:
             if prob is None or 'plugin_id' not in prob or 'plugin_name' not in prob:
                 continue
 
-            if prob['plugin_id'] in disable_service:
-                print('Service %s disabled' % prob['plugin_name'])
+            plugin_id = prob['plugin_id']
+            if plugin_id in disable_service:
+                self.__log('Service %s disabled' % prob['plugin_name'])
                 continue
+            service_wrapper.set_data('plugin_id', plugin_id)
 
             capacities = service_wrapper.plugin_capacities()
             if capacities is None or not isinstance(capacities, (list, tuple)) or len(capacities) == 0:
@@ -123,6 +129,15 @@ class SubServiceManager:
 
         return self.init_services() and self.startup_service() and self.activate_services()
 
+    def teardown(self):
+        self.__quit = False
+        if self.__service_thread is not None:
+            self.__log('SebServiceManager Teardown, joining service thread...')
+            self.__service_thread.join()
+            self.__log('SebServiceManager Teardown, service thread quit.')
+        for _id, sub_service in self.__service_table.items():
+            sub_service.teardown()
+
     def init_services(self) -> bool:
         fail_service = []
         for identity, service_wrapper in self.__service_table.items():
@@ -131,9 +146,9 @@ class SubServiceManager:
                 fail_service.append((identity, service_wrapper))
                 prob = service_wrapper.plugin_prob()
                 if isinstance(prob, dict):
-                    print('Fail to init extension: ' + prob.get('plugin_id', 'NO ID'))
+                    self.__log('Fail to init extension: ' + prob.get('plugin_id', 'NO ID'))
                 else:
-                    print('Fail to init extension: prob data error')
+                    self.__log('Fail to init extension: prob data error')
         self.__remove_service(fail_service)
         return True
 
@@ -152,6 +167,15 @@ class SubServiceManager:
         ret = ret and self.__run_thread_services()
         return ret
 
+    def teardown_service(self):
+        for service_wrapper in self.__thread_service:
+            plugin_id = service_wrapper.get_data('plugin_id')
+            extension_thread: SubServiceManager.SubServiceThreadWrapper = \
+                service_wrapper.get_data('extension_thread')
+            self.__log('Sub service %s thread teardown, joining...' % plugin_id)
+            extension_thread.teardown()
+            self.__log('Sub service %s thread quit.' % plugin_id)
+
     # ---------------------------------------- Functions ----------------------------------------
 
     def run_service(self):
@@ -159,7 +183,7 @@ class SubServiceManager:
         self.__service_thread.start()
 
     def run_forever(self):
-        while True:
+        while not self.__quit:
             self.poll_service()
             time.sleep(0.05)
 
@@ -241,8 +265,11 @@ class SubServiceManager:
             extension_thread = SubServiceManager.SubServiceThreadWrapper(service_wrapper)
             service_wrapper.set_data('extension_thread', extension_thread)
             extension_thread.start()
+            self.__sub_service_threads.append(extension_thread)
         return True
 
+    def __log(self, text: str):
+        print(text)
 
 
 

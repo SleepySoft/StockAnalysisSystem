@@ -78,7 +78,9 @@ def startup() -> bool:
 
 
 def teardown() -> bool:
-    pass
+    if eventDispatcher is not None:
+        eventDispatcher.teardown()
+    return True
 
 
 def thread(context: dict):

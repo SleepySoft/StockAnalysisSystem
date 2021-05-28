@@ -1,3 +1,4 @@
+import time
 import uuid
 import datetime
 import threading
@@ -157,14 +158,26 @@ class EventDispatcher(EventHandler):
         if in_private_thread:
             self.__private_queue = EventQueue()
             self.__private_queue.add_event_handler(self)
-            self.__private_thread = threading.Thread(target=self.__private_queue.polling())
+            self.__private_thread = threading.Thread(target=self.__polling_thread)
         else:
             self.__private_queue = None
+        self.__quit = False
         self.__lock = threading.Lock()
         self.__handler_name = name
         self.__invoke_mapping = {}
         self.__message_mapping = {}
         super(EventDispatcher, self).__init__()
+
+    def startup(self):
+        if self.__private_thread is not None:
+            self.__private_thread.start()
+
+    def teardown(self):
+        self.__quit = True
+        if self.__private_thread is not None:
+            self.__log('Event dispatcher %s thread teardown, joining...' % self.__handler_name)
+            self.__private_thread.join()
+            self.__log('Event dispatcher %s thread quit.' % self.__handler_name)
 
     # ----------------------------------------------------------------
 
@@ -185,7 +198,7 @@ class EventDispatcher(EventHandler):
     # --------------- Override EventHandler Interface ---------------
 
     def identity(self) -> str:
-        return 'EventDispatcher | ' + self.__handler_name
+        return self.__handler_name
 
     def handle_event(self, event: Event, sync: bool):
         self.__handle_event(event)
@@ -230,4 +243,12 @@ class EventDispatcher(EventHandler):
             print(traceback.format_exc())
             return False
         return True
+
+    def __polling_thread(self):
+        while not self.__quit:
+            self.__private_queue.polling()
+            time.sleep(0.1)
+
+    def __log(self, text: str):
+        print(text)
 
