@@ -188,12 +188,27 @@ class EventDispatcher(EventHandler):
             self.__handle_event(event)
 
     def register_invoke_handler(self, function: str, entry):
+        """
+        Register a function that will handle inter-service invoke.
+        :param function: The name of function. This function can be invoked by this name.
+        :param entry: The pointer of handle function.
+                      The invoke params should follow this function's declaration.
+        :return: None
+        """
         with self.__lock:
             self.__invoke_mapping[function] = entry
 
-    def register_message_handler(self, function: str, entry):
+    def register_message_handler(self, message_type: str, entry):
+        """
+        Register a function that will handle message event.
+        :param message_type: The message type name that will be handled
+        :param entry: The pointer of handle function.
+                      The declaration of function should look like:
+                        any_function_name(source: str, message_data: dict)
+        :return: None
+        """
         with self.__lock:
-            self.__message_mapping[function] = entry
+            self.__message_mapping[message_type] = entry
 
     # --------------- Override EventHandler Interface ---------------
 

@@ -48,7 +48,46 @@ def test_analysis_result_brief_formatting():
 
 
 def test_entry():
-    pass
+    subServiceContext.sub_service_manager.sync_invoke('')
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def invoke_function_a(time_stamp: float, param1, param2) -> dict:
+    return {}
+
+
+def invoke_function_b(time_stamp: float, param1, param2) -> dict:
+    return {}
+
+
+def message_mail_event(source: str, message_data: dict):
+    print('Get mail message from at B %s, data: %s' % (source, message_data))
+
+
+def message_push_event(source: str, message_data: dict):
+    print('Get push message from at B %s, data: %s' % (source, message_data))
+
+
+def message_timer_event(source: str, message_data: dict):
+    print('Get timer message at A from %s, data: %s' % (source, message_data))
+
+
+def message_schedule_event(source: str, message_data: dict):
+    print('Get schedule message at A from %s, data: %s' % (source, message_data))
+
+
+def message_broadcast_event(source: str, message_data: dict):
+    print('Get broadcast message at A from %s, data: %s' % (source, message_data))
+
+
+def message_custom_event(source: str, message_data: dict):
+    print('Get custom message at A from %s, data: %s' % (source, message_data))
+
+
+def message_other_event(event: Event):
+    print('Get un-handle event at A from %s, type: %s, data: %s' % 
+          (event.event_source(), event.event_type(), event.get_event_data()))
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -91,6 +130,14 @@ def init(sub_service_context: SubServiceContext) -> bool:
 
 
 def startup() -> bool:
+    eventDispatcher.register_invoke_handler('function_a', invoke_function_a)
+    eventDispatcher.register_invoke_handler('function_b', invoke_function_b)
+    eventDispatcher.register_message_handler(Event.EVENT_MAIL, message_mail_event)
+    eventDispatcher.register_message_handler(Event.EVENT_PUSH, message_push_event)
+    eventDispatcher.register_message_handler(Event.EVENT_TIMER, message_timer_event)
+    eventDispatcher.register_message_handler(Event.EVENT_SCHEDULE, message_schedule_event)
+    eventDispatcher.register_message_handler(Event.EVENT_BROADCAST, message_broadcast_event)
+    eventDispatcher.register_message_handler('TestEventA', message_custom_event)
     return True
 
 

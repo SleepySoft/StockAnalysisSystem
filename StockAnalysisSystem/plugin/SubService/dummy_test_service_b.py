@@ -1,3 +1,5 @@
+import time
+import threading
 import traceback
 
 import StockAnalysisSystem.core.api as sasApi
@@ -6,7 +8,6 @@ from StockAnalysisSystem.core.SubServiceManager import SubServiceContext
 from StockAnalysisSystem.core.Utility.event_queue import Event, EventDispatcher
 
 
-once: bool = True
 eventDispatcher: EventDispatcher = None
 subServiceContext: SubServiceContext = None
 SERVICE_ID = '23a49732-f3b0-43ec-9f5c-f8f64d6da649'
@@ -14,8 +15,49 @@ SERVICE_ID = '23a49732-f3b0-43ec-9f5c-f8f64d6da649'
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def test_entry():
-    pass
+def invoke_function_x(time_stamp: float, param1, param2) -> dict:
+    ts = time.time()
+    tid = threading.get_ident()
+    print('function_x invoked at %s (delay %sms) in thread %s with param %s, %s' %
+          (ts, (ts - time_stamp) * 1000, str(tid), str(param1), str(param2)))
+    return {'thread_id': tid}
+
+
+def invoke_function_y(time_stamp: float, param1, param2) -> dict:
+    ts = time.time()
+    tid = threading.get_ident()
+    print('function_x invoked at %s (delay %sms) in thread %s with param %s, %s' %
+          (ts, (ts - time_stamp) * 1000, str(tid), str(param1), str(param2)))
+    return {'thread_id': tid}
+
+
+def message_mail_event(source: str, message_data: dict):
+    print('Get mail message from at B %s, data: %s' % (source, message_data))
+
+
+def message_push_event(source: str, message_data: dict):
+    print('Get push message from at B %s, data: %s' % (source, message_data))
+
+
+def message_timer_event(source: str, message_data: dict):
+    print('Get timer message at B from %s, data: %s' % (source, message_data))
+
+
+def message_schedule_event(source: str, message_data: dict):
+    print('Get schedule message at B from %s, data: %s' % (source, message_data))
+
+
+def message_broadcast_event(source: str, message_data: dict):
+    print('Get broadcast message at B from %s, data: %s' % (source, message_data))
+
+
+def message_custom_event(source: str, message_data: dict):
+    print('Get custom message at B from %s, data: %s' % (source, message_data))
+
+
+def message_other_event(event: Event):
+    print('Get un-handle event at B from %s, type: %s, data: %s' %
+          (event.event_source(), event.event_type(), event.get_event_data()))
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -58,6 +100,14 @@ def init(sub_service_context: SubServiceContext) -> bool:
 
 
 def startup() -> bool:
+    eventDispatcher.register_invoke_handler('function_x', invoke_function_x)
+    eventDispatcher.register_invoke_handler('function_y', invoke_function_y)
+    eventDispatcher.register_message_handler(Event.EVENT_MAIL, message_mail_event)
+    eventDispatcher.register_message_handler(Event.EVENT_PUSH, message_push_event)
+    eventDispatcher.register_message_handler(Event.EVENT_TIMER, message_timer_event)
+    eventDispatcher.register_message_handler(Event.EVENT_SCHEDULE, message_schedule_event)
+    eventDispatcher.register_message_handler(Event.EVENT_BROADCAST, message_broadcast_event)
+    eventDispatcher.register_message_handler('TestEventB', message_custom_event)
     return True
 
 
@@ -68,26 +118,10 @@ def teardown() -> bool:
 
 
 def polling(interval_ns: int):
-    global once
-    if once:
-        try:
-            test_entry()
-        except Exception as e:
-            print("Test exception")
-            print(e)
-            print(traceback.format_exc())
-        finally:
-            once = False
+    pass
 
 
 def event_handler(event: Event, sync: bool, **kwargs):
-    """
-    Use this function to handle event. Includes timer and subscribed event.
-    :param event: The event data
-    :param sync: If true, it should not be handled in other thread
-    :return:
-    """
-    print('Event')
     if not eventDispatcher.dispatch_event(event, sync):
-        pass
+        message_other_event(event)
 
