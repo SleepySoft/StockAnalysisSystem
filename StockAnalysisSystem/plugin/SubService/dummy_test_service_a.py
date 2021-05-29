@@ -1,3 +1,5 @@
+import threading
+import time
 import traceback
 
 import StockAnalysisSystem.core.api as sasApi
@@ -47,8 +49,30 @@ def test_analysis_result_brief_formatting():
     print(text)
 
 
+TARGET_ID = '23a49732-f3b0-43ec-9f5c-f8f64d6da649'
+
+
+def function_y_cb(result):
+    print('function_y finished: ' + str(result))
+
+
 def test_entry():
-    subServiceContext.sub_service_manager.sync_invoke('')
+    result_x = subServiceContext.sub_service_manager.sync_invoke(
+        '', 'function_x', time.time(), 'param1 from A', threading.get_ident())
+    print('function_x returned: ' + str(result_x))
+
+    event_y = subServiceContext.sub_service_manager.async_invoke(
+        '23a49732-f3b0-43ec-9f5c-f8f64d6da649', 'function_y', function_y_cb,
+        time.time(), 'param1 from A', threading.get_ident())
+    print('Get function_y event: ' + str(event_y))
+
+    subServiceContext.sub_service_manager.post_message(Event.EVENT_MAIL, TARGET_ID, SERVICE_ID, {'data': 'FromA'})
+    subServiceContext.sub_service_manager.post_message(Event.EVENT_PUSH, TARGET_ID, SERVICE_ID, {'data': 'FromA'})
+    subServiceContext.sub_service_manager.post_message(Event.EVENT_TIMER, TARGET_ID, SERVICE_ID, {'data': 'FromA'})
+    subServiceContext.sub_service_manager.post_message(Event.EVENT_SCHEDULE, TARGET_ID, SERVICE_ID, {'data': 'FromA'})
+    subServiceContext.sub_service_manager.post_message(Event.EVENT_BROADCAST, TARGET_ID, SERVICE_ID, {'data': 'FromA'})
+    subServiceContext.sub_service_manager.post_message('TestEventB', TARGET_ID, SERVICE_ID, {'data': 'FromA'})
+    subServiceContext.sub_service_manager.post_message('UnknownEvent', TARGET_ID, SERVICE_ID, {'data': 'FromA'})
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -98,6 +122,7 @@ def plugin_prob() -> dict:
         'plugin_name': 'TestServiceA',
         'plugin_version': '0.0.0.1',
         'tags': ['Test', 'Sleepy'],
+        'default_enable': False,
     }
 
 

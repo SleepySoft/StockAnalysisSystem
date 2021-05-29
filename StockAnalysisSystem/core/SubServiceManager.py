@@ -98,6 +98,7 @@ class SubServiceManager:
 
     def init(self) -> bool:
         config = self.__sas_api.config()
+        enable_service = config.get('ENABLE_SERVICES', [])
         disable_service = config.get('DISABLE_SERVICES', [])
 
         self.__plugin.refresh()
@@ -110,11 +111,16 @@ class SubServiceManager:
                 continue
 
             plugin_id = prob['plugin_id']
+
+            # If "default_enable" of service prob is False, it should be enabled by "ENABLE_SERVICES" in json
+            if not prob.get('default_enable', True) and plugin_id not in enable_service:
+                continue
+
             if plugin_id in disable_service:
                 self.__log('Service %s disabled' % prob['plugin_name'])
                 continue
-            service_wrapper.set_data('plugin_id', plugin_id)
 
+            service_wrapper.set_data('plugin_id', plugin_id)
             capacities = service_wrapper.plugin_capacities()
             if capacities is None or not isinstance(capacities, (list, tuple)) or len(capacities) == 0:
                 continue
@@ -127,6 +133,9 @@ class SubServiceManager:
                 self.__event_handler_service.append(service_wrapper)
             self.__service_table[prob['plugin_id']] = service_wrapper
 
+        return True
+
+    def startup(self) -> bool:
         return self.init_services() and self.startup_service() and self.activate_services()
 
     def teardown(self):
@@ -204,21 +213,26 @@ class SubServiceManager:
 
     # --------------------------------------- Transaction ---------------------------------------
 
-    def sync_invoke(self, dest: str or [str] or None, function: str, *args, **kwargs) -> any:
-        event = EventInvoke(dest)
+    def sync_invoke(self, target: str or [str] or None, function: str, *args, **kwargs) -> any:
+        event = EventInvoke(target)
         event.invoke(function, *args, **kwargs)
         self.__event_queue.deliver_event(event)
         return event.result()
 
-    def async_invoke(self, dest: str or [str] or None, function: str, *args, **kwargs) -> EventInvoke:
-        event = EventInvoke(dest)
-        event.invoke(function, *args, **kwargs)
-        self.__event_queue.deliver_event(event)
-        return event
+    def async_invoke(self, target: str or [str] or None, function: str,
+                     invoke_callback, *args, **kwargs) -> EventInvoke or None:
+        event = EventInvoke(target)
+        if event.invoke(function, *args, **kwargs):
+            event.set_invoke_callback(invoke_callback)
+            self.__event_queue.post_event(event)
+            return event
+        else:
+            return None
 
-    def post_message(self, message_type: str, receiver: str or [str] or None, sender: str, **kwargs):
+    def post_message(self, message_type: str, receiver: str or [str] or None, sender: str, _data: dict, **kwargs):
         event = Event(message_type, receiver, sender)
-        event.set_event_data(kwargs)
+        event.set_event_data(_data)
+        event.update_event_data(kwargs)
         self.__event_queue.post_event(event)
 
     # ------------------------------------------ Event ------------------------------------------

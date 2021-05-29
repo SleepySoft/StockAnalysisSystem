@@ -44,6 +44,9 @@ class Event:
     def set_event_data(self, _data: dict):
         self.__event_data = _data
 
+    def update_event_data(self, _data: dict):
+        self.__event_data.update(_data)
+
     def get_event_data_value(self, key: str, default_val: any = None) -> any:
         return self.__event_data.get(key, default_val)
 
@@ -71,10 +74,16 @@ class EventInvoke(Event):
     def __init__(self, event_target: str):
         super(EventInvoke, self).__init__(Event.EVENT_INVOKE, event_target, '')
 
-    def invoke(self, function: str, *args, **kwargs):
+    def invoke(self, function: str, *args, **kwargs) -> bool:
+        if not isinstance(function, str):
+            return False
         self.set_event_data_value('invoke_function', function)
         self.set_event_data_value('invoke_args', args)
         self.set_event_data_value('invoke_kwargs', kwargs)
+        return True
+
+    def set_invoke_callback(self, callback):
+        self.set_event_data_value('invoke_callback', callback)
 
     def get_invoke_function(self) -> str:
         return self.get_event_data_value('invoke_function')
@@ -168,9 +177,9 @@ class EventDispatcher(EventHandler):
         self.__message_mapping = {}
         super(EventDispatcher, self).__init__()
 
-    def startup(self):
-        if self.__private_thread is not None:
-            self.__private_thread.start()
+    # def startup(self):
+    #     if self.__private_thread is not None:
+    #         self.__private_thread.start()
 
     def teardown(self):
         self.__quit = True
@@ -181,11 +190,14 @@ class EventDispatcher(EventHandler):
 
     # ----------------------------------------------------------------
 
-    def dispatch_event(self, event: Event, sync: bool):
+    def dispatch_event(self, event: Event, sync: bool) -> bool:
         if self.__private_queue is not None and not sync:
-            self.__private_queue.post_event(event, sync)
+            self.__private_queue.post_event(event)
+            if not self.__private_thread.is_alive():
+                self.__private_thread.start()
+            return True
         else:
-            self.__handle_event(event)
+            return self.__handle_event(event)
 
     def register_invoke_handler(self, function: str, entry):
         """
@@ -237,6 +249,9 @@ class EventDispatcher(EventHandler):
         try:
             result = entry(*args, **kwargs)
             event.set_event_data_value('invoke_result', result)
+            invoke_callback = event.get_event_data_value('invoke_callback')
+            if invoke_callback is not None:
+                invoke_callback(result)
             return True
         except Exception as e:
             print('Invoke Fail: ' + str(e))
@@ -261,7 +276,7 @@ class EventDispatcher(EventHandler):
 
     def __polling_thread(self):
         while not self.__quit:
-            self.__private_queue.polling()
+            self.__private_queue.polling(1000)
             time.sleep(0.1)
 
     def __log(self, text: str):

@@ -18,7 +18,7 @@ SERVICE_ID = '23a49732-f3b0-43ec-9f5c-f8f64d6da649'
 def invoke_function_x(time_stamp: float, param1, param2) -> dict:
     ts = time.time()
     tid = threading.get_ident()
-    print('function_x invoked at %s (delay %sms) in thread %s with param %s, %s' %
+    print('function_x invoked at %s (delay %sms) in thread %s with param <%s>, <%s>' %
           (ts, (ts - time_stamp) * 1000, str(tid), str(param1), str(param2)))
     return {'thread_id': tid}
 
@@ -26,7 +26,7 @@ def invoke_function_x(time_stamp: float, param1, param2) -> dict:
 def invoke_function_y(time_stamp: float, param1, param2) -> dict:
     ts = time.time()
     tid = threading.get_ident()
-    print('function_x invoked at %s (delay %sms) in thread %s with param %s, %s' %
+    print('function_y invoked at %s (delay %sms) in thread %s with param <%s>, <%s>' %
           (ts, (ts - time_stamp) * 1000, str(tid), str(param1), str(param2)))
     return {'thread_id': tid}
 
@@ -68,6 +68,7 @@ def plugin_prob() -> dict:
         'plugin_name': 'TestServiceB',
         'plugin_version': '0.0.0.1',
         'tags': ['Test', 'Sleepy'],
+        'default_enable': False,
     }
 
 
@@ -87,7 +88,7 @@ def plugin_capacities() -> list:
 def init(sub_service_context: SubServiceContext) -> bool:
     try:
         global eventDispatcher
-        eventDispatcher = EventDispatcher(in_private_thread=False, name=SERVICE_ID)
+        eventDispatcher = EventDispatcher(in_private_thread=True, name=SERVICE_ID)
         global subServiceContext
         subServiceContext = sub_service_context
     except Exception as e:

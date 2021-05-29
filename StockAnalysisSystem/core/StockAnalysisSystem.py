@@ -243,6 +243,7 @@ class StockAnalysisSystem(metaclass=ThreadSafeSingleton):
         # ------------------------------------------------------------------------------------
 
         self.__task_queue.start()
+        self.__sub_service_manager.startup()
         self.__sub_service_manager.run_service()
 
         return True

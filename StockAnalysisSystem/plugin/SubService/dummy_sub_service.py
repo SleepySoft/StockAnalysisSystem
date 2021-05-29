@@ -26,6 +26,7 @@ def plugin_prob() -> dict:
         'plugin_name': 'Dummy',
         'plugin_version': '0.0.0.1',
         'tags': ['Dummy', 'Test', 'Example', 'Sleepy'],
+        'default_enable': False,
     }
 
 
