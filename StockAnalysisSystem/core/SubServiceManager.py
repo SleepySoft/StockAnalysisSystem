@@ -214,6 +214,14 @@ class SubServiceManager:
     # --------------------------------------- Transaction ---------------------------------------
 
     def sync_invoke(self, target: str or [str] or None, function: str, *args, **kwargs) -> any:
+        """
+        Invoke function sync. The function will be invoked directly in the same thread.
+        :param target: The id of target service. None or empty string to invoke the first match service.
+        :param function: The function name that you will invoke.
+        :param args: The list parameters
+        :param kwargs: The named parameters
+        :return: The invoke result
+        """
         event = EventInvoke(target)
         event.invoke(function, *args, **kwargs)
         self.__event_queue.deliver_event(event)
@@ -221,6 +229,18 @@ class SubServiceManager:
 
     def async_invoke(self, target: str or [str] or None, function: str,
                      invoke_callback, *args, **kwargs) -> EventInvoke or None:
+        """
+        Invoke function async. The function will return immediately.
+        :param target: The id of target service. None or empty string to invoke the first match service.
+        :param function: The function name that you will invoke.
+        :param invoke_callback: The function will be called after the invoke finished. None if you don't want callback.
+                                The callback function should have one parameter named 'result' to retrieve the invoke result.
+                                If you want to pass more data or context into this callback, you can use partial instead.
+                                The callback thread is the invoke thread which is uncertain.
+        :param args: The list parameters
+        :param kwargs: The named parameters
+        :return: Instance of EventInvoke or None if error occurs.
+        """
         event = EventInvoke(target)
         if event.invoke(function, *args, **kwargs):
             event.set_invoke_callback(invoke_callback)
@@ -230,6 +250,15 @@ class SubServiceManager:
             return None
 
     def post_message(self, message_type: str, receiver: str or [str] or None, sender: str, _data: dict, **kwargs):
+        """
+        Post a message to other service.
+        :param message_type: Message type as string. The Event class defines some standard message type.
+        :param receiver: The id of target service
+        :param sender: The id of sender service
+        :param _data: The message data as dict
+        :param kwargs: Other parameters, will be combined with _data
+        :return: None
+        """
         event = Event(message_type, receiver, sender)
         event.set_event_data(_data)
         event.update_event_data(kwargs)
