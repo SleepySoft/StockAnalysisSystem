@@ -31,6 +31,8 @@ subServiceContext: SubServiceContext = None
 
 def user_message_handler(sender: str, receiver: str, message: str):
     print(message)
+    response = subServiceContext.sub_service_manager.sync_invoke('', 'interact', message)
+    wechatSpy.send_text(sender, response)
 
 
 def group_message_handler(sender: str, receiver: str, message: str):
@@ -40,14 +42,18 @@ def group_message_handler(sender: str, receiver: str, message: str):
     # Only handle @myself message
     if message_content.startswith('@StockAnalysisSystem'):
         print(message_content)
+        message_content = message_content[len('@StockAnalysisSystem'):].strip()
+        response = subServiceContext.sub_service_manager.sync_invoke('', 'interact', message_content)
         at_str = '@' + from_group_member
-        wechatSpy.send_text(sender, 'Hello', at_wxid=at_str)
+        wechatSpy.send_text(sender, response, at_wxid=at_str)
 
 
 def on_wechat_text_message(sender: str, receiver: str, message: str):
     print('%s -> %s: %s' % (sender, receiver, message))
     if sender.endswith("@chatroom"):
         group_message_handler(sender, receiver, message)
+    else:
+        user_message_handler(sender, receiver, message)
 
 
 # ----------------------------------------------------------------------------------------------------------------------

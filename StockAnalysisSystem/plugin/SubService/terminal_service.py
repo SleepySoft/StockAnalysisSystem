@@ -1,7 +1,7 @@
 import StockAnalysisSystem.core.api as sasApi
-from StockAnalysisSystem.core.Utility.event_queue import Event
 from StockAnalysisSystem.core.SubServiceManager import SubServiceContext
 from StockAnalysisSystem.core.Utility.relative_import import RelativeImport
+from StockAnalysisSystem.core.Utility.event_queue import Event, EventDispatcher
 
 with RelativeImport(__file__):
     from WebServiceProvider.service_provider import ServiceProvider
@@ -11,13 +11,6 @@ SERVICE_ID = '0ea2afb5-3350-46e8-af1b-2e7ff246a1ff'
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-
-"""
-Support event:
-    Event type: Event.EVENT_INVOKE
-    Event 
-"""
-
 
 class TerminalService:
     def __init__(self):
@@ -31,15 +24,9 @@ class TerminalService:
                                            sub_service_context.sas_api)
         return self.__service_provider.is_inited()
 
-    def handle_event(self, event: Event, **kwargs):
-        if event.event_type() == Event.EVENT_INVOKE:
-            invoke_function = event.get_event_data_value('invoke_function')
-            if invoke_function == 'interact':
-                self.__handle_interact(event, **kwargs)
+    def interact(self, text: str, **kwargs) -> any:
+        return self.__service_provider.terminal_interact(text, **kwargs)
 
-    def __handle_interact(self, event: Event, **kwargs):
-            invoke_parameters = event.get_event_data_value('invoke_parameters')
-            self.__service_provider.interact()
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -67,6 +54,7 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+eventDispatcher = EventDispatcher(in_private_thread=False, name=SERVICE_ID)
 terminalService = TerminalService()
 
 
@@ -83,6 +71,13 @@ def init(sub_service_context: SubServiceContext) -> bool:
 
 
 def startup() -> bool:
+    eventDispatcher.register_invoke_handler('interact', terminalService.interact)
+    return True
+
+
+def teardown() -> bool:
+    if eventDispatcher is not None:
+        eventDispatcher.teardown()
     return True
 
 
@@ -95,7 +90,7 @@ def startup() -> bool:
 
 
 def event_handler(event: Event, sync: bool, **kwargs):
-    terminalService.handle_event(event, **kwargs)
+    eventDispatcher.dispatch_event(event, sync)
 
 
 

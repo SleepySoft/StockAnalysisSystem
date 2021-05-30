@@ -6,7 +6,7 @@
     "NOSQL_DB_PASS": "",
     "PROXY_PROTOCOL": "HTTP_PROXY",
     "PROXY_HOST": "",
-    "memo_path": "C:/Code/git/StockMemo",
+    "memo_path": "git/StockMemo",
 
     "wechat_token": "xxxxxxxxx",
     "wechat_app_id": "xxxxxxxxx",
@@ -49,8 +49,13 @@
     },
 
     "SERVICE_COMMENTS": [
-        ["Only for comments. You can put these UUID into DISABLE_SERVICES setting"],
-        ["f38cbc96-3b94-4cf2-bb36-fd9d4e656025", "dummy_test_service"],
+        ["Only for comments. You can put these UUID into DISABLE_SERVICES or ENABLE_SERVICES setting"],
+        ["If the 'default_enable' if True, you can put it into DISABLE_SERVICES to disable it."],
+        ["If the 'default_enable' if False, you can put it into ENABLE_SERVICES to enable it."],
+
+        ["7129e9d2-4f53-4826-9161-c568ced52d02", "dummy_sub_service"],
+        ["f38cbc96-3b94-4cf2-bb36-fd9d4e656025", "dummy_test_service_a"],
+        ["23a49732-f3b0-43ec-9f5c-f8f64d6da649", "dummy_test_service_b"],
         ["bd9a7d9f-dbcc-4dc8-8992-16dac9191ff9", "stock_memo_service"],
         ["8e6e6025-c0c7-4577-b62a-dd26b925b874", "system_service"],
         ["0ea2afb5-3350-46e8-af1b-2e7ff246a1ff", "terminal_service"],
@@ -59,7 +64,9 @@
         ["12d59df4-c218-45af-9a3e-a0b99526c291", "wechat_robot_service"]
     ],
 
+    "ENABLE_SERVICES": [
+    ],
+
     "DISABLE_SERVICES": [
-        "f38cbc96-3b94-4cf2-bb36-fd9d4e656025"
     ]
 }

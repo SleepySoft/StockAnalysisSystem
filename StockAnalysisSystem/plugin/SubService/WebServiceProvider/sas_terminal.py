@@ -9,6 +9,9 @@ class TerminalContext:
         self.result_handler = result_handler
 
 
+TEXT_SPLITTER = '\n---------------------------------\n'
+
+
 class SasTerminal:
     MIN_INPUT = 3
 
@@ -79,8 +82,14 @@ class SasTerminal:
         if len(text_items) == 0:
             text += '未发现风险项目'
         else:
-            text += '风险项目\n----------------------------\n'
+            text += '风险项目'
+            text += TEXT_SPLITTER
             text += '\n'.join(text_items)
+
+        url = 'http://211.149.229.160/analysis?security=%s' % stock_identity
+        result_link = '详情: %s' % url
+        text += TEXT_SPLITTER
+        text += result_link
 
         return text
 
