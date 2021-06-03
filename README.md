@@ -31,8 +31,14 @@ https://github.com/SleepySoft/StockAnalysisSystem
 > analysis_report.xlsx (程序生成的分析报告)  
   
 # 最近更新内容： 
-将访问接口扩展为sasApi和sasInterface，并将界面与服务彻底分离  
-如果想使用之前一体式的版本（今后不再更新），请checkout One-Piece分支  
+将网络服务全部做成Sub Service，并将Service Provider等放入SubService下  
+加入Sub Service管理，可以在config.json中配置需要启用或禁止的子服务  
+> 参考config_example.json中的注释  
+  
+加入微信机器人，基于WeChatSpy。原因是新号无法使用网页微信，故无法使用wxpy  
+> 可以添加微信号StockAnalysisSystem体验功能  
+> 也可以添加公众号SleepySoft体验公众号功能  
+> 注：由于没有云服务器，所以有时候服务可能无法使用（个人电脑偶尔要调试程序）
   
 如何运行:  
 * 环境准备看下面  
@@ -55,7 +61,6 @@ https://github.com/SleepySoft/StockAnalysisSystem
 * 暂时移除每日自动增量更新子服务（调试中）  
 * Stock Memo功能可能还有问题（边用边调）  
 * 具体功能文档尚不完善（喘口气，慢慢完善）。  
-* 网盘可能会被举报失效（莫名其妙）。  
   
 # 视频讲解（未更新，不过内部结构没变）  
 安装配置：https://www.bilibili.com/video/BV14z411b7AE/  
