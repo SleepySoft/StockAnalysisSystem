@@ -61,7 +61,7 @@ urllib3==1.25.8
 w3lib==1.22.0
 webencodings==0.5.1
 websocket-client==0.57.0
-websockets==8.1
+websockets==9.1
 wincertstore==0.2
 zipp==3.1.0
 psutil
