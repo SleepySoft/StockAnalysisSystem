@@ -99,7 +99,7 @@ WxUserSasUserDict = {
 
 def handle_text_message(flask_request: request, msg_dict: dict) -> str:
     content: str = msg_dict.get('Content', '')
-    return ServiceProvider.terminal_interact(content)
+    return ServiceProvider().terminal_interact(content)
 
     # ret, resp = handle_command(flask_request, msg_dict)
     # if ret:
