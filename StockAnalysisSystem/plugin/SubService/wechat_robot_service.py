@@ -32,7 +32,10 @@ subServiceContext: SubServiceContext = None
 def user_message_handler(sender: str, receiver: str, message: str):
     print(message)
     response = subServiceContext.sub_service_manager.sync_invoke('', 'interact', message)
-    wechatSpy.send_text(sender, response)
+    if response is not None:
+        wechatSpy.send_text(sender, response)
+    else:
+        print('Error: None response.')
 
 
 def group_message_handler(sender: str, receiver: str, message: str):

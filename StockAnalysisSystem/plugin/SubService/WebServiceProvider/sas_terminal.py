@@ -18,7 +18,7 @@ class SasTerminal:
     def __init__(self, sas_if: SasInterface, sas_api: sasApi):
         self.__sas_if = sas_if
         self.__sas_api = sas_api
-        self.__offline_analysis_result = None
+        self.__result_url = sas_api.config().get('analysis_result_url', 'http://sleepysoft.xyz/analysis?security=%s')
 
     def interact(self, ctx: TerminalContext, input_text: str) -> str:
         command, parameter = self.analysis_input_text(input_text)
@@ -87,7 +87,7 @@ class SasTerminal:
             text += '\n'.join(text_items)
 
         # url = 'http://211.149.229.160/analysis?security=%s' % stock_identity
-        url = self.__offline_analysis_result.get_analysis_result_url(stock_identity)
+        url = self.__result_url % stock_identity
         result_link = '详情: %s' % url
         text += TEXT_SPLITTER
         text += result_link
