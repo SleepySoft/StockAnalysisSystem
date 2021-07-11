@@ -86,7 +86,8 @@ class SasTerminal:
             text += TEXT_SPLITTER
             text += '\n'.join(text_items)
 
-        url = 'http://211.149.229.160/analysis?security=%s' % stock_identity
+        # url = 'http://211.149.229.160/analysis?security=%s' % stock_identity
+        url = self.__offline_analysis_result.get_analysis_result_url(stock_identity)
         result_link = '详情: %s' % url
         text += TEXT_SPLITTER
         text += result_link

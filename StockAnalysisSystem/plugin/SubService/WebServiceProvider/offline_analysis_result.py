@@ -18,6 +18,7 @@ class OfflineAnalysisResult:
         self.__logger = logger
         self.__lock = threading.Lock()
         self.__future = None
+        self.__result_url = ''
         self.__result_path = ''
         self.__name_dict_path = ''
         self.__analyzer_name_dict = {}
@@ -25,6 +26,7 @@ class OfflineAnalysisResult:
         self.__analysis_result_table = {}
 
     def init(self, config: Config):
+        self.__result_url = config.get('analysis_result_url', 'http://sleepysoft.xyz/analysis?security=%s')
         self.__result_path = config.get('analysis_result_path', 'analysis_result.json')
         self.__name_dict_path = config.get('analysis_name_dict_path', 'analyzer_names.json')
         self.create_load_offline_data_task()
@@ -82,6 +84,9 @@ class OfflineAnalysisResult:
     def security_result_exists(self, security: str) -> bool:
         with self.__lock:
             return security in self.__analysis_result_html or security in self.__analysis_result_table
+
+    def get_analysis_result_url(self, security: str) -> str:
+        return self.__result_url % security
 
     def get_analysis_result_html(self, security: str) -> str:
         security = security.split('.')[0]
