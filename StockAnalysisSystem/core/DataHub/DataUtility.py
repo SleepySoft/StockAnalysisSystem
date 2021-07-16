@@ -176,7 +176,7 @@ class DataUtility:
         :param uri: The uri that you want to update. MUST.
         :param identity: The identity/identities that you want to update.
                          If None, function will get the update list from uri data agent.
-         :param time_serial: Specify update time or time range. None for auto detecting update time range.
+        :param time_serial: Specify update time or time range. None for auto detecting update time range.
         :param full_update: If True, function will do full volume update
         :param quit_flag: A bool wrapped by list. If True being specified, the update will be terminated.
                           None if you don't need it.

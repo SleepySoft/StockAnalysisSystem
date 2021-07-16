@@ -3,7 +3,7 @@ import datetime
 import StockAnalysisSystem.core.api as sasApi
 from StockAnalysisSystem.core.Utility.time_utility import *
 from StockAnalysisSystem.core.Utility.event_queue import Event
-from StockAnalysisSystem.core.DataHub.DataAgent import DataAgent
+from StockAnalysisSystem.core.DataHub.DataAgent import *
 from StockAnalysisSystem.core.SubServiceManager import SubServiceContext
 
 
@@ -38,8 +38,13 @@ class UpdateService:
 
     }
 
+    # If the update is larger than the threshold. Just use serial update.
+    UPDATE_THRESHOLD_DAILY = 60
+    UPDATE_THRESHOLD_QUARTER = 365
+
     def __init__(self, sub_service_context: SubServiceContext):
         self.__sub_service_context = sub_service_context
+        self.__progress = ProgressRate()
 
     def startup(self):
         # DEBUG: Debug event
@@ -79,14 +84,32 @@ class UpdateService:
     def check_update_single(self, uri: str, properties: tuple, data_agent: DataAgent) -> bool:
         update_period, can_slice, only_trade_day = properties
         ret, last_update_time, update_days = self.__calculate_update_range(uri)
-        if not ret:
-            return False
+        if not ret or last_update_time is None:
+            return self.update_directly(uri)
         if update_days < update_period:
             return True
-        if can_slice:
-            pass
+        data_duration = data_agent.data_duration()
+        if data_duration in [DATA_DURATION_NONE, DATA_DURATION_AUTO, DATA_DURATION_FLOW]:
+            self.update_directly(uri)
+        elif data_duration == DATA_DURATION_DAILY:
+            self.update_for_daily_data()
+        elif data_duration == DATA_DURATION_QUARTER:
+            self.update_for_quarter_data()
         else:
+            # DATA_DURATION_ANNUAL - Not support
             pass
+
+    def update_directly(self, uri: str) -> bool:
+        ret = subServiceContext.sas_api.data_utility().auto_update(uri, progress=self.__progress)
+        return ret
+
+    def update_for_daily_data(self):
+        pass
+
+    def update_for_quarter_data(self):
+        pass
+
+    # --------------------------------------------------------------------------------------
 
     def __calculate_update_range(self, uri: str) -> (bool, datetime.datetime, int):
         last_update_time = self.__sub_service_context.sas_if.sas_get_last_update_time_from_update_table(uri.split('.'))
