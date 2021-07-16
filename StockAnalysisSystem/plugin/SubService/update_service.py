@@ -3,15 +3,41 @@ import datetime
 import StockAnalysisSystem.core.api as sasApi
 from StockAnalysisSystem.core.Utility.time_utility import *
 from StockAnalysisSystem.core.Utility.event_queue import Event
+from StockAnalysisSystem.core.DataHub.DataAgent import DataAgent
 from StockAnalysisSystem.core.SubServiceManager import SubServiceContext
 
 
 SERVICE_ID = '7129e9d2-4f53-4826-9161-c568ced52d02'
 
+
 # ----------------------------------------------------------------------------------------------------------------------
 
-
 class UpdateService:
+    UPDATE_PERIOD_TABLE = {
+        # URI                               (period, can slice, only trade day)
+        'Market.TradeCalender':             (0,      False,     False),
+        'Market.SecuritiesInfo':            (1,      False,     True),
+        'Market.IndexInfo':                 (1,      False,     True),
+        'Market.Enquiries':                 (0,      False,     False),
+        'Market.NamingHistory':             (1,      False,     False),
+        'Market.SecuritiesTags':            (1,      False,     True),
+        'Finance.Audit':                    (7,      True,      False),
+        'Finance.BalanceSheet':             (7,      True,      False),
+        'Finance.IncomeStatement':          (7,      True,      False),
+        'Finance.CashFlowStatement':        (7,      True,      False),
+        'Finance.BusinessComposition':      (7,      True,      False),
+        'Stockholder.Statistics':           (7,      True,      False),
+        'Stockholder.PledgeStatus':         (7,      True,      False),
+        'Stockholder.PledgeHistory':        (7,      True,      False),
+        'Stockholder.ReductionIncrease':    (7,      True,      False),
+        'Stockholder.Repurchase':           (7,      True,      False),
+        'Stockholder.StockUnlock':          (7,      True,      False),
+        'TradeData.Stock.Daily':            (1,      True,      True),
+        'TradeData.Index.Daily':            (1,      True,      True),
+        'Metrics.Stock.Daily':              (1,      True,      True),
+
+    }
+
     def __init__(self, sub_service_context: SubServiceContext):
         self.__sub_service_context = sub_service_context
 
@@ -38,6 +64,54 @@ class UpdateService:
         elif event.event_type() == 'update_service_test':
             if event.get_event_data().get('update_service_test_flag', '') == 'daily':
                 self.__do_daily_update()
+
+    # ---------------------------------------------------------------------------------------
+
+    def check_update_all(self):
+        data_agents = subServiceContext.sas_api.get_data_agents()
+        data_agents_table = {agent.base_uri: agent for agent in data_agents}
+        for uri, properties in self.UPDATE_PERIOD_TABLE.items():
+            data_agent = data_agents_table.get(uri, None)
+            if data_agent is None:
+                continue
+            self.check_update_single(uri, properties, data_agent)
+
+    def check_update_single(self, uri: str, properties: tuple, data_agent: DataAgent) -> bool:
+        update_period, can_slice, only_trade_day = properties
+        ret, last_update_time, update_days = self.__calculate_update_range(uri)
+        if not ret:
+            return False
+        if update_days < update_period:
+            return True
+        if can_slice:
+            pass
+        else:
+            pass
+
+    def __calculate_update_range(self, uri: str) -> (bool, datetime.datetime, int):
+        last_update_time = self.__sub_service_context.sas_if.sas_get_last_update_time_from_update_table(uri.split('.'))
+        last_update_date = to_date(last_update_time)
+
+        if last_update_date is None:
+            self.__sub_service_context.log('Error last update time format: ' + str(last_update_time))
+            return False, None, 0
+
+        date_delta = now().date() - last_update_date
+        return True, last_update_time, date_delta.days
+
+    def __calculate_update_trade_data(self, last_update_time: datetime.datetime) -> [datetime.datetime]:
+        # DEBUG: Test slice update
+        if update_days > 1000:
+            # More than 100 days, update per each
+            ret = self.__update_daily_data_trade_per_each(uri)
+            return ret
+        else:
+            # First try to update by slice
+            ret = self.__update_daily_data_trade_by_slice(uri, last_update_time)
+            if not ret:
+                # If update by slice fail, update per each
+                ret = self.__update_daily_data_trade_per_each(uri)
+            return ret
 
     # ---------------------------------------------------------------------------------------
 

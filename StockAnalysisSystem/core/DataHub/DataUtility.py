@@ -171,7 +171,7 @@ class DataUtility:
                     time_serial: datetime.datetime or tuple or None = None,
                     full_update: bool = False, quit_flag: [bool] or None = None, progress: ProgressRate = None) -> bool:
         """
-        Check last update time and auto increment update. Not support slice udpate.
+        Check last update time and auto increment update. Not support slice update.
 
         :param uri: The uri that you want to update. MUST.
         :param identity: The identity/identities that you want to update.

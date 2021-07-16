@@ -209,6 +209,34 @@ def build_data_agent(database_entry: DatabaseEntry):
             update_list=DataAgentUtility.a_stock_list,
         ),
 
+        DataAgent(
+            uri='Stockholder.Repurchase',
+            depot=DepotMongoDB(primary_keys=['stock_identity', 'ann_date'],
+                               client=mongodb_client,
+                               database='StockAnalysisSystem',
+                               data_table=uri_to_table('Stockholder.Repurchase')),
+            identity_field='stock_identity',
+            datetime_field='ann_date',
+            data_duration=DATA_DURATION_FLOW,
+            update_priority=DataAgent.PRIORITY_HIGHEST,
+            update_list=DataAgentUtility.a_stock_list,
+        ),
+
+        DataAgent(
+            uri='Stockholder.StockUnlock',
+            # Note: The ann_date field of tushare may be empty.
+            # So we use float_date as primary key, which is renamed unlock_date
+            depot=DepotMongoDB(primary_keys=['stock_identity', 'unlock_date', 'holder_name'],
+                               client=mongodb_client,
+                               database='StockAnalysisSystem',
+                               data_table=uri_to_table('Stockholder.StockUnlock')),
+                identity_field='stock_identity',
+                datetime_field='unlock_date',
+                data_duration=DATA_DURATION_FLOW,
+                update_priority=DataAgent.PRIORITY_HIGHEST,
+                update_list=DataAgentUtility.a_stock_list,
+            ),
+
         # ----------------------- Trade Data - Daily -----------------------
 
         DataAgent(
@@ -276,35 +304,6 @@ def build_data_agent(database_entry: DatabaseEntry):
             data_duration=DATA_DURATION_QUARTER,
             update_priority=DataAgent.PRIORITY_NOT_UPDATE
         ),
-
-        DataAgent(
-            uri='Stockholder.Repurchase',
-            depot=DepotMongoDB(primary_keys=['stock_identity', 'ann_date'],
-                               client=mongodb_client,
-                               database='StockAnalysisSystem',
-                               data_table=uri_to_table('Stockholder.Repurchase')),
-            identity_field='stock_identity',
-            datetime_field='ann_date',
-            data_duration=DATA_DURATION_FLOW,
-            update_priority=DataAgent.PRIORITY_HIGHEST,
-            update_list=DataAgentUtility.a_stock_list,
-        ),
-
-        DataAgent(
-            uri='Stockholder.StockUnlock',
-            # Note: The ann_date field of tushare may be empty.
-            # So we use float_date as primary key, which is renamed unlock_date
-            depot=DepotMongoDB(primary_keys=['stock_identity', 'unlock_date', 'holder_name'],
-                               client=mongodb_client,
-                               database='StockAnalysisSystem',
-                               data_table=uri_to_table('Stockholder.StockUnlock')),
-                identity_field='stock_identity',
-                datetime_field='unlock_date',
-                data_duration=DATA_DURATION_FLOW,
-                update_priority=DataAgent.PRIORITY_HIGHEST,
-                update_list=DataAgentUtility.a_stock_list,
-            ),
-
     ]
 
 
