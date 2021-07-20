@@ -8,7 +8,7 @@ from StockAnalysisSystem.core.SubServiceManager import SubServiceContext
 from StockAnalysisSystem.core.DataHub.UniversalDataCenter import UniversalDataCenter
 
 
-SERVICE_ID = '7129e9d2-4f53-4826-9161-c568ced52d02'
+SERVICE_ID = 'ba561f10-2c6a-491e-8c0c-500b7b305a8a'
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -47,12 +47,13 @@ class UpdateService:
     def __init__(self, sub_service_context: SubServiceContext):
         self.__sub_service_context = sub_service_context
         self.__progress = ProgressRate()
-        self.__debug = False
+        self.__debug_info = True
+        self.__nop = False
 
     def startup(self):
         # DEBUG: Debug event
         event = Event('update_service_test', SERVICE_ID)
-        event.update_event_data('update_service_test_flag', 'daily')
+        event.set_event_data_value('update_service_test_flag', 'daily')
         self.__sub_service_context.sub_service_manager.post_event(event)
 
         # Temporary remove auto update service
@@ -81,7 +82,7 @@ class UpdateService:
 
     def check_update_all(self):
         data_agents = self.__sub_service_context.sas_api.get_data_agents()
-        data_agents_table = {agent.base_uri: agent for agent in data_agents}
+        data_agents_table = {agent.base_uri(): agent for agent in data_agents}
         for uri, properties in self.UPDATE_PERIOD_TABLE.items():
             data_agent = data_agents_table.get(uri, None)
             if data_agent is None:
@@ -115,10 +116,10 @@ class UpdateService:
 
         quarters = []
         derive_time = now()
-        while derive_time < last_update_time and len(quarters) < 6:
+        while derive_time > last_update_time and len(quarters) < 6:
             prev_quarter = previous_quarter(derive_time)
             quarters.append(prev_quarter)
-            prev_quarter -= datetime.timedelta(days=1)
+            derive_time = prev_quarter - datetime.timedelta(days=1)
 
         if len(quarters) > self.UPDATE_THRESHOLD_QUARTER_QUARTER or \
                 not self.__slice_update_for_quarter(uri, quarters):
@@ -154,30 +155,30 @@ class UpdateService:
     # -------------------------------------------------------------------
 
     def __slice_update_for_quarter(self, uri: str, update_quarters: []):
-        data_center: UniversalDataCenter = self.__sub_service_context.sas_api.get_data_center()
+        data_center: UniversalDataCenter = self.__sub_service_context.sas_api.data_center()
         for q in update_quarters:
-            if self.__debug:
+            if self.__debug_info:
                 print('Slice update quarter %s [%s]' % (uri, datetime2text(q)))
-            else:
+            if not self.__nop:
                 ret = data_center.update_local_data(uri, time_serial=q)
                 if not ret:
                     return False
         return True
 
     def __serial_update(self, uri: str) -> bool:
-        if self.__debug:
+        if self.__debug_info:
             print('Serial update %s' % uri)
-        else:
+        if not self.__nop:
             ret = self.__sub_service_context.sas_api.data_utility().auto_update(uri, progress=self.__progress)
             return ret
 
     def __slice_update_for_daily(self, uri: str, update_days: []):
-        data_center: UniversalDataCenter = self.__sub_service_context.sas_api.get_data_center()
+        data_center: UniversalDataCenter = self.__sub_service_context.sas_api.data_center()
         for d in update_days:
-            if self.__debug:
-                print('Slice update daily %s [%s]' % (uri, datetime2text(p)))
-            else:
-                ret = data_center.update_local_data(uri, time_serial=d) if not self.__debug else True
+            if self.__debug_info:
+                print('Slice update daily %s [%s]' % (uri, datetime2text(d)))
+            if not self.__nop:
+                ret = data_center.update_local_data(uri, time_serial=d)
                 if not ret:
                     return False
         return True

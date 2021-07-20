@@ -219,7 +219,7 @@ class UniversalDataCenter:
             ret, params, result = patch
             if not ret or not isinstance(result, pd.DataFrame):
                 print('Warning: Error patch.')
-                return ret
+                return False
             if len(result) == 0:
                 print('Empty patch - Ignore')
                 return ret
@@ -236,6 +236,7 @@ class UniversalDataCenter:
             print('%s: [%s] - Persistence finished, time spending: %sms' % (uri, str(identity), clock.elapsed_ms()))
         else:
             print('%s: [%s] - Persistence fail' % (uri, str(identity)))
+            return False
 
         # ----------------------- Update Table ----------------------
 

@@ -203,7 +203,8 @@ class SystemService:
             if time.time() - last_run_time > 1000:
                 print('Warning: Service timeout.')
             if last_run_cycles - self.__prev_run_cycles < 5:
-                print('Warning: Service runs slow.')
+                # print('Warning: Service runs slow.')
+                pass
 
         self.__prev_run_cycles = last_run_cycles
 
@@ -215,7 +216,8 @@ class SystemService:
                 SERVICE_ID, SystemService.WATCH_DOG_TIMER_INTERVAL * 1000, True)
         elif time.time() - self.__timer_event_expect_time > 5.0:
             # If the expect time hasn't being update for 5s, the timer thread may be blocked.
-            print('Timer seems being blocked.')
+            # print('Timer seems being blocked.')
+            pass
         else:
             if len(self.__timer_gap_buffer) > 0:
                 max_gap = max(self.__timer_gap_buffer)
