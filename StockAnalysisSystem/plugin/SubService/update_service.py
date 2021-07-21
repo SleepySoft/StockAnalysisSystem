@@ -16,7 +16,7 @@ SERVICE_ID = 'ba561f10-2c6a-491e-8c0c-500b7b305a8a'
 class UpdateService:
     UPDATE_PERIOD_TABLE = {
         # URI                               (period, can slice, only trade day)
-        'Market.TradeCalender':             (0,      False,     False),
+        'Market.TradeCalender':             (0,      False,     False),         # Must update first
         'Market.SecuritiesInfo':            (1,      False,     True),
         'Market.IndexInfo':                 (1,      False,     True),
         'Market.Enquiries':                 (0,      False,     False),
@@ -48,7 +48,7 @@ class UpdateService:
         self.__sub_service_context = sub_service_context
         self.__progress = ProgressRate()
         self.__debug_info = True
-        self.__nop = False
+        self.__nop = True
 
     def startup(self):
         # DEBUG: Debug event

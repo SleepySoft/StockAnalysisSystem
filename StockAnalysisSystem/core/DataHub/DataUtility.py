@@ -190,7 +190,7 @@ class DataUtility:
             return False
 
         if quit_flag is None or len(quit_flag) == 0:
-            quit_flag = [True]
+            quit_flag = [False]
         if progress is None:
             progress = ProgressRate()
 
@@ -246,18 +246,22 @@ class DataUtility:
                     time_serial = (since, until)
 
             patch = self.__data_center.build_local_data_patch(uri, identity, time_serial, force=full_update)
+            update_counter[0] += 1
 
             if not patch[0]:
                 error_identities.append(identity)
-                if len(error_identities) / len(update_list) > 0.1:
-                    # More than 10% error
+                if len(error_identities) / len(update_list) > 0.10 or len(error_identities) > 5:
+                    print('Update gets %s errors. Quit update.' % len(error_identities))
                     return False
-
-            update_counter[0] += 1
+                continue
             print('Patch count: %s' % update_counter[0])
 
             last_future = thread_pool.submit(self.__execute_persistence, uri,
                                              identity, patch, update_counter, progress)
+
+        if quit_flag[0]:
+            print('Quit flag set. Quit update.')
+            return False
 
         if last_future is not None:
             print('Waiting for persistence task finish...')
