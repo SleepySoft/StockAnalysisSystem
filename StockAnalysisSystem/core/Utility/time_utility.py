@@ -45,6 +45,12 @@ def yesterday_of(_time: datetime.datetime):
     return _time - datetime.timedelta(days=1)
 
 
+def end_of_month(_time: datetime.datetime):
+    if _time.month == 12:
+        return _time.replace(day=31)
+    return _time.replace(month=_time.month+1, day=1) - datetime.timedelta(days=1)
+
+
 def to_date(_time: datetime.date or datetime.datetime or any):
     if type(_time) == datetime.date:
         return _time
@@ -69,6 +75,20 @@ def to_datetime(_date: datetime.date or datetime.datetime or any):
     else:
         # TODO: to py datetime
         pass
+
+
+# From https://stackoverflow.com/a/45292233
+
+def quarter_head(dt=datetime.date.today()):
+    return datetime.date(dt.year, (dt.month - 1) // 3 * 3 + 1, 1)
+
+
+def quarter_tail(dt=datetime.date.today()):
+    nextQtYr = dt.year + (1 if dt.month > 9 else 0)
+    nextQtFirstMo = (dt.month - 1) // 3 * 3 + 4
+    nextQtFirstMo = 1 if nextQtFirstMo==13 else nextQtFirstMo
+    nextQtFirstDy = datetime.date(nextQtYr, nextQtFirstMo, 1)
+    return nextQtFirstDy - datetime.timedelta(days=1)
 
 
 # From https://stackoverflow.com/a/16864368/12929244
@@ -263,6 +283,8 @@ class DateTimeIterator:
     def data_range(self) -> (datetime.datetime, datetime.datetime):
         return self.__iter_from, self.__iter_to
 
+    # ------------------------- Regular iteration -------------------------
+
     def iter_days(self, days: int) -> (datetime.datetime, datetime.datetime):
         return self.iter_delta(datetime.timedelta(days=days))
 
@@ -276,6 +298,52 @@ class DateTimeIterator:
             self.__iter_to = self.__until
         return self.data_range()
 
+    # ------------------------ Irregular iteration ------------------------
+
+    def iter_year_tail(self):
+        if not self.end():
+            if self.__iter_from == self.__since:
+                year = self.__iter_from.year
+            else:
+                year = self.__iter_from.year + 1
+            self.__iter_from = datetime.datetime(year=year, month=12, day=31, hour=0, minute=0, second=0)
+            self.__iter_to = self.__iter_from
+        return self.data_range()
+
+    def iter_quarter_tail(self):
+        if not self.end():
+            if self.__iter_from == self.__since:
+                self.__iter_from = quarter_tail(self.__iter_from)
+            else:
+                self.__iter_from = quarter_tail(self.__iter_from + datetime.timedelta(days=1))
+            self.__iter_to = self.__iter_from
+        return self.data_range()
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def test_datetime_iterator_quarter_tail():
+    iter = DateTimeIterator(datetime.datetime(2000, 3, 31),
+                            datetime.datetime(2000, 9, 1))
+    days = [iter.iter_quarter_tail() for i in range(99999) if not iter.end()]
+
+
+def main():
+    pass
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        import traceback
+        print(e)
+        print(traceback.format_exc())
+        exit(1)
+    finally:
+        pass
 
 
 

@@ -205,6 +205,9 @@ def check_execute_dump_flag(result: pd.DataFrame, **kwargs):
         result.to_csv(uri)
 
 
+def is_slice_update(ts_code: str, since: datetime.datetime, until: datetime.datetime) -> bool:
+    return not str_available(ts_code) and isinstance(since, datetime.datetime)
+
 
 
 

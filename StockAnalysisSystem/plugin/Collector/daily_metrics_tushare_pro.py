@@ -55,6 +55,8 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+# https://tushare.pro/document/2?doc_id=32
+
 def __fetch_stock_metrics_daily(**kwargs) -> pd.DataFrame:
     uri = kwargs.get('uri')
     result = check_execute_test_flag(**kwargs)
@@ -65,32 +67,34 @@ def __fetch_stock_metrics_daily(**kwargs) -> pd.DataFrame:
         ts_code = pickup_ts_code(kwargs)
         since, until = normalize_time_serial(period, default_since(), today())
 
-        pro = ts.pro_api(TS_TOKEN)
-        time_iter = DateTimeIterator(since, until)
-
         result = None
-        while True:
-            sub_since, sub_until = time_iter.iter_years(20)
-            ts_since = sub_since.strftime('%Y%m%d')
-            ts_until = sub_until.strftime('%Y%m%d')
+        pro = ts.pro_api(TS_TOKEN)
 
-            # 500 times per 1 min, do not need delay.
-            clock = Clock()
+        if is_slice_update(ts_code, since, until):
+            # Slice update, only for one day
+            ts_since = since.strftime('%Y%m%d')
+            result = pro.daily_basic(ts_code='', trade_date=ts_since)
+        else:
+            time_iter = DateTimeIterator(since, until)
 
-            # Score 300; Update 15:00 ~ 17:00; No limit;
-            ts_delay('daily_basic')
+            while True:
+                sub_since, sub_until = time_iter.iter_years(15)
+                ts_since = sub_since.strftime('%Y%m%d')
+                ts_until = sub_until.strftime('%Y%m%d')
 
-            if str_available(ts_code):
+                clock = Clock()
+
+                # Score 600; Update 15:00 ~ 17:00
+                ts_delay('daily_basic')
+
                 result_metrics = pro.daily_basic(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
-            else:
-                result_metrics = pro.daily_basic(ts_code=ts_code, trade_date=ts_since)
 
-            print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
+                print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
 
-            result = pd.concat([result, result_metrics], ignore_index=True)
+                result = pd.concat([result, result_metrics], ignore_index=True)
 
-            if time_iter.end():
-                break
+                if time_iter.end():
+                    break
 
     check_execute_dump_flag(result, **kwargs)
 

@@ -35,6 +35,8 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+# https://tushare.pro/document/2?doc_id=81
+
 def __fetch_business_data(**kwargs) -> pd.DataFrame:
     uri = kwargs.get('uri')
     result = check_execute_test_flag(**kwargs)
@@ -54,23 +56,29 @@ def __fetch_business_data(**kwargs) -> pd.DataFrame:
         result = None
         pro = ts.pro_api(TS_TOKEN)
 
-        clock = Clock()
-        for year in range(since_year, until_year):
-            ts_date = '%02d1231' % year
-            # 抱歉，您每分钟最多访问该接口60次
-            ts_delay('fina_mainbz')
-            sub_result = pro.fina_mainbz(ts_code=ts_code, start_date=ts_date, end_date=ts_date)
-            result = pd.concat([result, sub_result])
-        print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
+        if is_slice_update(ts_code, since, until):
+            ts_since = since.strftime('%Y%m%d')
+            result = pro.fina_mainbz_vip(ts_since)
+        else:
+            clock = Clock()
+            for year in range(since_year, until_year):
+                ts_date = '%02d1231' % year
+                # 抱歉，您每分钟最多访问该接口60次
+                ts_delay('fina_mainbz')
+                sub_result = pro.fina_mainbz(ts_code=ts_code, start_date=ts_date, end_date=ts_date)
+                result = pd.concat([result, sub_result])
+            print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
 
-        if result is not None:
-            result.fillna(0.0)
-            del result['ts_code']
-            # raise ValueError("If using all scalar values, you must pass an index")
-            # TODO: Fix here
-            result = pd.DataFrame.from_dict({'business': result.groupby('end_date').apply(
-                lambda x: x.drop('end_date', axis=1).to_dict('records'))}, orient='index').reset_index()
-            result['ts_code'] = ts_code
+            if result is not None:
+                result.fillna(0.0)
+                del result['ts_code']
+                # raise ValueError("If using all scalar values, you must pass an index")
+                # TODO: Fix here
+                result.reset_index()
+                business = result.groupby('end_date').apply(
+                    lambda x: x.drop('end_date', axis=1).to_dict('records'))
+                result = pd.DataFrame.from_dict({'business': business}, orient='index').reset_index()
+                result['ts_code'] = ts_code
 
     check_execute_dump_flag(result, **kwargs)
 
