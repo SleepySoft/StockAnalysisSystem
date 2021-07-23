@@ -80,14 +80,14 @@ def to_datetime(_date: datetime.date or datetime.datetime or any):
 # From https://stackoverflow.com/a/45292233
 
 def quarter_head(dt=datetime.date.today()):
-    return datetime.date(dt.year, (dt.month - 1) // 3 * 3 + 1, 1)
+    return datetime.datetime(dt.year, (dt.month - 1) // 3 * 3 + 1, 1)
 
 
-def quarter_tail(dt=datetime.date.today()):
+def quarter_tail(dt=datetime.date.today()) -> datetime.datetime:
     nextQtYr = dt.year + (1 if dt.month > 9 else 0)
     nextQtFirstMo = (dt.month - 1) // 3 * 3 + 4
     nextQtFirstMo = 1 if nextQtFirstMo==13 else nextQtFirstMo
-    nextQtFirstDy = datetime.date(nextQtYr, nextQtFirstMo, 1)
+    nextQtFirstDy = datetime.datetime(nextQtYr, nextQtFirstMo, 1)
     return nextQtFirstDy - datetime.timedelta(days=1)
 
 
@@ -271,65 +271,120 @@ class DelayerMinuteLimit(Delayer):
 # -------------------------------------------------- DateTimeIterator --------------------------------------------------
 
 class DateTimeIterator:
+    """
+    Iterate datetime range or datetime days.
+    """
     def __init__(self, since: datetime.datetime, until: datetime.datetime):
+        """
+        Specify iterate datetime range.
+        :param since: The start datetime
+        :param until: The end datetime
+        """
         self.__since = since
         self.__until = until
         self.__iter_from = self.__since
         self.__iter_to = self.__since
+        self.__first_iter = True
 
     def end(self) -> bool:
+        """
+        Check whether the iteration ends.
+        :return: True if ends else False
+        """
         return self.__iter_to >= self.__until
 
     def data_range(self) -> (datetime.datetime, datetime.datetime):
+        """
+        Get current iteration range. For single days iteration, the from and to are the same value.
+        :return: Current iteration range as (datetime.datetime, datetime.datetime)
+        """
         return self.__iter_from, self.__iter_to
 
     # ------------------------- Regular iteration -------------------------
 
     def iter_days(self, days: int) -> (datetime.datetime, datetime.datetime):
+        """
+        Iterate datetime range by days.
+        :param days: The iteration step by days.
+        :return: The iteration range after this iteration as (datetime.datetime, datetime.datetime)
+        """
         return self.iter_delta(datetime.timedelta(days=days))
 
     def iter_years(self, years: int) -> (datetime.datetime, datetime.datetime):
+        """
+        Iterate datetime range by years.
+        :param years: The iteration step by years.
+        :return: The iteration range after this iteration as (datetime.datetime, datetime.datetime)
+        """
         return self.iter_delta(datetime.timedelta(days=years*365))
 
     def iter_delta(self, delta: datetime.timedelta) -> (datetime.datetime, datetime.datetime):
+        """
+        Iterate datetime range by datetime delta.
+        :param delta: The iteration step by datetime delta.
+        :return: The iteration range after this iteration as (datetime.datetime, datetime.datetime)
+        """
         self.__iter_from = self.__iter_to
         self.__iter_to += delta
         if self.end():
             self.__iter_to = self.__until
+        self.__first_iter = False
         return self.data_range()
 
     # ------------------------ Irregular iteration ------------------------
 
     def iter_year_tail(self):
+        """
+        Iterate the year tail days.
+        :return: The iteration day after this iteration, the 2 values in this tuple are the same.
+        """
         if not self.end():
-            if self.__iter_from == self.__since:
+            if self.__first_iter:
                 year = self.__iter_from.year
             else:
                 year = self.__iter_from.year + 1
             self.__iter_from = datetime.datetime(year=year, month=12, day=31, hour=0, minute=0, second=0)
             self.__iter_to = self.__iter_from
+            self.__first_iter = False
         return self.data_range()
 
     def iter_quarter_tail(self):
+        """
+        Iterate the quarter tail days.
+        :return: The iteration day after this iteration, the 2 values in this tuple are the same.
+        """
         if not self.end():
-            if self.__iter_from == self.__since:
+            if self.__first_iter:
                 self.__iter_from = quarter_tail(self.__iter_from)
             else:
                 self.__iter_from = quarter_tail(self.__iter_from + datetime.timedelta(days=1))
             self.__iter_to = self.__iter_from
+            self.__first_iter = False
         return self.data_range()
 
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 def test_datetime_iterator_quarter_tail():
+    days = []
     iter = DateTimeIterator(datetime.datetime(2000, 3, 31),
-                            datetime.datetime(2000, 9, 1))
-    days = [iter.iter_quarter_tail() for i in range(99999) if not iter.end()]
+                            datetime.datetime(2000, 9, 30))
+    while not iter.end():
+        days.append(iter.iter_quarter_tail()[0])
+    print(days)
+    assert days == [datetime.datetime(2000, 3, 31), datetime.datetime(2000, 6, 30), datetime.datetime(2000, 9, 30)]
+
+    days = []
+    iter = DateTimeIterator(datetime.datetime(2000, 4, 1),
+                            datetime.datetime(2000, 10, 1))
+    while not iter.end():
+        days.append(iter.iter_quarter_tail()[0])
+    print(days)
+    assert days == [datetime.datetime(2000, 6, 30), datetime.datetime(2000, 9, 30), datetime.datetime(2000, 12, 31)]
 
 
 def main():
-    pass
+    test_datetime_iterator_quarter_tail()
 
 
 # ----------------------------------------------------------------------------------------------------------------------
