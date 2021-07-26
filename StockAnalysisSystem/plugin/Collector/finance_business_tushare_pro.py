@@ -46,12 +46,12 @@ def __fetch_business_data(**kwargs) -> pd.DataFrame:
         ts_code = pickup_ts_code(kwargs)
         since, until = normalize_time_serial(period, default_since(), today())
 
-        since_limit = years_ago_of(until, 3)
-        since = max([since, since_limit])
+        # since_limit = years_ago_of(until, 3)
+        # since = max([since, since_limit])
 
         # Because of the implementation of this interface, we only fetch the annual report
-        since_year = since.year
-        until_year = until.year
+        # since_year = since.year
+        # until_year = until.year
 
         result = None
         pro = ts.pro_api(TS_TOKEN)
@@ -61,19 +61,30 @@ def __fetch_business_data(**kwargs) -> pd.DataFrame:
             result = pro.fina_mainbz_vip(ts_since)
         else:
             clock = Clock()
-            for year in range(since_year, until_year):
-                ts_date = '%02d1231' % year
-                # 抱歉，您每分钟最多访问该接口60次
+            time_iter = DateTimeIterator(since, until)
+
+            while not time_iter.end():
+                quarter = time_iter.iter_quarter_tail()[0]
+                if quarter > now():
+                    break
+                ts_date = since.strftime('%Y%m%d')
+
                 ts_delay('fina_mainbz')
                 sub_result = pro.fina_mainbz(ts_code=ts_code, start_date=ts_date, end_date=ts_date)
                 result = pd.concat([result, sub_result])
             print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
 
+            # for year in range(since_year, until_year):
+            #     ts_date = '%02d1231' % year
+            #     # 抱歉，您每分钟最多访问该接口60次
+            #     ts_delay('fina_mainbz')
+            #     sub_result = pro.fina_mainbz(ts_code=ts_code, start_date=ts_date, end_date=ts_date)
+            #     result = pd.concat([result, sub_result])
+            # print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
+
             if result is not None:
                 result.fillna(0.0)
                 del result['ts_code']
-                # raise ValueError("If using all scalar values, you must pass an index")
-                # TODO: Fix here
                 result.reset_index()
                 business = result.groupby('end_date').apply(
                     lambda x: x.drop('end_date', axis=1).to_dict('records'))

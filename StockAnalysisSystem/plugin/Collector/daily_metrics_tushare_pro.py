@@ -77,24 +77,18 @@ def __fetch_stock_metrics_daily(**kwargs) -> pd.DataFrame:
         else:
             time_iter = DateTimeIterator(since, until)
 
-            while True:
+            while not time_iter.end():
                 sub_since, sub_until = time_iter.iter_years(15)
                 ts_since = sub_since.strftime('%Y%m%d')
                 ts_until = sub_until.strftime('%Y%m%d')
 
                 clock = Clock()
-
                 # Score 600; Update 15:00 ~ 17:00
                 ts_delay('daily_basic')
-
                 result_metrics = pro.daily_basic(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
-
                 print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
 
                 result = pd.concat([result, result_metrics], ignore_index=True)
-
-                if time_iter.end():
-                    break
 
     check_execute_dump_flag(result, **kwargs)
 
