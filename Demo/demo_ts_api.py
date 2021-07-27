@@ -34,12 +34,22 @@ pro = ts.pro_api(token)
 # print(result)
 
 
-result = pro.repurchase(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
+# result = pro.repurchase(ts_code='000333.SZ', start_date='19900101', end_date='20210726')
+# print(len(result))
+# print('%s - %s' % (min(result['ann_date']), max(result['ann_date'])))
+# print(result)
 
 
+# result = pro.repurchase(ann_date='20181010')
+# print(result)
 
-sub_result: pd.DataFrame = pro.share_float(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
 
+# result = pro.pledge_stat(ts_code='000014.SZ')
+# print(result)
+result = pro.pledge_stat(end_date='20191227')
+print(result)           # 3000 items
+result = pro.pledge_stat(end_date='20191226')
+print(result)           # 0 items
 
 
 # result = pro.income_vip(period='20181231')

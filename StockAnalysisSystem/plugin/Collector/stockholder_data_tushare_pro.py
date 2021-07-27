@@ -77,6 +77,9 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+# pledge_stat: https://tushare.pro/document/2?doc_id=110
+# pledge_detail: https://tushare.pro/document/2?doc_id=111
+
 def __fetch_stock_holder_data(**kwargs) -> pd.DataFrame:
     uri = kwargs.get('uri')
     result = check_execute_test_flag(**kwargs)
