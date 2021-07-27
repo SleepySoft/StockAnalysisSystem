@@ -229,9 +229,11 @@ class TaskQueue:
             self.__running_task.quit()
             self.__running_task = None
 
-    def log(self, text: str):
+    def log(self, text: str, level: int = 0):
         if self.__logger is not None:
             self.__logger(text)
+        elif level > 5:
+            print(text)
 
     # ----------------------------------- Thread Entry -----------------------------------
 
@@ -258,9 +260,9 @@ class TaskQueue:
                         if task.status() != TaskQueue.Task.STATUS_CANCELED else None
                 except Exception as e:
                     task.update(TaskQueue.Task.STATUS_EXCEPTION)
-                    self.log('Task queue -> ' + str(task) + ' got exception:')
-                    self.log(e)
-                    self.log(traceback.format_exc())
+                    self.log('Task queue -> ' + str(task) + ' got exception:', 10)
+                    self.log(e, 10)
+                    self.log(traceback.format_exc(), 10)
                 finally:
                     self.log('Task queue -> finish: %s, time spending: %.2f ms' %
                           (str(task), (time.time() - clock) * 1000))
@@ -367,18 +369,7 @@ def main():
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def exception_hook(type, value, tback):
-    # log the exception here
-    print('Exception hook triggered.')
-    print(type)
-    print(value)
-    print(tback)
-    # then call the default handler
-    sys.__excepthook__(type, value, tback)
-
-
 if __name__ == "__main__":
-    sys.excepthook = exception_hook
     try:
         main()
     except Exception as e:
