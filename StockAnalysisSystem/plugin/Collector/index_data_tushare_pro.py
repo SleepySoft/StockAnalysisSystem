@@ -60,24 +60,31 @@ def __fetch_index_data_daily(**kwargs) -> pd.DataFrame:
         time_iter = DateTimeIterator(since, until)
 
         result = None
-        while not time_iter.end():
-            # 8000 items per one time
-            sub_since, sub_until = time_iter.iter_years(25)
-            ts_since = sub_since.strftime('%Y%m%d')
-            ts_until = sub_until.strftime('%Y%m%d')
+        if is_slice_update(ts_code, since, until):
+            result = None
+        else:
+            while not time_iter.end():
+                # 8000 items per one time
+                sub_since, sub_until = time_iter.iter_years(25)
+                ts_since = sub_since.strftime('%Y%m%d')
+                ts_until = sub_until.strftime('%Y%m%d')
 
-            clock = Clock()
-            ts_delay('index_daily')
-            sub_result = pro.index_daily(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
-            print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
+                clock = Clock()
+                ts_delay('index_daily')
+                sub_result = pro.index_daily(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
+                print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
 
-            result = pd.concat([result, sub_result], ignore_index=True)
+                result = pd.concat([result, sub_result], ignore_index=True)
 
     check_execute_dump_flag(result, **kwargs)
 
     if result is not None:
-        result['trade_date'] = pd.to_datetime(result['trade_date'])
-        result['stock_identity'] = result['ts_code'].apply(ts_code_to_stock_identity)
+        convert_ts_code_field(result)
+        convert_ts_date_field(result, 'end_date')
+
+        # result['trade_date'] = pd.to_datetime(result['trade_date'])
+        # result['stock_identity'] = result['ts_code'].apply(ts_code_to_stock_identity)
+
     return result
 
 

@@ -346,7 +346,12 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def __fetch_finance_data(**kwargs) -> pd.DataFrame:
+# fina_audit: https://tushare.pro/document/2?doc_id=80
+# balancesheet: https://tushare.pro/document/2?doc_id=36
+# income: https://tushare.pro/document/2?doc_id=33
+# cashflow: https://tushare.pro/document/2?doc_id=44
+
+def __fetch_finance_data(**kwargs) -> pd.DataFrame or None:
     uri = kwargs.get('uri')
     result = check_execute_test_flag(**kwargs)
 
@@ -366,39 +371,59 @@ def __fetch_finance_data(**kwargs) -> pd.DataFrame:
 
         clock = Clock()
         if uri == 'Finance.Audit':
-            # 抱歉，您每分钟最多访问该接口50次
             ts_delay('fina_audit')
-            result = pro.fina_audit(ts_code=ts_code, start_date=ts_since, end_date=ts_until, fields=field_joined)
+            if is_slice_update(ts_code, since, until):
+                # Not support
+                result = None
+            else:
+                result = pro.fina_audit(ts_code=ts_code, start_date=ts_since, end_date=ts_until, fields=field_joined)
+
         elif uri == 'Finance.BalanceSheet':
-            # 抱歉，您每分钟最多访问该接口50次
             ts_delay('balancesheet')
-            result = pro.balancesheet(ts_code=ts_code, start_date=ts_since, end_date=ts_until, fields=field_joined)
+            if is_slice_update(ts_code, since, until):
+                result = pro.balancesheet_vip(period=ts_since, fields=field_joined)
+            else:
+                result = pro.balancesheet(ts_code=ts_code, start_date=ts_since, end_date=ts_until, fields=field_joined)
+
         elif uri == 'Finance.IncomeStatement':
-            # 抱歉，您每分钟最多访问该接口50次
             ts_delay('income')
-            result = pro.income(ts_code=ts_code, start_date=ts_since, end_date=ts_until, fields=field_joined)
+            if is_slice_update(ts_code, since, until):
+                result = pro.income_vip(period=ts_since, fields=field_joined)
+            else:
+                result = pro.income(ts_code=ts_code, start_date=ts_since, end_date=ts_until, fields=field_joined)
+
         elif uri == 'Finance.CashFlowStatement':
-            # 抱歉，您每分钟最多访问该接口50次
             ts_delay('cashflow')
-            result = pro.cashflow(ts_code=ts_code, start_date=ts_since, end_date=ts_until, fields=field_joined)
+            if is_slice_update(ts_code, since, until):
+                result = pro.cashflow_vip(period=ts_since, fields=field_joined)
+            else:
+                result = pro.cashflow(ts_code=ts_code, start_date=ts_since, end_date=ts_until, fields=field_joined)
+
         else:
             result = None
         print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
     check_execute_dump_flag(result, **kwargs)
 
     if result is not None:
+        convert_ts_code_field(result)
+        convert_ts_date_field(result, 'end_date', 'period')
+
         # result.rename(columns={'ts_code': 'stock_identity', 'end_date': 'period'}, inplace=True)
-        result['period'] = result['end_date']
-        result['stock_identity'] = result['ts_code']
+        # result['period'] = result['end_date']
+        # result['stock_identity'] = result['ts_code']
+        #
+        # result['period'] = pd.to_datetime(result['period'])
+        # result['stock_identity'] = result['stock_identity'].str.replace('.SH', '.SSE')
+        # result['stock_identity'] = result['stock_identity'].str.replace('.SZ', '.SZSE')
 
-        result['period'] = pd.to_datetime(result['period'])
-        result['stock_identity'] = result['stock_identity'].str.replace('.SH', '.SSE')
-        result['stock_identity'] = result['stock_identity'].str.replace('.SZ', '.SZSE')
-
-        if uri is not None and uri == 'Finance.Audit':
+        if uri == 'Finance.Audit' and isinstance(result, pd.DataFrame) and not result.empty:
             result['sign'] = result['audit_sign']
             result['agency'] = result['audit_agency']
             result['conclusion'] = result['audit_result']
+
+            del result['audit_sign']
+            del result['audit_agency']
+            del result['audit_result']
 
             # result.rename(columns={'audit_result': 'conclusion',
             #                        'audit_agency': 'agency',

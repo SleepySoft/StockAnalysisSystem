@@ -55,7 +55,7 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-# https://tushare.pro/document/2?doc_id=32
+# daily_basic: https://tushare.pro/document/2?doc_id=32
 
 def __fetch_stock_metrics_daily(**kwargs) -> pd.DataFrame:
     uri = kwargs.get('uri')
@@ -93,9 +93,13 @@ def __fetch_stock_metrics_daily(**kwargs) -> pd.DataFrame:
     check_execute_dump_flag(result, **kwargs)
 
     if result is not None:
-        result['stock_identity'] = result['ts_code'].apply(ts_code_to_stock_identity)
-        result['trade_date'] = pd.to_datetime(result['trade_date'])
-        del result['ts_code']
+        convert_ts_code_field(result)
+        convert_ts_date_field(result, 'trade_date')
+
+        # result['stock_identity'] = result['ts_code'].apply(ts_code_to_stock_identity)
+        # result['trade_date'] = pd.to_datetime(result['trade_date'])
+        # del result['ts_code']
+
     return result
 
 

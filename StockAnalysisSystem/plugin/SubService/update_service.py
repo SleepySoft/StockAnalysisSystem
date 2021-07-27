@@ -26,7 +26,7 @@ class UpdateService:
         'Finance.BalanceSheet':             (7,      True,      False),
         'Finance.IncomeStatement':          (7,      True,      False),
         'Finance.CashFlowStatement':        (7,      True,      False),
-        'Finance.BusinessComposition':      (7,      True,      False),
+        # 'Finance.BusinessComposition':      (7,      True,      False),
         'Stockholder.Statistics':           (7,      True,      False),
         'Stockholder.PledgeStatus':         (7,      True,      False),
         'Stockholder.PledgeHistory':        (7,      True,      False),

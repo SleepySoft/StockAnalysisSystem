@@ -209,5 +209,21 @@ def is_slice_update(ts_code: str, since: datetime.datetime, until: datetime.date
     return not str_available(ts_code) and isinstance(since, datetime.datetime)
 
 
+def convert_ts_code_field(df: pd.DataFrame, ts_field: str = 'ts_code',
+                          sas_field: str = 'stock_identity') -> pd.DataFrame:
+    df[sas_field] = df[ts_field].apply(ts_code_to_stock_identity)
+    if sas_field != ts_field:
+        del df[ts_field]
+    return df
+
+
+def convert_ts_date_field(df: pd.DataFrame, ts_field: str,
+                          sas_field: str or None = None) -> pd.DataFrame:
+    sas_field = ts_field if sas_field is None else sas_field
+    df[sas_field] = pd.to_datetime(df[ts_field])
+    if sas_field != ts_field:
+        del df[ts_field]
+    return df
+
 
 

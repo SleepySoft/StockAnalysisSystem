@@ -25,7 +25,7 @@ def test_fetch_data():
     assert data_center.update_local_data('Finance.BalanceSheet', stock_list[0], force=True)
     assert data_center.update_local_data('Finance.IncomeStatement', stock_list[0], force=True)
     assert data_center.update_local_data('Finance.CashFlowStatement', stock_list[0], force=True)
-    assert data_center.update_local_data('Finance.BusinessComposition', stock_list[0], force=True)
+    # assert data_center.update_local_data('Finance.BusinessComposition', stock_list[0], force=True)
 
     assert data_center.update_local_data('Stockholder.PledgeStatus', stock_list[0], force=True)
     assert data_center.update_local_data('Stockholder.PledgeHistory', stock_list[0], force=True)

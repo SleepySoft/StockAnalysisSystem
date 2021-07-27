@@ -96,6 +96,8 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+# stock_basic: https://tushare.pro/document/2?doc_id=25
+
 def __fetch_securities_info(**kwargs) -> pd.DataFrame or None:
     result = check_execute_test_flag(**kwargs)
     if result is None:
@@ -105,10 +107,12 @@ def __fetch_securities_info(**kwargs) -> pd.DataFrame or None:
     check_execute_dump_flag(result, **kwargs)
 
     if result is not None:
-        result['list_date'] = pd.to_datetime(result['list_date'], format='%Y-%m-%d')
-        result['delist_date'] = pd.to_datetime(result['delist_date'], format='%Y-%m-%d')
+        convert_ts_date_field(result, 'list_date', 'listing_date')
+        convert_ts_date_field(result, 'delist_date')
 
-        result['listing_date'] = pd.to_datetime(result['list_date'], format='%Y-%m-%d')
+        # result['list_date'] = pd.to_datetime(result['list_date'], format='%Y-%m-%d')
+        # result['delist_date'] = pd.to_datetime(result['delist_date'], format='%Y-%m-%d')
+        # result['listing_date'] = pd.to_datetime(result['list_date'], format='%Y-%m-%d')
 
         if 'code' not in result.columns:
             result['code'] = result['ts_code'].apply(lambda val: val.split('.')[0])
@@ -121,12 +125,15 @@ def __fetch_securities_info(**kwargs) -> pd.DataFrame or None:
     return result
 
 
+# concept_detail: https://tushare.pro/document/2?doc_id=126
+
 def __fetch_stock_concept(**kwargs) -> pd.DataFrame or None:
+    ts_code = pickup_ts_code(kwargs)
     result = check_execute_test_flag(**kwargs)
+
     if result is None:
-        ts_code = pickup_ts_code(kwargs)
         pro = ts.pro_api(TS_TOKEN)
-        # 抱歉，您每分钟最多访问该接口100次
+
         ts_delay('concept_detail')
         result = pro.concept_detail(ts_code=ts_code, fields=[
             'id', 'concept_name', 'ts_code', 'name', 'in_date', 'out_date'])
@@ -138,6 +145,8 @@ def __fetch_stock_concept(**kwargs) -> pd.DataFrame or None:
         result['stock_identity'] = ts_code_to_stock_identity(ts_code)
     return result
 
+
+# index_basic: https://tushare.pro/document/2?doc_id=94
 
 def __fetch_indexes_info(**kwargs) -> pd.DataFrame or None:
     SUPPORT_MARKETS = ['SSE', 'SZSE', 'CSI', 'CICC', 'SW', 'MSCI', 'OTH']
@@ -161,6 +170,8 @@ def __fetch_indexes_info(**kwargs) -> pd.DataFrame or None:
 
     return result
 
+
+# trade_cal: https://tushare.pro/document/2?doc_id=26
 
 def __fetch_trade_calender(**kwargs) -> pd.DataFrame or None:
     exchange = kwargs.get('exchange', '')
@@ -191,6 +202,8 @@ def __fetch_trade_calender(**kwargs) -> pd.DataFrame or None:
         result['trade_date'] = pd.to_datetime(result['trade_date'])
     return result
 
+
+# namechange: https://tushare.pro/document/2?doc_id=100
 
 def __fetch_naming_history(**kwargs):
     result = check_execute_test_flag(**kwargs)
