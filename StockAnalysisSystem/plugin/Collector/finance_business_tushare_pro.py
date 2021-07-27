@@ -60,8 +60,7 @@ def __fetch_business_data(**kwargs) -> pd.DataFrame:
             ts_since = since.strftime('%Y%m%d')
             result = pro.fina_mainbz_vip(ts_since)
         else:
-            try:git status
-            
+            try:
                 clock = Clock()
                 time_iter = DateTimeIterator(since, until)
 
