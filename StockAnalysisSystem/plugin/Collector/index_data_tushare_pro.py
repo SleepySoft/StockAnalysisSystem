@@ -82,7 +82,7 @@ def __fetch_index_data_daily(**kwargs) -> pd.DataFrame:
 
     if result is not None:
         convert_ts_code_field(result)
-        convert_ts_date_field(result, 'end_date')
+        convert_ts_date_field(result, 'trade_date')
 
         # result['trade_date'] = pd.to_datetime(result['trade_date'])
         # result['stock_identity'] = result['ts_code'].apply(ts_code_to_stock_identity)
