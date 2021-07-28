@@ -44,13 +44,13 @@ pro = ts.pro_api(token)
 # print(result)
 
 
-result = pro.pledge_stat(ts_code='000014.SZ')
-print('%s - %s' % (min(result['end_date']), max(result['end_date'])))
-print(result)
-
-result = pro.pledge_stat(ts_code='000014.SZ', end_date='20180928')
-print('%s - %s' % (min(result['end_date']), max(result['end_date'])))
-print(result)
+# result = pro.pledge_stat(ts_code='000014.SZ')
+# print('%s - %s' % (min(result['end_date']), max(result['end_date'])))
+# print(result)
+#
+# result = pro.pledge_stat(ts_code='000014.SZ', end_date='20180928')
+# print('%s - %s' % (min(result['end_date']), max(result['end_date'])))
+# print(result)
 
 # result = pro.pledge_stat(end_date='20191227')
 # print(result)           # 3000 items
@@ -79,4 +79,14 @@ print(result)
 # print(result)
 
 
+# result = pro.fina_mainbz(ts_code='000627.SZ')
+# print(result)
+# result = pro.fina_mainbz(ts_code='000627.SZ', type='P', start_date='19900101', end_date='20180726')
+# print(result)
+# result = pro.fina_mainbz(ts_code='000627.SZ', type='D', start_date='19900101', end_date='20180726')
+# print(result)
 
+
+result = pro.concept_detail(ts_code='600848.SH', fields=[
+    'id', 'concept_name', 'ts_code', 'name', 'in_date', 'out_date'])
+print(result)

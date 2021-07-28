@@ -87,7 +87,7 @@ def build_data_agent(database_entry: DatabaseEntry):
 
         DataAgent(
             uri='Market.SecuritiesTags',
-            depot=DepotMongoDB(primary_keys='stock_identity',
+            depot=DepotMongoDB(primary_keys=['stock_identity', 'concept_name'],
                                client=mongodb_client,
                                database='StockAnalysisSystem',
                                data_table=uri_to_table('Market.SecuritiesTags')),

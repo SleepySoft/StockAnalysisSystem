@@ -140,9 +140,10 @@ def __fetch_stock_concept(**kwargs) -> pd.DataFrame or None:
     check_execute_dump_flag(result, **kwargs)
 
     if result is not None:
-        del result['ts_code']
-        result['ts_concept'] = result.to_dict('records')
-        result['stock_identity'] = ts_code_to_stock_identity(ts_code)
+        convert_ts_code_field(result)
+        # del result['ts_code']
+        # result['ts_concept'] = result.to_dict('records')
+        # result['stock_identity'] = ts_code_to_stock_identity(ts_code)
     return result
 
 

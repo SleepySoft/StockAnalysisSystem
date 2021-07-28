@@ -35,7 +35,7 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-# https://tushare.pro/document/2?doc_id=81
+# fina_mainbz: https://tushare.pro/document/2?doc_id=81
 
 def __fetch_business_data(**kwargs) -> pd.DataFrame:
     uri = kwargs.get('uri')
