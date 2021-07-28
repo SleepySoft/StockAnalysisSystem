@@ -146,10 +146,13 @@ def __fetch_stock_holder_data(**kwargs) -> pd.DataFrame:
             result['holding_amount'] = result['holding_amount'] * 10000
             result['pledged_amount'] = result['pledged_amount'] * 10000
 
-        result['due_date'] = pd.to_datetime(result['due_date'])
-        result['stock_identity'] = result['ts_code']
-        result['stock_identity'] = result['stock_identity'].str.replace('.SH', '.SSE')
-        result['stock_identity'] = result['stock_identity'].str.replace('.SZ', '.SZSE')
+        convert_ts_code_field(result)
+        convert_ts_date_field(result, 'due_date')
+
+        # result['due_date'] = pd.to_datetime(result['due_date'])
+        # result['stock_identity'] = result['ts_code']
+        # result['stock_identity'] = result['stock_identity'].str.replace('.SH', '.SSE')
+        # result['stock_identity'] = result['stock_identity'].str.replace('.SZ', '.SZSE')
 
     return result
 

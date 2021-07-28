@@ -44,12 +44,25 @@ pro = ts.pro_api(token)
 # print(result)
 
 
-# result = pro.pledge_stat(ts_code='000014.SZ')
+result = pro.pledge_stat(ts_code='000014.SZ')
+print('%s - %s' % (min(result['end_date']), max(result['end_date'])))
+print(result)
+
+result = pro.pledge_stat(ts_code='000014.SZ', end_date='20180928')
+print('%s - %s' % (min(result['end_date']), max(result['end_date'])))
+print(result)
+
+# result = pro.pledge_stat(end_date='20191227')
+# print(result)           # 3000 items
+# result = pro.pledge_stat(end_date='20210723')
 # print(result)
-result = pro.pledge_stat(end_date='20191227')
-print(result)           # 3000 items
-result = pro.pledge_stat(end_date='20191226')
-print(result)           # 0 items
+
+
+# result = pro.pledge_detail(ts_code='000014.SZ')
+# print(result)
+
+# result = pro.pledge_detail(ts_code='000014.SZ', start_date='20170101', end_date='20180101')
+# print(result)           # start_date, end_date are useless
 
 
 # result = pro.income_vip(period='20181231')
