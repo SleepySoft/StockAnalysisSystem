@@ -46,6 +46,8 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+# index_daily: https://tushare.pro/document/2?doc_id=95
+
 def __fetch_index_data_daily(**kwargs) -> pd.DataFrame:
     uri = kwargs.get('uri')
     result = check_execute_test_flag(**kwargs)

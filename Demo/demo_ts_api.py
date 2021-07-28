@@ -44,6 +44,12 @@ pro = ts.pro_api(token)
 # print(result)
 
 
+result = pro.share_float(ts_code='603301.SH', start_date='20180402', end_date='20180411')
+print(len(result))
+print('%s - %s' % (min(result['ann_date']), max(result['ann_date'])))
+print(result)
+
+
 # result = pro.pledge_stat(ts_code='000014.SZ')
 # print('%s - %s' % (min(result['end_date']), max(result['end_date'])))
 # print(result)
@@ -87,6 +93,6 @@ pro = ts.pro_api(token)
 # print(result)
 
 
-result = pro.concept_detail(ts_code='600848.SH', fields=[
-    'id', 'concept_name', 'ts_code', 'name', 'in_date', 'out_date'])
-print(result)
+# result = pro.concept_detail(ts_code='600848.SH', fields=[
+#     'id', 'concept_name', 'ts_code', 'name', 'in_date', 'out_date'])
+# print(result)
