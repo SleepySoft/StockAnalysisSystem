@@ -64,7 +64,7 @@ def analysis_dispersed_ownership(securities: str, time_serial: tuple, data_hub: 
     for index, row in df.iterrows():
         period = row['period']
         stockholder_top10 = row['stockholder_top10']
-        stockholder_top10_nt = row['stockholder_top10_nt']
+        # stockholder_top10_float = row['stockholder_top10_float']
 
         if not isinstance(stockholder_top10, (list, tuple)):
             continue
@@ -110,24 +110,24 @@ def analysis_stock_unlock(securities: str, time_serial: tuple, data_hub: DataHub
     if df is None or df.empty:
         return no_data_result
 
-    df = df[df['float_date'].notna()]
-    df['float_date'] = df['float_date'].apply(text_auto_time)
-    mask = (df['float_date'] > days_ago(90)) & (df['float_date'] <= days_after(180))
+    df = df[df['unlock_date'].notna()]
+    df['unlock_date'] = df['unlock_date'].apply(text_auto_time)
+    mask = (df['unlock_date'] > days_ago(90)) & (df['unlock_date'] <= days_after(180))
     df = df.loc[mask]
     if df is None or df.empty:
         return no_data_result
 
-    df_group = df.groupby('float_date')
+    df_group = df.groupby('unlock_date')
 
     reasons = []
     float_share_sum = 0
     for g, df in df_group:
-        float_date = g
+        unlock_date = g
         float_share = sum(df['float_share'])
         float_ratio = sum(df['float_ratio'])
 
         float_share_sum += float_share
-        reasons.append('%s: 解禁%s股，占总股份%s%%' % (float_date.date(), float_share, float_ratio))
+        reasons.append('%s: 解禁%s股，占总股份%s%%' % (unlock_date.date(), float_share, float_ratio))
 
     # for index, row in df.iterrows():
     #     float_date = row['float_date']
