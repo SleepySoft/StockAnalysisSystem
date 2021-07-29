@@ -51,9 +51,6 @@ def update_repurchase_and_stock_unlock(**kwargs) -> pd.DataFrame or None:
     pro = ts.pro_api(TS_TOKEN)
 
     clock = Clock()
-
-    # ts_delay('fina_audit')
-
     if is_slice_update(ts_code, since, until):
         if uri == 'Stockholder.Repurchase':
             # In fact, no company can repurchase up to 2000 times
