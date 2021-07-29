@@ -35,8 +35,13 @@ FIELDS = {
         'h_total_ratio':                 '持股总数占总股本比例',
         'is_buyback':                    '是否回购',
     },
+    'Stockholder.Count': {
+        'holder_num': '股东户数',
+    },
     'Stockholder.Statistics': {
-
+        'holder_name': '股东名称',
+        'hold_amount': '持有数量（股）',
+        'hold_ratio': '持有比例',
     },
     'Stockholder.ReductionIncrease': {
         'ts_code':                       'TS代码',
@@ -161,10 +166,43 @@ def __fetch_stock_holder_data(**kwargs) -> pd.DataFrame:
 
 
 # stk_holdernumber: https://tushare.pro/document/2?doc_id=166
+
+def __fetch_stock_holder_count(**kwargs) -> pd.DataFrame or None:
+    uri = kwargs.get('uri')
+    result = check_execute_test_flag(**kwargs)
+
+    if result is None:
+        period = kwargs.get('period')
+        ts_code = pickup_ts_code(kwargs)
+        since, until = normalize_time_serial(period, default_since(), today())
+
+        pro = ts.pro_api(TS_TOKEN)
+
+        ts_since = since.strftime('%Y%m%d')
+        ts_until = until.strftime('%Y%m%d')
+
+        if is_slice_update(ts_code, since, until):
+            result = None
+        else:
+            ts_delay('stk_holdernumber')
+
+            clock = Clock()
+            result = pro.stk_holdernumber(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
+            print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
+
+            convert_ts_code_field(result)
+            convert_ts_date_field(result, 'ann_date')
+            convert_ts_date_field(result, 'end_date', 'period')
+
+    check_execute_dump_flag(result, **kwargs)
+
+    return result
+
+
 # top10_holders: https://tushare.pro/document/2?doc_id=61
 # top10_floatholders: https://tushare.pro/document/2?doc_id=62
 
-def __fetch_stock_holder_statistics_piece(**kwargs) -> pd.DataFrame or None:
+def __fetch_stock_holder_statistics(**kwargs) -> pd.DataFrame or None:
     uri = kwargs.get('uri')
     result = check_execute_test_flag(**kwargs)
 
@@ -177,7 +215,6 @@ def __fetch_stock_holder_statistics_piece(**kwargs) -> pd.DataFrame or None:
         # since_limit = years_ago_of(until, 3)
         # since = max([since, since_limit])
 
-        clock = Clock()
         pro = ts.pro_api(TS_TOKEN)
 
         ts_since = since.strftime('%Y%m%d')
@@ -186,28 +223,22 @@ def __fetch_stock_holder_statistics_piece(**kwargs) -> pd.DataFrame or None:
         if is_slice_update(ts_code, since, until):
             result = None
         else:
-            ts_delay('stk_holdernumber')
-            result_count = pro.stk_holdernumber(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
+            clock = Clock()
     
             ts_delay('top10_holders')
             result_top10 = pro.top10_holders(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
     
             ts_delay('top10_floatholders')
-            result_top10_nt = pro.top10_floatholders(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
+            result_top10_float = pro.top10_floatholders(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
     
             print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
-
-            # Process stk_holdernumber data
-
-            convert_ts_code_field(result_count)
-            convert_ts_date_field(result_count, 'ann_date')
-            convert_ts_date_field(result_count, 'end_date', 'period')
 
             # Process top10_holders data
 
             del result_top10['ts_code']
             convert_ts_date_field(result_top10, 'ann_date')
             convert_ts_date_field(result_top10, 'end_date')
+            result_top10 = result_top10.fillna('')
             grouped_stockholder_top_10 = result_top10.groupby('end_date')
     
             data_dict = {'period': [], 'stockholder_top10': []}
@@ -220,24 +251,23 @@ def __fetch_stock_holder_statistics_piece(**kwargs) -> pd.DataFrame or None:
 
             # Process top10_floatholders data
 
-            del result_top10_nt['ts_code']
-            convert_ts_date_field(result_top10_nt, 'ann_date')
-            convert_ts_date_field(result_top10_nt, 'end_date')
-            grouped_stockholder_top_10_float = result_top10_nt.groupby('end_date')
+            del result_top10_float['ts_code']
+            convert_ts_date_field(result_top10_float, 'ann_date')
+            convert_ts_date_field(result_top10_float, 'end_date')
+            result_top10_float = result_top10_float.fillna('')
+            grouped_stockholder_top_10_float = result_top10_float.groupby('end_date')
     
-            data_dict = {'period': [], 'stockholder_top10': []}
+            data_dict = {'period': [], 'stockholder_top10_float': []}
             for g, df in grouped_stockholder_top_10_float:
                 data_dict['period'].append(g)
                 del df['end_date']
-                data_dict['stockholder_top10'].append(df.to_dict('records'))
+                data_dict['stockholder_top10_float'].append(df.to_dict('records'))
             grouped_stockholder_top_10_float_df = pd.DataFrame(data_dict)
             grouped_stockholder_top_10_float_df['stock_identity'] = ts_code_to_stock_identity(ts_code)
 
             # Merge together
     
             result = pd.merge(grouped_stockholder_top_10_df, grouped_stockholder_top_10_float_df,
-                              on=['stock_identity', 'period'], how='outer')
-            result = pd.merge(result, result_count,
                               on=['stock_identity', 'period'], how='outer')
             result = result.sort_values('period')
 
@@ -257,31 +287,31 @@ def __fetch_stock_holder_statistics_piece(**kwargs) -> pd.DataFrame or None:
         # else:
         #     result_top10_grouped = None
         # 
-        # if result_top10_nt is not None and len(result_top10_nt) > 0:
-        #     del result_top10_nt['ts_code']
-        #     del result_top10_nt['ann_date']
+        # if result_top10_float is not None and len(result_top10_float) > 0:
+        #     del result_top10_float['ts_code']
+        #     del result_top10_float['ann_date']
         # 
-        #     result_top10_nt_grouped = pd.DataFrame({'stockholder_top10_nt': result_top10_nt.groupby('end_date').apply(
+        #     result_top10_float_grouped = pd.DataFrame({'stockholder_top10_nt': result_top10_float.groupby('end_date').apply(
         #         lambda x: x.drop('end_date', axis=1).to_dict('records'))}).reset_index()
         # else:
-        #     result_top10_nt_grouped = None
+        #     result_top10_float_grouped = None
         # 
-        # if result_count is None or result_top10 is None or result_top10_nt is None:
+        # if result_count is None or result_top10 is None or result_top10_float is None:
         #     print('Fetch stockholder statistics data fail.')
         #     return None
         # 
         # result = result_top10_grouped \
         #     if result_top10_grouped is not None and len(result_top10_grouped) > 0 else None
-        # result = pd.merge(result, result_top10_nt_grouped, how='outer', on='end_date', sort=False) \
-        #     if result is not None else result_top10_nt_grouped
+        # result = pd.merge(result, result_top10_float_grouped, how='outer', on='end_date', sort=False) \
+        #     if result is not None else result_top10_float_grouped
         # result = pd.merge(result, result_count, how='left', on='end_date', sort=False) \
         #     if result is not None else result_count
         # result['ts_code'] = ts_code
 
         # del result_top10['ts_code']
         # del result_top10['ann_date']
-        # del result_top10_nt['ts_code']
-        # del result_top10_nt['ann_date']
+        # del result_top10_float['ts_code']
+        # del result_top10_float['ann_date']
         #
         # result_top10.fillna(0.0)
         # result_top10['hold_ratio'] = result_top10['hold_ratio'] / 100
@@ -289,10 +319,10 @@ def __fetch_stock_holder_statistics_piece(**kwargs) -> pd.DataFrame or None:
         # try:
         #     result_top10_grouped = pd.DataFrame({'stockholder_top10': result_top10.groupby('end_date').apply(
         #         lambda x: x.drop('end_date', axis=1).to_dict('records'))}).reset_index()
-        #     result_top10_nt_grouped = pd.DataFrame({'stockholder_top10_nt': result_top10_nt.groupby('end_date').apply(
+        #     result_top10_float_grouped = pd.DataFrame({'stockholder_top10_nt': result_top10_float.groupby('end_date').apply(
         #         lambda x: x.drop('end_date', axis=1).to_dict('records'))}).reset_index()
         #
-        #     result = pd.merge(result_top10_grouped, result_top10_nt_grouped, how='outer', on='end_date', sort=False)
+        #     result = pd.merge(result_top10_grouped, result_top10_float_grouped, how='outer', on='end_date', sort=False)
         #     result = pd.merge(result, result_count, how='left', on='end_date', sort=False)
         #     result['ts_code'] = ts_code
         # except Exception as e:
@@ -351,7 +381,7 @@ def __fetch_stock_holder_statistics_piece(**kwargs) -> pd.DataFrame or None:
 #         result_count = pro.stk_holdernumber(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
 #
 #         result_top10 = None
-#         result_top10_nt = None
+#         result_top10_float = None
 #         while not time_iter.end():
 #             # Top10 api can only fetch 100 items per one time (100 / 10 / 4 = 2.5Years)
 #             sub_since, sub_until = time_iter.iter_years(2.4)
@@ -362,27 +392,27 @@ def __fetch_stock_holder_statistics_piece(**kwargs) -> pd.DataFrame or None:
 #             result_top10_part = pro.top10_holders(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
 #
 #             ts_delay('top10_floatholders')
-#             result_top10_nt_part = pro.top10_floatholders(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
+#             result_top10_float_part = pro.top10_floatholders(ts_code=ts_code, start_date=ts_since, end_date=ts_until)
 #
 #             result_top10 = pd.concat([result_top10, result_top10_part])
-#             result_top10_nt = pd.concat([result_top10_nt, result_top10_nt_part])
+#             result_top10_float = pd.concat([result_top10_float, result_top10_float_part])
 #
 #         print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
 #
-#         if result_count is None or result_top10 is None or result_top10_nt is None:
+#         if result_count is None or result_top10 is None or result_top10_float is None:
 #             print('Fetch stockholder statistics data fail.')
 #             return None
 #
 #         del result_top10['ann_date']
-#         del result_top10_nt['ann_date']
+#         del result_top10_float['ann_date']
 #
 #         key_columns = ['ts_code', 'end_date']
 #         result_top10_grouped = pd.DataFrame({'stockholder_top10': result_top10.groupby(key_columns).apply(
 #             lambda x: x.drop(key_columns, axis=1).to_dict('records'))}).reset_index()
-#         result_top10_nt_grouped = pd.DataFrame({'stockholder_top10_nt': result_top10_nt.groupby(key_columns).apply(
+#         result_top10_float_grouped = pd.DataFrame({'stockholder_top10_nt': result_top10_float.groupby(key_columns).apply(
 #             lambda x: x.drop(key_columns, axis=1).to_dict('records'))}).reset_index()
 #
-#         result = pd.merge(result_top10_grouped, result_top10_nt_grouped, how='outer', on=key_columns, sort=False)
+#         result = pd.merge(result_top10_grouped, result_top10_float_grouped, how='outer', on=key_columns, sort=False)
 #         result = pd.merge(result, result_count, how='outer', on=key_columns, sort=False)
 #
 #         print(result)
@@ -450,8 +480,10 @@ def query(**kwargs) -> pd.DataFrame or None:
     uri = kwargs.get('uri')
     if uri in ['Stockholder.PledgeStatus', 'Stockholder.PledgeHistory']:
         return __fetch_stock_holder_data(**kwargs)
+    if uri in ['Stockholder.Count']:
+        return __fetch_stock_holder_count(**kwargs)
     if uri in ['Stockholder.Statistics']:
-        return __fetch_stock_holder_statistics_piece(**kwargs)
+        return __fetch_stock_holder_statistics(**kwargs)
     if uri in ['Stockholder.ReductionIncrease']:
         return __fetch_stock_holder_reduction_increase_full(**kwargs)
     return None

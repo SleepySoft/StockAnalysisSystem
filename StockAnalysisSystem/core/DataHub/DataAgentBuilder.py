@@ -162,6 +162,18 @@ def build_data_agent(database_entry: DatabaseEntry):
         # ----------------------- Stockholder & Pledge -----------------------
 
         DataAgent(
+            uri='Stockholder.Count',
+            depot=DepotMongoDB(primary_keys=['stock_identity', 'period'],
+                               client=mongodb_client,
+                               database='StockAnalysisSystem',
+                               data_table=uri_to_table('Stockholder.Count')),
+            identity_field='stock_identity',
+            datetime_field='period',
+            data_duration=DATA_DURATION_QUARTER,
+            update_list=DataAgentUtility.a_stock_list,
+        ),
+
+        DataAgent(
             uri='Stockholder.Statistics',
             depot=DepotMongoDB(primary_keys=['stock_identity', 'period'],
                                client=mongodb_client,
