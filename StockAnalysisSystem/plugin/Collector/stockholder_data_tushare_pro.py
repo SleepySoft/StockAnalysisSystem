@@ -440,36 +440,39 @@ def __fetch_stock_holder_reduction_increase_full(**kwargs) -> pd.DataFrame or No
         ts_code = pickup_ts_code(kwargs)
         since, until = normalize_time_serial(period, default_since(), today())
 
-        clock = Clock()
         pro = ts.pro_api(TS_TOKEN)
-        time_iter = DateTimeIterator(since, until)
+        ts_since = since.strftime('%Y%m%d')
+        ts_until = until.strftime('%Y%m%d')
 
-        result = None
-        while not time_iter.end():
-            # Fetch 3000 items per one time, almost 10 years
-            sub_since, sub_until = time_iter.iter_years(10)
-            ts_since = sub_since.strftime('%Y%m%d')
-            ts_until = sub_until.strftime('%Y%m%d')
-
-            # 抱歉，您每分钟最多访问该接口100次
+        clock = Clock()
+        if is_slice_update(ts_code, since, until):
+            result = pro.stk_holdertrade(ann_date=ts_since,
+                                         fields=list(FIELDS['Stockholder.ReductionIncrease'].keys()))
+        else:
+            pass
             ts_delay('stk_holdertrade')
             # If not specify fields, begin_date and close_date will be missing.
-            result_part = pro.stk_holdertrade(ts_code=ts_code, start_date=ts_since, end_date=ts_until,
-                                              fields=list(FIELDS['Stockholder.ReductionIncrease'].keys()))
-            result = result_part if result is None else pd.concat([result, result_part], axis=0, ignore_index=True)
-            result.reindex()
+            result = pro.stk_holdertrade(ts_code=ts_code, start_date=ts_since, end_date=ts_until,
+                                         fields=list(FIELDS['Stockholder.ReductionIncrease'].keys()))
 
         print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
 
     check_execute_dump_flag(result, **kwargs)
 
     if result is not None:
-        result.fillna('')
-        result['stock_identity'] = result['ts_code'].apply(ts_code_to_stock_identity)
-        result['ann_date'] = pd.to_datetime(result['ann_date'])
+        result.reindex()
+        convert_ts_code_field(result)
+        convert_ts_date_field(result, 'ann_date')
         result['stock_holder'] = result['holder_name']
+        result = result.fillna('')
 
-        del result['holder_name']
+        if len(result) >= 2000:
+            print('Stock %s has more than 2000 sotck trade record.' % ts_code)
+
+        # result['stock_identity'] = result['ts_code'].apply(ts_code_to_stock_identity)
+        # result['ann_date'] = pd.to_datetime(result['ann_date'])
+        # result['stock_holder'] = result['holder_name']
+        # del result['holder_name']
 
     return result
 
