@@ -1,6 +1,7 @@
 import time
 import threading
 import collections
+import uuid
 from concurrent.futures.thread import ThreadPoolExecutor
 
 import psutil
@@ -60,29 +61,40 @@ class SystemService:
     class TimerData(ScheduleDataBase):
         def __init__(self, scheduler: BaseScheduler, target: str, duration_ms: int, repeat: bool, **kwargs):
             self.__duration_ms = duration_ms
+            self.__job_id = ''
             super(SystemService.TimerData, self).__init__(scheduler, target, repeat, kwargs)
 
         def schedule_handler(self):
             timer_event = Event(Event.EVENT_TIMER, self.get_target())
             timer_event.set_event_data(self.get_extra_data())
             subServiceContext.sub_service_manager.insert_event(timer_event)
-            # if self.is_repeat():
-            #     self.re_schedule()
+            if self.is_repeat():
+                self.re_schedule()
+            else:
+                self.
 
         def re_schedule(self):
-            self.get_scheduler().add_job(self.schedule_handler, 'interval', seconds=self.__duration_ms / 1000)
+            if self.__job_id == '':
+                self.__job_id = str(uuid.uuid4())
+                self.get_scheduler().add_job(self.schedule_handler, 'interval',
+                                             seconds=self.__duration_ms / 1000,
+                                             id=self.__job_id)
 
         def cancel_schedule(self):
-            pass
+            if self.__job_id != '':
+                self.get_scheduler().remove_job(self.__job_id)
+                self.__job_id = ''
 
     class ScheduleData(ScheduleDataBase):
         THREAD_POOL = ThreadPoolExecutor(max_workers=5)
 
         def __init__(self, scheduler: BaseScheduler, target: str, hour: int, minute: int, second: int,
-                     repeat: bool, run_thread: str, **kwargs):
+                     period: str, repeat: bool, run_thread: str, **kwargs):
             self.__hour = hour
             self.__minute = minute
             self.__second = second
+            self.__period = period
+            self.__repeat = repeat
             self.__run_thread = run_thread
             self.__job = None
             super(SystemService.ScheduleData, self).__init__(scheduler, target, repeat, kwargs)
@@ -93,7 +105,7 @@ class SystemService:
 
             if self.__run_thread:
                 # If run_thread is set, deliver this event by the thread of thread pool
-                # TODO: How to keep the futurn for further trace?
+                # TODO: How to keep the future for further trace?
                 future = self.THREAD_POOL.submit(self.__execute_schedule_job, schedule_event)
             else:
                 # Otherwise just post it to the event queue
@@ -177,10 +189,10 @@ class SystemService:
         self.__schedule_data.append(timer)
         timer.re_schedule()
 
-    def register_schedule_event(self, target: str, hour: int, minute: int, second: int, repeat=True,
-                                run_thread: str = SCHEDULE_THREAD_DEFAULT, **kwargs):
+    def register_schedule_event(self, target: str, hour: int, minute: int, second: int, period: str,
+                                repeat=True, run_thread: str = SCHEDULE_THREAD_DEFAULT, **kwargs):
         schedule = SystemService.ScheduleData(self.__scheduler, target, hour, minute, second,
-                                              repeat, run_thread, **kwargs)
+                                              period, repeat, run_thread, **kwargs)
         self.__schedule_data.append(schedule)
         schedule.re_schedule()
 

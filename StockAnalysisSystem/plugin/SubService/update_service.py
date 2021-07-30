@@ -23,22 +23,22 @@ class UpdateService:
         'Market.NamingHistory':             (1,      False,     False),
         'Market.SecuritiesTags':            (1,      False,     False),
 
-        'Finance.Audit':                    (7,      True,      False),
+        'Finance.Audit':                    (7,      False,     False),
         'Finance.BalanceSheet':             (7,      True,      False),
         'Finance.IncomeStatement':          (7,      True,      False),
         'Finance.CashFlowStatement':        (7,      True,      False),
 
         # 'Finance.BusinessComposition':      (7,      True,      False),
 
-        'Stockholder.Statistics':           (7,      True,      False),
-        'Stockholder.PledgeStatus':         (7,      True,      False),
-        'Stockholder.PledgeHistory':        (7,      True,      False),
-        'Stockholder.ReductionIncrease':    (7,      True,      False),
-        'Stockholder.Repurchase':           (7,      True,      False),
-        'Stockholder.StockUnlock':          (7,      True,      False),
+        'Stockholder.Statistics':           (7,      False,     False),
+        'Stockholder.PledgeStatus':         (7,      False,     False),
+        'Stockholder.PledgeHistory':        (7,      False,     False),
+        'Stockholder.ReductionIncrease':    (7,      False,     False),
+        'Stockholder.Repurchase':           (7,      False,     False),
+        'Stockholder.StockUnlock':          (7,      False,     False),
 
         'TradeData.Stock.Daily':            (1,      True,      True),
-        'TradeData.Index.Daily':            (1,      True,      True),
+        'TradeData.Index.Daily':            (1,      False,     True),
         'Metrics.Stock.Daily':              (1,      True,      True),
 
     }
@@ -55,30 +55,14 @@ class UpdateService:
         self.__nop = True
 
     def startup(self):
-        # DEBUG: Debug event
-        event = Event('update_service_test', SERVICE_ID)
-        event.set_event_data_value('update_service_test_flag', 'daily')
-        self.__sub_service_context.sub_service_manager.post_event(event)
-
-        # Temporary remove auto update service
-        # self.__sub_service_context.register_schedule_event(SERVICE_ID, 17, 0, 0, period='daily')
-        # self.__sub_service_context.register_schedule_event(SERVICE_ID, 21, 0, 0, period='weekly')
-
-        pass
+        self.__sub_service_context.register_timer_event(target=SERVICE_ID, duration_ms=10000, repeat=False)
+        self.__sub_service_context.register_schedule_event(target=SERVICE_ID, hour=23, minute=0, second=0, period='daily')
 
     def handle_event(self, event: Event):
         if event.event_type() == Event.EVENT_SCHEDULE:
             self.check_update_all()
-            # if event.get_event_data().get('period', '') == 'daily':
-            #     self.__do_daily_update()
-            # elif event.get_event_data().get('period', '') == 'weekly':
-            #     # Friday
-            #     if now_week_days() == 6:
-            #         self.__do_weekly_update()
-        elif event.event_type() == 'update_service_test':
+        elif event.event_type() == Event.EVENT_TIMER:
             self.check_update_all()
-            # if event.get_event_data().get('update_service_test_flag', '') == 'daily':
-            #     self.__do_daily_update()
 
     # ---------------------------------------------------------------------------------------
 
@@ -91,7 +75,10 @@ class UpdateService:
             data_agent = data_agents_table.get(uri, None)
             if data_agent is None:
                 continue
+            clock = Clock()
+            print('> Check update for %s.' % uri)
             self.check_update_single(uri, properties, data_agent)
+            print('< Check update for %s finished, time spending: %sms' % (uri, clock.elapsed_ms()))
 
     def check_update_single(self, uri: str, properties: tuple, data_agent: DataAgent) -> bool:
         update_period, can_slice, only_trade_day = properties
@@ -125,6 +112,7 @@ class UpdateService:
             quarters.append(prev_quarter)
             derive_time = prev_quarter - datetime.timedelta(days=1)
 
+        quarters.reverse()
         if len(quarters) > self.UPDATE_THRESHOLD_QUARTER_QUARTER or \
                 not self.__slice_update_for_quarter(uri, quarters):
             return self.update_directly(uri)
@@ -143,31 +131,24 @@ class UpdateService:
                 return False
             if len(trading_days) <= 1:
                 return True
-            if trading_days[0] == last_update_time:
-                trading_days.pop(0)
+
+            # Think on this case: The update execute at morning, today's data are not exists.
+            # But the last update time updates to today. So if we exclude the last update day, some data may be missing.
+
+            # if trading_days[0] == last_update_time:
+            #     trading_days.pop(0)
             update_days_list = trading_days
         else:
-            derive_time = last_update_time
             update_days_list = []
-            while derive_time.date() < now().date():
-                derive_time += datetime.timedelta(days=1)
+            derive_time = last_update_time
+            while derive_time.date() <= now().date():
                 update_days_list.append(derive_time)
+                derive_time += datetime.timedelta(days=1)
         if not self.__slice_update_for_daily(uri, update_days_list):
             return self.update_directly(uri)
         return True
 
     # -------------------------------------------------------------------
-
-    def __slice_update_for_quarter(self, uri: str, update_quarters: []):
-        data_center: UniversalDataCenter = self.__sub_service_context.sas_api.data_center()
-        for q in update_quarters:
-            if self.__debug_info:
-                print('Slice update quarter %s [%s]' % (uri, datetime2text(q)))
-            if not self.__nop:
-                ret = data_center.update_local_data(uri, time_serial=q)
-                if not ret:
-                    return False
-        return True
 
     def __serial_update(self, uri: str) -> bool:
         if self.__debug_info:
@@ -176,11 +157,23 @@ class UpdateService:
             ret = self.__sub_service_context.sas_api.data_utility().auto_update(uri, progress=self.__progress)
             return ret
 
+    def __slice_update_for_quarter(self, uri: str, update_quarters: []):
+        data_center: UniversalDataCenter = self.__sub_service_context.sas_api.data_center()
+        for q in update_quarters:
+            if self.__debug_info:
+                print('Quarter slice update for %s - [%s]' % (uri, datetime2text(q)))
+            # if not self.__nop:
+            if True:
+                ret = data_center.update_local_data(uri, time_serial=q)
+                if not ret:
+                    return False
+        return True
+
     def __slice_update_for_daily(self, uri: str, update_days: []):
         data_center: UniversalDataCenter = self.__sub_service_context.sas_api.data_center()
         for d in update_days:
             if self.__debug_info:
-                print('Slice update daily %s [%s]' % (uri, datetime2text(d)))
+                print('Daily slice update for %s - [%s]' % (uri, datetime2text(d)))
             if not self.__nop:
                 ret = data_center.update_local_data(uri, time_serial=d)
                 if not ret:
