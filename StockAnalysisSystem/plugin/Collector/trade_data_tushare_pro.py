@@ -52,8 +52,11 @@ def plugin_capacities() -> list:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def __fetch_trade_data_daily_range(uri: str, ts_code: str,
-                                   since: datetime.datetime, until: datetime.datetime) -> pd.DataFrame:
+# daily: https://tushare.pro/document/2?doc_id=27
+# adj_factor: https://tushare.pro/document/2?doc_id=28
+
+def __fetch_trade_data_daily_serial(uri: str, ts_code: str,
+                                    since: datetime.datetime, until: datetime.datetime) -> pd.DataFrame:
     pro = ts.pro_api(TS_TOKEN)
     time_iter = DateTimeIterator(since, until)
 
@@ -79,11 +82,12 @@ def __fetch_trade_data_daily_range(uri: str, ts_code: str,
 
         print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
 
-        sub_result = None
-        sub_result = merge_on_columns(sub_result, result_daily, ['ts_code', 'trade_date'])
-        sub_result = merge_on_columns(sub_result, result_adjust, ['ts_code', 'trade_date'])
-        # sub_result = merge_on_columns(sub_result, result_index, ['ts_code', 'trade_date'])
+        # sub_result = None
+        # sub_result = merge_on_columns(sub_result, result_daily, ['ts_code', 'trade_date'])
+        # sub_result = merge_on_columns(sub_result, result_adjust, ['ts_code', 'trade_date'])
+        # # sub_result = merge_on_columns(sub_result, result_index, ['ts_code', 'trade_date'])
 
+        sub_result = pd.merge(result_daily, result_adjust, on=['ts_code', 'trade_date'])
         result = pd.concat([result, sub_result], ignore_index=True)
 
         if time_iter.end():
@@ -94,11 +98,16 @@ def __fetch_trade_data_daily_range(uri: str, ts_code: str,
 
 def __fetch_trade_data_daily_slice(uri: str, _time: datetime.datetime) -> pd.DataFrame:
     pro = ts.pro_api(TS_TOKEN)
-    ts_delay('daily')
+    trade_date = _time.strftime('%Y%m%d')
 
     clock = Clock()
-    result = pro.daily(trade_date=_time)
+    ts_delay('daily')
+    result_daily = pro.daily(trade_date=trade_date)
+    ts_delay('adj_factor')
+    result_adjust = pro.adj_factor(trade_date=trade_date)
     print('%s: [%s] - Network finished, time spending: %sms' % (uri, datetime2text(_time), clock.elapsed_ms()))
+
+    result = pd.merge(result_daily, result_adjust, on=['ts_code', 'trade_date'])
 
     return result
 
@@ -113,18 +122,22 @@ def __fetch_trade_data_daily(**kwargs) -> pd.DataFrame:
         ts_code = pickup_ts_code(kwargs)
         since, until = normalize_time_serial(period, default_since(), today())
 
-        if since == until and not str_available(ts_code):
+        if is_slice_update(ts_code, since, until):
             result = __fetch_trade_data_daily_slice(uri, since)
         else:
-            result = __fetch_trade_data_daily_range(uri, ts_code, since, until)
+            result = __fetch_trade_data_daily_serial(uri, ts_code, since, until)
 
     check_execute_dump_flag(result, **kwargs)
 
     if result is not None:
-        result['stock_identity'] = result['ts_code']
-        result['stock_identity'] = result['stock_identity'].str.replace('.SH', '.SSE')
-        result['stock_identity'] = result['stock_identity'].str.replace('.SZ', '.SZSE')
-        result['trade_date'] = pd.to_datetime(result['trade_date'])
+        convert_ts_code_field(result)
+        convert_ts_date_field(result, 'trade_date')
+
+        # result['stock_identity'] = result['ts_code']
+        # result['stock_identity'] = result['stock_identity'].str.replace('.SH', '.SSE')
+        # result['stock_identity'] = result['stock_identity'].str.replace('.SZ', '.SZSE')
+        # result['trade_date'] = pd.to_datetime(result['trade_date'])
+
     return result
 
 

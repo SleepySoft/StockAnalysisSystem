@@ -16,23 +16,27 @@ SERVICE_ID = 'ba561f10-2c6a-491e-8c0c-500b7b305a8a'
 class UpdateService:
     UPDATE_PERIOD_TABLE = {
         # URI                               (period, can slice, only trade day)
-        'Market.TradeCalender':             (0,      False,     False),         # Must update first
-        'Market.SecuritiesInfo':            (1,      False,     True),
-        'Market.IndexInfo':                 (1,      False,     True),
-        'Market.Enquiries':                 (0,      False,     False),
+        'Market.TradeCalender':             (1,      False,     False),         # Must update first
+        'Market.SecuritiesInfo':            (1,      False,     False),
+        'Market.IndexInfo':                 (1,      False,     False),
+        'Market.Enquiries':                 (1,      False,     False),
         'Market.NamingHistory':             (1,      False,     False),
-        'Market.SecuritiesTags':            (1,      False,     True),
+        'Market.SecuritiesTags':            (1,      False,     False),
+
         'Finance.Audit':                    (7,      True,      False),
         'Finance.BalanceSheet':             (7,      True,      False),
         'Finance.IncomeStatement':          (7,      True,      False),
         'Finance.CashFlowStatement':        (7,      True,      False),
+
         # 'Finance.BusinessComposition':      (7,      True,      False),
+
         'Stockholder.Statistics':           (7,      True,      False),
         'Stockholder.PledgeStatus':         (7,      True,      False),
         'Stockholder.PledgeHistory':        (7,      True,      False),
         'Stockholder.ReductionIncrease':    (7,      True,      False),
         'Stockholder.Repurchase':           (7,      True,      False),
         'Stockholder.StockUnlock':          (7,      True,      False),
+
         'TradeData.Stock.Daily':            (1,      True,      True),
         'TradeData.Index.Daily':            (1,      True,      True),
         'Metrics.Stock.Daily':              (1,      True,      True),
