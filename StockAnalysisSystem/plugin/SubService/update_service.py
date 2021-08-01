@@ -20,8 +20,8 @@ class UpdateService:
         'Market.SecuritiesInfo':            (1,      False,     False),
         'Market.IndexInfo':                 (1,      False,     False),
         'Market.Enquiries':                 (1,      False,     False),
-        'Market.NamingHistory':             (1,      False,     False),
-        'Market.SecuritiesTags':            (1,      False,     False),
+        'Market.NamingHistory':             (7,      False,     False),
+        'Market.SecuritiesTags':            (7,      False,     False),
 
         'Finance.Audit':                    (7,      False,     False),
         'Finance.BalanceSheet':             (7,      True,      False),
@@ -52,10 +52,10 @@ class UpdateService:
         self.__sub_service_context = sub_service_context
         self.__progress = ProgressRate()
         self.__debug_info = True
-        self.__nop = True
+        self.__nop = False
 
     def startup(self):
-        self.__sub_service_context.register_timer_event(target=SERVICE_ID, duration_ms=10000, repeat=False)
+        # self.__sub_service_context.register_timer_event(target=SERVICE_ID, duration_ms=10000, repeat=False)
         self.__sub_service_context.register_schedule_event(target=SERVICE_ID, hour=23, minute=0, second=0, period='daily')
 
     def handle_event(self, event: Event):
@@ -137,7 +137,8 @@ class UpdateService:
 
             # if trading_days[0] == last_update_time:
             #     trading_days.pop(0)
-            update_days_list = trading_days
+            update_days_list = [datetime.datetime.combine(
+                d, datetime.time(hour=0, minute=0, second=0)) for d in trading_days]
         else:
             update_days_list = []
             derive_time = last_update_time
@@ -162,8 +163,7 @@ class UpdateService:
         for q in update_quarters:
             if self.__debug_info:
                 print('Quarter slice update for %s - [%s]' % (uri, datetime2text(q)))
-            # if not self.__nop:
-            if True:
+            if not self.__nop:
                 ret = data_center.update_local_data(uri, time_serial=q)
                 if not ret:
                     return False

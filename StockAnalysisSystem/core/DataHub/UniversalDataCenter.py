@@ -226,34 +226,51 @@ class UniversalDataCenter:
             uri, identity, since, until, table = params
         except Exception as e:
             print(e)
+            print(traceback.format_exc())
             return False
+        finally:
+            pass
 
         # ------------------------- Merge --------------------------
 
-        clock = Clock()
-        ret = table.merge(uri, identity, result)
-        if ret:
-            print('%s: [%s] - Persistence finished, time spending: %sms' % (uri, str(identity), clock.elapsed_ms()))
-        else:
-            print('%s: [%s] - Persistence fail' % (uri, str(identity)))
+        try:
+            clock = Clock()
+            ret = table.merge(uri, identity, result)
+            if ret:
+                print('%s: [%s] - Persistence finished, time spending: %sms' % (uri, str(identity), clock.elapsed_ms()))
+            else:
+                print('%s: [%s] - Persistence fail' % (uri, str(identity)))
+                return False
+        except Exception as e:
+            print(e)
+            print(traceback.format_exc())
             return False
+        finally:
+            pass
 
         # ----------------------- Update Table ----------------------
 
-        # Cache the update range in Update Table
+        try:
+            # Cache the update range in Update Table
 
-        # 1.Update of uri
-        # 20200221: Update uri last update outside after all sub-update been updated. For daily update judgement.
-        # 20200225: Only update update range so the ui will display correctly.
-        update_tags = uri.split('.')
-        # self.get_update_table().update_latest_update_time(update_tags)
-        self.get_update_table().update_update_range(update_tags, since, until)
-
-        # 2.Update of each identity
-        if str_available(identity):
-            update_tags.append(identity.replace('.', '_'))
-            self.get_update_table().update_latest_update_time(update_tags)
+            # 1.Update of uri
+            # 20200221: Update uri last update outside after all sub-update been updated. For daily update judgement.
+            # 20200225: Only update update range so the ui will display correctly.
+            update_tags = uri.split('.')
+            # self.get_update_table().update_latest_update_time(update_tags)
             self.get_update_table().update_update_range(update_tags, since, until)
+
+            # 2.Update of each identity
+            if str_available(identity):
+                update_tags.append(identity.replace('.', '_'))
+                self.get_update_table().update_latest_update_time(update_tags)
+                self.get_update_table().update_update_range(update_tags, since, until)
+        except Exception as e:
+            print(e)
+            print(traceback.format_exc())
+            return False
+        finally:
+            pass
 
         return True
 

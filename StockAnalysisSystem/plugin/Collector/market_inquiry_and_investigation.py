@@ -210,20 +210,22 @@ def __fetch_szse_enquiries(since: datetime.datetime) -> pd.DataFrame or None:
             if text_auto_time(time_str) < since:
                 break
         df_szse = df_page if df_szse is None else pd.concat([df_szse, df_page])
-    df_szse = df_szse.reset_index(drop=True)
 
-    df_szse['exchange'] = 'SZSE'
-    df_szse['gsdm'] = df_szse['gsdm'] + '.SZSE'
-    # Because the format checker expects datetime64[ns]
-    # df_szse['fhrq'] = df_szse['fhrq'].apply(text_auto_time)
-    df_szse['fhrq'] = pd.to_datetime(df_szse['fhrq'], format='%Y/%m/%d')
+    if df_szse is not None:
+        df_szse = df_szse.reset_index(drop=True)
 
-    df_szse.rename(columns={'gsdm': 'stock_identity',
-                            'gsjc': 'name',
-                            'fhrq': 'enquiry_date',
-                            'hjlb': 'enquiry_topic',
-                            'ck': 'enquiry_title'}, inplace=True)
-    del df_szse['hfck']
+        df_szse['exchange'] = 'SZSE'
+        df_szse['gsdm'] = df_szse['gsdm'] + '.SZSE'
+        # Because the format checker expects datetime64[ns]
+        # df_szse['fhrq'] = df_szse['fhrq'].apply(text_auto_time)
+        df_szse['fhrq'] = pd.to_datetime(df_szse['fhrq'], format='%Y/%m/%d')
+
+        df_szse.rename(columns={'gsdm': 'stock_identity',
+                                'gsjc': 'name',
+                                'fhrq': 'enquiry_date',
+                                'hjlb': 'enquiry_topic',
+                                'ck': 'enquiry_title'}, inplace=True)
+        del df_szse['hfck']
 
     return df_szse
 

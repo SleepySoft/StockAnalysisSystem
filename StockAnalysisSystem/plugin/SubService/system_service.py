@@ -71,7 +71,7 @@ class SystemService:
             if self.is_repeat():
                 self.re_schedule()
             else:
-                self.
+                self.cancel_schedule()
 
         def re_schedule(self):
             if self.__job_id == '':
@@ -96,6 +96,7 @@ class SystemService:
             self.__period = period
             self.__repeat = repeat
             self.__run_thread = run_thread
+            self.__job_id = ''
             self.__job = None
             super(SystemService.ScheduleData, self).__init__(scheduler, target, repeat, kwargs)
 
@@ -110,15 +111,22 @@ class SystemService:
             else:
                 # Otherwise just post it to the event queue
                 subServiceContext.sub_service_manager.insert_event(schedule_event)
-            # if self.is_repeat():
-            #     self.re_schedule()
+            if self.is_repeat():
+                self.re_schedule()
+            else:
+                self.cancel_schedule()
 
         def re_schedule(self):
-            self.__job = self.get_scheduler().add_job(self.schedule_handler, 'cron',
-                                                      hour=self.__hour, minute=self.__minute, second=self.__second)
+            if self.__job_id == '':
+                self.__job_id = str(uuid.uuid4())
+                self.__job = self.get_scheduler().add_job(self.schedule_handler, 'cron',
+                                                          hour=self.__hour, minute=self.__minute, second=self.__second,
+                                                          id=self.__job_id)
 
         def cancel_schedule(self):
-            self.get_scheduler()
+            if self.__job_id != '':
+                self.get_scheduler().remove_job(self.__job_id)
+                self.__job_id = ''
 
         def __execute_schedule_job(self, schedule_event: Event):
             subServiceContext.sub_service_manager.deliver_event(schedule_event)
