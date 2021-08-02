@@ -30,15 +30,8 @@ https://github.com/SleepySoft/StockAnalysisSystem
 > offline_analysis_result.zip (供服务使用)  
 > analysis_report.xlsx (程序生成的分析报告)  
   
-# 最近更新内容： 
-将网络服务全部做成Sub Service，并将Service Provider等放入SubService下  
-加入Sub Service管理，可以在config.json中配置需要启用或禁止的子服务  
-> 参考config_example.json中的注释  
-  
-加入微信机器人，基于WeChatSpy。原因是新号无法使用网页微信，故无法使用wxpy  
-> 可以添加微信号StockAnalysisSystem体验功能  
-> 也可以添加公众号SleepySoft体验公众号功能  
-> 注：由于没有云服务器，所以有时候服务可能无法使用（个人电脑偶尔要调试程序）
+# 最近更新内容：
+完成自动更新服务：update_service.py，可以在配置中启用该服务  
   
 如何运行:  
 * 环境准备看下面  
@@ -49,18 +42,10 @@ https://github.com/SleepySoft/StockAnalysisSystem
 * 运行方式2：先运行main_service.py，再运行main.py，在弹出的窗口中选择remote interface  
 > 这种方式将会调用远程接口，通过网络连接服务器，关闭界面不影响服务运行  
   
-移除功能：
-* 年报下载插件  
-> 网站接口变化，现在已无法下载。如果有可用的库，欢迎推荐。谢谢。之前下载的年报可以在网盘下载，很大。  
-* 证监会立案调查数据  
-> 网站不再提供该服务，如果有替代数据源，欢迎推荐。谢谢。  
-  
 已知问题：  
-* 本次改动比较大（指ui和sas的接口，内部结构并未变化），而数据源也有所改变，故问题可能较多。欢迎大家提出bug，使程序更加完善。多谢。  
-* 无法获得服务器状态，故ui无法展示服务器配置错误等状态（接口预留，待加功能）。  
-* 暂时移除每日自动增量更新子服务（调试中）  
-* Stock Memo功能可能还有问题（边用边调）  
-* 具体功能文档尚不完善（喘口气，慢慢完善）。  
+* 由于当前主要数据源tushare的接口限制经常更改，并且积分不同限制不仅仅是调用时间间隔不同， 
+  而程序中的数据获取以5000分为标准实现。所以尽管调用时间间隔可以配置，然而一次能获取的数据范围却是无法配置的。
+  所以不同用户可能会出现数据获取失败的情况（详见Doc/TushareApi.xlsx）这种情况建议使用离线数据。  
   
 # 视频讲解（未更新，不过内部结构没变）  
 安装配置：https://www.bilibili.com/video/BV14z411b7AE/  
@@ -163,12 +148,30 @@ QQ群：931499339，进群验证码：SleepySoft
   
 ----------------------------------------------------------------------------------------------------------------------
   
-# 开发计划：
+# 历史更新  
   
-* 接入更多数据  
+移除功能：
+* 年报下载插件  
+> 网站接口变化，现在已无法下载。如果有可用的库，欢迎推荐。谢谢。之前下载的年报可以在网盘下载，很大。  
+* 证监会立案调查数据  
+> 网站不再提供该服务，如果有替代数据源，欢迎推荐。谢谢。  
+  
+将网络服务全部做成Sub Service，并将Service Provider等放入SubService下  
+加入Sub Service管理，可以在config.json中配置需要启用或禁止的子服务  
+> 参考config_example.json中的注释  
+  
+加入微信机器人，基于WeChatSpy。原因是新号无法使用网页微信，故无法使用wxpy  
+> 可以添加微信号StockAnalysisSystem体验功能  
+> 也可以添加公众号SleepySoft体验公众号功能  
+> 注：由于没有云服务器，所以有时候服务可能无法使用（个人电脑偶尔要调试程序）
+  
 > 限售股解禁: https://tushare.pro/document/2?doc_id=160  
 > 回购数据  
 > 增减持数据: https://tushare.pro/document/2?doc_id=175  
+  
+# 开发计划：
+  
+* 接入更多数据  
 > 实际控制人数据（巨潮）: http://webapi.cninfo.com.cn/#/dataBrowse?id=266  
 * 加入更多分析算法  
 > 量价分析  
