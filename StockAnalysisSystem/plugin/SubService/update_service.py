@@ -28,7 +28,7 @@ class UpdateService:
         'Finance.IncomeStatement':          (7,      True,      False),
         'Finance.CashFlowStatement':        (7,      True,      False),
 
-        # 'Finance.BusinessComposition':      (7,      True,      False),
+        'Finance.BusinessComposition':      (15,     True,      False),
 
         'Stockholder.Statistics':           (7,      False,     False),
         'Stockholder.PledgeStatus':         (7,      False,     False),
@@ -55,7 +55,10 @@ class UpdateService:
         self.__nop = False
 
     def startup(self):
+        # Delay 10s for startup check update
         # self.__sub_service_context.register_timer_event(target=SERVICE_ID, duration_ms=10000, repeat=False)
+
+        # Daily check update at 23:00
         self.__sub_service_context.register_schedule_event(target=SERVICE_ID, hour=23, minute=0, second=0, period='daily')
 
     def handle_event(self, event: Event):
