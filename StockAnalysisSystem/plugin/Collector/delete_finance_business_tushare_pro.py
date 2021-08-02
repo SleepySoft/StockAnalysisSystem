@@ -11,6 +11,12 @@ from StockAnalysisSystem.core.Utility.CollectorUtility import *
 
 FIELDS = {
     'Finance.BusinessComposition': {
+        'bz_item': '主营业务来源',
+        'bz_sales': '主营业务收入(元)',
+        'bz_profit': '主营业务利润(元)',
+        'bz_cost': '主营业务成本(元)',
+        'curr_type': '货币代码',
+        'update_flag': '是否更新',
     },
 }
 
@@ -37,6 +43,36 @@ def plugin_capacities() -> list:
 
 # fina_mainbz: https://tushare.pro/document/2?doc_id=81
 
+def __fetch_bussiness_data_by_type(pro: ts.pro_api, ts_code: str, classify: str,
+                                   since: datetime.datetime, until: datetime.datetime):
+    limit = 10
+    result = None
+    derive_time = until
+    while limit > 0:
+        ts_since = since.strftime('%Y%m%d')
+        ts_until = derive_time.strftime('%Y%m%d')
+
+        ts_delay('fina_mainbz')
+        sub_result = pro.fina_mainbz(ts_code=ts_code, start_date=ts_since, end_date=ts_until, type=classify)
+        if not isinstance(sub_result, pd.DataFrame) or sub_result.empty:
+            break
+        result = pd.concat([result, sub_result])
+        result = result.reset_index(drop=True)
+
+        result_since = min(sub_result['end_date'])
+        result_since = text_auto_time(result_since)
+
+        # End condition
+        if result_since == derive_time or len(sub_result) < 100:
+            break
+        limit -= 1
+        derive_time = result_since
+    if isinstance(result, pd.DataFrame):
+        result = result.drop_duplicates()
+
+    return result
+
+
 def __fetch_business_data(**kwargs) -> pd.DataFrame:
     uri = kwargs.get('uri')
     result = check_execute_test_flag(**kwargs)
@@ -56,53 +92,56 @@ def __fetch_business_data(**kwargs) -> pd.DataFrame:
         result = None
         pro = ts.pro_api(TS_TOKEN)
 
-        if is_slice_update(ts_code, since, until):
-            ts_since = since.strftime('%Y%m%d')
-            result = pro.fina_mainbz_vip(ts_since)
-        else:
-            try:
+        try:
+            if is_slice_update(ts_code, since, until):
+                ts_since = since.strftime('%Y%m%d')
+
                 clock = Clock()
-                time_iter = DateTimeIterator(since, until)
-
-                while not time_iter.end():
-                    quarter = time_iter.iter_quarter_tail()[0]
-                    if quarter > now():
-                        break
-                    ts_date = since.strftime('%Y%m%d')
-
-                    ts_delay('fina_mainbz')
-                    sub_result = pro.fina_mainbz(ts_code=ts_code, start_date=ts_date, end_date=ts_date)
-                    result = pd.concat([result, sub_result])
+                result_product = pro.fina_mainbz_vip(ts_since, type='P')
+                result_area = pro.fina_mainbz_vip(ts_since, type='D')
+                print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
+            else:
+                clock = Clock()
+                result_product = __fetch_bussiness_data_by_type(pro, ts_code, 'P', since, until)
+                result_area = __fetch_bussiness_data_by_type(pro, ts_code, 'D', since, until)
                 print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
 
-                # for year in range(since_year, until_year):
-                #     ts_date = '%02d1231' % year
-                #     # 抱歉，您每分钟最多访问该接口60次
-                #     ts_delay('fina_mainbz')
-                #     sub_result = pro.fina_mainbz(ts_code=ts_code, start_date=ts_date, end_date=ts_date)
-                #     result = pd.concat([result, sub_result])
-                # print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
+            if isinstance(result_product, pd.DataFrame) and not result_product.empty:
+                result_product['classification'] = 'product'
+            if isinstance(result_area, pd.DataFrame) and not result_area.empty:
+                result_area['classification'] = 'area'
+            result = pd.merge(result_product, result_area, on=['ts_code', 'end_date'])
 
-                if result is not None and len(result) > 0:
-                    result.fillna(0.0)
-                    del result['ts_code']
-                    result.reset_index()
-                    business = result.groupby('end_date').apply(
-                        lambda x: x.drop('end_date', axis=1).to_dict('records'))
-                    result = pd.DataFrame.from_dict({'business': business}, orient='index').reset_index()
-                    result['ts_code'] = ts_code
-            except Exception as e:
-                print(e)
-                print(traceback.format_exc())
-            finally:
-                pass
+            # for year in range(since_year, until_year):
+            #     ts_date = '%02d1231' % year
+            #     # 抱歉，您每分钟最多访问该接口60次
+            #     ts_delay('fina_mainbz')
+            #     sub_result = pro.fina_mainbz(ts_code=ts_code, start_date=ts_date, end_date=ts_date)
+            #     result = pd.concat([result, sub_result])
+            # print('%s: [%s] - Network finished, time spending: %sms' % (uri, ts_code, clock.elapsed_ms()))
+
+            # result.fillna(0.0)
+            # del result['ts_code']
+            # result.reset_index()
+            # business = result.groupby('end_date').apply(
+            #     lambda x: x.drop('end_date', axis=1).to_dict('records'))
+            # result = pd.DataFrame.from_dict({'business': business}, orient='index').reset_index()
+            # result['ts_code'] = ts_code
+        except Exception as e:
+            print(e)
+            print(traceback.format_exc())
+        finally:
+            pass
 
     check_execute_dump_flag(result, **kwargs)
 
-    if result is not None:
-        result.fillna('')
-        result['period'] = pd.to_datetime(result['end_date'])
-        result['stock_identity'] = result['ts_code'].apply(ts_code_to_stock_identity)
+    if isinstance(result, pd.DataFrame) and not result.empty:
+        result.fillna('', inplace=True)
+        convert_ts_code_field(result)
+        convert_ts_date_field(result, 'end_date')
+    # if result is not None:
+    #     result['period'] = pd.to_datetime(result['end_date'])
+    #     result['stock_identity'] = result['ts_code'].apply(ts_code_to_stock_identity)
 
     return result
 
