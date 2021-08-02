@@ -110,7 +110,7 @@ def __fetch_business_data(**kwargs) -> pd.DataFrame:
                 result_product['classification'] = 'product'
             if isinstance(result_area, pd.DataFrame) and not result_area.empty:
                 result_area['classification'] = 'area'
-            result = pd.merge(result_product, result_area, on=['ts_code', 'end_date'])
+            result = pd.concat([result_product, result_area])
 
             # for year in range(since_year, until_year):
             #     ts_date = '%02d1231' % year
@@ -136,9 +136,10 @@ def __fetch_business_data(**kwargs) -> pd.DataFrame:
     check_execute_dump_flag(result, **kwargs)
 
     if isinstance(result, pd.DataFrame) and not result.empty:
+        result.reset_index(drop=True, inplace=True)
         result.fillna('', inplace=True)
         convert_ts_code_field(result)
-        convert_ts_date_field(result, 'end_date')
+        convert_ts_date_field(result, 'end_date', 'period')
     # if result is not None:
     #     result['period'] = pd.to_datetime(result['end_date'])
     #     result['stock_identity'] = result['ts_code'].apply(ts_code_to_stock_identity)
