@@ -10,6 +10,8 @@ class TerminalContext:
 
 
 TEXT_SPLITTER = '\n---------------------------------\n'
+TEXT_HELP = '''股票名或股票代码：查看股票分析
+项目地址：查看此项目开源地址'''
 
 
 class SasTerminal:
@@ -28,28 +30,46 @@ class SasTerminal:
     # ----------------------------------------------------------------------------------------
 
     def analysis_input_text(self, input_text: str) -> (str, list or str):
-        if len(input_text) < SasTerminal.MIN_INPUT:
+        if input_text.strip() in ['help', '帮助']:
             return 'help', ''
+
+        if len(input_text) < SasTerminal.MIN_INPUT:
+            return 'help_brief', ''
 
         securities = self.__sas_api.data_utility().guess_securities(input_text)
         if len(securities) > 0:
             return 'analysis', securities
 
-        return 'help', ''
+        if input_text.strip() == '项目地址':
+            return 'project_url', ''
+
+        return 'help_brief', ''
 
     def dispatch_command(self, ctx: TerminalContext, command: str, parameter: list or str) -> str:
         if command == 'help':
             result = self.command_help()
+        elif command == 'help_brief':
+            result = self.help_brief()
+
+        elif command == 'project_url':
+            result = self.command_url()
         elif command == 'analysis':
             result = self.command_analysis(parameter)
+
         else:
             result = ''
         return result
 
     # ----------------------------------------------------------------------------------------
+    
+    def help_brief(self) -> str:
+        return '直接输入股票名或股票代码查看股票分析。\n或输入"帮助"查看详细帮助信息。'
 
     def command_help(self) -> str:
-        return '''直接输入股票名或股票代码：查看股票分析'''
+        return TEXT_HELP
+    
+    def command_url(self) -> str:
+        return 'https://gitee.com/SleepySoft/StockAnalysisSystem'
 
     def command_analysis(self, securities: str) -> str:
         if len(securities) > 1:
