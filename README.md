@@ -28,7 +28,13 @@ https://github.com/SleepySoft/StockAnalysisSystem
 * 由于上传了大文件导致一些问题，于是彻底清理了大文件  
   以下文件放在度盘“分析数据”目录中：
 > offline_analysis_result.zip (供服务使用)  
-> analysis_report.xlsx (程序生成的分析报告)  
+> analysis_report.xlsx (程序生成的分析报告，供人类阅读)  
+  
+服务器已建成，微信机器人可以使用，添加下方的账号可以体验此功能（可将机器人拉入群聊，@TA 即可获得回复）：  
+![image](doc/ID_Code_WeChat.jpg)  
+或者wx公众号：  
+![image](doc/ID_Code_WeChatPub.jpg)  
+如果有兴趣，也可以自己搭建一个机器人。欢迎入群交流。  
   
 # 最近更新内容：
 完成自动更新服务：update_service.py，可以在配置中启用该服务  
@@ -180,3 +186,11 @@ QQ群：931499339，进群验证码：SleepySoft
 * 盯盘  
 * 投资图谱  
 * 做成WebService，通过APP操作  
+  
+----------------------------------------------------------------------------------------------------------------------
+# 赞助此项目：  
+如果此项目对您有用，欢迎资助，此资助将被用于服务器租用及数据购买。  
+  
+![image](doc/Appreciation_Code_WeChat.png)  
+  
+  
