@@ -38,6 +38,12 @@ class WebApiInterface:
 
         return resp
 
+    def token_valid(self) -> bool:
+        pass
+
+    def check_login(self) -> str:
+        pass
+
     def check_request(self, api: str, token: str, args_json: str, kwargs_json: str) -> bool:
         return isinstance(api, str) and api != '' and \
                isinstance(token, str) and token != '' and \
