@@ -1,15 +1,7 @@
-import hashlib
+import uuid
 import functools
 import threading
-import uuid
-
 from StockAnalysisSystem.core.Utility.bidict import bidict
-
-
-def str_md5(text: str) -> str:
-    md5 = hashlib.md5()
-    md5.update(text.encode('utf-8'))
-    return md5.hexdigest()
 
 
 BUILTIN_ACCESS_GROUP = {
@@ -23,6 +15,29 @@ BUILTIN_USER = {
 
 
 # --------------------------------------------------------------------------------
+
+class AccessData:
+    ACCESS_MODE_ALL = -1
+    ACCESS_MODE_NONE = 0
+    ACCESS_MODE_WHITE = 1
+    ACCESS_MODE_BLACK = 2
+
+    def __init__(self):
+        self.access_mode = AccessData.ACCESS_MODE_NONE
+        self.access_list = []
+
+    def check_access(self, fid: any) -> bool:
+        if self.access_mode == AccessData.ACCESS_MODE_ALL:
+            return True
+        elif self.access_mode == AccessData.ACCESS_MODE_NONE:
+            return False
+        elif self.access_mode == AccessData.ACCESS_MODE_WHITE:
+            return fid in self.access_list
+        elif self.access_mode == AccessData.ACCESS_MODE_BLACK:
+            return fid not in self.access_list
+        else:
+            return False
+
 
 class AccessControl:
     CONTROL_INSTANCE = None
