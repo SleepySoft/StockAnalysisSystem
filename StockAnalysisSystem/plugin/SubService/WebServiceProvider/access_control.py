@@ -1,86 +1,89 @@
+import hashlib
 import functools
+import threading
+import uuid
+
+from StockAnalysisSystem.core.Utility.bidict import bidict
 
 
-# import hashlib
-# md5 = hashlib.md5()
-# md5.update('SleepySoft'.encode('utf-8'))
-# print(md5.hexdigest())
+def str_md5(text: str) -> str:
+    md5 = hashlib.md5()
+    md5.update(text.encode('utf-8'))
+    return md5.hexdigest()
 
-class UniversalBits:
-    def __init__(self):
-        self.__mask_arr = []
-        self.__highest_bit = 0
 
-    # ------------------------------------------------
+BUILTIN_ACCESS_GROUP = {
+    'admin_group': {'default_access': True, 'access_feature': [], 'deny_feature': []}
+}
 
-    def bit_0_count(self) -> int:
-        pass
 
-    def bit_1_count(self) -> int:
-        pass
+BUILTIN_USER = {
+    'admin': {'password': '23da39b4df4d8b2cbdd976edd4df4301', 'group': 'admin_group'},
+}
 
-    def highest_bit(self) -> int:
-        return self.__highest_bit
 
-    def reserve_bit(self, highest_bit: int, default_set=False):
-        pass
-
-    # ------------------------------------------------
-
-    def set_bit(self, bit: int):
-        pass
-
-    def clear_bit(self, bit: int):
-        pass
-
-    def check_bit(self, bit: int) -> bool:
-        pass
-
-    # ------------------------------------------------
-
-    def set_bits(self, bits) -> bool:
-        if not isinstance(bits, UniversalBits):
-            return False
-
-    def clear_bits(self, bits) -> bool:
-        if not isinstance(bits, UniversalBits):
-            return False
-
-    def check_bits(self, bits) -> bool:
-        if not isinstance(bits, UniversalBits):
-            return False
-
+# --------------------------------------------------------------------------------
 
 class AccessControl:
     CONTROL_INSTANCE = None
+    FEATURE_COUNT_LIMIT = 10240
 
     def __init__(self):
         if AccessControl.CONTROL_INSTANCE is None:
-            self.take_control()
-        self.__access_table = {}
+            self.__take_control()
+        # Variants
+        self.__lock = threading.Lock()
+        # User & Group
+        self.__access_group_table = BUILTIN_ACCESS_GROUP
+        self.__user_data_table = BUILTIN_USER
+        # Token
+        self.__token_user_table = bidict()
+        self.__token_access_table = {}
 
-    def accessible(self, token: str, feature_name: str, **kwargs) -> (bool, str):
-        # TODO: Check access here
-        access = True
-        reason = ''
-        return access, reason
+    # ------------------------------------------------------------------
+
+    def login(self, user_name: str, password: str) -> str:
+        with self.__lock:
+            user_token = self.user_token(user_name)
+            if len(user_token) > 0:
+                del self.__token_user_table[user_token]
+                del self.__token_access_table[user_token]
+
+            auth = self.user_valid(user_name) and \
+                   self.__user_data_table[user_name]['password'] == str_md5(password)
+            if auth:
+                new_token = uuid.uuid4()
+                user_group = self.__user_data_table[user_name]['group']
+                self.__token_user_table[new_token] = user_name
+                self.__token_access_table[new_token] = self.__access_group_table.get(user_group, {})
+            else:
+                new_token = ''
+            return new_token
+
+    def user_token(self, user_name: str) -> str:
+        with self.__lock:
+            return self.__token_user_table.inverse.get(user_name, '')
+
+    def user_valid(self, user_name: str):
+        with self.__lock:
+            return user_name in self.__user_data_table.keys()
 
     def token_valid(self, token: str):
-        return token in self.__access_table
+        with self.__lock:
+            return token in self.__token_user_table.keys()
 
-    def register_feature(self, feature_name: str):
-        pass
-
-    def set_token_access(self, token: str, access_sheet: dict):
-        pass
-
-    def get_token_access(self, token: str) -> dict:
-        pass
+    def token_accessible(self, token: str, feature_name: str, **kwargs) -> (bool, str):
+        # TODO: Check access here
+        with self.__lock:
+            token_access = self.__token_access_table.get(token, None)
+            if not token_access:
+                return False, 'Access Deny'
+            accessible = feature_name in token_access['access_feature'] if \
+                            not token_access['default_access'] else \
+                         feature_name not in token_access['deny_feature']
+            return accessible, ('' if accessible else 'Access Deny')
 
     # ---------------------------------------------------------------------------------
-
-    def take_control(self):
-        AccessControl.CONTROL_INSTANCE = self
 
     @staticmethod
     def apply(feature_name: str):
@@ -96,11 +99,15 @@ class AccessControl:
                     return 'Access Control missing.'
                 del kwargs['token']
                 access, reason = AccessControl.\
-                    CONTROL_INSTANCE.accessible(token, feature_name, **kwargs)
+                    CONTROL_INSTANCE.token_accessible(token, feature_name, **kwargs)
                 return func(*args, **kwargs) if access else reason
             return wrapper
         return decorator
 
+    # ---------------------------------------------------------------------------------
+
+    def __take_control(self):
+        AccessControl.CONTROL_INSTANCE = self
 
 
 
