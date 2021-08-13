@@ -1,60 +1,100 @@
 import time
+import uuid
 import hashlib
+import threading
+from StockAnalysisSystem.core.Utility.bidict import bidict
+from StockAnalysisSystem.core.Utility.encryption import md5_str
+from StockAnalysisSystem.core.Utility.common import str_available
 
 
-class UserData:
-    def __init__(self):
-        self.name = ''
-        self.login_time = 0
-        self.user_session = {}
+USER_FIELD_PASSWORD = 'password'
+USER_FIELD_SESSION = 'session'
+USER_FIELD_TIMEOUT = 'timeout'
+USER_FIELD_GROUP = 'group'
+
+
+BUILTIN_USER = {
+    'admin': {
+        USER_FIELD_PASSWORD: '23da39b4df4d8b2cbdd976edd4df4301',
+        USER_FIELD_GROUP: 'admin_group',
+        USER_FIELD_SESSION: {}
+    },
+}
 
 
 class UserManager:
     def __init__(self):
-        self.__user_data = {}
+        self.__lock = threading.Lock()
+        self.__user_data_table = BUILTIN_USER
+        self.__token_user_table = bidict()
 
-    def login(self, username: str, passowrd: str) -> bool:
-        passwd_sha1 = hashlib.sha1(passowrd.encode('utf-8')).hexdigest()
-        if username == 'Sleepy' and passwd_sha1 == '4181a3ababceb12d8cf21523e7eafefb46f7326f':
-            user_data = self.get_user_data(username, True)
-            user_data.login_time = time.time()
-            return True
-        else:
-            return False
+    # ------------------------------------------------------------------------------
 
-    def logoff(self, username: str, remove_session: bool = False) -> bool:
-        user_data = self.get_user_data(username, False)
-        if user_data is not None:
-            if user_data.login_time > 0:
-                ret = True
-                user_data.login_time = 0
+    def user_auth(self, username: str, password: str) -> bool:
+        with self.__lock:
+            auth = username in self.__user_data_table.keys() and \
+                   self.__user_data_table[username]['password'] == self.encrypt_password(password)
+            return auth
+
+    def user_exists(self, username: str):
+        with self.__lock:
+            return self.__user_exists(username)
+
+    def user_register(self, username: str, password: str, group: str) -> bool:
+        with self.__lock:
+            if not str_available(username) or not str_available(password):
+                return False
+            if username in self.__user_data_table.keys():
+                return False
+            self.__user_data_table[username] = {
+                USER_FIELD_PASSWORD: self.encrypt_password(password),
+                USER_FIELD_GROUP: group,
+                USER_FIELD_SESSION: {}
+            }
+
+    # ------------------------------------------------------------------------------
+
+    def get_user_property(self, username: str, key: str) -> any:
+        with self.__lock:
+            if not self.__user_exists(username):
+                return None
+            user_data = self.__user_data_table.get(username, {})
+            return user_data.get(key, None)
+
+    def set_user_property(self, username: str, key: str, val: any):
+        with self.__lock:
+            if not self.__user_exists(username):
+                return
+            user_data = self.__user_data_table.get(username, {})
+            user_data[key] = val
+
+    # ------------------------------------------------------------------------------
+
+    def get_user_session_data(self, username: str, key: str) -> any:
+        with self.__lock:
+            if not self.__user_exists(username):
+                return None
+            user_data = self.__user_data_table.get(username, {})
+            user_session = user_data.get(USER_FIELD_SESSION, {})
+            return user_session.session.get(key, None)
+
+    def set_user_session_data(self, username: str, key: str, val: any):
+        with self.__lock:
+            if not self.__user_exists(username):
+                return
+            # User data MUST exists, otherwise the update will not successful
+            user_data = self.__user_data_table.get(username, {})
+            if USER_FIELD_SESSION in user_data.keys():
+                user_data[USER_FIELD_SESSION][key] = val
             else:
-                ret = False
-            if remove_session:
-                del self.__user_data[username]
-            return ret
-        else:
-            return False
+                user_data[USER_FIELD_SESSION] = {key: val}
 
-    def is_user_login(self, username: str):
-        user_data = self.__user_data.get(username, None)
-        return user_data is not None and user_data.login_time > 0
+    # ------------------------------------------------------------------------------
 
-    def get_user_data(self, username: str, create: bool = False) -> UserData or None:
-        user_data = self.__user_data.get(username, None)
-        if user_data is None and create:
-            user_data = UserData()
-            user_data.name = username
-            self.__user_data[username] = user_data
-        return user_data
+    def __user_exists(self, username) -> bool:
+        return username in self.__user_data_table.keys()
 
-    def update_user_session(self, username: str, key: str, val: any):
-        user_data = self.get_user_data(username, True)
-        if user_data is not None:
-            user_data.session[key] = val
-
-    def get_user_session(self, username: str, key: str):
-        user_data = self.get_user_data(username, False)
-        return None if user_data is None else user_data.session.get(key)
-
+    @staticmethod
+    def encrypt_password(password: str) -> str:
+        return md5_str(password)
 
