@@ -28,11 +28,11 @@ class AccessData:
 
 
 class AccessControl:
-    CONTROL_INSTANCE = None
+    # CONTROL_INSTANCE = None
 
     def __init__(self):
-        if AccessControl.CONTROL_INSTANCE is None:
-            self.__take_control()
+        # if AccessControl.CONTROL_INSTANCE is None:
+        #     self.__take_control()
         self.__lock = threading.Lock()
         self.__token_access_table = {}
 
@@ -46,7 +46,7 @@ class AccessControl:
         with self.__lock:
             self.__token_access_table[token] = access_data
 
-    def get_token_access(self, token: str, access_data: AccessData) -> AccessData or None:
+    def get_token_access(self, token: str) -> AccessData or None:
         with self.__lock:
             return self.__token_access_table.get(token, None)
 
@@ -58,31 +58,31 @@ class AccessControl:
                 return False, 'Access Deny'
             return (True, '') if token_access.check_access(feature_id) else (False, 'Access Deny')
 
-    # ---------------------------------------------------------------------------------
-
-    @staticmethod
-    def apply(feature_name: str):
-        def decorator(func):
-            @functools.wraps(func)
-            def wrapper(*args, **kwargs):
-                token = kwargs.get('token', None)
-                if token is None:
-                    print('Token missing - [%s] Blocked.' % feature_name)
-                    return 'Token missing.'
-                if AccessControl.CONTROL_INSTANCE is None:
-                    print('Access Control missing - [%s] Blocked' % feature_name)
-                    return 'Access Control missing.'
-                del kwargs['token']
-                access, reason = AccessControl.\
-                    CONTROL_INSTANCE.token_accessible(token, feature_name, **kwargs)
-                return func(*args, **kwargs) if access else reason
-            return wrapper
-        return decorator
-
-    # ---------------------------------------------------------------------------------
-
-    def __take_control(self):
-        AccessControl.CONTROL_INSTANCE = self
+    # # ---------------------------------------------------------------------------------
+    #
+    # @staticmethod
+    # def apply(feature_name: str):
+    #     def decorator(func):
+    #         @functools.wraps(func)
+    #         def wrapper(*args, **kwargs):
+    #             token = kwargs.get('token', None)
+    #             if token is None:
+    #                 print('Token missing - [%s] Blocked.' % feature_name)
+    #                 return 'Token missing.'
+    #             if AccessControl.CONTROL_INSTANCE is None:
+    #                 print('Access Control missing - [%s] Blocked' % feature_name)
+    #                 return 'Access Control missing.'
+    #             del kwargs['token']
+    #             access, reason = AccessControl.\
+    #                 CONTROL_INSTANCE.token_accessible(token, feature_name, **kwargs)
+    #             return func(*args, **kwargs) if access else reason
+    #         return wrapper
+    #     return decorator
+    #
+    # # ---------------------------------------------------------------------------------
+    #
+    # def __take_control(self):
+    #     AccessControl.CONTROL_INSTANCE = self
 
 
 
