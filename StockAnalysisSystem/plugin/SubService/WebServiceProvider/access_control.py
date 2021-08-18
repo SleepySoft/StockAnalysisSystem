@@ -50,6 +50,11 @@ class AccessControl:
         with self.__lock:
             return self.__token_access_table.get(token, None)
 
+    def del_token_access(self, token: str):
+        with self.__lock:
+            if token in self.__token_access_table.keys():
+                del self.__token_access_table[token]
+
     def token_accessible(self, token: str, feature_id: str, **kwargs) -> (bool, str):
         # TODO: Check access here
         with self.__lock:

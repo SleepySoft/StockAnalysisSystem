@@ -14,7 +14,8 @@ from StockAnalysisSystem.interface.interface import SasInterface as sasIF
 
 
 def init_if(local: bool = True, local_project_path: str = '',
-            remote_url: str = 'http://127.0.0.1:80/api', remote_token: str = '') -> sasIF or None:
+            remote_url: str = 'http://127.0.0.1:80/api',
+            remote_token: str = 'http://sleepysoft.xyz') -> sasIF or None:
     if local:
         if local_project_path is None or local_project_path == '':
             local_project_path = os.getcwd()

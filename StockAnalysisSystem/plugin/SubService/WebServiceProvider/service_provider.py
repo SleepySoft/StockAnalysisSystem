@@ -8,6 +8,7 @@ with RelativeImport(__file__):
     from sas_terminal import TerminalContext
     from user_manager import UserManager
     from access_control import AccessControl
+    from access_handler import AccessHandler
     from common_render import generate_display_page
 
 
@@ -24,6 +25,7 @@ class ServiceProvider(metaclass=ThreadSafeSingleton):
         self.__sas_terminal = None
         self.__user_manager = None
         self.__access_control = None
+        self.__access_handler = None
 
         self.__offline_analysis_result = None
 
@@ -43,8 +45,10 @@ class ServiceProvider(metaclass=ThreadSafeSingleton):
             self.__logger = logger
 
             self.__sas_terminal = SasTerminal(self.__sas_if, self.__sas_api)
+
             self.__user_manager = UserManager()
             self.__access_control = AccessControl()
+            self.__access_handler = AccessHandler(self.__user_manager, self.__access_control)
 
             ret = self.__init_offline_analysis_result()
             final_ret = ret and final_ret
@@ -80,6 +84,15 @@ class ServiceProvider(metaclass=ThreadSafeSingleton):
         self.__offline_analysis_result.init(self.__config)
         self.log('Init OfflineAnalysisResult Complete.')
         return True
+
+    # ---------------------------------------------------------------------------------------------------------
+
+    def login(self, username: str, password: str) -> str:
+        token = self.__access_handler.login(username, password)
+        return token
+
+    def logoff(self, token: str):
+        self.__access_handler.logoff(token)
 
     # ---------------------------------------------------------------------------------------------------------
 
@@ -142,8 +155,8 @@ class ServiceProvider(metaclass=ThreadSafeSingleton):
             return reason
 
     def check_accessible(self, token: str, feature, *args, **kwargs):
-        return self.__access_control.accessible(token, feature, **kwargs) \
-            if self.__access_control is not None else False, ''
+        return self.__access_handler.accessible(token, feature, **kwargs) \
+            if self.__access_handler is not None else False, ''
 
     # @AccessControl.apply('query')
     # def query(self, uri: str, identity: str or None = None,

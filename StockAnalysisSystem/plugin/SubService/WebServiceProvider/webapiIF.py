@@ -26,11 +26,16 @@ class WebApiInterface:
         """
         resp = ''
         api = req_args.get('api', None)
+        print('==> ' + api)
+
+        if self.is_special_api(api):
+            print('<== ' + api)
+            return self.handle_special_api(api, req_args)
+
         token = req_args.get('token', None)
         args_json = req_args.get('args', '')
         kwargs_json = req_args.get('kwargs', '')
 
-        print('==> ' + api)
         if self.check_request(api, token, args_json, kwargs_json):
             success, args, kwargs = self.parse_request(args_json, kwargs_json)
             resp = self.dispatch_request(api, token, *args, **kwargs)
@@ -38,11 +43,18 @@ class WebApiInterface:
 
         return resp
 
-    def token_valid(self) -> bool:
-        pass
+    def is_special_api(self, api: str) -> bool:
+        return api in ['login', 'logoff']
 
-    def check_login(self) -> str:
-        pass
+    def handle_special_api(self, api: str, req_args: dict) -> str:
+        args_json = req_args.get('args', '')
+        kwargs_json = req_args.get('kwargs', '')
+        success, args, kwargs = self.parse_request(args_json, kwargs_json)
+
+        if api == 'login':
+            self.__provider.login(kwargs.get('username', None), kwargs.get('password', None))
+        elif api == 'logoff':
+            pass
 
     def check_request(self, api: str, token: str, args_json: str, kwargs_json: str) -> bool:
         return isinstance(api, str) and api != '' and \

@@ -15,7 +15,7 @@ class AccessHandler:
 
     DEFAULT_LOGIN_TIMEOUT = 1 * 60 * 60         # second
     ACCESS_HANDLE_INSTANCE = None
-    DEFAULT_TOKEN = ''
+    DEFAULT_TOKEN = 'http://sleepysoft.xyz'
 
     def __init__(self, user_manager: UserManager, access_control: AccessControl):
         self.__user_manager = user_manager
@@ -41,7 +41,7 @@ class AccessHandler:
         with self.__lock:
             if self.__user_manager.user_auth(username, password):
                 # If multiple login allowed. Just return existing token and renew.
-                self.__logoff(username)
+                self.__logoff(username=username)
 
                 new_token = str(uuid.uuid4())
                 self.__token_user_table[new_token] = username
@@ -56,9 +56,9 @@ class AccessHandler:
                 new_token = ''
             return new_token
 
-    def logoff(self, username: str, remove_session: bool = False):
+    def logoff(self, token, remove_session: bool = False):
         with self.__lock:
-            self.__logoff(username)
+            self.__logoff(user_token=token)
 
     def is_user_login(self, username: str) -> bool:
         with self.__lock:
@@ -110,30 +110,37 @@ class AccessHandler:
         pass
 
     def __init_static_token(self):
-        self.__access_control.set_token_access('', AccessData(AccessData.ACCESS_MODE_ALL))
+        self.__access_control.set_token_access(
+            AccessHandler.DEFAULT_TOKEN,
+            AccessData(AccessData.ACCESS_MODE_ALL))
 
     # ------------------------------------------------------------------------------
 
-    def __logoff(self, username: str or None = None, user_token: str or None = None):
+    def __logoff(self, user_token: str or None = None, username: str or None = None):
         if str_available(username):
             user_token = self.__token_user_table.inverse.get(username, '')
         if str_available(user_token) and user_token in self.__token_user_table.keys():
             del self.__token_user_table[user_token]
+        self.__access_control.del_token_access(user_token)
 
     def __renew_token(self, token: str):
-        username = self.__token_user_table.get(token, '')
+        if not str_available(token):
+            return
+        username = self.__token_user_table.inverse.get(token, None)
         if str_available(username):
             timeout = self.__user_manager.get_user_property(username, USER_DATA_TIMEOUT)
             timeout = self.DEFAULT_LOGIN_TIMEOUT if timeout is None else timeout
-            self.__token_expire_table[token] = int(time.time()) + timeout
+        else:
+            timeout = self.DEFAULT_LOGIN_TIMEOUT
+        self.__token_expire_table[token] = int(time.time()) + timeout
 
-    def __token_expired(self, username: str) -> bool:
+    def __token_expired(self, token: str) -> bool:
         """
-        Check login timeout.
-        :param username: User Name
-        :return: True if login timeout else False
+        Check Token timeout.
+        :param token: Access Token
+        :return: True if Token timeout else False
         """
-        timeout_ts = self.__user_manager.get_user_session_data(username, USER_SESSION_LOGIN_TIMEOUT)
+        timeout_ts = self.__token_expire_table.get(token, None)
         return (timeout_ts <= int(time.time())) if timeout_ts is not None else True
 
     def __check_user_login(self, username: str, renew: bool = False) -> str:
@@ -143,15 +150,23 @@ class AccessHandler:
         :param renew: Ture to renew user login timeout if user login available.
         :return: User token str if login valid else empty str
         """
-        token = self.__user_token(username)
-        if not str_available(token):
+        token = self.__token_user_table.get(username, '')
+        if not self.__check_token_valid(token, renew):
+            self.__logoff(user_token=token)
             return ''
-        if self.__token_expired(username):
-            self.__logoff(username=username)
-            return ''
-        if renew:
-            self.__renew_token(username)
         return token
+
+    def __check_token_valid(self, token: str, renew: bool = False) -> bool:
+        if not str_available(token):
+            return False
+        if token not in self.__token_user_table.keys():
+            return False
+        if self.__token_expired(token):
+            self.__logoff(user_token=token)
+            return False
+        if renew:
+            self.__renew_token(token)
+        return True
 
     # ------------------------------------------------------------------------------
 
