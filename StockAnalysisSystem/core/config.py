@@ -95,7 +95,7 @@ class Config:
         finally:
             pass
 
-    def load_config(self, config_file: str = 'config.json'):
+    def load_config(self, config_file: str = 'config.json') -> bool:
         try:
             with open(config_file, 'rt') as f:
                 self.__config_root = json.load(f)

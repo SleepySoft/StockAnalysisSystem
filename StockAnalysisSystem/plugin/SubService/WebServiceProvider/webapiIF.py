@@ -29,16 +29,15 @@ class WebApiInterface:
         print('==> ' + api)
 
         if self.is_special_api(api):
-            print('<== ' + api)
-            return self.handle_special_api(api, req_args)
+            resp = self.handle_special_api(api, req_args)
+        else:
+            token = req_args.get('token', None)
+            args_json = req_args.get('args', '')
+            kwargs_json = req_args.get('kwargs', '')
 
-        token = req_args.get('token', None)
-        args_json = req_args.get('args', '')
-        kwargs_json = req_args.get('kwargs', '')
-
-        if self.check_request(api, token, args_json, kwargs_json):
-            success, args, kwargs = self.parse_request(args_json, kwargs_json)
-            resp = self.dispatch_request(api, token, *args, **kwargs)
+            if self.check_request(api, token, args_json, kwargs_json):
+                success, args, kwargs = self.parse_request(args_json, kwargs_json)
+                resp = self.dispatch_request(api, token, *args, **kwargs)
         print('<== ' + api)
 
         return resp
@@ -52,9 +51,11 @@ class WebApiInterface:
         success, args, kwargs = self.parse_request(args_json, kwargs_json)
 
         if api == 'login':
-            self.__provider.login(kwargs.get('username', None), kwargs.get('password', None))
+            token = self.__provider.login(kwargs.get('username', None), kwargs.get('password', None))
+            return token
         elif api == 'logoff':
-            pass
+            token = req_args.get('token', '')
+            self.__provider.logoff(token)
 
     def check_request(self, api: str, token: str, args_json: str, kwargs_json: str) -> bool:
         return isinstance(api, str) and api != '' and \

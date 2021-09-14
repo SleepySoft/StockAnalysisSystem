@@ -16,16 +16,21 @@ import StockAnalysisSystem.core.Utility.JsonSerializerImpl
 class RestInterface:
     def __init__(self):
         self.__token = None
+        self.__username = ''
+        self.__password = ''
         self.__timeout = 9999   # Blocking in request for debug
         self.__api_url = 'http://127.0.0.1:80/api'
 
-    def if_init(self, api_uri: str = None, token: str = None, timeout=None) -> bool:
-        if token is not None:
-            self.__token = token
+    def if_init(self, api_uri: str = None, username: str = None,
+                password: str = None, token: str = None, timeout=None) -> bool:
         if timeout is not None:
             self.__timeout = timeout
         if api_uri is not None:
             self.__api_url = api_uri
+        if username is not None and password is not None:
+            self.__token = self.login(username, password)
+        elif token is not None:
+            self.__token = token
         return True
 
     def if_prob(self) -> dict:

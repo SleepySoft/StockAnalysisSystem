@@ -2,6 +2,7 @@ import time
 import uuid
 import hashlib
 import threading
+from StockAnalysisSystem.core.config import Config
 from StockAnalysisSystem.core.Utility.bidict import bidict
 from StockAnalysisSystem.core.Utility.encryption import md5_str
 from StockAnalysisSystem.core.Utility.common import str_available
@@ -22,6 +23,50 @@ BUILTIN_USER = {
         USER_DATA_SESSION: {}
     },
 }
+
+
+class UserTable:
+    def __init__(self):
+        pass
+
+    def user_init(self, *args, **kwargs) -> bool:
+        pass
+
+    def user_auth(self, username: str, password: str) -> bool:
+        pass
+
+    def user_exists(self, username: str):
+        pass
+
+    def user_update(self, username: str, password: str):
+        pass
+
+    @staticmethod
+    def password_encrypt(password: str) -> str:
+        return md5_str(password)
+
+
+class UserTableJson:
+    def __init__(self):
+        self.__config = Config()
+        super(UserTableJson, self).__init__()
+
+    def user_init(self, user_config_file: str) -> bool:
+        return self.__config.load_config(user_config_file)
+
+    def user_auth(self, username: str, password: str) -> bool:
+        user_data = self.__config.get(username)
+        if not isinstance(user_data, dict):
+            return False
+        auth = 'password' in user_data.keys() and \
+               user_data['password'] == UserTable.password_encrypt(password)
+        return auth
+
+    def user_exists(self, username: str):
+        return isinstance(self.__config.get(username), dict)
+
+    def user_update(self, username: str, user_data: dict):
+        pass
 
 
 class UserManager:
