@@ -6,10 +6,25 @@ https://gitee.com/SleepySoft/StockAnalysisSystem
   
 # Github
 https://github.com/SleepySoft/StockAnalysisSystem  
+
+# 新文档系列
+01.开发环境配置 http://sleepysoft.xyz/archives/137  
+02.SAS系统配置 http://sleepysoft.xyz/archives/166  
   
 # 网盘下载：  
 应网友要求，对于网络访问受限的用户，提供网盘下载： 
-   
+
+### 网盘（新）  
+* 根目录  
+链接（含提取码）: https://pan.baidu.com/s/1NkjEhXUuwC4F1WdC_kIIvg?pwd=7xu8  
+  
+* 由于之前的网盘账号会员到期，容量超限，所以新资源将用另一个账号发布，旧账号上的资源不再更新  
+* 新网盘主要用于更新离线数据和分析报告，而旧网盘中的其它资源依旧有价值  
+* 由于上传了大文件导致一些问题，于是彻底清理了大文件，以下文件放在度盘中：
+> offline_analysis_result.zip (供服务使用)  
+> analysis_report.xlsx (程序生成的分析报告，供人类阅读)  
+  
+### 网盘（旧）  
 * 根目录  
 链接: https://pan.baidu.com/s/1trY6GJ_ixj3ulXDA2JIGRg  
 提取码: 4d9f  
@@ -25,10 +40,7 @@ https://github.com/SleepySoft/StockAnalysisSystem
 链接：https://pan.baidu.com/s/1p9psTFIdQc3nbEORTzSxyw  
 提取码：y3yv  
   
-* 由于上传了大文件导致一些问题，于是彻底清理了大文件  
-  以下文件放在度盘“分析数据”目录中：
-> offline_analysis_result.zip (供服务使用)  
-> analysis_report.xlsx (程序生成的分析报告，供人类阅读)  
+# 微信服务  
   
 服务器已建成，微信机器人可以使用，添加下方的账号可以体验此功能（可将机器人拉入群聊，@TA 即可获得回复）：  
 ![image](Doc/ID_Code_WeChat.jpg)  
