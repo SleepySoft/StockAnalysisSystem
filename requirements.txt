@@ -1,7 +1,7 @@
-pyqt5
+PyQt5==5.15
 # pyqtgraph
 pyqtgraph==0.11.0rc0
-pyqtwebengine
+pyqtwebengine==5.12
 bs4
 lxml
 requests
