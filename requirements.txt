@@ -27,6 +27,6 @@ APScheduler
 protobuf==3.11.3
 
 # PyWeChatSpy
-Flask==1.1.2
+Flask
 zmq
 pywin32

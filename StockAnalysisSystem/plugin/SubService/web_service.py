@@ -1,4 +1,5 @@
 import os
+import logging
 import traceback
 from flask import Flask, request
 
@@ -62,6 +63,8 @@ def init(sub_service_context: SubServiceContext) -> bool:
 
         global flaskApp
         flaskApp = Flask(__name__)
+
+        flaskApp.logger.setLevel(logging.ERROR)
 
         config = subServiceContext.sas_api.config()
         restIF.init(serviceProvider, config)

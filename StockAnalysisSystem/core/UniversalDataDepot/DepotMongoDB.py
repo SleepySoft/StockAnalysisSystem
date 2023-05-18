@@ -165,13 +165,14 @@ class DepotMongoDB(DepotInterface):
             collection.create_index(index, unique=True)
 
     def __check_recycle_connection(self):
-        if self.__connection_count >= self.__connection_threshold:
-            # Close the previous connections. Avoiding resource and memory leak.
-            # https://api.mongodb.com/python/current/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient.close
-            #   Close all sockets in the connection pools and stop the monitor threads. If this instance is used
-            #   again it will be automatically re-opened and the threads restarted unless auto encryption is enabled.
-            self.__client.close()
-            self.__connection_count = 0
+        pass
+        # if self.__connection_count >= self.__connection_threshold:
+        #     # Close the previous connections. Avoiding resource and memory leak.
+        #     # https://api.mongodb.com/python/current/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient.close
+        #     #   Close all sockets in the connection pools and stop the monitor threads. If this instance is used
+        #     #   again it will be automatically re-opened and the threads restarted unless auto encryption is enabled.
+        #     self.__client.close()
+        #     self.__connection_count = 0
 
     def __xsert(self, dataset: pd.DataFrame or dict or any, operation: int) -> bool:
         # 0: Insert

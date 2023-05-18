@@ -238,7 +238,7 @@ def __fetch_sse_enquiries() -> pd.DataFrame or None:
     df_sse['stockcode'] = df_sse['stockcode'] + '.SSE'
     # Because the format checker expects datetime64[ns]
     # df_sse['cmsOpDate'] = df_sse['cmsOpDate'].apply(text_auto_time)
-    df_sse['cmsOpDate'] = pd.to_datetime(df_sse['cmsOpDate'], format='%Y-%m-%d %H:%M:%S')
+    df_sse['cmsOpDate'] = pd.to_datetime(df_sse['cmsOpDate'], format='%Y%m%d %H:%M:%S')
 
     df_sse.rename(columns={'stockcode': 'stock_identity',
                            'extGSJC': 'name',

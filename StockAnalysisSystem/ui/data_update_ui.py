@@ -420,6 +420,10 @@ class DataUpdateUi(QWidget):
         updater: ResourceTagUpdater = self.__current_update_task.get_updater()
         updated_res_id = updater.get_resource_ids()
 
+        if updated_res_id is None:
+            # The server might be killed
+            return
+
         done_progress = []
         for res_id in updated_res_id:
             progress: ProgressRate = updater.get_resource(res_id, 'progress')

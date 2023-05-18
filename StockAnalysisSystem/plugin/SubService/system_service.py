@@ -13,9 +13,10 @@ from StockAnalysisSystem.core.Utility.event_queue import Event
 from StockAnalysisSystem.core.SubServiceManager import SubServiceContext
 
 
-logging.getLogger('apscheduler').setLevel(logging.WARNING)
-logging.getLogger('apscheduler.executors').setLevel(logging.WARNING)
-logging.getLogger('apscheduler.jobstores').setLevel(logging.WARNING)
+logging.getLogger('requests').setLevel(logging.ERROR)
+logging.getLogger('apscheduler').setLevel(logging.ERROR)
+logging.getLogger('apscheduler.executors').setLevel(logging.ERROR)
+logging.getLogger('apscheduler.jobstores').setLevel(logging.ERROR)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
