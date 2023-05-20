@@ -1,0 +1,71 @@
+{
+    "TS_TOKEN": "",
+    "NOSQL_DB_HOST": "localhost",
+    "NOSQL_DB_PORT": "27017",
+    "NOSQL_DB_USER": "",
+    "NOSQL_DB_PASS": "",
+    "PROXY_PROTOCOL": "HTTP_PROXY",
+    "PROXY_HOST": "",
+    "memo_path": "git/StockMemo",
+
+    "wechat_token": "xxxxxxxxx",
+    "wechat_app_id": "xxxxxxxxx",
+    "wechat_app_secret": "xxxxxxxxx",
+
+    "service_port": "80",
+    "service_debug": "true",
+    "analysis_result_path": "TestData/analysis_result.json",
+    "analysis_name_dict_path": "TestData/analyzer_names.json",
+
+    "TS_DELAY": {
+        "daily_basic":          "0",
+        "fina_mainbz":          "0",
+    
+        "fina_audit":           "0",
+        "balancesheet":         "0",
+        "income":               "0",
+        "cashflow":             "0",
+    
+        "index_daily":          "0",
+        "daily_index":          "0",
+    
+        "concept_detail":       "0",
+        "namechange":           "400",
+    
+        "pledge_stat":          "0",
+        "pledge_detail":        "0",
+    
+    
+        "stk_holdernumber":     "0",
+        "top10_holders":        "0",
+        "top10_floatholders":   "0",
+        "stk_holdertrade":      "300",
+    
+        "daily":                "0",
+        "adj_factor":           "0",
+    
+        "repurchase":           "0",
+        "share_float":          "0"
+    },
+
+    "SERVICE_COMMENTS": [
+        ["Only for comments. You can put these UUID into DISABLE_SERVICES or ENABLE_SERVICES setting"],
+        ["If the 'default_enable' if True, you can put it into DISABLE_SERVICES to disable it."],
+        ["If the 'default_enable' if False, you can put it into ENABLE_SERVICES to enable it."]
+    ],
+
+    "ENABLE_SERVICES": [
+        ["8e6e6025-c0c7-4577-b62a-dd26b925b874", "system_service"],
+        ["0ea2afb5-3350-46e8-af1b-2e7ff246a1ff", "terminal_service"],
+        ["f54e8afa-959d-44a2-8a95-545175be92a7", "web_service"]
+    ],
+
+    "DISABLE_SERVICES": [
+        ["7129e9d2-4f53-4826-9161-c568ced52d02", "dummy_sub_service"],
+        ["f38cbc96-3b94-4cf2-bb36-fd9d4e656025", "dummy_test_service_a"],
+        ["23a49732-f3b0-43ec-9f5c-f8f64d6da649", "dummy_test_service_b"],
+        ["bd9a7d9f-dbcc-4dc8-8992-16dac9191ff9", "stock_memo_service"],
+        ["7129e9d2-4f53-4826-9161-c568ced52d02", "update_service"],
+        ["12d59df4-c218-45af-9a3e-a0b99526c291", "wechat_robot_service"]
+    ]
+}

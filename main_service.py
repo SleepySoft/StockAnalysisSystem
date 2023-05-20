@@ -1,9 +1,10 @@
+import logging
 import os
 import time
 import traceback
 
-import StockAnalysisSystem.core.api as sasApi
 from StockAnalysisSystem.core.config import Config
+from StockAnalysisSystem.core.Utility.log import logging_config, logging_test
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -26,6 +27,9 @@ def init_sas(work_path: str, config: Config or None) -> bool:
 
 
 def main():
+    logging_config()
+    logging_test()
+
     if not init_sas(os.getcwd(), None):
         exit(1)
 
