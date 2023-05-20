@@ -100,6 +100,8 @@ class SubServiceManager:
         config = self.__sas_api.config()
         enable_service = config.get('ENABLE_SERVICES', [])
         disable_service = config.get('DISABLE_SERVICES', [])
+        enable_service_id = [s[0] for s in enable_service]
+        disable_service_id = [s[0] for s in disable_service]
 
         self.__plugin.refresh()
         modules = self.__plugin.all_modules()
@@ -113,10 +115,10 @@ class SubServiceManager:
             plugin_id = prob['plugin_id']
 
             # If "default_enable" of service prob is False, it should be enabled by "ENABLE_SERVICES" in json
-            if not prob.get('default_enable', True) and plugin_id not in enable_service:
+            if not prob.get('default_enable', True) and plugin_id not in enable_service_id:
                 continue
 
-            if plugin_id in disable_service:
+            if plugin_id in disable_service_id:
                 self.__log('Service %s disabled' % prob['plugin_name'])
                 continue
 
