@@ -17,26 +17,30 @@
     "analysis_result_path": "TestData/analysis_result.json",
     "analysis_name_dict_path": "TestData/analyzer_names.json",
 
+    "TS_DELAY_COMMENTS": [
+        ["The following config is only for 5000 tushare points."],
+    ],
+
     "TS_DELAY": {
         "daily_basic":          "0",
-        "fina_mainbz":          "0",
+        "fina_mainbz":          "500",
     
-        "fina_audit":           "0",
-        "balancesheet":         "0",
-        "income":               "0",
-        "cashflow":             "0",
+        "fina_audit":           "400",
+        "balancesheet":         "500",
+        "income":               "500",
+        "cashflow":             "500",
     
         "index_daily":          "0",
         "daily_index":          "0",
     
-        "concept_detail":       "0",
+        "concept_detail":       "400",
         "namechange":           "400",
     
-        "pledge_stat":          "0",
-        "pledge_detail":        "0",
+        "pledge_stat":          "400",
+        "pledge_detail":        "400",
     
     
-        "stk_holdernumber":     "0",
+        "stk_holdernumber":     "400",
         "top10_holders":        "0",
         "top10_floatholders":   "0",
         "stk_holdertrade":      "300",
@@ -45,7 +49,7 @@
         "adj_factor":           "0",
     
         "repurchase":           "0",
-        "share_float":          "0"
+        "share_float":          "400"
     },
 
     "SERVICE_COMMENTS": [
